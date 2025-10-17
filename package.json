@@ -1,0 +1,20 @@
+{
+  "name": "nanowrimo2025",
+  "version": "1.0.0",
+  "description": "Interactive fiction project for NaNoWriMo 2025",
+  "scripts": {
+    "build": "npm run build:main && npm run build:proofread",
+    "build:main": "tweego src -o dist/index.html --format=harlowe-3.3.9",
+    "build:proofread": "tweego src -o dist/proofread.html --format=paperthin-1.0.0",
+    "dev": "tweego src -o dist/index.html --format=harlowe-3.3.9 --watch",
+    "dev:proofread": "tweego src -o dist/proofread.html --format=paperthin-1.0.0 --watch",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "twine",
+    "interactive-fiction",
+    "nanowrimo"
+  ],
+  "author": "",
+  "license": "ISC"
+}

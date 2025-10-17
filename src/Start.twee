@@ -1,0 +1,12 @@
+:: Start
+You stand at the beginning of a new story.
+
+The blank page awaits.
+
+[[Continue->Chapter1]]
+
+
+:: Chapter1
+This is where your story begins...
+
+(More passages to come)
