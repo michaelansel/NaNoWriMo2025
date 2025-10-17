@@ -1,12 +1,16 @@
 :: Start
 You stand at the beginning of a new story.
 
-The blank page awaits.
+The blank page awaits, full of infinite possibilities.
 
-[[Continue->Chapter1]]
+What will you write today?
+
+[[Begin the journey->Chapter1]]
 
 
 :: Chapter1
 This is where your story begins...
+
+The path stretches before you, winding through untold adventures.
 
 (More passages to come)
