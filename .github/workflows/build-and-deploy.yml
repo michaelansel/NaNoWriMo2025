@@ -31,9 +31,6 @@ jobs:
           # Keep storyformats in the repository root for tweego to find
           mv tweego-files/storyformats .
 
-      - name: List available story formats
-        run: tweego --list-formats
-
       - name: Build Harlowe version (main)
         run: |
           mkdir -p dist
