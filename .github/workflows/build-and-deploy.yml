@@ -4,18 +4,22 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -40,13 +44,64 @@ jobs:
         run: |
           tweego src -o dist/proofread.html -f paperthin-1
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
+      - name: Upload build artifacts (for PR preview)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: story-preview
+          path: dist/
+          retention-days: 30
 
-      - name: Upload artifact
+      - name: Comment on PR with preview instructions
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const indexSize = fs.statSync('dist/index.html').size;
+            const proofreadSize = fs.statSync('dist/proofread.html').size;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## ✅ Build Successful
+
+            Your story has been built successfully!
+
+            **📊 Build Stats:**
+            - Harlowe version: ${(indexSize / 1024).toFixed(2)} KB
+            - Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
+
+            **🎮 Preview Your Changes:**
+            1. Download the \`story-preview\` artifact from the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+            2. Extract the zip file
+            3. Open \`index.html\` in your browser to play the story
+            4. Open \`proofread.html\` to see the proofreading view
+
+            **💡 Tip:** Once merged to main, this will be live at:
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/proofread.html`
+            });
+
+      - name: Save build artifacts for deployment
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-pages-artifact@v3
         with:
           path: './dist'
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Deploy to GitHub Pages
         id: deployment

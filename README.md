@@ -14,9 +14,39 @@ NaNoWriMo2025/
 └── dist/                  # Build output (ignored by git)
 ```
 
-## Development
+## Collaboration Workflows
 
-### Prerequisites
+This project supports two development workflows:
+
+### 1. GitHub Web Interface (No Installation Required)
+
+Perfect for quick edits and non-technical collaborators:
+
+1. **Edit files directly on GitHub:**
+   - Navigate to any file in the `src/` directory
+   - Click the pencil icon to edit
+   - Make your changes
+   - Commit to a new branch and create a pull request
+
+2. **Automatic validation:**
+   - GitHub Actions will automatically build your changes
+   - Check the PR for a green checkmark (build succeeded) or red X (build failed)
+   - The bot will comment with build stats and preview instructions
+
+3. **Preview your changes:**
+   - Download the `story-preview` artifact from the Actions tab
+   - Extract and open `index.html` to test your story
+   - No local setup required!
+
+4. **Merge when ready:**
+   - Once approved, merge the PR
+   - Your changes will be live on GitHub Pages within minutes
+
+### 2. Local Development (Desktop Flow)
+
+For more complex work and offline development:
+
+#### Prerequisites
 
 Install [Tweego](https://github.com/tmedwards/tweego/releases) for local development:
 
@@ -39,21 +69,19 @@ sudo mv tweego /usr/local/bin/
 **Windows:**
 Download from [releases page](https://github.com/tmedwards/tweego/releases) and add to PATH.
 
-### Download Story Formats
+#### Download Story Formats
 
 ```bash
 mkdir -p storyformats && cd storyformats
 
-# Harlowe
-wget https://github.com/klembot/harlowe/releases/download/3.3.9/harlowe-3.3.9.zip
-unzip harlowe-3.3.9.zip && rm harlowe-3.3.9.zip
-
-# Paperthin
-wget https://github.com/BenjaminSiskoo/Paperthin/raw/master/paperthin-1.0.0.zip
-unzip paperthin-1.0.0.zip && rm paperthin-1.0.0.zip
+# Download tweego which includes story formats
+wget https://github.com/tmedwards/tweego/releases/download/v2.1.1/tweego-2.1.1-linux-x64.zip
+unzip tweego-2.1.1-linux-x64.zip
+mv storyformats/* .
+cd ..
 ```
 
-### Build Scripts
+#### Build Scripts
 
 ```bash
 # Build both versions
@@ -75,9 +103,40 @@ npm run dev:proofread
 npm run clean
 ```
 
+#### Git Workflow
+
+```bash
+# Create a feature branch
+git checkout -b add-new-chapter
+
+# Make your changes to files in src/
+# Test locally with npm run dev
+
+# Commit and push
+git add src/
+git commit -m "Add new chapter"
+git push -u origin add-new-chapter
+
+# Create a pull request on GitHub
+gh pr create --title "Add new chapter" --body "Adds chapter 2"
+```
+
 ## Deployment
 
+### Automatic Deployment
+
 The project uses GitHub Actions to automatically build and deploy to GitHub Pages on every push to `main`.
+
+**What happens on PRs:**
+- ✅ Build validation runs automatically
+- ✅ Build artifacts are uploaded for download and testing
+- ✅ Bot comments on PR with build stats and preview instructions
+- ❌ No live PR preview URL (GitHub Pages limitation - only deploys from `main`)
+
+**What happens on `main` branch:**
+- ✅ Build validation runs
+- ✅ Automatic deployment to GitHub Pages
+- ✅ Live at the production URLs within 1-2 minutes
 
 ### Setup GitHub Pages
 
