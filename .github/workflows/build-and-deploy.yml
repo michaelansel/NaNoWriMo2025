@@ -38,9 +38,9 @@ jobs:
       - name: Download dotgraph format
         run: |
           wget https://github.com/mcdemarco/dotgraph/releases/download/v2.2.0/release.zip -O dotgraph.zip
-          unzip dotgraph.zip -d dotgraph-temp
-          # Find and move the online dotgraph-2 folder to storyformats
-          find dotgraph-temp -type d -name "dotgraph-2" ! -path "*/offline/*" -exec mv {} storyformats/ \;
+          unzip dotgraph.zip
+          # Move the online dotgraph-2 folder (not the offline version) to storyformats
+          mv dotgraph-2 storyformats/
 
       - name: Build Harlowe version (main)
         run: |
