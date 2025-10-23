@@ -35,6 +35,14 @@ jobs:
           # Keep storyformats in the repository root for tweego to find
           mv tweego-files/storyformats .
 
+      - name: Download dotgraph format
+        run: |
+          wget https://github.com/mcdemarco/dotgraph/releases/download/v2.2.0/release.zip -O dotgraph.zip
+          unzip -q dotgraph.zip -d dotgraph-temp
+          # Move the online dotgraph-2 folder (not the offline version) to storyformats
+          mv dotgraph-temp/dotgraph-2 storyformats/
+          rm -rf dotgraph-temp dotgraph.zip
+
       - name: Build Harlowe version (main)
         run: |
           mkdir -p dist
@@ -43,6 +51,10 @@ jobs:
       - name: Build Paperthin version (proofread)
         run: |
           tweego src -o dist/proofread.html -f paperthin-1
+
+      - name: Build DotGraph version (visualization)
+        run: |
+          tweego src -o dist/graph.html -f dotgraph-2
 
       - name: Upload build artifacts (for PR preview)
         if: github.event_name == 'pull_request'
@@ -60,6 +72,7 @@ jobs:
             const fs = require('fs');
             const indexSize = fs.statSync('dist/index.html').size;
             const proofreadSize = fs.statSync('dist/proofread.html').size;
+            const graphSize = fs.statSync('dist/graph.html').size;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -72,16 +85,19 @@ jobs:
             **📊 Build Stats:**
             - Harlowe version: ${(indexSize / 1024).toFixed(2)} KB
             - Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
+            - DotGraph version: ${(graphSize / 1024).toFixed(2)} KB
 
             **🎮 Preview Your Changes:**
             1. Download the \`story-preview\` artifact from the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
             2. Extract the zip file
-            3. Open \`index.html\` in your browser to play the story
-            4. Open \`proofread.html\` to see the proofreading view
+            3. Open \`index.html\` to play the story
+            4. Open \`proofread.html\` for linear proofreading
+            5. Open \`graph.html\` to visualize the story structure
 
             **💡 Tip:** Once merged to main, this will be live at:
             - https://${context.repo.owner}.github.io/${context.repo.repo}/
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/proofread.html`
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/proofread.html
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/graph.html`
             });
 
       - name: Save build artifacts for deployment
