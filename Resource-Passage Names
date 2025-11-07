@@ -1,0 +1,33 @@
+Start.twee 
+  :: Start
+  [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
+  [[Attack the monster->proactive attack]] or [[Retreat->run from the monster]]
+  [[Find the lantern]] or [[Ignore the lantern->Day 2 KEB]]
+  [[Check the creature]] or [[Check the cavern walls->Day 4 KEB]]
+
+mansel-20251101.twee
+  :: run from the monster
+  [[Re-enter the cave]] or [[Hesitate->Day 3 KEB]]
+
+KEB-251101.twee
+  :: Day 1 KEB
+  [[Join them]] or [[Hold back->Day 5 KEB]]
+
+KEB-251102.twee
+  :: Day 2 KEB
+
+KEB-251103.twee
+  :: Day 3 KEB
+
+KEB-251104.twee
+  :: Day 4 KEB
+
+KEB-251105.twee
+  :: Day 5 KEB
+  [[Flee]] or [[Stay->Day 6 KEB]]
+
+KEB-251106.twee
+  :: Day 6 KEB
+
+KEB-251107.twee
+  :: Day 7 KEB
