@@ -9,7 +9,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
   pull-requests: write
@@ -25,6 +25,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate resources file
+        run: |
+          chmod +x scripts/generate-resources.sh
+          ./scripts/generate-resources.sh
+
+      - name: Commit updated resources file
+        if: github.event_name == 'pull_request'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update Resource-Passage Names"
+          file_pattern: "Resource-Passage Names"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
 
       - name: Download and install tweego
         run: |
