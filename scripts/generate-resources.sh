@@ -1,6 +1,7 @@
 #!/bin/bash
 # Automatically generate Resource-Passage Names file
 # Extracts all passage definitions and links from .twee files
+# Groups links under their respective passages
 
 output="Resource-Passage Names"
 temp_output="${output}.tmp"
@@ -16,11 +17,36 @@ for file in src/*.twee; do
     # Print filename
     echo "$basename" >> "$temp_output"
 
-    # Extract passage definitions (lines starting with ::)
-    grep "^::" "$file" | sed 's/^/  /' >> "$temp_output" 2>/dev/null || true
-
-    # Extract lines containing links (lines with [[)
-    grep "\[\[" "$file" | grep -v "^::" | sed 's/^/  /' >> "$temp_output" 2>/dev/null || true
+    # Process the file to group links under passages
+    awk '
+    /^::/ {
+        # Found a new passage
+        # Print any accumulated links from previous passage
+        if (current_passage != "") {
+            for (i = 1; i <= link_count; i++) {
+                print links[i]
+            }
+        }
+        # Print the new passage
+        print "  " $0
+        current_passage = $0
+        link_count = 0
+        next
+    }
+    /\[\[/ {
+        # Found a line with links, save it
+        link_count++
+        links[link_count] = "  " $0
+    }
+    END {
+        # Print any remaining links from last passage
+        if (current_passage != "") {
+            for (i = 1; i <= link_count; i++) {
+                print links[i]
+            }
+        }
+    }
+    ' "$file" >> "$temp_output"
 
     # Add blank line between files
     echo "" >> "$temp_output"

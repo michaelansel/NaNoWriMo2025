@@ -1,8 +1,8 @@
 KEB-251101.twee
   :: Day 1 KEB
-  :: Join them
   [[Join them]]
   [[Hold back->Day 5 KEB]]
+  :: Join them
 
 KEB-251102.twee
   :: Day 2 KEB
@@ -15,9 +15,9 @@ KEB-251104.twee
 
 KEB-251105.twee
   :: Day 5 KEB
-  :: Flee
   [[Flee]]
   [[Stay->Day 6 KEB]]
+  :: Flee
 
 KEB-251106.twee
   :: Day 6 KEB
@@ -27,20 +27,20 @@ KEB-251107.twee
 
 Start.twee
   :: Start
-  :: Continue on
-  :: Javlyn continued
-  :: proactive attack
-  :: Find the lantern
-  :: Check the creature
   [[Continue on]]
   [[Perhaps another day->Day 7 KEB]]
+  :: Continue on
   After listening for a moment, [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
+  :: Javlyn continued
   [[Attack the monster->proactive attack]]
   [[Retreat->run from the monster]]
+  :: proactive attack
   [[Find the lantern]]
   [[Ignore the lantern->Day 2 KEB]]
+  :: Find the lantern
   [[Check the creature]]
   [[Check the cavern walls->Day 4 KEB]]
+  :: Check the creature
 
 StoryData.twee
   :: StoryData
@@ -50,7 +50,7 @@ StoryTitle.twee
 
 mansel-20251101.twee
   :: run from the monster
-  :: Re-enter the cave
   [[Re-enter the cave]]
   [[Hesitate->Day 3 KEB]]
+  :: Re-enter the cave
 
