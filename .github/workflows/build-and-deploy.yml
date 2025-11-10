@@ -88,6 +88,11 @@ jobs:
         run: |
           tweego src -o dist/graph.html -f dotgraph-2
 
+      - name: Build AllPaths version (AI continuity checking)
+        run: |
+          chmod +x scripts/build-allpaths.sh
+          ./scripts/build-allpaths.sh
+
       - name: Upload build artifacts (for PR preview)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -105,6 +110,11 @@ jobs:
             const indexSize = fs.statSync('dist/index.html').size;
             const proofreadSize = fs.statSync('dist/proofread.html').size;
             const graphSize = fs.statSync('dist/graph.html').size;
+            const allpathsSize = fs.statSync('dist/allpaths.html').size;
+
+            // Count AllPaths text files
+            const allpathsTextFiles = fs.readdirSync('dist/allpaths-text').filter(f => f.endsWith('.txt'));
+            const pathCount = allpathsTextFiles.length;
 
             github.rest.issues.createComment({
               issue_number: context.issue.number,
@@ -118,6 +128,7 @@ jobs:
             - Harlowe version: ${(indexSize / 1024).toFixed(2)} KB
             - Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
             - DotGraph version: ${(graphSize / 1024).toFixed(2)} KB
+            - AllPaths version: ${(allpathsSize / 1024).toFixed(2)} KB (${pathCount} paths)
 
             **🎮 Preview Your Changes:**
             1. Download the \`story-preview\` artifact from the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
@@ -125,11 +136,14 @@ jobs:
             3. Open \`index.html\` to play the story
             4. Open \`proofread.html\` for linear proofreading
             5. Open \`graph.html\` to visualize the story structure
+            6. Open \`allpaths.html\` to browse all ${pathCount} story paths
+            7. See \`allpaths-text/\` for individual path files for AI processing
 
             **💡 Tip:** Once merged to main, this will be live at:
             - https://${context.repo.owner}.github.io/${context.repo.repo}/
             - https://${context.repo.owner}.github.io/${context.repo.repo}/proofread.html
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/graph.html`
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/graph.html
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/allpaths.html`
             });
 
       - name: Save build artifacts for deployment

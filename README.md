@@ -79,6 +79,7 @@ src/
 - **Harlowe format** (`index.html`): Interactive playable story
 - **Paperthin format** (`proofread.html`): Linear text view for proofreading - [view live](https://michaelansel.github.io/NaNoWriMo2025/proofread.html)
 - **DotGraph format** (`graph.html`): Interactive story structure visualization - [view live](https://michaelansel.github.io/NaNoWriMo2025/graph.html)
+- **AllPaths format** (`allpaths.html`): All possible story paths for AI continuity checking - [view live](https://michaelansel.github.io/NaNoWriMo2025/allpaths.html) | [documentation](formats/allpaths/README.md)
 
 ## Resources
 
