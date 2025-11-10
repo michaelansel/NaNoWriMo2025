@@ -66,8 +66,8 @@ npm run build:allpaths
 
 **Manual (requires tweego installed):**
 ```bash
-# Step 1: Compile with Tweego
-tweego src -o temp.html -f formats/allpaths/format.js
+# Step 1: Compile with Tweego (using paperthin format to get story data)
+tweego src -o temp.html -f paperthin-1
 
 # Step 2: Generate paths
 python3 formats/allpaths/generator.py temp.html dist/
@@ -158,18 +158,14 @@ On the next build, validated paths will:
 
 ### Components
 
-1. **format.js** - Tweego story format definition
-   - Integrates with Tweego build system
-   - Outputs raw story data HTML
-
-2. **generator.py** - Path generation engine
+1. **generator.py** - Path generation engine
    - Parses Tweego-compiled HTML
    - Performs DFS to find all paths
    - Generates HTML and text outputs
    - Manages validation cache
 
-3. **build-allpaths.sh** - Build script
-   - Orchestrates Tweego compilation
+2. **build-allpaths.sh** - Build script
+   - Orchestrates Tweego compilation (using paperthin format)
    - Runs Python generator
    - Cleans up temporary files
 
@@ -178,9 +174,9 @@ On the next build, validated paths will:
 ```
 .twee files
     ↓
-  Tweego (with format.js)
+  Tweego (paperthin format)
     ↓
-  Temporary HTML
+  Temporary HTML (with story data)
     ↓
   generator.py
     ↓
