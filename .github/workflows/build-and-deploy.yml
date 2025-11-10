@@ -48,8 +48,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Checkout the PR branch (we're currently on the merge commit)
-          git checkout -B ${{ github.head_ref }}
+          # Save the generated resources file
+          cp "Resource-Passage Names" /tmp/resources-generated
+
+          # Fetch the PR branch to get latest commits
+          git fetch origin ${{ github.head_ref }}
+
+          # Checkout the PR branch from remote
+          git checkout ${{ github.head_ref }}
+
+          # Restore the generated resources file
+          cp /tmp/resources-generated "Resource-Passage Names"
 
           echo "Adding Resource-Passage Names to git..."
           git add "Resource-Passage Names"
