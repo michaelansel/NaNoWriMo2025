@@ -17,14 +17,13 @@ echo "Project: $PROJECT_DIR"
 echo "Output: $DIST_DIR"
 echo ""
 
-# Step 1: Compile story with AllPaths format
+# Step 1: Compile story with Paperthin format (just to get the story data)
 echo "[1/2] Compiling story with Tweego..."
 TEMP_FILE="$DIST_DIR/allpaths-temp.html"
 
 if command -v tweego &> /dev/null; then
-    tweego src \
-        -o "$TEMP_FILE" \
-        -f "$FORMAT_DIR/format.js"
+    # Use paperthin format as it's simple and just outputs the story data
+    tweego src -o "$TEMP_FILE" -f paperthin-1
     echo "✓ Story compiled"
 else
     echo "Error: tweego not found. Please install tweego first."
