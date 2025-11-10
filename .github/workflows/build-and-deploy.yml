@@ -26,7 +26,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
+          # For pull_request events, this checks out the merge commit (PR merged with base)
+          # This ensures scripts from main are available even if PR branch is old
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate resources file
@@ -46,6 +47,10 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Checkout the PR branch (we're currently on the merge commit)
+          git checkout -B ${{ github.head_ref }}
+
           echo "Adding Resource-Passage Names to git..."
           git add "Resource-Passage Names"
           echo "Checking for staged changes..."
@@ -55,7 +60,7 @@ jobs:
           else
             echo "Changes detected, committing..."
             git commit -m "Auto-update Resource-Passage Names"
-            git push
+            git push origin ${{ github.head_ref }}
           fi
 
       - name: Download and install tweego
