@@ -26,7 +26,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate resources file
@@ -36,12 +36,16 @@ jobs:
 
       - name: Commit updated resources file
         if: github.event_name == 'pull_request'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update Resource-Passage Names"
-          file_pattern: "Resource-Passage Names"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "Resource-Passage Names"
+          if git diff --staged --quiet; then
+            echo "No changes to Resource-Passage Names"
+          else
+            git commit -m "Auto-update Resource-Passage Names"
+            git push
+          fi
 
       - name: Download and install tweego
         run: |
