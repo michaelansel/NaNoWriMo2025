@@ -32,15 +32,8 @@ jobs:
 
       - name: Generate resources file
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Before generation:"
-          ls -la "Resource-Passage Names" || echo "Resource-Passage Names does not exist"
           chmod +x scripts/generate-resources.sh
           ./scripts/generate-resources.sh
-          echo "After generation:"
-          ls -la "Resource-Passage Names"
-          echo "Git status after generation:"
-          git status --short
 
       - name: Commit updated resources file
         if: github.event_name == 'pull_request'
@@ -51,23 +44,16 @@ jobs:
           # Save the generated resources file
           cp "Resource-Passage Names" /tmp/resources-generated
 
-          # Fetch the PR branch to get latest commits
+          # Fetch and checkout the PR branch to get latest commits
           git fetch origin ${{ github.head_ref }}
-
-          # Checkout the PR branch from remote
           git checkout ${{ github.head_ref }}
 
           # Restore the generated resources file
           cp /tmp/resources-generated "Resource-Passage Names"
 
-          echo "Adding Resource-Passage Names to git..."
+          # Commit and push if there are changes
           git add "Resource-Passage Names"
-          echo "Checking for staged changes..."
-          git diff --staged --stat
-          if git diff --staged --quiet; then
-            echo "No changes to Resource-Passage Names"
-          else
-            echo "Changes detected, committing..."
+          if ! git diff --staged --quiet; then
             git commit -m "Auto-update Resource-Passage Names"
             git push origin ${{ github.head_ref }}
           fi
