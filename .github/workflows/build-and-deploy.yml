@@ -26,7 +26,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          # For pull_request events, this checks out the merge commit (PR merged with base)
+          # This ensures scripts from main are available even if PR branch is old
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Generate resources file
@@ -36,12 +37,26 @@ jobs:
 
       - name: Commit updated resources file
         if: github.event_name == 'pull_request'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "Auto-update Resource-Passage Names"
-          file_pattern: "Resource-Passage Names"
-          commit_user_name: "github-actions[bot]"
-          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Save the generated resources file
+          cp "Resource-Passage Names" /tmp/resources-generated
+
+          # Fetch and checkout the PR branch to get latest commits
+          git fetch origin ${{ github.head_ref }}
+          git checkout ${{ github.head_ref }}
+
+          # Restore the generated resources file
+          cp /tmp/resources-generated "Resource-Passage Names"
+
+          # Commit and push if there are changes
+          git add "Resource-Passage Names"
+          if ! git diff --staged --quiet; then
+            git commit -m "Auto-update Resource-Passage Names"
+            git push origin ${{ github.head_ref }}
+          fi
 
       - name: Download and install tweego
         run: |

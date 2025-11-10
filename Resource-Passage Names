@@ -3,6 +3,9 @@ KEB-251101.twee
   [[Join them]]
   [[Hold back->Day 5 KEB]]
   :: Join them
+  [[Defense magic]]
+  [[Light magic->Day 8 KEB]]
+  :: Defense magic
 
 KEB-251102.twee
   :: Day 2 KEB
@@ -12,6 +15,9 @@ KEB-251103.twee
 
 KEB-251104.twee
   :: Day 4 KEB
+  [[Do not investigate]]
+  [[Investigate->Day 9 KEB]]
+  :: Do not investigate
 
 KEB-251105.twee
   :: Day 5 KEB
@@ -24,6 +30,12 @@ KEB-251106.twee
 
 KEB-251107.twee
   :: Day 7 KEB
+
+KEB-251108.twee
+  :: Day 8 KEB
+
+KEB-251109.twee
+  :: Day 9 KEB
 
 Start.twee
   :: Start
