@@ -31,18 +31,29 @@ jobs:
 
       - name: Generate resources file
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Before generation:"
+          ls -la "Resource-Passage Names" || echo "Resource-Passage Names does not exist"
           chmod +x scripts/generate-resources.sh
           ./scripts/generate-resources.sh
+          echo "After generation:"
+          ls -la "Resource-Passage Names"
+          echo "Git status after generation:"
+          git status --short
 
       - name: Commit updated resources file
         if: github.event_name == 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          echo "Adding Resource-Passage Names to git..."
           git add "Resource-Passage Names"
+          echo "Checking for staged changes..."
+          git diff --staged --stat
           if git diff --staged --quiet; then
             echo "No changes to Resource-Passage Names"
           else
+            echo "Changes detected, committing..."
             git commit -m "Auto-update Resource-Passage Names"
             git push
           fi
