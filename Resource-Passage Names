@@ -45,7 +45,7 @@ Start.twee
   After listening for a moment, [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
   :: Javlyn continued
   [[Attack the monster->proactive attack]]
-  [[Retreat->run from the monster]]
+  [[Retreat->mansel-20251101]]
   :: proactive attack
   [[Find the lantern]]
   [[Ignore the lantern->Day 2 KEB]]
@@ -61,8 +61,13 @@ StoryTitle.twee
   :: StoryTitle
 
 mansel-20251101.twee
-  :: run from the monster
+  :: mansel-20251101
   [[Re-enter the cave]]
   [[Hesitate->Day 3 KEB]]
   :: Re-enter the cave
+  Should Javlyn [[leave Jerrick behind]] or [[drag Jerrick out of the cave->mansel-20251102]]?
+  :: leave Jerrick behind
+
+mansel-20251102.twee
+  :: mansel-20251102
 
