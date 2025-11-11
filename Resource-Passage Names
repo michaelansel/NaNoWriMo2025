@@ -37,6 +37,9 @@ KEB-251108.twee
 KEB-251109.twee
   :: Day 9 KEB
 
+KEB-251110.twee
+  :: Day 10 KEB
+
 Start.twee
   :: Start
   [[Continue on]]
@@ -44,6 +47,8 @@ Start.twee
   :: Continue on
   After listening for a moment, [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
   :: Javlyn continued
+  Inside the cave, Javlyn found [[nothing->Day 10 KEB]] or [[one creature]].
+  :: one creature
   [[Attack the monster->proactive attack]]
   [[Retreat->mansel-20251101]]
   :: proactive attack
