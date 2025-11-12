@@ -33,7 +33,7 @@ The AllPaths format uses depth-first search (DFS) to explore the entire story gr
 - Includes path metadata (route, length, ID)
 - Stable filenames with path hash for tracking
 
-**Validation Cache (`allpaths-validation-cache.json`)**
+**Validation Cache (`allpaths-validation-status.json`)**
 - Tracks all discovered paths with unique IDs
 - Records first seen date
 - Stores validation status
@@ -88,7 +88,7 @@ dist/
 │   ├── path-002-1bf824a1.txt
 │   └── ...
 ├── allpaths-passage-mapping.json      # Maps random IDs back to passage names
-└── allpaths-validation-cache.json     # Validation tracking (at repository root)
+└── allpaths-validation-status.json     # Validation tracking (at repository root)
 ```
 
 ### Browsing Paths
@@ -149,7 +149,7 @@ Path ID: 6e587dcb
 
 **Mark a path as validated:**
 
-Edit `allpaths-validation-cache.json`:
+Edit `allpaths-validation-status.json`:
 ```json
 {
   "6e587dcb": {
@@ -169,7 +169,7 @@ On the next build, validated paths will:
 
 If the text generation format changes (e.g., how passages or choices are displayed), you should clear the validation cache to get fresh AI analysis:
 ```bash
-rm allpaths-validation-cache.json
+rm allpaths-validation-status.json
 ```
 
 This will mark all paths as "new" and they will be re-checked with the updated format.
@@ -228,7 +228,7 @@ This prevents the AI from being confused by passage names that contain timeline 
     ↓
   ┌─────────────┬──────────────────┬────────────────────┐
   ↓             ↓                  ↓                    ↓
-allpaths.html  allpaths-text/  validation-cache.json
+allpaths.html  allpaths-text/  validation-status.json
 ```
 
 ### Algorithm

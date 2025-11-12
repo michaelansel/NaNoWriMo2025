@@ -157,10 +157,10 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
 def validate_artifact_structure(artifact_dir: Path) -> bool:
     """Validate that artifact contains expected files and structure."""
     # Expected structure:
-    # - allpaths-validation-cache.json (at root)
+    # - allpaths-validation-status.json (at root)
     # - dist/allpaths-text/ directory with .txt files
 
-    cache_file = artifact_dir / "allpaths-validation-cache.json"
+    cache_file = artifact_dir / "allpaths-validation-status.json"
     text_dir = artifact_dir / "dist" / "allpaths-text"
 
     if not cache_file.exists():
@@ -456,7 +456,7 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
 
             # Get paths to check
             text_dir = tmpdir_path / "dist" / "allpaths-text"
-            cache_file = tmpdir_path / "allpaths-validation-cache.json"
+            cache_file = tmpdir_path / "allpaths-validation-status.json"
             mapping_file = tmpdir_path / "dist" / "allpaths-passage-mapping.json"
 
             # Load passage ID mapping for translating results
@@ -861,7 +861,7 @@ def process_approval_async(pr_number: int, path_ids: List[str], username: str):
                 post_pr_comment(pr_number, "⚠️ Error: Failed to download validation cache")
                 return
 
-            cache_file = tmpdir_path / "allpaths-validation-cache.json"
+            cache_file = tmpdir_path / "allpaths-validation-status.json"
             if not cache_file.exists():
                 post_pr_comment(pr_number, "⚠️ Error: Validation cache not found in artifacts")
                 return
@@ -901,7 +901,7 @@ Paths approved by @{username}:
 Co-Authored-By: Claude <noreply@anthropic.com>
 """
 
-            if not commit_file_to_branch(branch_name, "allpaths-validation-cache.json",
+            if not commit_file_to_branch(branch_name, "allpaths-validation-status.json",
                                         cache_content, commit_message):
                 post_pr_comment(pr_number, "⚠️ Error: Failed to commit validation cache")
                 return

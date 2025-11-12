@@ -109,7 +109,7 @@ jobs:
           path: |
             dist/allpaths-text/
             dist/allpaths-passage-mapping.json
-            allpaths-validation-cache.json
+            allpaths-validation-status.json
           retention-days: 7
 
       - name: Comment on PR with preview instructions
