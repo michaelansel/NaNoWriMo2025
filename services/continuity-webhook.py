@@ -71,8 +71,8 @@ metrics_lock = threading.Lock()
 def verify_signature(payload_body: bytes, signature_header: str) -> bool:
     """Verify GitHub webhook signature."""
     if not WEBHOOK_SECRET:
-        app.logger.warning("WEBHOOK_SECRET not set, skipping signature verification")
-        return True  # Allow in development, but log warning
+        app.logger.error("WEBHOOK_SECRET not set, rejecting webhook for security")
+        return False  # Fail closed - require secret to be configured
 
     if not signature_header:
         app.logger.error("No signature header provided")
@@ -103,6 +103,14 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
         app.logger.error("GITHUB_TOKEN not set, cannot download artifacts")
         return False
 
+    # Validate artifact URL is from GitHub (prevent SSRF)
+    from urllib.parse import urlparse
+    parsed_url = urlparse(artifact_url)
+    allowed_hosts = ['api.github.com', 'github.com', 'objects.githubusercontent.com', 'pipelines.actions.githubusercontent.com']
+    if parsed_url.netloc not in allowed_hosts:
+        app.logger.error(f"Artifact URL has invalid domain: {parsed_url.netloc}")
+        return False
+
     headers = {
         "Authorization": f"token {GITHUB_TOKEN}",
         "Accept": "application/vnd.github.v3+json"
@@ -111,7 +119,7 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
     try:
         # Download artifact (returns a ZIP file)
         app.logger.info(f"Downloading artifact from {artifact_url}")
-        response = requests.get(artifact_url, headers=headers, stream=True)
+        response = requests.get(artifact_url, headers=headers, stream=True, timeout=60)
         response.raise_for_status()
 
         # Save to temporary zip file
@@ -120,10 +128,21 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
 
-        # Extract zip file
+        # Extract zip file with path traversal protection
         app.logger.info(f"Extracting artifact to {dest_dir}")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(dest_dir)
+            # Validate each member to prevent path traversal (Zip Slip)
+            for member in zip_ref.namelist():
+                member_path = os.path.normpath(os.path.join(dest_dir, member))
+                dest_dir_normalized = os.path.normpath(dest_dir)
+
+                # Ensure the member path is within dest_dir
+                if not member_path.startswith(dest_dir_normalized + os.sep) and member_path != dest_dir_normalized:
+                    app.logger.error(f"Attempted path traversal in ZIP: {member}")
+                    raise ValueError(f"Invalid path in ZIP archive: {member}")
+
+                # Extract the member
+                zip_ref.extract(member, dest_dir)
 
         # Remove zip file
         zip_path.unlink()
@@ -178,6 +197,39 @@ def translate_passage_ids(text: str, id_to_name: Dict[str, str]) -> str:
     return text
 
 
+def sanitize_ai_content(text: str) -> str:
+    """
+    Sanitize AI-generated content before including in PR comments.
+
+    Protects against markdown injection, XSS, and malicious links.
+    """
+    if not text:
+        return text
+
+    # Remove any javascript: protocol links
+    text = re.sub(r'javascript:', 'blocked-javascript:', text, flags=re.IGNORECASE)
+
+    # Remove data: protocol links (can be used for XSS)
+    text = re.sub(r'data:', 'blocked-data:', text, flags=re.IGNORECASE)
+
+    # Remove file: protocol links
+    text = re.sub(r'file:', 'blocked-file:', text, flags=re.IGNORECASE)
+
+    # Escape HTML entities that could be used for injection
+    # GitHub markdown should handle this, but defense in depth
+    text = text.replace('<script', '&lt;script')
+    text = text.replace('</script', '&lt;/script')
+    text = text.replace('<iframe', '&lt;iframe')
+    text = text.replace('</iframe', '&lt;/iframe')
+
+    # Limit excessive markdown nesting (can cause DoS in some renderers)
+    if text.count('[') > 50 or text.count('![') > 20:
+        app.logger.warning("AI content has suspicious number of markdown links, truncating")
+        text = text[:1000] + "\n\n[Content truncated for safety]"
+
+    return text
+
+
 def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None) -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
@@ -189,11 +241,13 @@ def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None
         return results
 
     except Exception as e:
+        # Log detailed error to server logs only
         app.logger.error(f"Error running continuity checker: {e}", exc_info=True)
+        # Return generic error to user
         return {
             "checked_count": 0,
             "paths_with_issues": [],
-            "summary": f"Error: {str(e)}"
+            "summary": "Error: Internal error during continuity check. Please contact repository maintainers."
         }
 
 
@@ -249,15 +303,15 @@ def format_path_issues(path: dict) -> str:
     """Format issues for a single path."""
     route_str = " → ".join(path["route"]) if path["route"] else path["id"]
     output = f"**Path:** `{route_str}`\n\n"
-    output += f"_{path['summary']}_\n\n"
+    output += f"_{sanitize_ai_content(path['summary'])}_\n\n"
 
     if path.get("issues"):
         output += "<details>\n<summary>Details</summary>\n\n"
         for issue in path["issues"]:
             issue_type = issue.get("type", "unknown")
             severity = issue.get("severity", "unknown")
-            description = issue.get("description", "No description")
-            location = issue.get("location", "")
+            description = sanitize_ai_content(issue.get("description", "No description"))
+            location = sanitize_ai_content(issue.get("location", ""))
 
             output += f"- **{issue_type.capitalize()}** ({severity}): {description}"
             if location:
@@ -268,7 +322,7 @@ def format_path_issues(path: dict) -> str:
             context = issue.get("context", {})
             if context and isinstance(context, dict):
                 quotes = context.get("quotes", [])
-                explanation = context.get("explanation", "")
+                explanation = sanitize_ai_content(context.get("explanation", ""))
 
                 if quotes or explanation:
                     output += "\n  **In context:**\n"
@@ -278,7 +332,7 @@ def format_path_issues(path: dict) -> str:
                         output += "\n"
                         for quote in quotes:
                             passage_name = quote.get("passage", "unknown")
-                            quote_text = quote.get("text", "")
+                            quote_text = sanitize_ai_content(quote.get("text", ""))
                             if quote_text:
                                 output += f'  > In "{passage_name}": "{quote_text}"\n'
                     output += "\n"
@@ -479,7 +533,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     path_id = path_result.get("id", "unknown")
                     route_str = " → ".join(path_result["route"]) if path_result["route"] else path_id
                     severity = path_result.get("severity", "none")
-                    summary = translate_passage_ids(path_result.get("summary", ""), id_to_name)
+                    summary = sanitize_ai_content(translate_passage_ids(path_result.get("summary", ""), id_to_name))
                     issues = path_result.get("issues", [])
 
                     # Choose emoji based on severity
@@ -504,8 +558,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         for issue in issues:
                             issue_type = issue.get("type", "unknown")
                             issue_severity = issue.get("severity", "unknown")
-                            description = translate_passage_ids(issue.get("description", "No description"), id_to_name)
-                            location = translate_passage_ids(issue.get("location", ""), id_to_name)
+                            description = sanitize_ai_content(translate_passage_ids(issue.get("description", "No description"), id_to_name))
+                            location = sanitize_ai_content(translate_passage_ids(issue.get("location", ""), id_to_name))
 
                             update_comment += f"- **{issue_type.capitalize()}** ({issue_severity}): {description}"
                             if location:
@@ -516,7 +570,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                             context = issue.get("context", {})
                             if context and isinstance(context, dict):
                                 quotes = context.get("quotes", [])
-                                explanation = context.get("explanation", "")
+                                explanation = sanitize_ai_content(context.get("explanation", ""))
 
                                 if quotes or explanation:
                                     update_comment += "\n  **In context:**\n"
@@ -526,7 +580,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                         update_comment += "\n"
                                         for quote in quotes:
                                             passage_id = quote.get("passage", "")
-                                            quote_text = quote.get("text", "")
+                                            quote_text = sanitize_ai_content(quote.get("text", ""))
                                             # Translate passage ID to name
                                             passage_name = id_to_name.get(passage_id, passage_id) if passage_id else "unknown"
                                             if quote_text:
@@ -719,8 +773,14 @@ def handle_comment_webhook(payload):
     if not re.search(r'/approve-path\b', comment_body):
         return jsonify({"message": "Not an approval command"}), 200
 
-    # Ignore bot's own progress comments (they contain the helper text)
-    if '💡 **To approve this path:**' in comment_body:
+    # Ignore bot's own progress comments by checking for multiple bot markers
+    # This prevents self-triggering from the helper text in progress comments
+    bot_markers = [
+        '💡 **To approve this path:**',
+        '🤖 AI Continuity Check',
+        'Path {current}/{total} Complete'  # Not using f-string, just checking pattern
+    ]
+    if any(marker in comment_body for marker in bot_markers):
         return jsonify({"message": "Ignoring bot's own comment"}), 200
 
     # Extract path IDs (8-char hex hashes)
@@ -780,6 +840,12 @@ def process_approval_async(pr_number: int, path_ids: List[str], username: str):
 
         branch_name = pr_info['head']['ref']
         repo_full_name = pr_info['head']['repo']['full_name']
+
+        # Validate branch name format (alphanumeric, dash, underscore, slash, dot)
+        if not re.match(r'^[a-zA-Z0-9/_.-]+$', branch_name):
+            post_pr_comment(pr_number, "⚠️ Error: Invalid branch name format")
+            app.logger.error(f"Invalid branch name: {branch_name}")
+            return
 
         # Download the latest artifact from the most recent workflow run on this PR
         artifacts_url = get_latest_artifacts_url(pr_number)
@@ -863,8 +929,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>
             app.logger.info(f"[Approval] Successfully approved {approved_count} paths for PR #{pr_number}")
 
     except Exception as e:
+        # Log detailed error to server only
         app.logger.error(f"[Approval] Error: {e}", exc_info=True)
-        post_pr_comment(pr_number, f"⚠️ Error processing approval: {str(e)}")
+        # Return generic error to user
+        post_pr_comment(pr_number, "⚠️ Error processing approval. Please contact repository maintainers.")
 
 
 def get_pr_info(pr_number: int) -> Dict:
@@ -969,8 +1037,11 @@ def commit_file_to_branch(branch_name: str, file_path: str, content: str, messag
         app.logger.info(f"Successfully committed {file_path} to {branch_name}")
         return True
     except requests.HTTPError as e:
+        # Log detailed error to server only, don't expose to users
         app.logger.error(f"Error committing file: {e}")
-        app.logger.error(f"Response body: {e.response.text if e.response else 'N/A'}")
+        if e.response:
+            app.logger.error(f"Response status: {e.response.status_code}")
+            app.logger.error(f"Response body: {e.response.text[:500]}")  # Limit length
         return False
     except Exception as e:
         app.logger.error(f"Error committing file: {e}")

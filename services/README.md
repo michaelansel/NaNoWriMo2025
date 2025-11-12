@@ -157,7 +157,8 @@ Modify `.github/workflows/build-and-deploy.yml` to upload allpaths artifacts:
     name: allpaths
     path: |
       dist/allpaths-text/
-      dist/allpaths-validation-cache.json
+      dist/allpaths-passage-mapping.json
+      allpaths-validation-cache.json
     retention-days: 7
 ```
 
@@ -226,7 +227,7 @@ Test the AI checking script directly:
 
 ```bash
 cd /home/ubuntu/Code/NaNoWriMo2025
-python3 scripts/check-story-continuity.py dist/allpaths-text dist/allpaths-validation-cache.json
+python3 scripts/check-story-continuity.py dist/allpaths-text allpaths-validation-cache.json
 ```
 
 This should process any unvalidated paths and output results.
