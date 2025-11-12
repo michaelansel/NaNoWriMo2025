@@ -185,16 +185,53 @@ def calculate_path_hash(path: List[str]) -> str:
     route_str = ' -> '.join(path)
     return hashlib.md5(route_str.encode()).hexdigest()[:8]
 
+def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
+    """
+    Generate a stable mapping from passage names to random-looking hex IDs.
+
+    This prevents the AI from being influenced by passage names like "Day 5 KEB"
+    which might make it think there are timeline issues.
+
+    Returns:
+        Dict mapping passage name -> hex ID
+    """
+    mapping = {}
+    for passage_name in sorted(passages.keys()):
+        # Use hash of passage name for stable IDs across builds
+        passage_hash = hashlib.md5(passage_name.encode()).hexdigest()[:12]
+        mapping[passage_name] = passage_hash
+    return mapping
+
 def generate_path_text(path: List[str], passages: Dict, path_num: int,
-                      total_paths: int, include_metadata: bool = True) -> str:
-    """Generate formatted text for a single path"""
+                      total_paths: int, include_metadata: bool = True,
+                      passage_id_mapping: Dict[str, str] = None) -> str:
+    """
+    Generate formatted text for a single path.
+
+    Args:
+        path: List of passage names in the path
+        passages: Dict of all passages
+        path_num: Path number (1-indexed)
+        total_paths: Total number of paths
+        include_metadata: Whether to include path metadata header
+        passage_id_mapping: Optional mapping from passage names to random IDs
+                           (used to prevent AI from interpreting passage names)
+
+    Returns:
+        Formatted text for the path
+    """
     lines = []
 
     if include_metadata:
         lines.append("=" * 80)
         lines.append(f"PATH {path_num} of {total_paths}")
         lines.append("=" * 80)
-        lines.append(f"Route: {' → '.join(path)}")
+        # Use IDs in route if mapping provided
+        if passage_id_mapping:
+            route_with_ids = ' → '.join([passage_id_mapping.get(p, p) for p in path])
+            lines.append(f"Route: {route_with_ids}")
+        else:
+            lines.append(f"Route: {' → '.join(path)}")
         lines.append(f"Length: {len(path)} passages")
         lines.append(f"Path ID: {calculate_path_hash(path)}")
         lines.append("=" * 80)
@@ -202,15 +239,18 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
 
     for i, passage_name in enumerate(path):
         if passage_name not in passages:
-            lines.append(f"\n[PASSAGE: {passage_name}]")
+            # Use ID if mapping provided
+            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+            lines.append(f"\n[PASSAGE: {display_name}]")
             lines.append("[Passage not found]")
             lines.append("")
             continue
 
         passage = passages[passage_name]
 
-        # Add passage name as metadata (not user-visible in the game)
-        lines.append(f"[PASSAGE: {passage_name}]")
+        # Use random ID instead of passage name if mapping provided
+        display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+        lines.append(f"[PASSAGE: {display_name}]")
         lines.append("")
 
         # Determine the next passage in the path (if any) to filter links
@@ -709,11 +749,26 @@ def main():
     # Generate all paths
     all_paths = generate_all_paths_dfs(graph, start_passage)
 
+    # Generate passage ID mapping (random hex IDs to prevent AI from interpreting passage names)
+    passage_id_mapping = generate_passage_id_mapping(passages)
+
+    # Save the mapping for later translation back to passage names
+    mapping_file = output_dir / 'allpaths-passage-mapping.json'
+    with open(mapping_file, 'w', encoding='utf-8') as f:
+        # Also include reverse mapping for easy lookup
+        reverse_mapping = {v: k for k, v in passage_id_mapping.items()}
+        json.dump({
+            'name_to_id': passage_id_mapping,
+            'id_to_name': reverse_mapping
+        }, f, indent=2)
+
+    print(f"Generated passage ID mapping: {mapping_file}", file=sys.stderr)
+
     # Load validation cache
     cache_file = output_dir / 'allpaths-validation-cache.json'
     validation_cache = load_validation_cache(cache_file)
 
-    # Generate HTML output
+    # Generate HTML output (uses original passage names for human readability)
     html_output = generate_html_output(story_data, passages, all_paths, validation_cache)
 
     # Write HTML file
@@ -723,19 +778,21 @@ def main():
 
     print(f"Generated {html_file}", file=sys.stderr)
 
-    # Generate individual text files for AI processing
+    # Generate individual text files for AI processing (uses random IDs)
     text_dir = output_dir / 'allpaths-text'
     text_dir.mkdir(exist_ok=True)
 
     for i, path in enumerate(all_paths, 1):
         path_hash = calculate_path_hash(path)
-        text_content = generate_path_text(path, passages, i, len(all_paths))
+        # Pass the mapping to use random IDs instead of passage names
+        text_content = generate_path_text(path, passages, i, len(all_paths),
+                                         passage_id_mapping=passage_id_mapping)
 
         text_file = text_dir / f'path-{i:03d}-{path_hash}.txt'
         with open(text_file, 'w', encoding='utf-8') as f:
             f.write(text_content)
 
-    print(f"Generated {len(all_paths)} text files in {text_dir}", file=sys.stderr)
+    print(f"Generated {len(all_paths)} text files in {text_dir} (using random IDs)", file=sys.stderr)
 
     # Update validation cache with current paths (mark them as available for validation)
     for path in all_paths:
@@ -755,7 +812,8 @@ def main():
     print(f"Total paths: {len(all_paths)}", file=sys.stderr)
     print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
     print(f"HTML output: {html_file}", file=sys.stderr)
-    print(f"Text files: {text_dir}/", file=sys.stderr)
+    print(f"Text files: {text_dir}/ (using random IDs)", file=sys.stderr)
+    print(f"Passage mapping: {mapping_file}", file=sys.stderr)
     print(f"Validation cache: {cache_file}", file=sys.stderr)
 
 if __name__ == '__main__':

@@ -29,8 +29,9 @@ OLLAMA_TIMEOUT = 120  # 2 minute timeout per path
 CONTINUITY_PROMPT = """You are a story continuity checker. Analyze the following story path for continuity issues.
 
 IMPORTANT INSTRUCTIONS:
-- Lines marked with "[PASSAGE: name]" are METADATA ONLY and NOT visible to the player
-- These passage names are internal labels and should be COMPLETELY IGNORED in your analysis
+- Lines marked with "[PASSAGE: xxxxxxxxxxxx]" are METADATA ONLY containing random hex IDs
+- These are INTERNAL IDENTIFIERS with NO MEANING - completely ignore them
+- The hex IDs are randomly generated and have ZERO semantic content
 - Only analyze the actual story text that appears between these markers
 - Lines marked "(not selected)" show choices the player did NOT take in this path - ignore these completely
 - Focus ONLY on what the player actually sees and experiences in this specific path
@@ -42,8 +43,8 @@ Check for:
 4. Setting/world consistency (locations, rules remain consistent)
 5. Contradictions or plot holes
 
-DO NOT flag timeline issues based on passage names (like "Day 1" to "Day 5" jumps).
-DO NOT assume the player sees passage names - they only see the text content.
+DO NOT try to interpret the random hex IDs in passage markers - they are meaningless.
+DO NOT assume the player sees passage markers - they only see the text content.
 DO NOT consider non-selected choices as part of the story.
 
 Story Path:
@@ -234,6 +235,62 @@ def extract_route_from_text(text_path: Path) -> List[str]:
     return []
 
 
+def load_passage_mapping(mapping_file: Path) -> Dict:
+    """Load the passage ID to name mapping file."""
+    if not mapping_file.exists():
+        return {}
+
+    try:
+        with open(mapping_file, 'r') as f:
+            data = json.load(f)
+            # Return the id_to_name mapping for translating results
+            return data.get('id_to_name', {})
+    except Exception as e:
+        print(f"Warning: Could not load passage mapping: {e}", file=sys.stderr)
+        return {}
+
+
+def translate_passage_ids_in_result(result: Dict, id_to_name: Dict) -> Dict:
+    """
+    Translate random passage IDs back to real passage names in the result.
+
+    Args:
+        result: The continuity check result dict
+        id_to_name: Mapping from random ID to passage name
+
+    Returns:
+        Result dict with IDs translated to names
+    """
+    if not id_to_name:
+        return result
+
+    # Translate any IDs in issue descriptions/locations
+    if 'issues' in result:
+        for issue in result['issues']:
+            if 'location' in issue and issue['location']:
+                # Replace any IDs found in the location string
+                location = issue['location']
+                for passage_id, passage_name in id_to_name.items():
+                    location = location.replace(passage_id, passage_name)
+                issue['location'] = location
+
+            if 'description' in issue:
+                # Replace any IDs found in the description
+                description = issue['description']
+                for passage_id, passage_name in id_to_name.items():
+                    description = description.replace(passage_id, passage_name)
+                issue['description'] = description
+
+    # Translate in summary as well
+    if 'summary' in result:
+        summary = result['summary']
+        for passage_id, passage_name in id_to_name.items():
+            summary = summary.replace(passage_id, passage_name)
+        result['summary'] = summary
+
+    return result
+
+
 def check_paths_with_progress(
     text_dir: Path,
     cache_file: Path,
@@ -251,6 +308,12 @@ def check_paths_with_progress(
     Returns:
         Dict with checked_count, paths_with_issues, and summary
     """
+    # Load passage ID mapping for translating results back to passage names
+    mapping_file = text_dir.parent / 'allpaths-passage-mapping.json'
+    id_to_name = load_passage_mapping(mapping_file)
+    if id_to_name:
+        print(f"Loaded passage ID mapping with {len(id_to_name)} passages", file=sys.stderr)
+
     # Load cache
     cache = load_validation_cache(cache_file)
 
@@ -288,6 +351,9 @@ def check_paths_with_progress(
 
         # Check continuity
         result = check_path_continuity(story_text)
+
+        # Translate random passage IDs back to real names in the result
+        result = translate_passage_ids_in_result(result, id_to_name)
 
         # Update cache
         update_cache_with_results(cache, path_id, route, result)
