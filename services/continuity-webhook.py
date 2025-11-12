@@ -52,6 +52,16 @@ CHECKER_SCRIPT = PROJECT_ROOT / "scripts" / "check-story-continuity.py"
 # Flask app
 app = Flask(__name__)
 
+# Global state for tracking active jobs and metrics
+from datetime import datetime
+from collections import defaultdict
+import time
+
+active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status}}
+job_history = []  # Recent completed jobs
+metrics = defaultdict(int)  # Various counters
+metrics_lock = threading.Lock()
+
 
 def verify_signature(payload_body: bytes, signature_header: str) -> bool:
     """Verify GitHub webhook signature."""
@@ -296,6 +306,17 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
     try:
         app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number}")
 
+        # Track this job
+        with metrics_lock:
+            active_jobs[workflow_id] = {
+                "pr_number": pr_number,
+                "start_time": datetime.now(),
+                "current_path": 0,
+                "total_paths": 0,
+                "status": "initializing"
+            }
+            metrics["total_webhooks_received"] += 1
+
         # Fetch artifact list
         headers = {
             "Authorization": f"token {GITHUB_TOKEN}",
@@ -354,6 +375,12 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
             # Post initial comment with list of paths
             total_paths = len(unvalidated)
+
+            # Update job status with total paths
+            with metrics_lock:
+                active_jobs[workflow_id]["total_paths"] = total_paths
+                active_jobs[workflow_id]["status"] = "checking_paths"
+
             path_list = "\n".join([f"- Path `{path_id}`" for path_id, _ in unvalidated])
             initial_comment = f"""## 🤖 AI Continuity Check - Starting
 
@@ -372,7 +399,13 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
             # Define progress callback
             def progress_callback(current, total, path_result):
-                """Post progress update after each path completes."""
+                """Post progress update and update job status."""
+                # Update job status
+                with metrics_lock:
+                    if workflow_id in active_jobs:
+                        active_jobs[workflow_id]["current_path"] = current
+                        metrics["total_paths_checked"] += 1
+
                 try:
                     route_str = " → ".join(path_result["route"]) if path_result["route"] else path_result["id"]
                     severity = path_result.get("severity", "none")
@@ -426,8 +459,34 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
             app.logger.info(f"[Background] Successfully posted continuity check results to PR #{pr_number}")
 
+            # Mark job as complete
+            with metrics_lock:
+                if workflow_id in active_jobs:
+                    job_info = active_jobs.pop(workflow_id)
+                    job_info["status"] = "completed"
+                    job_info["end_time"] = datetime.now()
+                    job_info["duration_seconds"] = (job_info["end_time"] - job_info["start_time"]).total_seconds()
+                    job_history.append(job_info)
+                    # Keep only last 50 jobs in history
+                    if len(job_history) > 50:
+                        job_history.pop(0)
+                    metrics["total_jobs_completed"] += 1
+
     except Exception as e:
         app.logger.error(f"[Background] Error processing webhook: {e}", exc_info=True)
+
+        # Mark job as failed
+        with metrics_lock:
+            if workflow_id in active_jobs:
+                job_info = active_jobs.pop(workflow_id)
+                job_info["status"] = "failed"
+                job_info["error"] = str(e)
+                job_info["end_time"] = datetime.now()
+                job_info["duration_seconds"] = (job_info["end_time"] - job_info["start_time"]).total_seconds()
+                job_history.append(job_info)
+                if len(job_history) > 50:
+                    job_history.pop(0)
+                metrics["total_jobs_failed"] += 1
 
 
 @app.route('/webhook', methods=['POST'])
@@ -502,6 +561,44 @@ def health():
         "checker_script_exists": CHECKER_SCRIPT.exists()
     }
     return jsonify(status), 200
+
+
+@app.route('/status', methods=['GET'])
+def status():
+    """Status and metrics endpoint showing active jobs and statistics."""
+    with metrics_lock:
+        # Format active jobs
+        active_jobs_list = []
+        for workflow_id, job_info in active_jobs.items():
+            active_jobs_list.append({
+                "workflow_id": workflow_id,
+                "pr_number": job_info["pr_number"],
+                "start_time": job_info["start_time"].isoformat(),
+                "duration_seconds": (datetime.now() - job_info["start_time"]).total_seconds(),
+                "current_path": job_info.get("current_path", 0),
+                "total_paths": job_info.get("total_paths", 0),
+                "status": job_info.get("status", "processing")
+            })
+
+        # Format recent job history (last 10)
+        recent_jobs = job_history[-10:]
+
+        # Calculate uptime
+        if hasattr(status, '_start_time'):
+            uptime_seconds = (datetime.now() - status._start_time).total_seconds()
+        else:
+            status._start_time = datetime.now()
+            uptime_seconds = 0
+
+        response = {
+            "active_jobs": active_jobs_list,
+            "active_job_count": len(active_jobs_list),
+            "recent_completed_jobs": recent_jobs,
+            "metrics": dict(metrics),
+            "uptime_seconds": uptime_seconds
+        }
+
+    return jsonify(response), 200
 
 
 def main():
