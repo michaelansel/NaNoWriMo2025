@@ -311,7 +311,8 @@ def translate_passage_ids_in_result(result: Dict, id_to_name: Dict) -> Dict:
 def check_paths_with_progress(
     text_dir: Path,
     cache_file: Path,
-    progress_callback: Optional[Callable[[int, int, Dict], None]] = None
+    progress_callback: Optional[Callable[[int, int, Dict], None]] = None,
+    cancel_event=None
 ) -> Dict:
     """
     Check story paths with optional progress callbacks.
@@ -321,6 +322,7 @@ def check_paths_with_progress(
         cache_file: Path to validation cache JSON file
         progress_callback: Optional callback function called after each path.
                           Signature: callback(current, total, path_result)
+        cancel_event: Optional threading.Event to signal cancellation
 
     Returns:
         Dict with checked_count, paths_with_issues, and summary
@@ -352,6 +354,11 @@ def check_paths_with_progress(
     checked_count = 0
 
     for path_id, text_file in unvalidated:
+        # Check for cancellation
+        if cancel_event and cancel_event.is_set():
+            print(f"Validation cancelled at path {checked_count + 1}/{total_paths}", file=sys.stderr)
+            break
+
         checked_count += 1
         print(f"[{checked_count}/{total_paths}] Checking path {path_id}...", file=sys.stderr)
 

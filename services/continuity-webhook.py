@@ -165,13 +165,13 @@ def validate_artifact_structure(artifact_dir: Path) -> bool:
     return True
 
 
-def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None) -> dict:
+def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None) -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
         app.logger.info(f"Running continuity checker on {text_dir}")
 
-        # Call the checker function directly with progress callback
-        results = check_paths_with_progress(text_dir, cache_file, progress_callback)
+        # Call the checker function directly with progress callback and cancel event
+        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event)
 
         return results
 
@@ -414,11 +414,6 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
             # Define progress callback
             def progress_callback(current, total, path_result):
                 """Post progress update and update job status."""
-                # Check for cancellation before processing
-                if cancel_event.is_set():
-                    app.logger.info(f"[Background] Job cancelled during path {current}/{total}, stopping")
-                    raise Exception("Job cancelled")
-
                 # Update job status
                 with metrics_lock:
                     if workflow_id in active_jobs:
@@ -472,8 +467,14 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 except Exception as e:
                     app.logger.error(f"[Background] Error in progress callback: {e}", exc_info=True)
 
-            # Run continuity check with progress callback
-            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback)
+            # Run continuity check with progress callback and cancel event
+            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event)
+
+            # Check if job was cancelled during validation
+            if cancel_event.is_set():
+                app.logger.info(f"[Background] Job was cancelled during validation")
+                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
+                return
 
             # Format and post final summary comment
             comment = format_pr_comment(results)
