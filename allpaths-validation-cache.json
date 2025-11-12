@@ -29,7 +29,9 @@
   "b0dd9b98": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
     "first_seen": "2025-11-12T18:53:35.403199",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T19:26:38.428013",
+    "validated_by": "michaelansel"
   },
   "6a9c8261": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 leave Jerrick behind",
@@ -71,5 +73,5 @@
     "first_seen": "2025-11-12T18:53:35.403504",
     "validated": false
   },
-  "last_updated": "2025-11-12T18:57:13.399512"
+  "last_updated": "2025-11-12T19:26:38.428020"
 }
