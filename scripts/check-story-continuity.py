@@ -169,12 +169,25 @@ def save_validation_cache(cache_path: Path, cache: Dict):
 
 
 def get_unvalidated_paths(cache: Dict, text_dir: Path) -> List[Tuple[str, Path]]:
-    """Get list of paths that need validation."""
+    """Get list of paths that need validation.
+
+    Cache structure from generator:
+    {
+        "path_hash": {
+            "route": "Start → Continue → End",
+            "first_seen": "2025-11-12T...",
+            "validated": false
+        },
+        ...
+    }
+    """
     # Build a set of validated path IDs
+    # Cache keys are the path hashes themselves
     validated_ids = set()
-    for path_info in cache.get("paths", []):
-        if path_info.get("validated", False):
-            validated_ids.add(path_info["id"])
+    for path_id, path_info in cache.items():
+        # Skip non-dict entries (like "last_updated")
+        if isinstance(path_info, dict) and path_info.get("validated", False):
+            validated_ids.add(path_id)
 
     # Find all text files
     unvalidated = []
@@ -190,30 +203,34 @@ def get_unvalidated_paths(cache: Dict, text_dir: Path) -> List[Tuple[str, Path]]
 
 
 def update_cache_with_results(cache: Dict, path_id: str, route: List[str], result: Dict):
-    """Update the cache with validation results."""
-    # Find existing path entry or create new one
-    path_entry = None
-    for p in cache.get("paths", []):
-        if p["id"] == path_id:
-            path_entry = p
-            break
+    """Update the cache with validation results.
 
-    if path_entry is None:
-        path_entry = {
-            "id": path_id,
-            "route": route,
+    Updates cache structure:
+    {
+        "path_hash": {
+            "route": "Start → Continue → End",
+            "first_seen": "...",
+            "validated": true,
+            "validated_at": "...",
+            "has_issues": false,
+            "severity": "none",
+            "summary": "..."
+        }
+    }
+    """
+    # Get or create path entry
+    if path_id not in cache:
+        cache[path_id] = {
+            "route": ' → '.join(route) if isinstance(route, list) else route,
             "first_seen": datetime.now().isoformat()
         }
-        if "paths" not in cache:
-            cache["paths"] = []
-        cache["paths"].append(path_entry)
 
     # Update validation info
-    path_entry["validated"] = True
-    path_entry["validated_at"] = datetime.now().isoformat()
-    path_entry["has_issues"] = result.get("has_issues", False)
-    path_entry["severity"] = result.get("severity", "none")
-    path_entry["summary"] = result.get("summary", "")
+    cache[path_id]["validated"] = True
+    cache[path_id]["validated_at"] = datetime.now().isoformat()
+    cache[path_id]["has_issues"] = result.get("has_issues", False)
+    cache[path_id]["severity"] = result.get("severity", "none")
+    cache[path_id]["summary"] = result.get("summary", "")
 
 
 def extract_route_from_text(text_path: Path) -> List[str]:
