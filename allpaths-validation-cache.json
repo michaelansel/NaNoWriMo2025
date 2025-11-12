@@ -14,7 +14,9 @@
   "e4b905a1": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
     "first_seen": "2025-11-12T18:53:35.403080",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T19:49:24.212253",
+    "validated_by": "michaelansel"
   },
   "ca5d5d8e": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Day 9 KEB",
@@ -73,5 +75,5 @@
     "first_seen": "2025-11-12T18:53:35.403504",
     "validated": false
   },
-  "last_updated": "2025-11-12T19:26:38.428020"
+  "last_updated": "2025-11-12T19:49:24.212261"
 }
