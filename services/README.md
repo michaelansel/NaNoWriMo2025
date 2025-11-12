@@ -32,16 +32,29 @@ Flask web service that:
 - Listens for GitHub `workflow_run` webhooks
 - Verifies webhook signatures
 - Downloads artifacts from completed workflows
-- Calls AI checker script
-- Posts formatted results to PRs
+- Processes checks asynchronously in background threads
+- Posts real-time progress updates to PRs as each path completes
+- Posts final summary with all results
+- Tracks active jobs and provides `/status` endpoint for monitoring
 
 ### 2. AI Checker Script (`../scripts/check-story-continuity.py`)
 Python script that:
-- Loads validation cache
+- Loads validation cache to track validated paths
 - Identifies new/unvalidated story paths
-- Sends each path to Ollama for analysis
-- Returns structured results
-- Updates validation cache
+- Sends each path to Ollama HTTP API for analysis
+- Supports progress callbacks for real-time updates
+- Returns structured results with detailed issue information
+- Updates validation cache after each path
+
+### 3. Progress Updates
+The service posts three types of comments to PRs:
+
+1. **Initial Comment**: Posted when checking starts, lists all paths to be validated
+2. **Progress Updates**: Posted after each path completes with:
+   - Path route and severity (none/minor/major/critical)
+   - Summary of issues found
+   - Detailed issue list in collapsible section (type, severity, description, location)
+3. **Final Summary**: Comprehensive report organizing all issues by severity
 
 ## Setup
 
@@ -69,20 +82,23 @@ Python script that:
 
 2. **Start the service:**
    ```bash
-   sudo systemctl start continuity-webhook
-   sudo systemctl status continuity-webhook
+   systemctl --user start continuity-webhook
+   systemctl --user status continuity-webhook
+   systemctl --user enable continuity-webhook  # Auto-start on boot
    ```
 
 3. **View logs:**
    ```bash
-   sudo journalctl -u continuity-webhook -f
+   journalctl --user -u continuity-webhook -f
    ```
+
+Note: The service runs as a user systemd service (not system-wide) for better security and isolation.
 
 ### HTTPS Setup
 
 The webhook service needs to be accessible via HTTPS. You have several options:
 
-#### Option A: Nginx Reverse Proxy
+#### Option A: Nginx Reverse Proxy + Let's Encrypt
 
 ```nginx
 server {
@@ -98,8 +114,25 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_pass_request_headers on;  # Preserve webhook signature
+    }
+
+    location /health {
+        proxy_pass http://localhost:5000/health;
+        proxy_set_header Host $host;
+    }
+
+    location /status {
+        proxy_pass http://localhost:5000/status;
+        proxy_set_header Host $host;
     }
 }
+```
+
+For Let's Encrypt certificates:
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d your-server.com
 ```
 
 #### Option B: Caddy (Automatic HTTPS)
@@ -156,7 +189,38 @@ Expected output:
 }
 ```
 
-### Test 2: Local AI Check
+### Test 2: Status/Metrics Endpoint
+
+```bash
+curl http://localhost:5000/status
+```
+
+Expected output:
+```json
+{
+  "active_job_count": 0,
+  "active_jobs": [],
+  "metrics": {
+    "total_webhooks_received": 5,
+    "total_paths_checked": 42,
+    "total_jobs_completed": 3,
+    "total_jobs_failed": 0
+  },
+  "recent_completed_jobs": [
+    {
+      "workflow_id": 123456,
+      "pr_number": 42,
+      "start_time": "2025-11-12T16:00:00",
+      "status": "completed",
+      "duration_seconds": 180.5,
+      "total_paths": 14
+    }
+  ],
+  "uptime_seconds": 3600
+}
+```
+
+### Test 3: Local AI Check
 
 Test the AI checking script directly:
 
@@ -167,7 +231,7 @@ python3 scripts/check-story-continuity.py dist/allpaths-text dist/allpaths-valid
 
 This should process any unvalidated paths and output results.
 
-### Test 3: Simulate Webhook (Local)
+### Test 4: Simulate Webhook (Local)
 
 Create a test payload and send it to the webhook:
 
@@ -185,13 +249,17 @@ curl -X POST http://localhost:5000/webhook \
   -d "$PAYLOAD"
 ```
 
-### Test 4: Live Test with PR
+### Test 5: Live Test with PR
 
 1. Create a test branch and modify a story passage
 2. Open a PR
 3. Wait for workflow to complete
-4. Check service logs: `sudo journalctl -u continuity-webhook -f`
-5. Verify comment appears on PR with continuity check results
+4. Check service logs: `journalctl --user -u continuity-webhook -f`
+5. Monitor status endpoint: `curl http://localhost:5000/status`
+6. Verify comments appear on PR:
+   - Initial comment with list of paths
+   - Progress update for each path (with detailed issues)
+   - Final summary with all results organized by severity
 
 ## Troubleshooting
 
@@ -199,10 +267,10 @@ curl -X POST http://localhost:5000/webhook \
 
 ```bash
 # Check service status
-sudo systemctl status continuity-webhook
+systemctl --user status continuity-webhook
 
 # Check logs
-sudo journalctl -u continuity-webhook -n 50
+journalctl --user -u continuity-webhook -n 50
 
 # Verify environment file
 cat ~/.config/continuity-webhook/env
@@ -216,11 +284,16 @@ cat ~/.config/continuity-webhook/env
 ### Ollama errors
 
 ```bash
-# Test ollama directly
-ollama run gpt-oss:20b-fullcontext "Hello"
+# Test ollama API directly
+curl -X POST http://localhost:11434/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"model": "gpt-oss:20b-fullcontext", "prompt": "Hello", "stream": false}'
 
 # Check if model is available
 ollama list
+
+# Test ollama service
+curl http://localhost:11434/api/tags
 ```
 
 ### Can't download artifacts
@@ -234,25 +307,38 @@ ollama list
 ### Service Status
 
 ```bash
-sudo systemctl status continuity-webhook
+systemctl --user status continuity-webhook
+```
+
+### Status Endpoint (Live Metrics)
+
+```bash
+# Check active jobs
+curl http://localhost:5000/status | jq '.active_jobs'
+
+# Check metrics
+curl http://localhost:5000/status | jq '.metrics'
+
+# View recent jobs
+curl http://localhost:5000/status | jq '.recent_completed_jobs'
 ```
 
 ### Recent Logs
 
 ```bash
-sudo journalctl -u continuity-webhook -n 100
+journalctl --user -u continuity-webhook -n 100
 ```
 
 ### Follow Logs
 
 ```bash
-sudo journalctl -u continuity-webhook -f
+journalctl --user -u continuity-webhook -f
 ```
 
 ### Restart Service
 
 ```bash
-sudo systemctl restart continuity-webhook
+systemctl --user restart continuity-webhook
 ```
 
 ## Configuration
@@ -289,8 +375,9 @@ python3 continuity-webhook.py
 ### Making Changes
 
 1. Modify code
-2. Restart service: `sudo systemctl restart continuity-webhook`
-3. Check logs: `sudo journalctl -u continuity-webhook -f`
+2. Restart service: `systemctl --user restart continuity-webhook`
+3. Check logs: `journalctl --user -u continuity-webhook -f`
+4. Monitor status: `curl http://localhost:5000/status`
 
 ## Security Considerations
 
@@ -303,10 +390,12 @@ python3 continuity-webhook.py
 
 ## Performance
 
-- Ollama can take 30-120 seconds per path (model-dependent)
-- Service has 10-minute timeout for AI checking
-- Webhook responses are returned immediately (processing is async)
-- Failed checks don't block PRs (warnings only)
+- Ollama HTTP API averages 20-60 seconds per path (model/complexity dependent)
+- Processing happens in background threads (webhook returns 202 immediately)
+- Progress updates posted to PR in real-time as each path completes
+- Authors can start acting on issues while remaining paths are still being checked
+- Service has configurable timeout (default: 120 seconds per path)
+- Failed checks don't block PRs (informational comments only)
 
 ## Maintenance
 
@@ -323,7 +412,7 @@ pip install --upgrade flask requests
 1. Generate new webhook secret: `openssl rand -hex 32`
 2. Update `~/.config/continuity-webhook/env`
 3. Update GitHub webhook settings
-4. Restart service: `sudo systemctl restart continuity-webhook`
+4. Restart service: `systemctl --user restart continuity-webhook`
 
 ### Backup Configuration
 
