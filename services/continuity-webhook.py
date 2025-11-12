@@ -24,7 +24,9 @@ import shutil
 import zipfile
 import subprocess
 import threading
+import re
 from pathlib import Path
+from typing import Dict, List
 from flask import Flask, request, jsonify
 import requests
 
@@ -509,10 +511,17 @@ def webhook():
 
     app.logger.info(f"Received {event_type} event")
 
-    # Only handle workflow_run events
-    if event_type != 'workflow_run':
+    # Route to appropriate handler
+    if event_type == 'issue_comment':
+        return handle_comment_webhook(payload)
+    elif event_type == 'workflow_run':
+        return handle_workflow_webhook(payload)
+    else:
         return jsonify({"message": "Event ignored"}), 200
 
+
+def handle_workflow_webhook(payload):
+    """Handle workflow_run webhooks for AI continuity checking."""
     # Only handle completed workflows
     if payload.get('action') != 'completed':
         return jsonify({"message": "Workflow not completed, ignoring"}), 200
@@ -554,6 +563,274 @@ def webhook():
     # Return immediately
     app.logger.info(f"Accepted webhook for PR #{pr_number}, processing in background")
     return jsonify({"message": "Webhook accepted, processing in background", "pr": pr_number}), 202
+
+
+def handle_comment_webhook(payload):
+    """Handle issue_comment webhooks for path approval."""
+    action = payload.get('action')
+    if action != 'created':
+        return jsonify({"message": "Not a new comment"}), 200
+
+    # Check if it's a PR (not an issue)
+    if 'pull_request' not in payload.get('issue', {}):
+        return jsonify({"message": "Not a PR comment"}), 200
+
+    comment_body = payload['comment']['body']
+    pr_number = payload['issue']['number']
+    username = payload['comment']['user']['login']
+
+    # Check for /approve-path command
+    if not re.search(r'/approve-path\b', comment_body):
+        return jsonify({"message": "Not an approval command"}), 200
+
+    # Extract path IDs (8-char hex hashes)
+    path_ids = re.findall(r'\b[a-f0-9]{8}\b', comment_body)
+
+    if not path_ids:
+        post_pr_comment(pr_number,
+            "⚠️ No valid path IDs found. Format: `/approve-path abc12345 def67890`")
+        return jsonify({"message": "No path IDs"}), 200
+
+    # Check authorization
+    if not is_authorized(username):
+        post_pr_comment(pr_number,
+            f"⚠️ @{username} is not authorized to approve paths. Only repository collaborators can approve.")
+        return jsonify({"message": "Unauthorized"}), 403
+
+    # Process asynchronously
+    thread = threading.Thread(
+        target=process_approval_async,
+        args=(pr_number, path_ids, username),
+        daemon=True
+    )
+    thread.start()
+
+    return jsonify({"message": "Processing approval", "path_count": len(path_ids)}), 202
+
+
+def is_authorized(username: str) -> bool:
+    """Check if user is a repo collaborator."""
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/collaborators/{username}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        return response.status_code == 204  # 204 = is collaborator
+    except Exception as e:
+        app.logger.error(f"Error checking authorization: {e}")
+        return False
+
+
+def process_approval_async(pr_number: int, path_ids: List[str], username: str):
+    """Process path approvals in background."""
+    try:
+        app.logger.info(f"[Approval] Processing {len(path_ids)} paths for PR #{pr_number} by {username}")
+
+        # Post initial acknowledgment
+        post_pr_comment(pr_number, f"✅ Processing approval for {len(path_ids)} path(s)...")
+
+        # Get PR info to find branch name
+        pr_info = get_pr_info(pr_number)
+        if not pr_info:
+            post_pr_comment(pr_number, "⚠️ Error: Could not retrieve PR information")
+            return
+
+        branch_name = pr_info['head']['ref']
+        repo_full_name = pr_info['head']['repo']['full_name']
+
+        # Download the latest artifact from the most recent workflow run on this PR
+        artifacts_url = get_latest_artifacts_url(pr_number)
+        if not artifacts_url:
+            post_pr_comment(pr_number, "⚠️ Error: No workflow artifacts found for this PR")
+            return
+
+        # Download and extract artifact
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            if not download_artifact_for_pr(artifacts_url, tmpdir_path):
+                post_pr_comment(pr_number, "⚠️ Error: Failed to download validation cache")
+                return
+
+            cache_file = tmpdir_path / "allpaths-validation-cache.json"
+            if not cache_file.exists():
+                post_pr_comment(pr_number, "⚠️ Error: Validation cache not found in artifacts")
+                return
+
+            # Load cache
+            cache = load_validation_cache(cache_file)
+
+            # Mark paths as validated
+            approved_count = 0
+            not_found = []
+            already_approved = []
+
+            for path_id in path_ids:
+                if path_id in cache:
+                    if cache[path_id].get("validated", False):
+                        already_approved.append(path_id)
+                    else:
+                        cache[path_id]["validated"] = True
+                        cache[path_id]["validated_at"] = datetime.now().isoformat()
+                        cache[path_id]["validated_by"] = username
+                        approved_count += 1
+                else:
+                    not_found.append(path_id)
+
+            # Save updated cache
+            save_validation_cache(cache_file, cache)
+
+            # Commit cache back to PR branch
+            cache_content = cache_file.read_text()
+            commit_message = f"""Mark {approved_count} path(s) as validated
+
+Paths approved by @{username}:
+{chr(10).join(f'- {pid}' for pid in path_ids if pid not in not_found and pid not in already_approved)}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+            if not commit_file_to_branch(branch_name, "dist/allpaths-validation-cache.json",
+                                        cache_content, commit_message):
+                post_pr_comment(pr_number, "⚠️ Error: Failed to commit validation cache")
+                return
+
+            # Post success comment
+            success_lines = [f"✅ Successfully validated {approved_count} path(s) by @{username}\n"]
+
+            if approved_count > 0:
+                success_lines.append("**Approved paths:**")
+                for pid in path_ids:
+                    if pid not in not_found and pid not in already_approved:
+                        route = cache.get(pid, {}).get("route", pid)
+                        success_lines.append(f"- `{pid}` ({route})")
+
+            if already_approved:
+                success_lines.append(f"\n**Already approved:** {', '.join(f'`{p}`' for p in already_approved)}")
+
+            if not_found:
+                success_lines.append(f"\n**Not found:** {', '.join(f'`{p}`' for p in not_found)}")
+
+            success_lines.append("\nThese paths won't be re-checked unless their content changes.")
+
+            post_pr_comment(pr_number, '\n'.join(success_lines))
+
+            app.logger.info(f"[Approval] Successfully approved {approved_count} paths for PR #{pr_number}")
+
+    except Exception as e:
+        app.logger.error(f"[Approval] Error: {e}", exc_info=True)
+        post_pr_comment(pr_number, f"⚠️ Error processing approval: {str(e)}")
+
+
+def get_pr_info(pr_number: int) -> Dict:
+    """Get PR information from GitHub API."""
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pr_number}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        app.logger.error(f"Error getting PR info: {e}")
+        return None
+
+
+def get_latest_artifacts_url(pr_number: int) -> str:
+    """Get artifacts URL from most recent successful workflow run for this PR."""
+    # Get workflow runs for this PR
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/actions/runs"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        # Get recent workflow runs
+        response = requests.get(url, headers=headers, params={"per_page": 50})
+        response.raise_for_status()
+        runs = response.json().get("workflow_runs", [])
+
+        # Find the most recent successful run for this PR
+        for run in runs:
+            pull_requests = run.get("pull_requests", [])
+            if any(pr["number"] == pr_number for pr in pull_requests):
+                if run["conclusion"] == "success":
+                    return run["artifacts_url"]
+
+        return None
+    except Exception as e:
+        app.logger.error(f"Error getting artifacts URL: {e}")
+        return None
+
+
+def download_artifact_for_pr(artifacts_url: str, dest_dir: Path) -> bool:
+    """Download allpaths artifact for approval processing."""
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        # Get artifact list
+        response = requests.get(artifacts_url, headers=headers)
+        response.raise_for_status()
+        artifacts_data = response.json()
+
+        # Find the allpaths artifact
+        for artifact in artifacts_data.get('artifacts', []):
+            if artifact['name'] == 'allpaths':
+                return download_artifact(artifact['archive_download_url'], dest_dir)
+
+        return False
+    except Exception as e:
+        app.logger.error(f"Error downloading artifact: {e}")
+        return False
+
+
+def commit_file_to_branch(branch_name: str, file_path: str, content: str, message: str) -> bool:
+    """Commit a file to a branch using GitHub API."""
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{file_path}"
+    headers = {
+        "Authorization": f"token {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json"
+    }
+
+    try:
+        # Get current file SHA (required for updates)
+        response = requests.get(url, headers=headers, params={"ref": branch_name})
+        current_sha = None
+        if response.status_code == 200:
+            current_sha = response.json()["sha"]
+
+        # Commit the file
+        import base64
+        encoded_content = base64.b64encode(content.encode()).decode()
+
+        data = {
+            "message": message,
+            "content": encoded_content,
+            "branch": branch_name
+        }
+        if current_sha:
+            data["sha"] = current_sha
+
+        response = requests.put(url, headers=headers, json=data)
+        response.raise_for_status()
+
+        app.logger.info(f"Successfully committed {file_path} to {branch_name}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Error committing file: {e}")
+        return False
 
 
 @app.route('/health', methods=['GET'])
