@@ -39,6 +39,7 @@ _spec.loader.exec_module(_checker_module)
 check_paths_with_progress = _checker_module.check_paths_with_progress
 get_unvalidated_paths = _checker_module.get_unvalidated_paths
 load_validation_cache = _checker_module.load_validation_cache
+save_validation_cache = _checker_module.save_validation_cache
 
 # Configuration (from environment variables)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
