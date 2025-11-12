@@ -377,6 +377,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     route_str = " → ".join(path_result["route"]) if path_result["route"] else path_result["id"]
                     severity = path_result.get("severity", "none")
                     summary = path_result.get("summary", "")
+                    issues = path_result.get("issues", [])
 
                     # Choose emoji based on severity
                     emoji = "✅"
@@ -393,6 +394,22 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 **Result:** {severity}
 **Summary:** {summary}
 """
+
+                    # Add detailed issues if present
+                    if issues:
+                        update_comment += "\n<details>\n<summary>Details</summary>\n\n"
+                        for issue in issues:
+                            issue_type = issue.get("type", "unknown")
+                            issue_severity = issue.get("severity", "unknown")
+                            description = issue.get("description", "No description")
+                            location = issue.get("location", "")
+
+                            update_comment += f"- **{issue_type.capitalize()}** ({issue_severity}): {description}"
+                            if location:
+                                update_comment += f" _{location}_"
+                            update_comment += "\n"
+                        update_comment += "\n</details>\n"
+
                     app.logger.info(f"[Background] Posting progress update: {current}/{total}")
                     post_pr_comment(pr_number, update_comment)
                 except Exception as e:
