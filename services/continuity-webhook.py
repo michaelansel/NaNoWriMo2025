@@ -407,7 +407,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         metrics["total_paths_checked"] += 1
 
                 try:
-                    route_str = " → ".join(path_result["route"]) if path_result["route"] else path_result["id"]
+                    path_id = path_result.get("id", "unknown")
+                    route_str = " → ".join(path_result["route"]) if path_result["route"] else path_id
                     severity = path_result.get("severity", "none")
                     summary = path_result.get("summary", "")
                     issues = path_result.get("issues", [])
@@ -423,6 +424,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
                     update_comment = f"""### {emoji} Path {current}/{total} Complete
 
+**Path ID:** `{path_id}`
 **Route:** `{route_str}`
 **Result:** {severity}
 **Summary:** {summary}
@@ -442,6 +444,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                 update_comment += f" _{location}_"
                             update_comment += "\n"
                         update_comment += "\n</details>\n"
+
+                    # Add approval helper text
+                    update_comment += f"\n💡 **To approve this path:** reply `/approve-path {path_id}`\n"
 
                     app.logger.info(f"[Background] Posting progress update: {current}/{total}")
                     post_pr_comment(pr_number, update_comment)
