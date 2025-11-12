@@ -700,7 +700,7 @@ Paths approved by @{username}:
 Co-Authored-By: Claude <noreply@anthropic.com>
 """
 
-            if not commit_file_to_branch(branch_name, "dist/allpaths-validation-cache.json",
+            if not commit_file_to_branch(branch_name, "allpaths-validation-cache.json",
                                         cache_content, commit_message):
                 post_pr_comment(pr_number, "⚠️ Error: Failed to commit validation cache")
                 return
@@ -833,6 +833,10 @@ def commit_file_to_branch(branch_name: str, file_path: str, content: str, messag
 
         app.logger.info(f"Successfully committed {file_path} to {branch_name}")
         return True
+    except requests.HTTPError as e:
+        app.logger.error(f"Error committing file: {e}")
+        app.logger.error(f"Response body: {e.response.text if e.response else 'N/A'}")
+        return False
     except Exception as e:
         app.logger.error(f"Error committing file: {e}")
         return False
