@@ -58,7 +58,9 @@
   "0533c057": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 3 KEB",
     "first_seen": "2025-11-12T18:53:35.403331",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T21:05:14.499945",
+    "validated_by": "michaelansel"
   },
   "1ff5b506": {
     "route": "Start \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Defense magic",
@@ -95,5 +97,5 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-12T20:29:06.061494"
+  "last_updated": "2025-11-12T21:05:14.499953"
 }
