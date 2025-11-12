@@ -28,12 +28,23 @@ OLLAMA_TIMEOUT = 120  # 2 minute timeout per path
 # Continuity checking prompt template
 CONTINUITY_PROMPT = """You are a story continuity checker. Analyze the following story path for continuity issues.
 
+IMPORTANT INSTRUCTIONS:
+- Lines marked with "[PASSAGE: name]" are METADATA ONLY and NOT visible to the player
+- These passage names are internal labels and should be COMPLETELY IGNORED in your analysis
+- Only analyze the actual story text that appears between these markers
+- Lines marked "(not selected)" show choices the player did NOT take in this path - ignore these completely
+- Focus ONLY on what the player actually sees and experiences in this specific path
+
 Check for:
 1. Character consistency (names, traits, relationships stay consistent)
 2. Plot coherence (events flow logically, no contradictions)
-3. Timeline accuracy (event sequences make sense)
+3. Timeline accuracy (event sequences make sense in the story text itself)
 4. Setting/world consistency (locations, rules remain consistent)
 5. Contradictions or plot holes
+
+DO NOT flag timeline issues based on passage names (like "Day 1" to "Day 5" jumps).
+DO NOT assume the player sees passage names - they only see the text content.
+DO NOT consider non-selected choices as part of the story.
 
 Story Path:
 {story_text}

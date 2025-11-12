@@ -140,20 +140,43 @@ def generate_all_paths_dfs(graph: Dict[str, List[str]], start: str,
 
     return all_paths
 
-def format_passage_text(text: str) -> str:
-    """Format passage text for reading (convert links to plain text)"""
+def format_passage_text(text: str, selected_target: str = None) -> str:
+    """
+    Format passage text for reading (convert links to plain text).
+
+    Args:
+        text: The passage text to format
+        selected_target: If provided, only show this link and mark others as [not selected]
+
+    Returns:
+        Formatted text with links converted to visible text
+    """
     # Replace [[display->target]] with "display"
     # Replace [[target<-display]] with "display"
     # Replace [[target]] with "target"
 
     def replace_link(match):
         link = match.group(1)
+
+        # Extract display text and target
         if '->' in link:
-            return link.split('->')[0].strip()
+            display = link.split('->')[0].strip()
+            target = link.split('->')[1].strip()
         elif '<-' in link:
-            return link.split('<-')[1].strip()
+            display = link.split('<-')[1].strip()
+            target = link.split('<-')[0].strip()
         else:
-            return link.strip()
+            display = link.strip()
+            target = link.strip()
+
+        # If we have a selected target, only show that one
+        if selected_target is not None:
+            if target == selected_target:
+                return display
+            else:
+                return f"[{display}] (not selected)"
+        else:
+            return display
 
     return re.sub(r'\[\[([^\]]+)\]\]', replace_link, text)
 
@@ -177,21 +200,24 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
         lines.append("=" * 80)
         lines.append("")
 
-    for passage_name in path:
+    for i, passage_name in enumerate(path):
         if passage_name not in passages:
-            lines.append(f"\n### [{passage_name}]")
+            lines.append(f"\n[PASSAGE: {passage_name}]")
             lines.append("[Passage not found]")
             lines.append("")
             continue
 
         passage = passages[passage_name]
 
-        # Add passage header
-        lines.append(f"\n### {passage_name}")
+        # Add passage name as metadata (not user-visible in the game)
+        lines.append(f"[PASSAGE: {passage_name}]")
         lines.append("")
 
-        # Add formatted passage text
-        formatted_text = format_passage_text(passage['text'])
+        # Determine the next passage in the path (if any) to filter links
+        next_passage = path[i + 1] if i + 1 < len(path) else None
+
+        # Add formatted passage text with only the selected link visible
+        formatted_text = format_passage_text(passage['text'], next_passage)
         lines.append(formatted_text)
         lines.append("")
 
@@ -563,7 +589,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 '''
 
         # Add each passage in the path
-        for passage_name in path:
+        for j, passage_name in enumerate(path):
             if passage_name not in passages:
                 html += f'''
                 <div class="passage">
@@ -574,11 +600,14 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
                 continue
 
             passage = passages[passage_name]
-            formatted_text = format_passage_text(passage['text'])
+
+            # Determine the next passage to filter links
+            next_passage = path[j + 1] if j + 1 < len(path) else None
+            formatted_text = format_passage_text(passage['text'], next_passage)
 
             html += f'''
                 <div class="passage">
-                    <div class="passage-title">{passage_name}</div>
+                    <div class="passage-title" style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">[Passage: {passage_name}]</div>
                     <div class="passage-text">{formatted_text}</div>
                 </div>
 '''

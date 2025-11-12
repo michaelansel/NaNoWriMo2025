@@ -123,16 +123,24 @@ Length: 4 passages
 Path ID: 6e587dcb
 ================================================================================
 
-### Start
+[PASSAGE: Start]
 
 [Passage text here...]
 
-### Continue on
+[PASSAGE: Continue on]
 
-[Passage text here...]
+[Passage text here with selected choice visible]
+[other choice] (not selected)
 
 ...
 ```
+
+**Important notes about the format:**
+- Passage names are marked with `[PASSAGE: name]` and are metadata only
+- These passage names are NOT visible to players in the game
+- Only the selected choice in each passage is shown as visible text
+- Other choices are marked with `(not selected)` to indicate they weren't taken in this path
+- This ensures continuity checking focuses only on what players actually experience
 
 ### Validation Tracking
 
@@ -153,6 +161,15 @@ On the next build, validated paths will:
 - Appear with a green "Validated" badge
 - Have a green left border
 - Be filterable via "Validated Only" button
+
+**Clearing the validation cache:**
+
+If the text generation format changes (e.g., how passages or choices are displayed), you should clear the validation cache to get fresh AI analysis:
+```bash
+rm dist/allpaths-validation-cache.json
+```
+
+This will mark all paths as "new" and they will be re-checked with the updated format.
 
 ## Architecture
 
