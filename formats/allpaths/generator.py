@@ -180,10 +180,33 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
 
     return re.sub(r'\[\[([^\]]+)\]\]', replace_link, text)
 
-def calculate_path_hash(path: List[str]) -> str:
-    """Calculate a stable hash for a path based on its route"""
-    route_str = ' -> '.join(path)
-    return hashlib.md5(route_str.encode()).hexdigest()[:8]
+def calculate_path_hash(path: List[str], passages: Dict[str, Dict]) -> str:
+    """Calculate hash based on path route AND passage content.
+
+    This ensures the hash changes when:
+    - Passage names change (route structure)
+    - Passage content is edited (text changes)
+    - Path structure changes (added/removed passages)
+
+    Args:
+        path: List of passage names in order
+        passages: Dict of passage data including text content
+
+    Returns:
+        8-character hex hash
+    """
+    content_parts = []
+    for passage_name in path:
+        if passage_name in passages:
+            # Include both structure and content in hash
+            passage_text = passages[passage_name].get('text', '')
+            content_parts.append(f"{passage_name}:{passage_text}")
+        else:
+            # Passage doesn't exist (shouldn't happen, but be defensive)
+            content_parts.append(f"{passage_name}:MISSING")
+
+    combined = '\n'.join(content_parts)
+    return hashlib.md5(combined.encode()).hexdigest()[:8]
 
 def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
     """
@@ -233,7 +256,7 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
         else:
             lines.append(f"Route: {' → '.join(path)}")
         lines.append(f"Length: {len(path)} passages")
-        lines.append(f"Path ID: {calculate_path_hash(path)}")
+        lines.append(f"Path ID: {calculate_path_hash(path, passages)}")
         lines.append("=" * 80)
         lines.append("")
 
@@ -294,7 +317,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     validated_paths = []
 
     for path in all_paths:
-        path_hash = calculate_path_hash(path)
+        path_hash = calculate_path_hash(path, passages)
         if path_hash in validation_cache:
             validated_paths.append(path)
         else:
@@ -599,7 +622,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 
     # Generate each path
     for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path)
+        path_hash = calculate_path_hash(path, passages)
         is_validated = path_hash in validation_cache
         status_class = 'validated' if is_validated else 'new'
         badge_class = 'badge-validated' if is_validated else 'badge-new'
@@ -783,12 +806,13 @@ def main():
     text_dir.mkdir(exist_ok=True)
 
     for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path)
+        path_hash = calculate_path_hash(path, passages)
         # Pass the mapping to use random IDs instead of passage names
         text_content = generate_path_text(path, passages, i, len(all_paths),
                                          passage_id_mapping=passage_id_mapping)
 
-        text_file = text_dir / f'path-{i:03d}-{path_hash}.txt'
+        # Use content-based hash only (no sequential index)
+        text_file = text_dir / f'path-{path_hash}.txt'
         with open(text_file, 'w', encoding='utf-8') as f:
             f.write(text_content)
 
@@ -796,7 +820,7 @@ def main():
 
     # Update validation cache with current paths (mark them as available for validation)
     for path in all_paths:
-        path_hash = calculate_path_hash(path)
+        path_hash = calculate_path_hash(path, passages)
         if path_hash not in validation_cache:
             validation_cache[path_hash] = {
                 'route': ' → '.join(path),
