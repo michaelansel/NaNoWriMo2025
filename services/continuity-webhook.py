@@ -47,6 +47,7 @@ WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
 REPO_OWNER = os.getenv("REPO_OWNER", "michaelansel")
 REPO_NAME = os.getenv("REPO_NAME", "NaNoWriMo2025")
 PORT = int(os.getenv("WEBHOOK_PORT", "5000"))
+MAX_TEXT_FILE_SIZE = 1024 * 1024  # 1MB limit for artifact text files
 
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
@@ -158,7 +159,7 @@ def validate_artifact_structure(artifact_dir: Path) -> bool:
         return True  # Empty is valid
 
     for txt_file in txt_files:
-        if txt_file.stat().st_size > 1024 * 1024:  # 1MB limit
+        if txt_file.stat().st_size > MAX_TEXT_FILE_SIZE:
             app.logger.error(f"Text file too large: {txt_file}")
             return False
 
