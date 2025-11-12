@@ -60,7 +60,8 @@ from datetime import datetime
 from collections import defaultdict
 import time
 
-active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status}}
+active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status, cancel_event}}
+pr_active_jobs = {}  # {pr_number: workflow_id} - track which workflow is active for each PR
 job_history = []  # Recent completed jobs
 metrics = defaultdict(int)  # Various counters
 metrics_lock = threading.Lock()
@@ -306,6 +307,8 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
 
 def process_webhook_async(workflow_id, pr_number, artifacts_url):
     """Process webhook in background thread."""
+    cancel_event = threading.Event()
+
     try:
         app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number}")
 
@@ -316,8 +319,10 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
                 "start_time": datetime.now(),
                 "current_path": 0,
                 "total_paths": 0,
-                "status": "initializing"
+                "status": "initializing",
+                "cancel_event": cancel_event
             }
+            pr_active_jobs[pr_number] = workflow_id  # Mark this workflow as active for this PR
             metrics["total_webhooks_received"] += 1
 
         # Fetch artifact list
@@ -349,6 +354,12 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
             artifact_url = allpaths_artifact['archive_download_url']
             if not download_artifact(artifact_url, tmpdir_path):
                 app.logger.error("[Background] Failed to download artifact")
+                return
+
+            # Check for cancellation
+            if cancel_event.is_set():
+                app.logger.info(f"[Background] Job cancelled for PR #{pr_number}, stopping")
+                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
 
             # Validate structure
@@ -403,6 +414,11 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
             # Define progress callback
             def progress_callback(current, total, path_result):
                 """Post progress update and update job status."""
+                # Check for cancellation before processing
+                if cancel_event.is_set():
+                    app.logger.info(f"[Background] Job cancelled during path {current}/{total}, stopping")
+                    raise Exception("Job cancelled")
+
                 # Update job status
                 with metrics_lock:
                     if workflow_id in active_jobs:
@@ -480,6 +496,10 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         job_history.pop(0)
                     metrics["total_jobs_completed"] += 1
 
+                # Clean up PR tracking if this is still the active job for this PR
+                if pr_active_jobs.get(pr_number) == workflow_id:
+                    pr_active_jobs.pop(pr_number, None)
+
     except Exception as e:
         app.logger.error(f"[Background] Error processing webhook: {e}", exc_info=True)
 
@@ -487,14 +507,19 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
         with metrics_lock:
             if workflow_id in active_jobs:
                 job_info = active_jobs.pop(workflow_id)
-                job_info["status"] = "failed"
+                job_info["status"] = "failed" if "Job cancelled" not in str(e) else "cancelled"
                 job_info["error"] = str(e)
                 job_info["end_time"] = datetime.now()
                 job_info["duration_seconds"] = (job_info["end_time"] - job_info["start_time"]).total_seconds()
                 job_history.append(job_info)
                 if len(job_history) > 50:
                     job_history.pop(0)
-                metrics["total_jobs_failed"] += 1
+                if "Job cancelled" not in str(e):
+                    metrics["total_jobs_failed"] += 1
+
+            # Clean up PR tracking if this is still the active job for this PR
+            if pr_active_jobs.get(pr_number) == workflow_id:
+                pr_active_jobs.pop(pr_number, None)
 
 
 @app.route('/webhook', methods=['POST'])
@@ -552,6 +577,16 @@ def handle_workflow_webhook(payload):
     if not artifacts_url:
         app.logger.error("No artifacts URL in workflow")
         return jsonify({"error": "No artifacts URL"}), 400
+
+    # Cancel any existing job for this PR
+    with metrics_lock:
+        if pr_number in pr_active_jobs:
+            old_workflow_id = pr_active_jobs[pr_number]
+            if old_workflow_id in active_jobs:
+                app.logger.info(f"Cancelling existing job (workflow {old_workflow_id}) for PR #{pr_number}")
+                cancel_event = active_jobs[old_workflow_id].get("cancel_event")
+                if cancel_event:
+                    cancel_event.set()  # Signal cancellation
 
     # Spawn background thread to process webhook
     thread = threading.Thread(
