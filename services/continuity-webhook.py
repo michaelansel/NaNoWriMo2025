@@ -136,11 +136,11 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
 def validate_artifact_structure(artifact_dir: Path) -> bool:
     """Validate that artifact contains expected files and structure."""
     # Expected structure:
-    # - allpaths-validation-cache.json (validation cache)
-    # - allpaths-text/ directory with .txt files
+    # - allpaths-validation-cache.json (at root)
+    # - dist/allpaths-text/ directory with .txt files
 
     cache_file = artifact_dir / "allpaths-validation-cache.json"
-    text_dir = artifact_dir / "allpaths-text"
+    text_dir = artifact_dir / "dist" / "allpaths-text"
 
     if not cache_file.exists():
         app.logger.error(f"Missing validation cache file: {cache_file}")
@@ -357,7 +357,7 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
                 return
 
             # Get paths to check
-            text_dir = tmpdir_path / "allpaths-text"
+            text_dir = tmpdir_path / "dist" / "allpaths-text"
             cache_file = tmpdir_path / "allpaths-validation-cache.json"
 
             # Load cache to see what paths need checking
