@@ -261,6 +261,74 @@ curl -X POST http://localhost:5000/webhook \
    - Progress update for each path (with detailed issues)
    - Final summary with all results organized by severity
 
+## Approving Validated Paths
+
+After reviewing AI feedback, you can mark paths as validated to skip them in future checks:
+
+### How It Works
+
+1. **Review AI feedback** on the PR (progress comments show individual path results)
+2. **Reply to approve** paths you've reviewed:
+   ```
+   /approve-path abc12345 def67890 e4f5a678
+   ```
+3. **Service processes approval**:
+   - Checks you're a repository collaborator
+   - Downloads latest validation cache from PR artifacts
+   - Marks paths as validated in cache
+   - Commits updated cache to your PR branch
+4. **Workflow runs** on the new commit
+5. **Approved paths are skipped** - only new/unvalidated paths are checked
+
+### Path ID Behavior
+
+- **Content-based hashing**: Path IDs are 8-character hashes based on passage content
+- **Automatic re-validation**: If you edit any passage in an approved path, the hash changes and it requires re-validation
+- **Structure changes**: Renaming passages or changing path structure also changes the hash
+
+### Batch Approval
+
+Approve multiple paths in a single comment:
+```
+Great work! These all look good:
+/approve-path a3f8b912 b2c7d843 f4e1a923 c9d2e144
+```
+
+The service extracts all 8-character hex hashes and processes them together in one commit.
+
+### Authorization
+
+Only repository collaborators can approve paths. If a non-collaborator tries to approve, they'll receive an error message.
+
+### Example Workflow
+
+**AI posts validation:**
+```
+### 🟢 Path 4/14 Complete
+**Path ID:** `a3f8b912`
+**Route:** `Start → Continue → Cave → Victory`
+**Result:** minor
+**Summary:** Small timeline inconsistency
+
+💡 To approve this path: reply `/approve-path a3f8b912`
+```
+
+**You reply:**
+```
+Timeline issue is acceptable for the story flow.
+/approve-path a3f8b912
+```
+
+**Service responds:**
+```
+✅ Successfully validated 1 path(s) by @michaelansel
+
+**Approved paths:**
+- `a3f8b912` (Start → Continue → Cave → Victory)
+
+These paths won't be re-checked unless their content changes.
+```
+
 ## Troubleshooting
 
 ### Service won't start
