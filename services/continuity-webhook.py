@@ -419,7 +419,17 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 active_jobs[workflow_id]["total_paths"] = total_paths
                 active_jobs[workflow_id]["status"] = "checking_paths"
 
-            path_list = "\n".join([f"- Path `{path_id}`" for path_id, _ in unvalidated])
+            # Build path list with routes from cache
+            path_list_items = []
+            for path_id, text_file in unvalidated:
+                # Try to get route from cache
+                route = cache.get(path_id, {}).get("route", "")
+                if route:
+                    path_list_items.append(f"- `{path_id}` ({route})")
+                else:
+                    path_list_items.append(f"- `{path_id}`")
+            path_list = "\n".join(path_list_items)
+
             initial_comment = f"""## 🤖 AI Continuity Check - Starting
 
 Found **{total_paths}** new story path(s) to check.
@@ -462,8 +472,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
                     update_comment = f"""### {emoji} Path {current}/{total} Complete
 
-**Path ID:** `{path_id}`
-**Route:** `{route_str}`
+**Path:** `{path_id}` ({route_str})
 **Result:** {severity}
 **Summary:** {summary}
 """
