@@ -583,6 +583,10 @@ def handle_comment_webhook(payload):
     if not re.search(r'/approve-path\b', comment_body):
         return jsonify({"message": "Not an approval command"}), 200
 
+    # Ignore bot's own progress comments (they contain the helper text)
+    if '💡 **To approve this path:**' in comment_body:
+        return jsonify({"message": "Ignoring bot's own comment"}), 200
+
     # Extract path IDs (8-char hex hashes)
     path_ids = re.findall(r'\b[a-f0-9]{8}\b', comment_body)
 
