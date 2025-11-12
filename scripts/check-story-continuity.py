@@ -80,7 +80,12 @@ def call_ollama(prompt: str, model: str = OLLAMA_MODEL) -> Optional[str]:
             json={
                 'model': model,
                 'prompt': prompt,
-                'stream': False
+                'stream': False,
+                'options': {
+                    'temperature': 1.0,
+                    'top_p': 1.0,
+                    'top_k': 0
+                }
             },
             timeout=OLLAMA_TIMEOUT
         )

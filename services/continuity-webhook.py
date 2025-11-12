@@ -165,6 +165,18 @@ def validate_artifact_structure(artifact_dir: Path) -> bool:
     return True
 
 
+def translate_passage_ids(text: str, id_to_name: Dict[str, str]) -> str:
+    """Replace passage IDs with real passage names in text."""
+    if not id_to_name:
+        return text
+
+    for passage_id, passage_name in id_to_name.items():
+        # Replace IDs with names, adding quotes for clarity
+        text = text.replace(passage_id, f'"{passage_name}"')
+
+    return text
+
+
 def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None) -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
@@ -370,6 +382,18 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
             # Get paths to check
             text_dir = tmpdir_path / "dist" / "allpaths-text"
             cache_file = tmpdir_path / "allpaths-validation-cache.json"
+            mapping_file = tmpdir_path / "dist" / "allpaths-passage-mapping.json"
+
+            # Load passage ID mapping for translating results
+            id_to_name = {}
+            if mapping_file.exists():
+                try:
+                    with open(mapping_file, 'r') as f:
+                        mapping_data = json.load(f)
+                        id_to_name = mapping_data.get('id_to_name', {})
+                        app.logger.info(f"Loaded passage ID mapping with {len(id_to_name)} passages")
+                except Exception as e:
+                    app.logger.warning(f"Could not load passage mapping: {e}")
 
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
@@ -424,7 +448,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     path_id = path_result.get("id", "unknown")
                     route_str = " → ".join(path_result["route"]) if path_result["route"] else path_id
                     severity = path_result.get("severity", "none")
-                    summary = path_result.get("summary", "")
+                    summary = translate_passage_ids(path_result.get("summary", ""), id_to_name)
                     issues = path_result.get("issues", [])
 
                     # Choose emoji based on severity
@@ -450,8 +474,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         for issue in issues:
                             issue_type = issue.get("type", "unknown")
                             issue_severity = issue.get("severity", "unknown")
-                            description = issue.get("description", "No description")
-                            location = issue.get("location", "")
+                            description = translate_passage_ids(issue.get("description", "No description"), id_to_name)
+                            location = translate_passage_ids(issue.get("location", ""), id_to_name)
 
                             update_comment += f"- **{issue_type.capitalize()}** ({issue_severity}): {description}"
                             if location:
@@ -475,6 +499,16 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 app.logger.info(f"[Background] Job was cancelled during validation")
                 post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
+
+            # Translate passage IDs in final results
+            if id_to_name and results.get("paths_with_issues"):
+                for path in results["paths_with_issues"]:
+                    path["summary"] = translate_passage_ids(path["summary"], id_to_name)
+                    if path.get("issues"):
+                        for issue in path["issues"]:
+                            issue["description"] = translate_passage_ids(issue["description"], id_to_name)
+                            if issue.get("location"):
+                                issue["location"] = translate_passage_ids(issue["location"], id_to_name)
 
             # Format and post final summary comment
             comment = format_pr_comment(results)
