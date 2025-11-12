@@ -88,7 +88,7 @@ dist/
 │   ├── path-002-1bf824a1.txt
 │   └── ...
 ├── allpaths-passage-mapping.json      # Maps random IDs back to passage names
-└── allpaths-validation-cache.json     # Validation tracking
+└── allpaths-validation-cache.json     # Validation tracking (at repository root)
 ```
 
 ### Browsing Paths
@@ -149,7 +149,7 @@ Path ID: 6e587dcb
 
 **Mark a path as validated:**
 
-Edit `dist/allpaths-validation-cache.json`:
+Edit `allpaths-validation-cache.json`:
 ```json
 {
   "6e587dcb": {
@@ -169,7 +169,7 @@ On the next build, validated paths will:
 
 If the text generation format changes (e.g., how passages or choices are displayed), you should clear the validation cache to get fresh AI analysis:
 ```bash
-rm dist/allpaths-validation-cache.json
+rm allpaths-validation-cache.json
 ```
 
 This will mark all paths as "new" and they will be re-checked with the updated format.
