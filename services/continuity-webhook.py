@@ -28,6 +28,16 @@ from pathlib import Path
 from flask import Flask, request, jsonify
 import requests
 
+# Import the checker module dynamically (filename has hyphens, not underscores)
+import importlib.util
+_checker_script_path = Path(__file__).parent.parent / "scripts" / "check-story-continuity.py"
+_spec = importlib.util.spec_from_file_location("check_story_continuity", _checker_script_path)
+_checker_module = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_checker_module)
+check_paths_with_progress = _checker_module.check_paths_with_progress
+get_unvalidated_paths = _checker_module.get_unvalidated_paths
+load_validation_cache = _checker_module.load_validation_cache
+
 # Configuration (from environment variables)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
@@ -141,54 +151,18 @@ def validate_artifact_structure(artifact_dir: Path) -> bool:
     return True
 
 
-def run_continuity_check(text_dir: Path, cache_file: Path) -> dict:
-    """Run the AI continuity checking script."""
+def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None) -> dict:
+    """Run the AI continuity checking script with optional progress callbacks."""
     try:
         app.logger.info(f"Running continuity checker on {text_dir}")
-        result = subprocess.run(
-            [sys.executable, str(CHECKER_SCRIPT), str(text_dir), str(cache_file)],
-            capture_output=True,
-            text=True,
-            timeout=600  # 10 minute timeout (ollama can be slow)
-        )
 
-        # Parse JSON output from script
-        try:
-            # The script outputs JSON to stdout
-            output_lines = result.stdout.strip().split('\n')
-            # Find the JSON output (should be after "=== RESULTS ===")
-            json_start = -1
-            for i, line in enumerate(output_lines):
-                if line == "=== RESULTS ===":
-                    json_start = i + 1
-                    break
+        # Call the checker function directly with progress callback
+        results = check_paths_with_progress(text_dir, cache_file, progress_callback)
 
-            if json_start >= 0 and json_start < len(output_lines):
-                json_output = '\n'.join(output_lines[json_start:])
-                return json.loads(json_output)
-            else:
-                # Fallback: try to parse entire stdout as JSON
-                return json.loads(result.stdout)
+        return results
 
-        except json.JSONDecodeError as e:
-            app.logger.error(f"Failed to parse checker output: {e}")
-            app.logger.error(f"Stdout: {result.stdout}")
-            app.logger.error(f"Stderr: {result.stderr}")
-            return {
-                "checked_count": 0,
-                "paths_with_issues": [],
-                "summary": f"Error: Failed to parse checker output"
-            }
-
-    except subprocess.TimeoutExpired:
-        app.logger.error("Continuity checker timed out")
-        return {
-            "checked_count": 0,
-            "paths_with_issues": [],
-            "summary": "Error: Checker timed out after 10 minutes"
-        }
     except Exception as e:
-        app.logger.error(f"Error running continuity checker: {e}")
+        app.logger.error(f"Error running continuity checker: {e}", exc_info=True)
         return {
             "checked_count": 0,
             "paths_with_issues": [],
@@ -358,16 +332,79 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
                 app.logger.error("[Background] Invalid artifact structure")
                 return
 
-            # Run continuity check
+            # Get paths to check
             text_dir = tmpdir_path / "allpaths-text"
             cache_file = tmpdir_path / "allpaths-validation-cache.json"
 
-            results = run_continuity_check(text_dir, cache_file)
+            # Load cache to see what paths need checking
+            cache = load_validation_cache(cache_file)
+            unvalidated = get_unvalidated_paths(cache, text_dir)
 
-            # Format and post comment
+            if not unvalidated:
+                app.logger.info("[Background] No new paths to check")
+                comment = """## 🤖 AI Continuity Check
+
+No new story paths to check. All paths have been validated previously.
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+"""
+                post_pr_comment(pr_number, comment)
+                return
+
+            # Post initial comment with list of paths
+            total_paths = len(unvalidated)
+            path_list = "\n".join([f"- Path `{path_id}`" for path_id, _ in unvalidated])
+            initial_comment = f"""## 🤖 AI Continuity Check - Starting
+
+Found **{total_paths}** new story path(s) to check.
+
+**Paths to validate:**
+{path_list}
+
+_This may take 5-10 minutes. Updates will be posted as each path completes._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+"""
+            app.logger.info(f"[Background] Posting initial comment for {total_paths} paths")
+            post_pr_comment(pr_number, initial_comment)
+
+            # Define progress callback
+            def progress_callback(current, total, path_result):
+                """Post progress update after each path completes."""
+                try:
+                    route_str = " → ".join(path_result["route"]) if path_result["route"] else path_result["id"]
+                    severity = path_result.get("severity", "none")
+                    summary = path_result.get("summary", "")
+
+                    # Choose emoji based on severity
+                    emoji = "✅"
+                    if severity == "critical":
+                        emoji = "🔴"
+                    elif severity == "major":
+                        emoji = "🟡"
+                    elif severity == "minor":
+                        emoji = "🟢"
+
+                    update_comment = f"""### {emoji} Path {current}/{total} Complete
+
+**Route:** `{route_str}`
+**Result:** {severity}
+**Summary:** {summary}
+"""
+                    app.logger.info(f"[Background] Posting progress update: {current}/{total}")
+                    post_pr_comment(pr_number, update_comment)
+                except Exception as e:
+                    app.logger.error(f"[Background] Error in progress callback: {e}", exc_info=True)
+
+            # Run continuity check with progress callback
+            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback)
+
+            # Format and post final summary comment
             comment = format_pr_comment(results)
             if not post_pr_comment(pr_number, comment):
-                app.logger.error("[Background] Failed to post comment")
+                app.logger.error("[Background] Failed to post final comment")
                 return
 
             app.logger.info(f"[Background] Successfully posted continuity check results to PR #{pr_number}")
