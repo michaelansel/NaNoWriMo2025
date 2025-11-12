@@ -788,7 +788,7 @@ def main():
     print(f"Generated passage ID mapping: {mapping_file}", file=sys.stderr)
 
     # Load validation cache (stored at repository root, not in dist/)
-    cache_file = output_dir.parent / 'allpaths-validation-cache.json'
+    cache_file = output_dir.parent / 'allpaths-validation-status.json'
     validation_cache = load_validation_cache(cache_file)
 
     # Generate HTML output (uses original passage names for human readability)

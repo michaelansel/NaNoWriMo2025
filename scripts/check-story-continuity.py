@@ -479,7 +479,7 @@ def main():
     if len(sys.argv) < 3:
         print("Usage: check-story-continuity.py <text_dir> <cache_file>", file=sys.stderr)
         print("", file=sys.stderr)
-        print("Example: check-story-continuity.py dist/allpaths-text allpaths-validation-cache.json", file=sys.stderr)
+        print("Example: check-story-continuity.py dist/allpaths-text allpaths-validation-status.json", file=sys.stderr)
         sys.exit(1)
 
     text_dir = Path(sys.argv[1])
