@@ -1,0 +1,16 @@
+# Python virtual environment
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Environment files (contains secrets)
+env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
