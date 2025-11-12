@@ -108,6 +108,7 @@ jobs:
           name: allpaths
           path: |
             dist/allpaths-text/
+            dist/allpaths-passage-mapping.json
             allpaths-validation-cache.json
           retention-days: 7
 
