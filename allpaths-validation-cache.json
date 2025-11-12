@@ -2,7 +2,9 @@
   "de589b69": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-12T18:53:35.403015",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T20:01:14.329899",
+    "validated_by": "michaelansel"
   },
   "2a79f028": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Check the creature",
@@ -26,7 +28,9 @@
   "eb4b8c91": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Metal object",
     "first_seen": "2025-11-12T18:53:35.403164",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T20:01:14.329900",
+    "validated_by": "michaelansel"
   },
   "b0dd9b98": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
@@ -43,7 +47,9 @@
   "b7273d73": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
     "first_seen": "2025-11-12T18:53:35.403289",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T20:01:14.329890",
+    "validated_by": "michaelansel"
   },
   "0533c057": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 3 KEB",
@@ -58,7 +64,9 @@
   "bbd913f9": {
     "route": "Start \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Day 8 KEB",
     "first_seen": "2025-11-12T18:53:35.403415",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-12T20:01:14.329897",
+    "validated_by": "michaelansel"
   },
   "c1c241a2": {
     "route": "Start \u2192 Continue on \u2192 Day 1 KEB \u2192 Day 5 KEB \u2192 Flee",
@@ -75,5 +83,5 @@
     "first_seen": "2025-11-12T18:53:35.403504",
     "validated": false
   },
-  "last_updated": "2025-11-12T19:49:24.212261"
+  "last_updated": "2025-11-12T20:01:14.329901"
 }
