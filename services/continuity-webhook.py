@@ -262,7 +262,27 @@ def format_path_issues(path: dict) -> str:
             if location:
                 output += f" _{location}_"
             output += "\n"
-        output += "\n</details>\n\n"
+
+            # Add context with quotes if available
+            context = issue.get("context", {})
+            if context and isinstance(context, dict):
+                quotes = context.get("quotes", [])
+                explanation = context.get("explanation", "")
+
+                if quotes or explanation:
+                    output += "\n  **In context:**\n"
+                    if explanation:
+                        output += f"  {explanation}\n"
+                    if quotes:
+                        output += "\n"
+                        for quote in quotes:
+                            passage_name = quote.get("passage", "unknown")
+                            quote_text = quote.get("text", "")
+                            if quote_text:
+                                output += f'  > In "{passage_name}": "{quote_text}"\n'
+                    output += "\n"
+
+        output += "</details>\n\n"
 
     return output
 
@@ -490,7 +510,29 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                             if location:
                                 update_comment += f" _{location}_"
                             update_comment += "\n"
-                        update_comment += "\n</details>\n"
+
+                            # Add context with quotes if available
+                            context = issue.get("context", {})
+                            if context and isinstance(context, dict):
+                                quotes = context.get("quotes", [])
+                                explanation = context.get("explanation", "")
+
+                                if quotes or explanation:
+                                    update_comment += "\n  **In context:**\n"
+                                    if explanation:
+                                        update_comment += f"  {explanation}\n"
+                                    if quotes:
+                                        update_comment += "\n"
+                                        for quote in quotes:
+                                            passage_id = quote.get("passage", "")
+                                            quote_text = quote.get("text", "")
+                                            # Translate passage ID to name
+                                            passage_name = id_to_name.get(passage_id, passage_id) if passage_id else "unknown"
+                                            if quote_text:
+                                                update_comment += f'  > In "{passage_name}": "{quote_text}"\n'
+                                    update_comment += "\n"
+
+                        update_comment += "</details>\n"
 
                     # Add approval helper text
                     update_comment += f"\n💡 **To approve this path:** reply `/approve-path {path_id}`\n"
@@ -518,6 +560,19 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                             issue["description"] = translate_passage_ids(issue["description"], id_to_name)
                             if issue.get("location"):
                                 issue["location"] = translate_passage_ids(issue["location"], id_to_name)
+                            # Translate passage IDs in context quotes
+                            context = issue.get("context", {})
+                            if context and isinstance(context, dict):
+                                if context.get("explanation"):
+                                    context["explanation"] = translate_passage_ids(context["explanation"], id_to_name)
+                                quotes = context.get("quotes", [])
+                                for quote in quotes:
+                                    if quote.get("passage"):
+                                        # Translate passage ID to passage name
+                                        passage_id = quote["passage"]
+                                        quote["passage"] = id_to_name.get(passage_id, passage_id)
+                                    if quote.get("text"):
+                                        quote["text"] = translate_passage_ids(quote["text"], id_to_name)
 
             # Format and post final summary comment
             comment = format_pr_comment(results)

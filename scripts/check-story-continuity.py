@@ -59,11 +59,23 @@ Respond with a JSON object in this format:
       "type": "character/plot/timeline/setting/contradiction",
       "severity": "minor/major/critical",
       "description": "Brief description of the issue",
-      "location": "Where in the path this occurs (optional)"
+      "location": "Where in the path this occurs (optional)",
+      "context": {{
+        "quotes": [
+          {{
+            "passage": "The passage marker ID where this quote appears",
+            "text": "The exact quote demonstrating the issue"
+          }}
+        ],
+        "explanation": "How these quotes demonstrate the continuity issue"
+      }}
     }}
   ],
   "summary": "Brief overall assessment"
 }}
+
+For each issue, include specific quotes from the story text with their passage markers to demonstrate the problem.
+When citing quotes, include the [PASSAGE: xxxx] marker so we know which passage it's from.
 
 If no issues found, return: {{"has_issues": false, "severity": "none", "issues": [], "summary": "No continuity issues detected"}}
 """
