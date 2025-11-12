@@ -101,6 +101,17 @@ jobs:
           path: dist/
           retention-days: 30
 
+      - name: Upload allpaths artifacts for AI continuity checking
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: allpaths
+          path: |
+            dist/allpaths-text/
+            dist/allpaths-passage-mapping.json
+            allpaths-validation-cache.json
+          retention-days: 7
+
       - name: Comment on PR with preview instructions
         if: github.event_name == 'pull_request'
         uses: actions/github-script@v7

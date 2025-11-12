@@ -83,10 +83,11 @@ After building, you'll find:
 ```
 dist/
 ├── allpaths.html                      # Browse all paths in browser
-├── allpaths-text/                     # Individual path files
+├── allpaths-text/                     # Individual path files (with random IDs)
 │   ├── path-001-6e587dcb.txt
 │   ├── path-002-1bf824a1.txt
 │   └── ...
+├── allpaths-passage-mapping.json      # Maps random IDs back to passage names
 └── allpaths-validation-cache.json     # Validation tracking
 ```
 
@@ -118,21 +119,31 @@ done
 ================================================================================
 PATH 1 of 11
 ================================================================================
-Route: Start → Continue on → Javlyn continued → proactive attack
+Route: a1b2c3d4e5f6 → 9f8e7d6c5b4a → 1234567890ab → fedcba098765
 Length: 4 passages
 Path ID: 6e587dcb
 ================================================================================
 
-### Start
+[PASSAGE: a1b2c3d4e5f6]
 
 [Passage text here...]
 
-### Continue on
+[PASSAGE: 9f8e7d6c5b4a]
 
-[Passage text here...]
+[Passage text here with selected choice visible]
+[other choice] (not selected)
 
 ...
 ```
+
+**Important notes about the format:**
+- **Random IDs for AI processing**: Passage names are replaced with random hex IDs (e.g., `a1b2c3d4e5f6`)
+- This prevents the AI from being confused by passage names like "Day 5 KEB" which players never see
+- The IDs are meaningless random identifiers with zero semantic content
+- Only the selected choice in each passage is shown as visible text
+- Other choices are marked with `(not selected)` to indicate they weren't taken in this path
+- The mapping from IDs back to passage names is saved in `allpaths-passage-mapping.json`
+- This ensures continuity checking focuses only on what players actually experience
 
 ### Validation Tracking
 
@@ -153,6 +164,41 @@ On the next build, validated paths will:
 - Appear with a green "Validated" badge
 - Have a green left border
 - Be filterable via "Validated Only" button
+
+**Clearing the validation cache:**
+
+If the text generation format changes (e.g., how passages or choices are displayed), you should clear the validation cache to get fresh AI analysis:
+```bash
+rm dist/allpaths-validation-cache.json
+```
+
+This will mark all paths as "new" and they will be re-checked with the updated format.
+
+**Understanding the Passage Mapping:**
+
+The `allpaths-passage-mapping.json` file contains a bidirectional mapping:
+```json
+{
+  "name_to_id": {
+    "Start": "a1b2c3d4e5f6",
+    "Day 5 KEB": "9f8e7d6c5b4a",
+    "Continue on": "1234567890ab"
+  },
+  "id_to_name": {
+    "a1b2c3d4e5f6": "Start",
+    "9f8e7d6c5b4a": "Day 5 KEB",
+    "1234567890ab": "Continue on"
+  }
+}
+```
+
+The continuity checker automatically:
+1. Loads this mapping file
+2. Receives AI results with random IDs
+3. Translates IDs back to passage names before reporting
+4. Ensures human-readable output even though AI sees only random IDs
+
+This prevents the AI from being confused by passage names that contain timeline markers, character names, or other semantic information that isn't visible to players.
 
 ## Architecture
 

@@ -1,0 +1,20 @@
+[Unit]
+Description=Story Continuity Webhook Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Code/NaNoWriMo2025
+EnvironmentFile=/home/ubuntu/.config/continuity-webhook/env
+ExecStart=/home/ubuntu/Code/NaNoWriMo2025/services/venv/bin/python /home/ubuntu/Code/NaNoWriMo2025/services/continuity-webhook.py
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=continuity-webhook
+
+[Install]
+WantedBy=multi-user.target
