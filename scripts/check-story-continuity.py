@@ -14,13 +14,16 @@ import json
 import sys
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple
-import subprocess
+from typing import Dict, List, Tuple, Callable, Optional
+import requests
 import hashlib
 from datetime import datetime
+import time
 
-# Ollama model to use
+# Ollama configuration
 OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_TIMEOUT = 120  # 2 minute timeout per path
 
 # Continuity checking prompt template
 CONTINUITY_PROMPT = """You are a story continuity checker. Analyze the following story path for continuity issues.
@@ -54,24 +57,35 @@ If no issues found, return: {{"has_issues": false, "severity": "none", "issues":
 """
 
 
-def call_ollama(prompt: str, model: str = OLLAMA_MODEL) -> str:
-    """Call Ollama with a prompt and return the response."""
+def call_ollama(prompt: str, model: str = OLLAMA_MODEL) -> Optional[str]:
+    """Call Ollama HTTP API with a prompt and return the response."""
     try:
-        result = subprocess.run(
-            ["ollama", "run", model],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=120  # 2 minute timeout
+        print(f"Calling ollama API (model: {model})...", file=sys.stderr)
+        start_time = time.time()
+
+        response = requests.post(
+            OLLAMA_API_URL,
+            json={
+                'model': model,
+                'prompt': prompt,
+                'stream': False
+            },
+            timeout=OLLAMA_TIMEOUT
         )
 
-        if result.returncode != 0:
-            print(f"Error calling ollama: {result.stderr}", file=sys.stderr)
+        elapsed = time.time() - start_time
+        print(f"Ollama responded in {elapsed:.1f}s", file=sys.stderr)
+
+        if response.status_code != 200:
+            print(f"Error calling ollama: HTTP {response.status_code}", file=sys.stderr)
+            print(f"Response: {response.text[:200]}", file=sys.stderr)
             return None
 
-        return result.stdout.strip()
-    except subprocess.TimeoutExpired:
-        print("Ollama request timed out", file=sys.stderr)
+        result = response.json()
+        return result.get('response', '')
+
+    except requests.Timeout:
+        print(f"Ollama request timed out after {OLLAMA_TIMEOUT}s", file=sys.stderr)
         return None
     except Exception as e:
         print(f"Error calling ollama: {e}", file=sys.stderr)
@@ -209,21 +223,23 @@ def extract_route_from_text(text_path: Path) -> List[str]:
     return []
 
 
-def main():
-    """Main entry point."""
-    if len(sys.argv) < 3:
-        print("Usage: check-story-continuity.py <text_dir> <cache_file>", file=sys.stderr)
-        print("", file=sys.stderr)
-        print("Example: check-story-continuity.py dist/allpaths-text dist/allpaths-validation-cache.json", file=sys.stderr)
-        sys.exit(1)
+def check_paths_with_progress(
+    text_dir: Path,
+    cache_file: Path,
+    progress_callback: Optional[Callable[[int, int, Dict], None]] = None
+) -> Dict:
+    """
+    Check story paths with optional progress callbacks.
 
-    text_dir = Path(sys.argv[1])
-    cache_file = Path(sys.argv[2])
+    Args:
+        text_dir: Directory containing story path text files
+        cache_file: Path to validation cache JSON file
+        progress_callback: Optional callback function called after each path.
+                          Signature: callback(current, total, path_result)
 
-    if not text_dir.exists() or not text_dir.is_dir():
-        print(f"Error: {text_dir} is not a valid directory", file=sys.stderr)
-        sys.exit(1)
-
+    Returns:
+        Dict with checked_count, paths_with_issues, and summary
+    """
     # Load cache
     cache = load_validation_cache(cache_file)
 
@@ -231,23 +247,22 @@ def main():
     unvalidated = get_unvalidated_paths(cache, text_dir)
 
     if not unvalidated:
-        print("No new paths to validate")
-        result = {
+        return {
             "checked_count": 0,
             "paths_with_issues": [],
             "summary": "No new paths to check"
         }
-        print(json.dumps(result, indent=2))
-        sys.exit(0)
 
-    print(f"Checking {len(unvalidated)} new path(s)...", file=sys.stderr)
+    total_paths = len(unvalidated)
+    print(f"Checking {total_paths} new path(s)...", file=sys.stderr)
 
     # Check each path
     paths_with_issues = []
     checked_count = 0
 
     for path_id, text_file in unvalidated:
-        print(f"Checking path {path_id}...", file=sys.stderr)
+        checked_count += 1
+        print(f"[{checked_count}/{total_paths}] Checking path {path_id}...", file=sys.stderr)
 
         # Read the story text
         try:
@@ -262,33 +277,61 @@ def main():
 
         # Check continuity
         result = check_path_continuity(story_text)
-        checked_count += 1
 
         # Update cache
         update_cache_with_results(cache, path_id, route, result)
 
         # Collect issues
+        path_result = {
+            "id": path_id,
+            "route": route,
+            "severity": result.get("severity", "none"),
+            "has_issues": result.get("has_issues", False),
+            "summary": result.get("summary", "")
+        }
+
         if result.get("has_issues", False):
-            paths_with_issues.append({
-                "id": path_id,
-                "route": route,
-                "severity": result.get("severity", "unknown"),
-                "issues": result.get("issues", []),
-                "summary": result.get("summary", "")
-            })
+            path_result["issues"] = result.get("issues", [])
+            paths_with_issues.append(path_result)
 
         print(f"  Result: {result.get('severity', 'none')} - {result.get('summary', '')}", file=sys.stderr)
+
+        # Call progress callback
+        if progress_callback:
+            try:
+                progress_callback(checked_count, total_paths, path_result)
+            except Exception as e:
+                print(f"Warning: progress callback failed: {e}", file=sys.stderr)
 
     # Save updated cache
     save_validation_cache(cache_file, cache)
 
-    # Output results as JSON
-    result = {
+    return {
         "checked_count": checked_count,
         "paths_with_issues": paths_with_issues,
         "summary": f"Checked {checked_count} path(s), found issues in {len(paths_with_issues)}"
     }
 
+
+def main():
+    """Main entry point for CLI usage."""
+    if len(sys.argv) < 3:
+        print("Usage: check-story-continuity.py <text_dir> <cache_file>", file=sys.stderr)
+        print("", file=sys.stderr)
+        print("Example: check-story-continuity.py dist/allpaths-text dist/allpaths-validation-cache.json", file=sys.stderr)
+        sys.exit(1)
+
+    text_dir = Path(sys.argv[1])
+    cache_file = Path(sys.argv[2])
+
+    if not text_dir.exists() or not text_dir.is_dir():
+        print(f"Error: {text_dir} is not a valid directory", file=sys.stderr)
+        sys.exit(1)
+
+    # Run checks without progress callback (CLI mode)
+    result = check_paths_with_progress(text_dir, cache_file)
+
+    # Output results as JSON
     print("\n=== RESULTS ===", file=sys.stderr)
     print(json.dumps(result, indent=2))
 

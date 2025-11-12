@@ -23,6 +23,7 @@ import tempfile
 import shutil
 import zipfile
 import subprocess
+import threading
 from pathlib import Path
 from flask import Flask, request, jsonify
 import requests
@@ -316,6 +317,65 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
         return None
 
 
+def process_webhook_async(workflow_id, pr_number, artifacts_url):
+    """Process webhook in background thread."""
+    try:
+        app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number}")
+
+        # Fetch artifact list
+        headers = {
+            "Authorization": f"token {GITHUB_TOKEN}",
+            "Accept": "application/vnd.github.v3+json"
+        }
+
+        response = requests.get(artifacts_url, headers=headers)
+        response.raise_for_status()
+        artifacts_data = response.json()
+
+        # Find the "allpaths" artifact
+        allpaths_artifact = None
+        for artifact in artifacts_data.get('artifacts', []):
+            if artifact['name'] == 'allpaths':
+                allpaths_artifact = artifact
+                break
+
+        if not allpaths_artifact:
+            app.logger.info("[Background] No allpaths artifact found, nothing to check")
+            return
+
+        # Download and process artifact
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            # Download artifact
+            artifact_url = allpaths_artifact['archive_download_url']
+            if not download_artifact(artifact_url, tmpdir_path):
+                app.logger.error("[Background] Failed to download artifact")
+                return
+
+            # Validate structure
+            if not validate_artifact_structure(tmpdir_path):
+                app.logger.error("[Background] Invalid artifact structure")
+                return
+
+            # Run continuity check
+            text_dir = tmpdir_path / "allpaths-text"
+            cache_file = tmpdir_path / "allpaths-validation-cache.json"
+
+            results = run_continuity_check(text_dir, cache_file)
+
+            # Format and post comment
+            comment = format_pr_comment(results)
+            if not post_pr_comment(pr_number, comment):
+                app.logger.error("[Background] Failed to post comment")
+                return
+
+            app.logger.info(f"[Background] Successfully posted continuity check results to PR #{pr_number}")
+
+    except Exception as e:
+        app.logger.error(f"[Background] Error processing webhook: {e}", exc_info=True)
+
+
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """Handle GitHub webhooks."""
@@ -359,63 +419,23 @@ def webhook():
 
     app.logger.info(f"Processing workflow {workflow_id} for PR #{pr_number}")
 
-    # Get artifacts
+    # Get artifacts URL
     artifacts_url = workflow_run.get('artifacts_url')
     if not artifacts_url:
         app.logger.error("No artifacts URL in workflow")
         return jsonify({"error": "No artifacts URL"}), 400
 
-    # Fetch artifact list
-    headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
-    }
+    # Spawn background thread to process webhook
+    thread = threading.Thread(
+        target=process_webhook_async,
+        args=(workflow_id, pr_number, artifacts_url),
+        daemon=True
+    )
+    thread.start()
 
-    try:
-        response = requests.get(artifacts_url, headers=headers)
-        response.raise_for_status()
-        artifacts_data = response.json()
-
-        # Find the "allpaths" artifact
-        allpaths_artifact = None
-        for artifact in artifacts_data.get('artifacts', []):
-            if artifact['name'] == 'allpaths':
-                allpaths_artifact = artifact
-                break
-
-        if not allpaths_artifact:
-            app.logger.info("No allpaths artifact found, nothing to check")
-            return jsonify({"message": "No allpaths artifact"}), 200
-
-        # Download and process artifact
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpdir_path = Path(tmpdir)
-
-            # Download artifact
-            artifact_url = allpaths_artifact['archive_download_url']
-            if not download_artifact(artifact_url, tmpdir_path):
-                return jsonify({"error": "Failed to download artifact"}), 500
-
-            # Validate structure
-            if not validate_artifact_structure(tmpdir_path):
-                return jsonify({"error": "Invalid artifact structure"}), 400
-
-            # Run continuity check
-            text_dir = tmpdir_path / "allpaths-text"
-            cache_file = tmpdir_path / "allpaths-validation-cache.json"
-
-            results = run_continuity_check(text_dir, cache_file)
-
-            # Format and post comment
-            comment = format_pr_comment(results)
-            if not post_pr_comment(pr_number, comment):
-                return jsonify({"error": "Failed to post comment"}), 500
-
-        return jsonify({"message": "Continuity check completed", "pr": pr_number}), 200
-
-    except Exception as e:
-        app.logger.error(f"Error processing webhook: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+    # Return immediately
+    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing in background")
+    return jsonify({"message": "Webhook accepted, processing in background", "pr": pr_number}), 202
 
 
 @app.route('/health', methods=['GET'])
