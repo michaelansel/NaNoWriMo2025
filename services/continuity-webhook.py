@@ -25,6 +25,8 @@ import zipfile
 import subprocess
 import threading
 import re
+import jwt
+import time
 from pathlib import Path
 from typing import Dict, List
 from flask import Flask, request, jsonify
@@ -49,6 +51,11 @@ REPO_NAME = os.getenv("REPO_NAME", "NaNoWriMo2025")
 PORT = int(os.getenv("WEBHOOK_PORT", "5000"))
 MAX_TEXT_FILE_SIZE = 1024 * 1024  # 1MB limit for artifact text files
 
+# GitHub App configuration (optional - falls back to PAT if not set)
+GITHUB_APP_ID = os.getenv("GITHUB_APP_ID")
+GITHUB_APP_PRIVATE_KEY_PATH = os.getenv("GITHUB_APP_PRIVATE_KEY_PATH")
+GITHUB_APP_INSTALLATION_ID = os.getenv("GITHUB_APP_INSTALLATION_ID")
+
 # Paths
 PROJECT_ROOT = Path(__file__).parent.parent.resolve()
 CHECKER_SCRIPT = PROJECT_ROOT / "scripts" / "check-story-continuity.py"
@@ -66,6 +73,76 @@ pr_active_jobs = {}  # {pr_number: workflow_id} - track which workflow is active
 job_history = []  # Recent completed jobs
 metrics = defaultdict(int)  # Various counters
 metrics_lock = threading.Lock()
+
+# Webhook deduplication (GitHub can send webhooks multiple times)
+processed_comment_ids = {}  # {comment_id: timestamp} - track processed comments
+COMMENT_DEDUP_TTL = 300  # 5 minutes
+
+# GitHub App authentication - token cache
+_token_cache = {
+    'token': None,
+    'expires_at': 0
+}
+
+
+def generate_jwt(app_id: str, private_key: str) -> str:
+    """Generate JWT for GitHub App authentication."""
+    now = int(time.time())
+    payload = {
+        'iat': now - 60,  # Issued at (60s in past for clock drift)
+        'exp': now + (10 * 60),  # Expires in 10 minutes
+        'iss': app_id  # Issuer (GitHub App ID)
+    }
+    return jwt.encode(payload, private_key, algorithm='RS256')
+
+
+def get_installation_token(app_id: str, private_key: str, installation_id: str) -> str:
+    """Get installation access token for GitHub App."""
+    jwt_token = generate_jwt(app_id, private_key)
+
+    headers = {
+        'Authorization': f'Bearer {jwt_token}',
+        'Accept': 'application/vnd.github+json'
+    }
+
+    url = f'https://api.github.com/app/installations/{installation_id}/access_tokens'
+    response = requests.post(url, headers=headers)
+    response.raise_for_status()
+
+    return response.json()['token']
+
+
+def get_github_token() -> str:
+    """Get GitHub token - either from GitHub App or PAT fallback."""
+    # Check if using GitHub App
+    if GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY_PATH and GITHUB_APP_INSTALLATION_ID:
+        # Check if cached token is still valid
+        now = time.time()
+        if _token_cache['token'] and now < _token_cache['expires_at']:
+            return _token_cache['token']
+
+        try:
+            # Load private key
+            with open(GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
+                private_key = f.read()
+
+            # Generate new installation token
+            token = get_installation_token(GITHUB_APP_ID, private_key, GITHUB_APP_INSTALLATION_ID)
+
+            # Cache token (expires in 1 hour, refresh 5 minutes early)
+            _token_cache['token'] = token
+            _token_cache['expires_at'] = now + (55 * 60)
+
+            app.logger.info("Using GitHub App authentication")
+            return token
+        except Exception as e:
+            app.logger.error(f"Error getting GitHub App token, falling back to PAT: {e}")
+            # Fall through to PAT fallback
+
+    # Fall back to PAT
+    if GITHUB_TOKEN:
+        app.logger.info("Using PAT authentication")
+    return GITHUB_TOKEN
 
 
 def verify_signature(payload_body: bytes, signature_header: str) -> bool:
@@ -99,8 +176,9 @@ def verify_signature(payload_body: bytes, signature_header: str) -> bool:
 
 def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
     """Download and extract a GitHub artifact."""
-    if not GITHUB_TOKEN:
-        app.logger.error("GITHUB_TOKEN not set, cannot download artifacts")
+    token = get_github_token()
+    if not token:
+        app.logger.error("GitHub token not available, cannot download artifacts")
         return False
 
     # Validate artifact URL is from GitHub (prevent SSRF)
@@ -112,8 +190,8 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
         return False
 
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -345,14 +423,15 @@ def format_path_issues(path: dict) -> str:
 
 def post_pr_comment(pr_number: int, comment: str) -> bool:
     """Post a comment to a GitHub PR."""
-    if not GITHUB_TOKEN:
-        app.logger.error("GITHUB_TOKEN not set, cannot post comment")
+    token = get_github_token()
+    if not token:
+        app.logger.error("GitHub token not available, cannot post comment")
         return False
 
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/issues/{pr_number}/comments"
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
     data = {"body": comment}
 
@@ -368,13 +447,14 @@ def post_pr_comment(pr_number: int, comment: str) -> bool:
 
 def get_pr_number_from_workflow(workflow_run_id: int) -> int:
     """Get PR number associated with a workflow run."""
-    if not GITHUB_TOKEN:
+    token = get_github_token()
+    if not token:
         return None
 
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/actions/runs/{workflow_run_id}"
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -414,9 +494,10 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
             metrics["total_webhooks_received"] += 1
 
         # Fetch artifact list
+        token = get_github_token()
         headers = {
-            "Authorization": f"token {GITHUB_TOKEN}",
-            "Accept": "application/vnd.github.v3+json"
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json"
         }
 
         response = requests.get(artifacts_url, headers=headers)
@@ -784,10 +865,27 @@ def handle_comment_webhook(payload):
     comment_body = payload['comment']['body']
     pr_number = payload['issue']['number']
     username = payload['comment']['user']['login']
+    comment_id = payload['comment']['id']
 
     # Check for /approve-path command
     if not re.search(r'/approve-path\b', comment_body):
         return jsonify({"message": "Not an approval command"}), 200
+
+    # Deduplication: Check if we've already processed this comment
+    with metrics_lock:
+        now = time.time()
+        # Clean up old entries
+        expired_ids = [cid for cid, ts in processed_comment_ids.items() if now - ts > COMMENT_DEDUP_TTL]
+        for cid in expired_ids:
+            del processed_comment_ids[cid]
+
+        # Check if already processed
+        if comment_id in processed_comment_ids:
+            app.logger.info(f"Ignoring duplicate webhook for comment {comment_id}")
+            return jsonify({"message": "Duplicate webhook, already processed"}), 200
+
+        # Mark as processed
+        processed_comment_ids[comment_id] = now
 
     # Ignore bot's own progress comments by checking for multiple bot markers
     # This prevents self-triggering from the helper text in progress comments
@@ -826,10 +924,11 @@ def handle_comment_webhook(payload):
 
 def is_authorized(username: str) -> bool:
     """Check if user is a repo collaborator."""
+    token = get_github_token()
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/collaborators/{username}"
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -953,10 +1052,11 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 def get_pr_info(pr_number: int) -> Dict:
     """Get PR information from GitHub API."""
+    token = get_github_token()
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pr_number}"
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -970,11 +1070,12 @@ def get_pr_info(pr_number: int) -> Dict:
 
 def get_latest_artifacts_url(pr_number: int) -> str:
     """Get artifacts URL from most recent successful workflow run for this PR."""
+    token = get_github_token()
     # Get workflow runs for this PR
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/actions/runs"
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -998,9 +1099,10 @@ def get_latest_artifacts_url(pr_number: int) -> str:
 
 def download_artifact_for_pr(artifacts_url: str, dest_dir: Path) -> bool:
     """Download allpaths artifact for approval processing."""
+    token = get_github_token()
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -1022,10 +1124,11 @@ def download_artifact_for_pr(artifacts_url: str, dest_dir: Path) -> bool:
 
 def commit_file_to_branch(branch_name: str, file_path: str, content: str, message: str) -> bool:
     """Commit a file to a branch using GitHub API."""
+    token = get_github_token()
     url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/{file_path}"
     headers = {
-        "Authorization": f"token {GITHUB_TOKEN}",
-        "Accept": "application/vnd.github.v3+json"
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
     }
 
     try:
@@ -1067,8 +1170,14 @@ def commit_file_to_branch(branch_name: str, file_path: str, content: str, messag
 @app.route('/health', methods=['GET'])
 def health():
     """Health check endpoint."""
+    # Determine authentication mode
+    github_app_configured = bool(GITHUB_APP_ID and GITHUB_APP_PRIVATE_KEY_PATH and GITHUB_APP_INSTALLATION_ID)
+    auth_mode = "github_app" if github_app_configured else "pat"
+
     status = {
         "status": "ok",
+        "authentication_mode": auth_mode,
+        "github_app_configured": github_app_configured,
         "github_token_set": bool(GITHUB_TOKEN),
         "webhook_secret_set": bool(WEBHOOK_SECRET),
         "checker_script_exists": CHECKER_SCRIPT.exists()
