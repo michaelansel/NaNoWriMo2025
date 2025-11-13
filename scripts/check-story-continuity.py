@@ -23,7 +23,7 @@ import time
 # Ollama configuration
 OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-OLLAMA_TIMEOUT = 120  # 2 minute timeout per path
+OLLAMA_TIMEOUT = 300  # 5 minute timeout per path
 
 # Continuity checking prompt template
 CONTINUITY_PROMPT = """You are a story continuity checker. Analyze the following story path for continuity issues.
