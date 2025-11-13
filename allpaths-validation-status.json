@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-13T00:41:48.090720",
+  "last_updated": "2025-11-13T00:53:16.687964",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -165,7 +165,9 @@
   "b3a35317": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Day 8 KEB",
     "first_seen": "2025-11-13T00:20:56.582922",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-13T00:53:16.687961",
+    "validated_by": "michaelansel"
   },
   "a7726bb3": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Day 5 KEB \u2192 Flee",
@@ -194,6 +196,8 @@
   "432645e7": {
     "route": "Start \u2192 mansel-20251112",
     "first_seen": "2025-11-13T00:40:27.153160",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-13T00:53:16.687954",
+    "validated_by": "michaelansel"
   }
 }
