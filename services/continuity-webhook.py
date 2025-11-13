@@ -513,7 +513,11 @@ Found **{total_paths}** new story path(s) to check.
 **Paths to validate:**
 {path_list}
 
-_This may take 5-10 minutes. Updates will be posted as each path completes._
+_This may take up to 5 minutes per passage. Updates will be posted as each path completes._
+
+💡 **To approve paths:** After reviewing the results, you can approve paths by commenting:
+- Single path: `/approve-path abc12345`
+- Multiple paths: `/approve-path abc12345 def67890 ghi13579`
 
 ---
 _Powered by Ollama (gpt-oss:20b-fullcontext)_
