@@ -48,6 +48,9 @@ KEB-251111.twee
 
 Start.twee
   :: Start
+  [[A rumor]]
+  [[The laundry->mansel-20251112]]
+  :: A rumor
   [[Continue on]]
   [[Perhaps another day->Day 7 KEB]]
   :: Continue on
@@ -81,4 +84,7 @@ mansel-20251101.twee
 
 mansel-20251102.twee
   :: mansel-20251102
+
+mansel-20251112.twee
+  :: mansel-20251112
 
