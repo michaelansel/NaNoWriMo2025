@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-13T01:33:06.752759",
+  "last_updated": "2025-11-13T01:37:08.314209",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -212,7 +212,9 @@
   "35b2de1f": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
     "first_seen": "2025-11-13T01:24:39.692083",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-13T01:37:08.314201",
+    "validated_by": "michaelansel"
   },
   "f1adbbc7": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 3 KEB",
