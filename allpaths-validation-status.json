@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-13T01:37:08.314209",
+  "last_updated": "2025-11-13T01:41:06.723405",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -233,6 +233,8 @@
   "6083e36c": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Day 5 KEB \u2192 Day 6 KEB",
     "first_seen": "2025-11-13T01:24:39.692244",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-13T01:41:06.723397",
+    "validated_by": "michaelansel"
   }
 }
