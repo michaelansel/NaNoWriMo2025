@@ -318,7 +318,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
-        if path_hash in validation_cache:
+        if validation_cache.get(path_hash, {}).get('validated', False):
             validated_paths.append(path)
         else:
             new_paths.append(path)
@@ -623,7 +623,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     # Generate each path
     for i, path in enumerate(all_paths, 1):
         path_hash = calculate_path_hash(path, passages)
-        is_validated = path_hash in validation_cache
+        is_validated = validation_cache.get(path_hash, {}).get('validated', False)
         status_class = 'validated' if is_validated else 'new'
         badge_class = 'badge-validated' if is_validated else 'badge-new'
         badge_text = 'Validated' if is_validated else 'New'
