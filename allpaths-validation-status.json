@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-13T01:05:56.721423",
+  "last_updated": "2025-11-13T01:33:06.752759",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -201,5 +201,36 @@
     "validated": true,
     "validated_at": "2025-11-13T00:53:16.687954",
     "validated_by": "michaelansel"
+  },
+  "ad53c7d0": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 leave Jerrick behind",
+    "first_seen": "2025-11-13T01:24:39.692039",
+    "validated": true,
+    "validated_at": "2025-11-13T01:33:06.752755",
+    "validated_by": "michaelansel"
+  },
+  "35b2de1f": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
+    "first_seen": "2025-11-13T01:24:39.692083",
+    "validated": false
+  },
+  "f1adbbc7": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 3 KEB",
+    "first_seen": "2025-11-13T01:24:39.692115",
+    "validated": true,
+    "validated_at": "2025-11-13T01:33:06.752756",
+    "validated_by": "michaelansel"
+  },
+  "2c69fc25": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Day 5 KEB \u2192 Flee",
+    "first_seen": "2025-11-13T01:24:39.692207",
+    "validated": true,
+    "validated_at": "2025-11-13T01:33:06.752748",
+    "validated_by": "michaelansel"
+  },
+  "6083e36c": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Day 5 KEB \u2192 Day 6 KEB",
+    "first_seen": "2025-11-13T01:24:39.692244",
+    "validated": false
   }
 }
