@@ -301,8 +301,9 @@ _No new story paths to check._
 
 def format_path_issues(path: dict) -> str:
     """Format issues for a single path."""
-    route_str = " → ".join(path["route"]) if path["route"] else path["id"]
-    output = f"**Path:** `{route_str}`\n\n"
+    path_id = path.get("id", "unknown")
+    route_str = " → ".join(path["route"]) if path["route"] else path_id
+    output = f"**Path:** `{path_id}` ({route_str})\n\n"
     output += f"_{sanitize_ai_content(path['summary'])}_\n\n"
 
     if path.get("issues"):
