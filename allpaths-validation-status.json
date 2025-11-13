@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-13T00:53:16.687964",
+  "last_updated": "2025-11-13T01:05:56.721423",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -136,7 +136,9 @@
   "a8f27821": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
     "first_seen": "2025-11-13T00:20:56.582734",
-    "validated": false
+    "validated": true,
+    "validated_at": "2025-11-13T01:05:56.721415",
+    "validated_by": "michaelansel"
   },
   "1f2bc321": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 leave Jerrick behind",
