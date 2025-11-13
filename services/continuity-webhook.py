@@ -545,9 +545,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     elif severity == "minor":
                         emoji = "🟢"
 
-                    update_comment = f"""### {emoji} Path {current}/{total} Complete
+                    update_comment = f"""### {emoji} Path {current}/{total}: {path_id} ({route_str})
 
-**Path:** `{path_id}` ({route_str})
 **Result:** {severity}
 **Summary:** {summary}
 """

@@ -295,15 +295,15 @@ def update_cache_with_results(cache: Dict, path_id: str, route: List[str], resul
 
 def extract_route_from_text(text_path: Path) -> List[str]:
     """Extract the route (passage names) from a path text file."""
-    # The text file should have a line like "Path: Start → Choice1 → End"
+    # The text file should have a line like "Route: Start → Choice1 → End"
     try:
         with open(text_path, 'r') as f:
             content = f.read()
-            # Look for the "Path:" line
+            # Look for the "Route:" line
             for line in content.split('\n'):
-                if line.startswith('Path:'):
+                if line.startswith('Route:'):
                     # Extract passage names (between → symbols)
-                    route_str = line.replace('Path:', '').strip()
+                    route_str = line.replace('Route:', '').strip()
                     route = [p.strip() for p in route_str.split('→')]
                     return route
     except Exception as e:
