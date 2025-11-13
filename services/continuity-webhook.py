@@ -301,8 +301,9 @@ _No new story paths to check._
 
 def format_path_issues(path: dict) -> str:
     """Format issues for a single path."""
-    route_str = " → ".join(path["route"]) if path["route"] else path["id"]
-    output = f"**Path:** `{route_str}`\n\n"
+    path_id = path.get("id", "unknown")
+    route_str = " → ".join(path["route"]) if path["route"] else path_id
+    output = f"**Path:** `{path_id}` ({route_str})\n\n"
     output += f"_{sanitize_ai_content(path['summary'])}_\n\n"
 
     if path.get("issues"):
@@ -608,27 +609,37 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 return
 
             # Translate passage IDs in final results
-            if id_to_name and results.get("paths_with_issues"):
+            if results.get("paths_with_issues"):
                 for path in results["paths_with_issues"]:
-                    path["summary"] = translate_passage_ids(path["summary"], id_to_name)
-                    if path.get("issues"):
-                        for issue in path["issues"]:
-                            issue["description"] = translate_passage_ids(issue["description"], id_to_name)
-                            if issue.get("location"):
-                                issue["location"] = translate_passage_ids(issue["location"], id_to_name)
-                            # Translate passage IDs in context quotes
-                            context = issue.get("context", {})
-                            if context and isinstance(context, dict):
-                                if context.get("explanation"):
-                                    context["explanation"] = translate_passage_ids(context["explanation"], id_to_name)
-                                quotes = context.get("quotes", [])
-                                for quote in quotes:
-                                    if quote.get("passage"):
-                                        # Translate passage ID to passage name
-                                        passage_id = quote["passage"]
-                                        quote["passage"] = id_to_name.get(passage_id, passage_id)
-                                    if quote.get("text"):
-                                        quote["text"] = translate_passage_ids(quote["text"], id_to_name)
+                    # Replace hex ID route with actual passage names from cache
+                    path_id = path.get("id")
+                    if path_id and path_id in cache:
+                        # Get the route with actual passage names from the cache
+                        cache_route = cache[path_id].get("route", "")
+                        if cache_route:
+                            # Convert route string to list format expected by format_path_issues
+                            path["route"] = cache_route.split(" → ")
+
+                    if id_to_name:
+                        path["summary"] = translate_passage_ids(path["summary"], id_to_name)
+                        if path.get("issues"):
+                            for issue in path["issues"]:
+                                issue["description"] = translate_passage_ids(issue["description"], id_to_name)
+                                if issue.get("location"):
+                                    issue["location"] = translate_passage_ids(issue["location"], id_to_name)
+                                # Translate passage IDs in context quotes
+                                context = issue.get("context", {})
+                                if context and isinstance(context, dict):
+                                    if context.get("explanation"):
+                                        context["explanation"] = translate_passage_ids(context["explanation"], id_to_name)
+                                    quotes = context.get("quotes", [])
+                                    for quote in quotes:
+                                        if quote.get("passage"):
+                                            # Translate passage ID to passage name
+                                            passage_id = quote["passage"]
+                                            quote["passage"] = id_to_name.get(passage_id, passage_id)
+                                        if quote.get("text"):
+                                            quote["text"] = translate_passage_ids(quote["text"], id_to_name)
 
             # Format and post final summary comment
             comment = format_pr_comment(results)
