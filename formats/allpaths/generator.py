@@ -642,6 +642,9 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
                     <div class="path-meta-item">
                         🔑 ID: {path_hash}
                     </div>
+                    <div class="path-meta-item">
+                        📄 <a href="allpaths-text/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
+                    </div>
                 </div>
                 <div style="margin-top: 1rem;">
                     <div class="route">{' → '.join(path)}</div>
