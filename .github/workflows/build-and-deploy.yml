@@ -33,7 +33,6 @@ jobs:
       - name: Generate resources file
         run: |
           chmod +x scripts/generate-resources.sh
-          ./scripts/generate-resources.sh
 
       - name: Commit updated resources file
         if: github.event_name == 'pull_request'
@@ -41,15 +40,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Save the generated resources file
-          cp "Resource-Passage Names" /tmp/resources-generated
-
-          # Fetch and checkout the PR branch to get latest commits
+          # Fetch and checkout the PR branch first (before generating)
           git fetch origin ${{ github.head_ref }}
           git checkout ${{ github.head_ref }}
 
-          # Restore the generated resources file
-          cp /tmp/resources-generated "Resource-Passage Names"
+          # Now generate the resources file on the PR branch
+          ./scripts/generate-resources.sh
 
           # Commit and push if there are changes
           git add "Resource-Passage Names"
