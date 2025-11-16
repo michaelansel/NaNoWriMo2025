@@ -62,6 +62,9 @@ KEB-251113.twee
 KEB-251114.twee
   :: Day 14 KEB
 
+KEB-251115.twee
+  :: Day 15 KEB
+
 Start.twee
   :: Start
   [[A rumor]]
@@ -72,7 +75,7 @@ Start.twee
   :: Continue on
   After listening for a moment, [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
   :: Javlyn continued
-  Inside the cave, Javlyn found [[nothing->Day 10 KEB]] or [[one creature]].
+  Inside the cave, Javlyn found [[nothing->Day 10 KEB]], [[one creature]], or [[four creatures->Day 15 KEB]].
   :: one creature
   [[Attack the monster->proactive attack]]
   [[Retreat->mansel-20251101]]
