@@ -466,6 +466,10 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
     old_paths_by_hash = {}
 
     for old_hash, old_data in validation_cache.items():
+        # Skip non-path entries (like 'last_updated') and non-dict values
+        if not isinstance(old_data, dict):
+            continue
+
         old_route = old_data.get('route', '').split(' → ')
         old_fingerprint = old_data.get('content_fingerprint')
 
