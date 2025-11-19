@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-13T03:33:05.662899",
+  "last_updated": "2025-11-19T08:14:59.224517",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -200,7 +200,10 @@
     "first_seen": "2025-11-13T00:40:27.153160",
     "validated": true,
     "validated_at": "2025-11-13T00:53:16.687954",
-    "validated_by": "michaelansel"
+    "validated_by": "michaelansel",
+    "content_fingerprint": "b2a954b5",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
   },
   "ad53c7d0": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 leave Jerrick behind",
@@ -256,6 +259,190 @@
     "first_seen": "2025-11-13T02:44:45.498124",
     "validated": true,
     "validated_at": "2025-11-13T03:33:05.662893",
+    "validated_by": "michaelansel"
+  },
+  "7f3bd85d": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB",
+    "first_seen": "2025-11-19T08:06:46.606147",
+    "validated": false,
+    "content_fingerprint": "7a68c812",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "a57c930d": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Check the creature",
+    "first_seen": "2025-11-19T08:06:46.622304",
+    "validated": false,
+    "content_fingerprint": "7818cfa5",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "58e7c6ad": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
+    "first_seen": "2025-11-19T08:06:46.641329",
+    "validated": false,
+    "content_fingerprint": "18b291d3",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "81c02b6f": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Day 9 KEB",
+    "first_seen": "2025-11-19T08:06:46.660444",
+    "validated": false,
+    "content_fingerprint": "d17f4a39",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "7430d548": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Metal object",
+    "first_seen": "2025-11-19T08:06:46.677850",
+    "validated": false,
+    "content_fingerprint": "e86b5971",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "1469f61c": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
+    "first_seen": "2025-11-19T08:06:46.694440",
+    "validated": false,
+    "content_fingerprint": "8c976c7a",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "68ec0074": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 leave Jerrick behind",
+    "first_seen": "2025-11-19T08:06:46.710552",
+    "validated": false,
+    "content_fingerprint": "0482db92",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "4fc91f47": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
+    "first_seen": "2025-11-19T08:06:46.727362",
+    "validated": false,
+    "content_fingerprint": "6e12e0d5",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "b851c82f": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 3 KEB",
+    "first_seen": "2025-11-19T08:06:46.741429",
+    "validated": false,
+    "content_fingerprint": "40cfeaf2",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "8c5d9e78": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 Day 14 KEB",
+    "first_seen": "2025-11-19T08:06:46.753694",
+    "validated": true,
+    "content_fingerprint": "48f8bb25",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "new",
+    "validated_at": "2025-11-19T08:14:59.224514",
+    "validated_by": "michaelansel"
+  },
+  "c253d1e1": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 15 KEB",
+    "first_seen": "2025-11-19T08:06:46.764063",
+    "validated": false,
+    "content_fingerprint": "d19f8974",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "new"
+  },
+  "85ef82ea": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Defense magic",
+    "first_seen": "2025-11-19T08:06:46.778020",
+    "validated": false,
+    "content_fingerprint": "4931fc86",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "009f416f": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Day 8 KEB",
+    "first_seen": "2025-11-19T08:06:46.792397",
+    "validated": false,
+    "content_fingerprint": "8fcaab62",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "f92f7d1c": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Day 12 KEB",
+    "first_seen": "2025-11-19T08:06:46.806888",
+    "validated": false,
+    "content_fingerprint": "d68ebc8f",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "4fb02272": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Day 17 KEB",
+    "first_seen": "2025-11-19T08:06:46.821146",
+    "validated": true,
+    "content_fingerprint": "fbb56c30",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "new",
+    "validated_at": "2025-11-19T08:14:59.224512",
+    "validated_by": "michaelansel"
+  },
+  "306a80d9": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Day 5 KEB \u2192 Flee",
+    "first_seen": "2025-11-19T08:06:46.835628",
+    "validated": false,
+    "content_fingerprint": "e93ef96e",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "036cdc5b": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Day 5 KEB \u2192 Day 6 KEB",
+    "first_seen": "2025-11-19T08:06:46.850919",
+    "validated": false,
+    "content_fingerprint": "703bd6e5",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "d628cb67": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 mansel-20251114",
+    "first_seen": "2025-11-19T08:06:46.861601",
+    "validated": false,
+    "content_fingerprint": "d5123b91",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "new"
+  },
+  "c1ff4bbc": {
+    "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 18 KEB",
+    "first_seen": "2025-11-19T08:06:46.868688",
+    "validated": false,
+    "content_fingerprint": "db861a88",
+    "commit_date": "2025-11-18T20:21:22-05:00",
+    "category": "new"
+  },
+  "c236ef48": {
+    "route": "Start \u2192 A rumor \u2192 Day 7 KEB \u2192 Day 16 KEB",
+    "first_seen": "2025-11-19T08:06:46.875994",
+    "validated": false,
+    "content_fingerprint": "221fac20",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "modified"
+  },
+  "2bb70e76": {
+    "route": "Start \u2192 A rumor \u2192 Day 7 KEB \u2192 Someone joins Javlyn \u2192 Mushroom cave",
+    "first_seen": "2025-11-19T08:06:46.883367",
+    "validated": true,
+    "content_fingerprint": "99888677",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "new",
+    "validated_at": "2025-11-19T08:14:59.224503",
+    "validated_by": "michaelansel"
+  },
+  "ed05c635": {
+    "route": "Start \u2192 A rumor \u2192 Day 7 KEB \u2192 Someone joins Javlyn \u2192 Day 13 KEB",
+    "first_seen": "2025-11-19T08:06:46.890378",
+    "validated": true,
+    "content_fingerprint": "362fe0ec",
+    "commit_date": "2025-11-18T19:39:20-05:00",
+    "category": "new",
+    "validated_at": "2025-11-19T08:14:59.224515",
     "validated_by": "michaelansel"
   }
 }
