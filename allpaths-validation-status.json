@@ -97,7 +97,7 @@
     "validated_at": "2025-11-12T20:29:06.061492",
     "validated_by": "michaelansel"
   },
-  "last_updated": "2025-11-19T08:25:45.595789",
+  "last_updated": "2025-11-19T08:31:31.115504",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -267,7 +267,7 @@
     "validated": true,
     "content_fingerprint": "7a68c812",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595779",
     "validated_by": "michaelansel"
   },
@@ -277,7 +277,7 @@
     "validated": true,
     "content_fingerprint": "7818cfa5",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595783",
     "validated_by": "michaelansel"
   },
@@ -287,7 +287,7 @@
     "validated": true,
     "content_fingerprint": "18b291d3",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595775",
     "validated_by": "michaelansel"
   },
@@ -297,7 +297,7 @@
     "validated": true,
     "content_fingerprint": "d17f4a39",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595781",
     "validated_by": "michaelansel"
   },
@@ -307,7 +307,7 @@
     "validated": true,
     "content_fingerprint": "e86b5971",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595778",
     "validated_by": "michaelansel"
   },
@@ -317,7 +317,7 @@
     "validated": true,
     "content_fingerprint": "8c976c7a",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595771",
     "validated_by": "michaelansel"
   },
@@ -327,7 +327,7 @@
     "validated": true,
     "content_fingerprint": "0482db92",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595777",
     "validated_by": "michaelansel"
   },
@@ -337,7 +337,7 @@
     "validated": true,
     "content_fingerprint": "6e12e0d5",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595774",
     "validated_by": "michaelansel"
   },
@@ -347,7 +347,7 @@
     "validated": true,
     "content_fingerprint": "40cfeaf2",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595784",
     "validated_by": "michaelansel"
   },
@@ -364,10 +364,12 @@
   "c253d1e1": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 15 KEB",
     "first_seen": "2025-11-19T08:06:46.764063",
-    "validated": false,
+    "validated": true,
     "content_fingerprint": "d19f8974",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "new"
+    "category": "new",
+    "validated_at": "2025-11-19T08:31:31.115500",
+    "validated_by": "michaelansel"
   },
   "85ef82ea": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Defense magic",
@@ -375,7 +377,7 @@
     "validated": true,
     "content_fingerprint": "4931fc86",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595782",
     "validated_by": "michaelansel"
   },
@@ -385,7 +387,7 @@
     "validated": true,
     "content_fingerprint": "8fcaab62",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595760",
     "validated_by": "michaelansel"
   },
@@ -395,7 +397,7 @@
     "validated": true,
     "content_fingerprint": "d68ebc8f",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595787",
     "validated_by": "michaelansel"
   },
@@ -415,7 +417,7 @@
     "validated": true,
     "content_fingerprint": "e93ef96e",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595773",
     "validated_by": "michaelansel"
   },
@@ -425,25 +427,29 @@
     "validated": true,
     "content_fingerprint": "703bd6e5",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595769",
     "validated_by": "michaelansel"
   },
   "d628cb67": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 mansel-20251114",
     "first_seen": "2025-11-19T08:06:46.861601",
-    "validated": false,
+    "validated": true,
     "content_fingerprint": "d5123b91",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "new"
+    "category": "new",
+    "validated_at": "2025-11-19T08:31:31.115502",
+    "validated_by": "michaelansel"
   },
   "c1ff4bbc": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 18 KEB",
     "first_seen": "2025-11-19T08:06:46.868688",
-    "validated": false,
+    "validated": true,
     "content_fingerprint": "db861a88",
     "commit_date": "2025-11-18T20:21:22-05:00",
-    "category": "new"
+    "category": "new",
+    "validated_at": "2025-11-19T08:31:31.115494",
+    "validated_by": "michaelansel"
   },
   "c236ef48": {
     "route": "Start \u2192 A rumor \u2192 Day 7 KEB \u2192 Day 16 KEB",
@@ -451,7 +457,7 @@
     "validated": true,
     "content_fingerprint": "221fac20",
     "commit_date": "2025-11-18T19:39:20-05:00",
-    "category": "modified",
+    "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595785",
     "validated_by": "michaelansel"
   },
