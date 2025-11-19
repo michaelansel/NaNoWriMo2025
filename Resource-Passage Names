@@ -75,6 +75,9 @@ KEB-251116.twee
 KEB-251117.twee
   :: Day 17 KEB
 
+KEB-251118.twee
+  :: Day 18 KEB
+
 Start.twee
   :: Start
   [[A rumor]]
@@ -83,6 +86,9 @@ Start.twee
   [[Continue on]]
   [[Perhaps another day->Day 7 KEB]]
   :: Continue on
+  [[No one]]
+  [[Thirteen people->Day 18 KEB]]
+  :: No one
   After listening for a moment, [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
   :: Javlyn continued
   Inside the cave, Javlyn found [[nothing->Day 10 KEB]], [[one creature]], or [[four creatures->Day 15 KEB]].
