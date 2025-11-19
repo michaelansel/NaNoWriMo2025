@@ -8,10 +8,11 @@ import re
 import sys
 import json
 import hashlib
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from html.parser import HTMLParser
-from typing import Dict, List, Tuple, Set
+from typing import Dict, List, Tuple, Set, Optional
 
 class TweeStoryParser(HTMLParser):
     """Parse Tweego-compiled HTML to extract story data"""
@@ -208,6 +209,37 @@ def calculate_path_hash(path: List[str], passages: Dict[str, Dict]) -> str:
     combined = '\n'.join(content_parts)
     return hashlib.md5(combined.encode()).hexdigest()[:8]
 
+def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
+    """Calculate fingerprint based ONLY on passage content, not names.
+
+    This fingerprint is more stable when:
+    - Passage names change
+    - Passages are reordered (fingerprint still changes, but deterministically)
+    - New passages are inserted (content changes, so fingerprint changes)
+
+    The fingerprint helps identify paths with similar content even when
+    the route structure has changed.
+
+    Args:
+        path: List of passage names in order
+        passages: Dict of passage data including text content
+
+    Returns:
+        8-character hex hash based on content only
+    """
+    content_parts = []
+    for passage_name in path:
+        if passage_name in passages:
+            # Include ONLY content in fingerprint (no passage names)
+            passage_text = passages[passage_name].get('text', '')
+            content_parts.append(passage_text)
+        else:
+            # Passage doesn't exist (shouldn't happen, but be defensive)
+            content_parts.append("MISSING")
+
+    combined = '\n'.join(content_parts)
+    return hashlib.md5(combined.encode()).hexdigest()[:8]
+
 def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
     """
     Generate a stable mapping from passage names to random-looking hex IDs.
@@ -302,26 +334,219 @@ def save_validation_cache(cache_file: Path, cache: Dict):
     with open(cache_file, 'w') as f:
         json.dump(cache, indent=2, fp=f)
 
+def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
+    """
+    Build a mapping from passage names to their source .twee files.
+
+    Args:
+        source_dir: Directory containing .twee source files
+
+    Returns:
+        Dict mapping passage name -> file path
+    """
+    mapping = {}
+
+    # Find all .twee files
+    for twee_file in source_dir.glob('**/*.twee'):
+        try:
+            with open(twee_file, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            # Find all passage declarations (:: PassageName)
+            passages_in_file = re.findall(r'^:: (.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
+
+            for passage_name in passages_in_file:
+                mapping[passage_name.strip()] = twee_file
+        except Exception as e:
+            # Skip files that can't be read
+            print(f"Warning: Could not read {twee_file}: {e}", file=sys.stderr)
+            continue
+
+    return mapping
+
+def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
+    """
+    Get the most recent commit date for a file using git log.
+
+    Args:
+        file_path: Path to the file
+        repo_root: Path to git repository root
+
+    Returns:
+        ISO format datetime string of most recent commit, or None if unavailable
+    """
+    try:
+        # Get the most recent commit date for this file
+        result = subprocess.run(
+            ['git', 'log', '-1', '--format=%aI', '--', str(file_path)],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()
+        else:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not get commit date for {file_path}: {e}", file=sys.stderr)
+        return None
+
+def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
+                        repo_root: Path) -> Optional[str]:
+    """
+    Get the most recent commit date among all passages in a path.
+
+    Args:
+        path: List of passage names in the path
+        passage_to_file: Mapping from passage names to file paths
+        repo_root: Path to git repository root
+
+    Returns:
+        ISO format datetime string of most recent commit, or None if unavailable
+    """
+    commit_dates = []
+
+    for passage_name in path:
+        if passage_name not in passage_to_file:
+            continue
+
+        file_path = passage_to_file[passage_name]
+        commit_date = get_file_commit_date(file_path, repo_root)
+
+        if commit_date:
+            commit_dates.append(commit_date)
+
+    # Return the most recent date
+    if commit_dates:
+        return max(commit_dates)
+    else:
+        return None
+
+def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
+    """
+    Calculate similarity between two paths based on shared passages.
+
+    Args:
+        path1: First path (list of passage names)
+        path2: Second path (list of passage names)
+
+    Returns:
+        Similarity score between 0.0 and 1.0
+    """
+    if not path1 or not path2:
+        return 0.0
+
+    # Calculate overlap using Jaccard similarity
+    set1 = set(path1)
+    set2 = set(path2)
+    intersection = len(set1 & set2)
+    union = len(set1 | set2)
+
+    return intersection / union if union > 0 else 0.0
+
+def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
+                    validation_cache: Dict) -> Dict[str, str]:
+    """
+    Categorize paths as New, Modified, or Unchanged based on comparison with validation cache.
+
+    Args:
+        current_paths: List of current paths
+        passages: Dict of passage data
+        validation_cache: Previous validation cache
+
+    Returns:
+        Dict mapping path hash -> category ('new', 'modified', 'unchanged')
+    """
+    categories = {}
+
+    # Build a mapping of old fingerprints to old paths for comparison
+    old_paths_by_fingerprint = {}
+    old_paths_by_hash = {}
+
+    for old_hash, old_data in validation_cache.items():
+        # Skip non-path entries (like 'last_updated') and non-dict values
+        if not isinstance(old_data, dict):
+            continue
+
+        old_route = old_data.get('route', '').split(' → ')
+        old_fingerprint = old_data.get('content_fingerprint')
+
+        old_paths_by_hash[old_hash] = old_route
+
+        if old_fingerprint:
+            if old_fingerprint not in old_paths_by_fingerprint:
+                old_paths_by_fingerprint[old_fingerprint] = []
+            old_paths_by_fingerprint[old_fingerprint].append((old_hash, old_route))
+
+    # Categorize each current path
+    for path in current_paths:
+        path_hash = calculate_path_hash(path, passages)
+        content_fingerprint = calculate_content_fingerprint(path, passages)
+
+        # Check if exact hash existed before
+        if path_hash in validation_cache:
+            old_fingerprint = validation_cache[path_hash].get('content_fingerprint')
+
+            if old_fingerprint == content_fingerprint:
+                # Exact same path (hash and fingerprint match)
+                categories[path_hash] = 'unchanged'
+            else:
+                # Same structure but content changed
+                categories[path_hash] = 'modified'
+        else:
+            # Hash is new - check if it's a variation of an existing path
+            # Look for paths with similar content or structure
+            max_similarity = 0.0
+            for old_hash, old_route in old_paths_by_hash.items():
+                similarity = calculate_path_similarity(path, old_route)
+                max_similarity = max(max_similarity, similarity)
+
+            # If path is very similar to an existing path (>70% overlap), consider it modified
+            # Otherwise, it's a completely new path
+            if max_similarity > 0.7:
+                categories[path_hash] = 'modified'
+            else:
+                categories[path_hash] = 'new'
+
+    return categories
+
 def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[str]],
-                        validation_cache: Dict = None) -> str:
+                        validation_cache: Dict = None, path_categories: Dict[str, str] = None) -> str:
     """Generate HTML output with all paths"""
     if validation_cache is None:
         validation_cache = {}
+    if path_categories is None:
+        path_categories = {}
 
     # Calculate statistics
     path_lengths = [len(p) for p in all_paths]
     total_passages = sum(path_lengths)
 
-    # Count new vs validated paths
-    new_paths = []
-    validated_paths = []
-
+    # Sort paths by commit date (newest first), then by category
+    paths_with_metadata = []
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
-        if validation_cache.get(path_hash, {}).get('validated', False):
-            validated_paths.append(path)
-        else:
-            new_paths.append(path)
+        commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
+        category = path_categories.get(path_hash, 'new')
+        paths_with_metadata.append((path, path_hash, commit_date, category))
+
+    # Sort: newest commit date first, then by category (new, modified, unchanged)
+    category_order = {'new': 0, 'modified': 1, 'unchanged': 2}
+    paths_with_metadata.sort(key=lambda x: (
+        x[2] if x[2] else '',  # commit_date (empty strings go last)
+        category_order.get(x[3], 3)  # category
+    ), reverse=True)
+
+    # Count paths by category
+    new_count = sum(1 for _, _, _, cat in paths_with_metadata if cat == 'new')
+    modified_count = sum(1 for _, _, _, cat in paths_with_metadata if cat == 'modified')
+    unchanged_count = sum(1 for _, _, _, cat in paths_with_metadata if cat == 'unchanged')
+
+    # Also count validation status
+    validated_count = sum(1 for path in all_paths
+                         if validation_cache.get(calculate_path_hash(path, passages), {}).get('validated', False))
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -456,12 +681,16 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }}
 
-        .path.validated {{
-            border-left: 5px solid #28a745;
+        .path.new {{
+            border-left: 5px solid #007bff;
         }}
 
-        .path.new {{
+        .path.modified {{
             border-left: 5px solid #ffc107;
+        }}
+
+        .path.unchanged {{
+            border-left: 5px solid #28a745;
         }}
 
         .path-header {{
@@ -500,14 +729,24 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
             text-transform: uppercase;
         }}
 
-        .badge-validated {{
+        .badge-new {{
+            background: #007bff;
+            color: white;
+        }}
+
+        .badge-modified {{
+            background: #ffc107;
+            color: #333;
+        }}
+
+        .badge-unchanged {{
             background: #28a745;
             color: white;
         }}
 
-        .badge-new {{
-            background: #ffc107;
-            color: #333;
+        .badge-validated {{
+            background: #6f42c1;
+            color: white;
         }}
 
         .route {{
@@ -584,13 +823,21 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
                 <div class="stat-label">Total Paths</div>
                 <div class="stat-value">{len(all_paths)}</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item" style="border-left-color: #007bff;">
                 <div class="stat-label">New Paths</div>
-                <div class="stat-value">{len(new_paths)}</div>
+                <div class="stat-value">{new_count}</div>
             </div>
-            <div class="stat-item">
+            <div class="stat-item" style="border-left-color: #ffc107;">
+                <div class="stat-label">Modified Paths</div>
+                <div class="stat-value">{modified_count}</div>
+            </div>
+            <div class="stat-item" style="border-left-color: #28a745;">
+                <div class="stat-label">Unchanged Paths</div>
+                <div class="stat-value">{unchanged_count}</div>
+            </div>
+            <div class="stat-item" style="border-left-color: #6f42c1;">
                 <div class="stat-label">Validated Paths</div>
-                <div class="stat-value">{len(validated_paths)}</div>
+                <div class="stat-value">{validated_count}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Shortest Path</div>
@@ -610,8 +857,9 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     <div class="filter-section">
         <div class="filter-buttons">
             <button class="filter-btn active" onclick="filterPaths('all')">All Paths</button>
-            <button class="filter-btn" onclick="filterPaths('new')">New Only ({len(new_paths)})</button>
-            <button class="filter-btn" onclick="filterPaths('validated')">Validated Only ({len(validated_paths)})</button>
+            <button class="filter-btn" onclick="filterPaths('new')">New ({new_count})</button>
+            <button class="filter-btn" onclick="filterPaths('modified')">Modified ({modified_count})</button>
+            <button class="filter-btn" onclick="filterPaths('unchanged')">Unchanged ({unchanged_count})</button>
             <button class="filter-btn" onclick="toggleAllPaths()">Expand All</button>
             <button class="filter-btn" onclick="collapseAllPaths()">Collapse All</button>
         </div>
@@ -620,28 +868,53 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     <div class="container">
 '''
 
-    # Generate each path
-    for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path, passages)
+    # Generate each path (using sorted paths with metadata)
+    for i, (path, path_hash, commit_date, category) in enumerate(paths_with_metadata, 1):
         is_validated = validation_cache.get(path_hash, {}).get('validated', False)
-        status_class = 'validated' if is_validated else 'new'
-        badge_class = 'badge-validated' if is_validated else 'badge-new'
-        badge_text = 'Validated' if is_validated else 'New'
+        first_seen = validation_cache.get(path_hash, {}).get('first_seen', '')
+
+        # Category badge
+        category_badge_class = f'badge-{category}'
+        category_text = category.capitalize()
 
         html += f'''
-        <div class="path {status_class}" data-status="{status_class}">
+        <div class="path {category}" data-status="{category}">
             <div class="path-header">
                 <div class="path-title">Path {i} of {len(all_paths)}</div>
                 <div class="path-meta">
                     <div class="path-meta-item">
-                        <span class="badge {badge_class}">{badge_text}</span>
-                    </div>
+                        <span class="badge {category_badge_class}">{category_text}</span>
+                    </div>'''
+
+        if is_validated:
+            html += '''
+                    <div class="path-meta-item">
+                        <span class="badge badge-validated">Validated</span>
+                    </div>'''
+
+        html += f'''
                     <div class="path-meta-item">
                         📏 Length: {len(path)} passages
                     </div>
                     <div class="path-meta-item">
                         🔑 ID: {path_hash}
-                    </div>
+                    </div>'''
+
+        if commit_date:
+            # Format commit date nicely
+            try:
+                from datetime import datetime as dt
+                commit_dt = dt.fromisoformat(commit_date.replace('Z', '+00:00'))
+                commit_display = commit_dt.strftime('%Y-%m-%d')
+            except:
+                commit_display = commit_date[:10] if len(commit_date) >= 10 else commit_date
+
+            html += f'''
+                    <div class="path-meta-item">
+                        📅 Committed: {commit_display}
+                    </div>'''
+
+        html += f'''
                     <div class="path-meta-item">
                         📄 <a href="allpaths-text/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
                     </div>
@@ -775,6 +1048,12 @@ def main():
     # Generate all paths
     all_paths = generate_all_paths_dfs(graph, start_passage)
 
+    # Build passage-to-file mapping for git commit date tracking
+    repo_root = output_dir.parent  # Assume output_dir is dist/ and repo root is parent
+    source_dir = repo_root / 'src'
+    passage_to_file = build_passage_to_file_mapping(source_dir)
+    print(f"Mapped {len(passage_to_file)} passages to source files", file=sys.stderr)
+
     # Generate passage ID mapping (random hex IDs to prevent AI from interpreting passage names)
     passage_id_mapping = generate_passage_id_mapping(passages)
 
@@ -794,8 +1073,14 @@ def main():
     cache_file = output_dir.parent / 'allpaths-validation-status.json'
     validation_cache = load_validation_cache(cache_file)
 
+    # Categorize paths (New/Modified/Unchanged)
+    path_categories = categorize_paths(all_paths, passages, validation_cache)
+    print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
+          f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
+          f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
+
     # Generate HTML output (uses original passage names for human readability)
-    html_output = generate_html_output(story_data, passages, all_paths, validation_cache)
+    html_output = generate_html_output(story_data, passages, all_paths, validation_cache, path_categories)
 
     # Write HTML file
     html_file = output_dir / 'allpaths.html'
@@ -824,12 +1109,24 @@ def main():
     # Update validation cache with current paths (mark them as available for validation)
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
+        content_fingerprint = calculate_content_fingerprint(path, passages)
+        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+        category = path_categories.get(path_hash, 'new')
+
         if path_hash not in validation_cache:
             validation_cache[path_hash] = {
                 'route': ' → '.join(path),
                 'first_seen': datetime.now().isoformat(),
                 'validated': False,
+                'content_fingerprint': content_fingerprint,
+                'commit_date': commit_date,
+                'category': category,
             }
+        else:
+            # Update fingerprint, commit date, and category for existing entries
+            validation_cache[path_hash]['content_fingerprint'] = content_fingerprint
+            validation_cache[path_hash]['commit_date'] = commit_date
+            validation_cache[path_hash]['category'] = category
 
     save_validation_cache(cache_file, validation_cache)
 
