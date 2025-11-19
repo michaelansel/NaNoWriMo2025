@@ -13,6 +13,7 @@ This script:
 import json
 import sys
 import os
+import argparse
 from pathlib import Path
 from typing import Dict, List, Tuple, Callable, Optional
 import requests
@@ -24,6 +25,13 @@ import time
 OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 300  # 5 minute timeout per path
+
+# Validation modes
+MODE_NEW_ONLY = 'new-only'
+MODE_MODIFIED = 'modified'
+MODE_ALL = 'all'
+VALID_MODES = [MODE_NEW_ONLY, MODE_MODIFIED, MODE_ALL]
+DEFAULT_MODE = MODE_NEW_ONLY
 
 # Continuity checking prompt template
 CONTINUITY_PROMPT = """You are a story continuity checker. Analyze the following story path for continuity issues.
@@ -228,8 +236,69 @@ def save_validation_cache(cache_path: Path, cache: Dict):
         print(f"Error saving cache: {e}", file=sys.stderr)
 
 
-def get_unvalidated_paths(cache: Dict, text_dir: Path) -> List[Tuple[str, Path]]:
-    """Get list of paths that need validation.
+def categorize_path(path_id: str, cache: dict) -> str:
+    """Categorize a path as 'new', 'modified', or 'unchanged'.
+
+    Args:
+        path_id: The 8-character path hash
+        cache: The validation cache dictionary
+
+    Returns:
+        One of: 'new', 'modified', 'unchanged'
+
+    Logic:
+        Uses the 'category' field calculated by the allpaths generator,
+        which is based on content fingerprint comparison. Falls back to
+        'new' if path not in cache or category not set.
+    """
+    if path_id not in cache:
+        return 'new'
+
+    path_info = cache[path_id]
+
+    # If it's not a dict (e.g., "last_updated" metadata), treat as new
+    if not isinstance(path_info, dict):
+        return 'new'
+
+    # Use the category field calculated by allpaths generator
+    # This is based on content fingerprint comparison, not validation status
+    return path_info.get('category', 'new')
+
+
+def should_validate_path(category: str, mode: str) -> bool:
+    """Determine if a path should be validated based on its category and the mode.
+
+    Args:
+        category: Path category ('new', 'modified', 'unchanged')
+        mode: Validation mode ('new-only', 'modified', 'all')
+
+    Returns:
+        True if path should be validated, False to skip
+    """
+    if mode == MODE_ALL:
+        return True
+
+    if mode == MODE_MODIFIED:
+        return category in ('new', 'modified')
+
+    if mode == MODE_NEW_ONLY:
+        return category == 'new'
+
+    raise ValueError(f"Invalid mode: {mode}")
+
+
+def get_unvalidated_paths(cache: Dict, text_dir: Path, mode: str = DEFAULT_MODE) -> Tuple[List[Tuple[str, Path]], Dict[str, int]]:
+    """Get list of paths that need validation based on mode.
+
+    Args:
+        cache: Validation cache dictionary
+        text_dir: Directory containing path text files
+        mode: Validation mode ('new-only', 'modified', 'all')
+
+    Returns:
+        Tuple of:
+        - List of (path_id, text_file_path) tuples to validate
+        - Dictionary of statistics: {'new': N, 'modified': N, 'unchanged': N, 'checked': N, 'skipped': N}
 
     Cache structure from generator:
     {
@@ -241,25 +310,31 @@ def get_unvalidated_paths(cache: Dict, text_dir: Path) -> List[Tuple[str, Path]]
         ...
     }
     """
-    # Build a set of validated path IDs
-    # Cache keys are the path hashes themselves
-    validated_ids = set()
-    for path_id, path_info in cache.items():
-        # Skip non-dict entries (like "last_updated")
-        if isinstance(path_info, dict) and path_info.get("validated", False):
-            validated_ids.add(path_id)
+    # Statistics tracking
+    stats = {'new': 0, 'modified': 0, 'unchanged': 0}
+    to_validate = []
 
-    # Find all text files
-    unvalidated = []
+    # Find all text files and categorize them
     for txt_file in sorted(text_dir.glob("*.txt")):
         # Extract path ID from filename (e.g., "path-abc12345.txt" -> "abc12345")
         filename = txt_file.stem
         if filename.startswith("path-"):
             path_id = filename[5:]  # Remove "path-" prefix
-            if path_id not in validated_ids:
-                unvalidated.append((path_id, txt_file))
 
-    return unvalidated
+            # Categorize this path
+            category = categorize_path(path_id, cache)
+            stats[category] += 1
+
+            # Check if we should validate based on mode
+            if should_validate_path(category, mode):
+                to_validate.append((path_id, txt_file))
+
+    # Calculate totals
+    total_paths = sum(stats.values())
+    stats['checked'] = len(to_validate)
+    stats['skipped'] = total_paths - stats['checked']
+
+    return to_validate, stats
 
 
 def update_cache_with_results(cache: Dict, path_id: str, route: List[str], result: Dict):
@@ -372,7 +447,8 @@ def check_paths_with_progress(
     text_dir: Path,
     cache_file: Path,
     progress_callback: Optional[Callable[[int, int, Dict], None]] = None,
-    cancel_event=None
+    cancel_event=None,
+    mode: str = DEFAULT_MODE
 ) -> Dict:
     """
     Check story paths with optional progress callbacks.
@@ -383,9 +459,10 @@ def check_paths_with_progress(
         progress_callback: Optional callback function called after each path.
                           Signature: callback(current, total, path_result)
         cancel_event: Optional threading.Event to signal cancellation
+        mode: Validation mode ('new-only', 'modified', 'all')
 
     Returns:
-        Dict with checked_count, paths_with_issues, and summary
+        Dict with checked_count, paths_with_issues, summary, mode, and statistics
     """
     # Load passage ID mapping for translating results back to passage names
     mapping_file = text_dir.parent / 'allpaths-passage-mapping.json'
@@ -396,18 +473,24 @@ def check_paths_with_progress(
     # Load cache
     cache = load_validation_cache(cache_file)
 
-    # Get unvalidated paths
-    unvalidated = get_unvalidated_paths(cache, text_dir)
+    # Get paths to validate based on mode
+    unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
+
+    print(f"Mode: {mode}", file=sys.stderr)
+    print(f"  New: {stats['new']}, Modified: {stats['modified']}, Unchanged: {stats['unchanged']}", file=sys.stderr)
+    print(f"  Will check: {stats['checked']}, Will skip: {stats['skipped']}", file=sys.stderr)
 
     if not unvalidated:
         return {
             "checked_count": 0,
             "paths_with_issues": [],
-            "summary": "No new paths to check"
+            "summary": f"No paths to check with mode '{mode}'",
+            "mode": mode,
+            "statistics": stats
         }
 
     total_paths = len(unvalidated)
-    print(f"Checking {total_paths} new path(s)...", file=sys.stderr)
+    print(f"Checking {total_paths} path(s)...", file=sys.stderr)
 
     # Check each path
     paths_with_issues = []
@@ -470,30 +553,65 @@ def check_paths_with_progress(
     return {
         "checked_count": checked_count,
         "paths_with_issues": paths_with_issues,
-        "summary": f"Checked {checked_count} path(s), found issues in {len(paths_with_issues)}"
+        "summary": f"Checked {checked_count} path(s), found issues in {len(paths_with_issues)}",
+        "mode": mode,
+        "statistics": stats
     }
 
 
 def main():
     """Main entry point for CLI usage."""
-    if len(sys.argv) < 3:
-        print("Usage: check-story-continuity.py <text_dir> <cache_file>", file=sys.stderr)
-        print("", file=sys.stderr)
-        print("Example: check-story-continuity.py dist/allpaths-text allpaths-validation-status.json", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description='AI-based story continuity checker',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Check only new paths (default)
+  %(prog)s dist/allpaths-text allpaths-validation-status.json
 
-    text_dir = Path(sys.argv[1])
-    cache_file = Path(sys.argv[2])
+  # Check new and modified paths
+  %(prog)s --mode modified dist/allpaths-text allpaths-validation-status.json
 
-    if not text_dir.exists() or not text_dir.is_dir():
-        print(f"Error: {text_dir} is not a valid directory", file=sys.stderr)
-        sys.exit(1)
+  # Check all paths
+  %(prog)s --mode all dist/allpaths-text allpaths-validation-status.json
 
-    # Run checks without progress callback (CLI mode)
-    result = check_paths_with_progress(text_dir, cache_file)
+Validation Modes:
+  new-only  - Check only brand new paths (default, fastest)
+  modified  - Check new and modified paths (pre-merge validation)
+  all       - Check all paths (full audit, slowest)
+        """
+    )
 
-    # Output results as JSON
+    parser.add_argument('text_dir', type=Path,
+                        help='Directory containing path text files')
+    parser.add_argument('cache_file', type=Path,
+                        help='Path to validation cache JSON file')
+    parser.add_argument('--mode', choices=VALID_MODES, default=DEFAULT_MODE,
+                        help=f'Validation mode (default: {DEFAULT_MODE})')
+
+    args = parser.parse_args()
+
+    if not args.text_dir.exists() or not args.text_dir.is_dir():
+        parser.error(f"{args.text_dir} is not a valid directory")
+
+    # Run checks with specified mode
+    result = check_paths_with_progress(
+        args.text_dir,
+        args.cache_file,
+        mode=args.mode
+    )
+
+    # Output results with statistics
     print("\n=== RESULTS ===", file=sys.stderr)
+    print(f"Mode: {result['mode']}", file=sys.stderr)
+    if 'statistics' in result:
+        stats = result['statistics']
+        print(f"New paths: {stats['new']}", file=sys.stderr)
+        print(f"Modified paths: {stats['modified']}", file=sys.stderr)
+        print(f"Unchanged paths: {stats['unchanged']}", file=sys.stderr)
+        print(f"Checked: {stats['checked']}", file=sys.stderr)
+        print(f"Skipped: {stats['skipped']}", file=sys.stderr)
+    print("\n", file=sys.stderr)
     print(json.dumps(result, indent=2))
 
 

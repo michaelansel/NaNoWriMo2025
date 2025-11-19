@@ -1126,7 +1126,12 @@ def main():
             # Update fingerprint, commit date, and category for existing entries
             validation_cache[path_hash]['content_fingerprint'] = content_fingerprint
             validation_cache[path_hash]['commit_date'] = commit_date
-            validation_cache[path_hash]['category'] = category
+
+            # Only update category if path is validated OR if new category is not 'unchanged'
+            # This prevents unvalidated paths from being marked as 'unchanged'
+            is_validated = validation_cache[path_hash].get('validated', False)
+            if is_validated or category != 'unchanged':
+                validation_cache[path_hash]['category'] = category
 
     save_validation_cache(cache_file, validation_cache)
 

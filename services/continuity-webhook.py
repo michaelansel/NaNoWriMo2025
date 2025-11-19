@@ -308,13 +308,13 @@ def sanitize_ai_content(text: str) -> str:
     return text
 
 
-def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None) -> dict:
+def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only') -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
-        app.logger.info(f"Running continuity checker on {text_dir}")
+        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}")
 
-        # Call the checker function directly with progress callback and cancel event
-        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event)
+        # Call the checker function directly with progress callback, cancel event, and mode
+        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode)
 
         return results
 
@@ -331,26 +331,55 @@ def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None
 
 def format_pr_comment(results: dict) -> str:
     """Format the continuity check results as a PR comment."""
+    mode = results.get('mode', 'new-only')
+    stats = results.get('statistics', {})
+
+    # Mode explanation
+    mode_explanations = {
+        'new-only': 'checked only new paths',
+        'modified': 'checked new and modified paths',
+        'all': 'checked all paths (full validation)'
+    }
+    mode_text = mode_explanations.get(mode, mode)
+
     if results["checked_count"] == 0:
         return f"""## 🤖 AI Continuity Check
 
+**Mode:** `{mode}` _({mode_text})_
+
 {results["summary"]}
 
-_No new story paths to check._
+_No paths to check with this mode._
 """
 
-    # Build comment
+    # Build comment header with mode and statistics
     comment = f"""## 🤖 AI Continuity Check
+
+**Mode:** `{mode}` _({mode_text})_
 
 **Summary:** {results["summary"]}
 
 """
 
+    # Add statistics if available
+    if stats:
+        comment += "### Validation Scope\n"
+        comment += f"- ✓ **Checked:** {stats['checked']} path(s)\n"
+        comment += f"- ⊘ **Skipped:** {stats['skipped']} path(s)\n"
+        comment += f"  - {stats['new']} new, {stats['modified']} modified, {stats['unchanged']} unchanged\n\n"
+
+        # Suggest broader checking if paths were skipped
+        if mode == 'new-only' and (stats['modified'] > 0 or stats['unchanged'] > 0):
+            comment += "_Use `/check-continuity modified` or `/check-continuity all` for broader checking._\n\n"
+        elif mode == 'modified' and stats['unchanged'] > 0:
+            comment += "_Use `/check-continuity all` for full validation._\n\n"
+
     if not results["paths_with_issues"]:
-        comment += "✅ **All paths passed continuity checks!**\n\n"
-        comment += f"Checked {results['checked_count']} new path(s), no issues found.\n"
+        comment += "### ✅ All Paths Passed\n\n"
+        comment += f"No issues found in {results['checked_count']} path(s).\n"
     else:
-        comment += f"⚠️ **Found issues in {len(results['paths_with_issues'])} path(s)**\n\n"
+        comment += f"### ⚠️ Issues Found\n\n"
+        comment += f"Found issues in **{len(results['paths_with_issues'])}** of {results['checked_count']} path(s).\n\n"
 
         # Group by severity
         critical = [p for p in results["paths_with_issues"] if p["severity"] == "critical"]
@@ -358,17 +387,17 @@ _No new story paths to check._
         minor = [p for p in results["paths_with_issues"] if p["severity"] == "minor"]
 
         if critical:
-            comment += f"### 🔴 Critical Issues ({len(critical)})\n\n"
+            comment += f"#### 🔴 Critical Issues ({len(critical)})\n\n"
             for path in critical:
                 comment += format_path_issues(path)
 
         if major:
-            comment += f"### 🟡 Major Issues ({len(major)})\n\n"
+            comment += f"#### 🟡 Major Issues ({len(major)})\n\n"
             for path in major:
                 comment += format_path_issues(path)
 
         if minor:
-            comment += f"### 🟢 Minor Issues ({len(minor)})\n\n"
+            comment += f"#### 🟢 Minor Issues ({len(minor)})\n\n"
             for path in minor:
                 comment += format_path_issues(path)
 
@@ -473,12 +502,19 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
         return None
 
 
-def process_webhook_async(workflow_id, pr_number, artifacts_url):
-    """Process webhook in background thread."""
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'):
+    """Process webhook in background thread.
+
+    Args:
+        workflow_id: Unique identifier for this validation job
+        pr_number: Pull request number
+        artifacts_url: URL to fetch workflow artifacts
+        mode: Validation mode ('new-only', 'modified', 'all')
+    """
     cancel_event = threading.Event()
 
     try:
-        app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number}")
+        app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number} with mode={mode}")
 
         # Track this job
         with metrics_lock:
@@ -554,13 +590,22 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url):
 
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
-            unvalidated = get_unvalidated_paths(cache, text_dir)
+            unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
 
             if not unvalidated:
-                app.logger.info("[Background] No new paths to check")
-                comment = """## 🤖 AI Continuity Check
+                app.logger.info(f"[Background] No paths to check with mode '{mode}'")
+                comment = f"""## 🤖 AI Continuity Check
 
-No new story paths to check. All paths have been validated previously.
+**Mode:** `{mode}`
+
+No paths to check with this mode.
+
+**Path Statistics:**
+- New: {stats['new']}
+- Modified: {stats['modified']}
+- Unchanged: {stats['unchanged']}
+
+_Use `/check-continuity modified` or `/check-continuity all` to check other paths._
 
 ---
 _Powered by Ollama (gpt-oss:20b-fullcontext)_
@@ -587,18 +632,42 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     path_list_items.append(f"- `{path_id}`")
             path_list = "\n".join(path_list_items)
 
+            # Mode explanation
+            mode_explanations = {
+                'new-only': 'checking only new paths',
+                'modified': 'checking new and modified paths',
+                'all': 'checking all paths (full validation)'
+            }
+            mode_text = mode_explanations.get(mode, mode)
+
+            # Build suggestions for other modes
+            other_modes_text = ""
+            if mode == 'new-only' and (stats['modified'] > 0 or stats['unchanged'] > 0):
+                other_modes_text = f"\n_**Note:** Skipped {stats['modified']} modified and {stats['unchanged']} unchanged paths. Use `/check-continuity modified` or `/check-continuity all` for broader checking._\n"
+            elif mode == 'modified' and stats['unchanged'] > 0:
+                other_modes_text = f"\n_**Note:** Skipped {stats['unchanged']} unchanged paths. Use `/check-continuity all` for full validation._\n"
+
             initial_comment = f"""## 🤖 AI Continuity Check - Starting
 
-Found **{total_paths}** new story path(s) to check.
+**Mode:** `{mode}` _({mode_text})_
 
+Found **{total_paths}** path(s) to check.
+
+**Path Statistics:**
+- New: {stats['new']}
+- Modified: {stats['modified']}
+- Unchanged: {stats['unchanged']}
+- **Checking:** {stats['checked']}
+- **Skipping:** {stats['skipped']}
+{other_modes_text}
 **Paths to validate:**
 {path_list}
 
 _This may take up to 5 minutes per passage. Updates will be posted as each path completes._
 
-💡 **To approve paths:** After reviewing the results, you can approve paths by commenting:
-- Single path: `/approve-path abc12345`
-- Multiple paths: `/approve-path abc12345 def67890 ghi13579`
+💡 **Commands:**
+- Approve paths: `/approve-path abc12345 def67890`
+- Check with different scope: `/check-continuity modified` or `/check-continuity all`
 
 ---
 _Powered by Ollama (gpt-oss:20b-fullcontext)_
@@ -684,8 +753,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 except Exception as e:
                     app.logger.error(f"[Background] Error in progress callback: {e}", exc_info=True)
 
-            # Run continuity check with progress callback and cancel event
-            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event)
+            # Run continuity check with progress callback, cancel event, and mode
+            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode)
 
             # Check if job was cancelled during validation
             if cancel_event.is_set():
@@ -840,20 +909,21 @@ def handle_workflow_webhook(payload):
                     cancel_event.set()  # Signal cancellation
 
     # Spawn background thread to process webhook
+    # Always use 'new-only' mode for automatic workflow triggers
     thread = threading.Thread(
         target=process_webhook_async,
-        args=(workflow_id, pr_number, artifacts_url),
+        args=(workflow_id, pr_number, artifacts_url, 'new-only'),
         daemon=True
     )
     thread.start()
 
     # Return immediately
-    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing in background")
+    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing in background with mode=new-only")
     return jsonify({"message": "Webhook accepted, processing in background", "pr": pr_number}), 202
 
 
 def handle_comment_webhook(payload):
-    """Handle issue_comment webhooks for path approval."""
+    """Handle issue_comment webhooks for commands."""
     action = payload.get('action')
     if action != 'created':
         return jsonify({"message": "Not a new comment"}), 200
@@ -863,13 +933,22 @@ def handle_comment_webhook(payload):
         return jsonify({"message": "Not a PR comment"}), 200
 
     comment_body = payload['comment']['body']
+
+    # Route to appropriate handler
+    if re.search(r'/check-continuity\b', comment_body):
+        return handle_check_continuity_command(payload)
+    elif re.search(r'/approve-path\b', comment_body):
+        return handle_approve_path_command(payload)
+    else:
+        return jsonify({"message": "No recognized command"}), 200
+
+
+def handle_approve_path_command(payload):
+    """Handle /approve-path command from PR comments."""
+    comment_body = payload['comment']['body']
     pr_number = payload['issue']['number']
     username = payload['comment']['user']['login']
     comment_id = payload['comment']['id']
-
-    # Check for /approve-path command
-    if not re.search(r'/approve-path\b', comment_body):
-        return jsonify({"message": "Not an approval command"}), 200
 
     # Deduplication: Check if we've already processed this comment
     with metrics_lock:
@@ -922,6 +1001,108 @@ def handle_comment_webhook(payload):
     return jsonify({"message": "Processing approval", "path_count": len(path_ids)}), 202
 
 
+def handle_check_continuity_command(payload):
+    """Handle /check-continuity command from PR comments."""
+    comment_body = payload['comment']['body']
+    pr_number = payload['issue']['number']
+    username = payload['comment']['user']['login']
+    comment_id = payload['comment']['id']
+
+    # Deduplication check
+    with metrics_lock:
+        now = time.time()
+        expired_ids = [cid for cid, ts in processed_comment_ids.items() if now - ts > COMMENT_DEDUP_TTL]
+        for cid in expired_ids:
+            del processed_comment_ids[cid]
+
+        if comment_id in processed_comment_ids:
+            app.logger.info(f"Ignoring duplicate /check-continuity for comment {comment_id}")
+            return jsonify({"message": "Duplicate webhook"}), 200
+
+        processed_comment_ids[comment_id] = now
+
+    # Ignore bot's own comments (which contain helper text with /check-continuity commands)
+    bot_markers = [
+        '🤖 AI Continuity Check',
+        'Powered by Ollama',
+        '**Mode:**'
+    ]
+    if any(marker in comment_body for marker in bot_markers):
+        app.logger.info(f"Ignoring bot's own comment")
+        return jsonify({"message": "Ignoring bot's own comment"}), 200
+
+    # Parse mode from command
+    mode = parse_check_command_mode(comment_body)
+
+    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode} from {username}")
+
+    # Get PR info to find the latest commit
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        post_pr_comment(pr_number, "⚠️ Could not retrieve PR information")
+        return jsonify({"message": "PR info error"}), 500
+
+    commit_sha = pr_info['head']['sha']
+
+    # Find the latest successful workflow run for this PR
+    token = get_github_token()
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    # Get workflow runs for this PR
+    workflows_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/actions/runs?event=pull_request&per_page=20"
+    try:
+        response = requests.get(workflows_url, headers=headers)
+        response.raise_for_status()
+        runs_data = response.json()
+
+        # Find the most recent successful run for this PR
+        artifacts_url = None
+        for run in runs_data.get('workflow_runs', []):
+            # Check if this run is for our PR and completed successfully
+            if (run.get('conclusion') == 'success' and
+                run.get('event') == 'pull_request' and
+                run.get('pull_requests')):
+
+                # Check if this run is for our PR number
+                pr_list = run.get('pull_requests', [])
+                if any(pr.get('number') == pr_number for pr in pr_list):
+                    artifacts_url = run['artifacts_url']
+                    app.logger.info(f"Found artifacts for PR #{pr_number} at workflow run {run['id']}")
+                    break
+
+        if not artifacts_url:
+            post_pr_comment(pr_number, "⚠️ No successful workflow run found for this PR. Please ensure the CI has completed successfully at least once.")
+            return jsonify({"message": "No artifacts found"}), 404
+
+    except Exception as e:
+        app.logger.error(f"Error fetching workflow runs: {e}")
+        post_pr_comment(pr_number, "⚠️ Error fetching workflow information")
+        return jsonify({"message": "API error"}), 500
+
+    # Cancel any existing checks for this PR
+    with metrics_lock:
+        if pr_number in pr_active_jobs:
+            existing_workflow_id = pr_active_jobs[pr_number]
+            if existing_workflow_id in active_jobs:
+                app.logger.info(f"Cancelling existing job {existing_workflow_id} for PR #{pr_number}")
+                active_jobs[existing_workflow_id]['cancel_event'].set()
+
+    # Spawn background thread for processing using the existing process_webhook_async
+    workflow_id = f"manual-{pr_number}-{int(time.time())}"
+
+    thread = threading.Thread(
+        target=process_webhook_async,
+        args=(workflow_id, pr_number, artifacts_url, mode),
+        daemon=True
+    )
+    thread.start()
+
+    return jsonify({"message": "Check started", "mode": mode, "workflow_id": workflow_id}), 202
+
+
 def is_authorized(username: str) -> bool:
     """Check if user is a repo collaborator."""
     token = get_github_token()
@@ -937,6 +1118,34 @@ def is_authorized(username: str) -> bool:
     except Exception as e:
         app.logger.error(f"Error checking authorization: {e}")
         return False
+
+
+def parse_check_command_mode(comment_body: str) -> str:
+    """Parse validation mode from /check-continuity command.
+
+    Supported formats:
+        /check-continuity           -> 'new-only' (default)
+        /check-continuity new-only  -> 'new-only'
+        /check-continuity modified  -> 'modified'
+        /check-continuity all       -> 'all'
+
+    Args:
+        comment_body: The comment text
+
+    Returns:
+        One of: 'new-only', 'modified', 'all'
+    """
+    # Match /check-continuity optionally followed by a mode
+    match = re.search(r'/check-continuity(?:\s+(new-only|modified|all))?', comment_body, re.IGNORECASE)
+
+    if not match:
+        return 'new-only'  # Default if command not found
+
+    mode = match.group(1)
+    if mode:
+        return mode.lower()
+
+    return 'new-only'  # Default if no mode specified
 
 
 def process_approval_async(pr_number: int, path_ids: List[str], username: str):

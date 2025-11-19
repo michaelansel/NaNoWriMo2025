@@ -102,17 +102,40 @@ Open `dist/allpaths.html` in a web browser to:
 
 ### AI Continuity Checking
 
-The text files in `allpaths-text/` are formatted for AI processing:
+The text files in `allpaths-text/` are formatted for AI processing.
 
-**Example workflow:**
+**Validation Modes:**
+
+The continuity checker supports three modes:
+- `new-only` - Check only new paths (default, fastest)
+- `modified` - Check new and modified paths (pre-merge validation)
+- `all` - Check all paths (full audit, slowest)
+
+**Example CLI workflow:**
 ```bash
-# Process all paths with an AI model
-for path in dist/allpaths-text/*.txt; do
-    echo "Checking: $path"
-    # Send to AI model for continuity analysis
-    ai-model check-continuity "$path" > "${path}.report"
-done
+# Check only new paths (default)
+python3 scripts/check-story-continuity.py dist/allpaths-text allpaths-validation-status.json
+
+# Check new and modified paths
+python3 scripts/check-story-continuity.py --mode modified dist/allpaths-text allpaths-validation-status.json
+
+# Check all paths
+python3 scripts/check-story-continuity.py --mode all dist/allpaths-text allpaths-validation-status.json
 ```
+
+**GitHub PR workflow:**
+```markdown
+# Automatic checks (new-only mode)
+/check-continuity
+
+# Check new and modified paths
+/check-continuity modified
+
+# Full validation
+/check-continuity all
+```
+
+See `services/README.md` for detailed documentation on validation modes and the webhook service.
 
 **Text file format:**
 ```
