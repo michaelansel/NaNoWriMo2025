@@ -247,9 +247,9 @@ def categorize_path(path_id: str, cache: dict) -> str:
         One of: 'new', 'modified', 'unchanged'
 
     Logic:
-        - 'new': Path ID not in cache at all (never seen before)
-        - 'modified': Path ID in cache but not validated (hash changed, needs re-check)
-        - 'unchanged': Path ID in cache and validated (no changes)
+        Uses the 'category' field calculated by the allpaths generator,
+        which is based on content fingerprint comparison. Falls back to
+        'new' if path not in cache or category not set.
     """
     if path_id not in cache:
         return 'new'
@@ -260,12 +260,9 @@ def categorize_path(path_id: str, cache: dict) -> str:
     if not isinstance(path_info, dict):
         return 'new'
 
-    # If validated flag is True, no changes
-    if path_info.get('validated', False):
-        return 'unchanged'
-
-    # In cache but not validated = content changed
-    return 'modified'
+    # Use the category field calculated by allpaths generator
+    # This is based on content fingerprint comparison, not validation status
+    return path_info.get('category', 'new')
 
 
 def should_validate_path(category: str, mode: str) -> bool:
