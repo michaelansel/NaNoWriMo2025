@@ -1021,6 +1021,16 @@ def handle_check_continuity_command(payload):
 
         processed_comment_ids[comment_id] = now
 
+    # Ignore bot's own comments (which contain helper text with /check-continuity commands)
+    bot_markers = [
+        '🤖 AI Continuity Check',
+        'Powered by Ollama',
+        '**Mode:**'
+    ]
+    if any(marker in comment_body for marker in bot_markers):
+        app.logger.info(f"Ignoring bot's own comment")
+        return jsonify({"message": "Ignoring bot's own comment"}), 200
+
     # Parse mode from command
     mode = parse_check_command_mode(comment_body)
 
