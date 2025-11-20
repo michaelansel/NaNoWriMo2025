@@ -924,7 +924,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 
         html += f'''
                     <div class="path-meta-item">
-                        📄 <a href="allpaths-text/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
+                        📄 <a href="allpaths-clean/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
                     </div>
                 </div>
                 <div style="margin-top: 1rem;">

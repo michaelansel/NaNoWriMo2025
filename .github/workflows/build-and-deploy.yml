@@ -111,7 +111,7 @@ jobs:
             const allpathsSize = fs.statSync('dist/allpaths.html').size;
 
             // Count AllPaths text files
-            const allpathsTextFiles = fs.readdirSync('dist/allpaths-text').filter(f => f.endsWith('.txt'));
+            const allpathsTextFiles = fs.readdirSync('dist/allpaths-clean').filter(f => f.endsWith('.txt'));
             const pathCount = allpathsTextFiles.length;
 
             github.rest.issues.createComment({

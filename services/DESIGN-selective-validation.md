@@ -72,12 +72,12 @@ For active development, this means re-validating many paths whenever any passage
 #### CLI (scripts/check-story-continuity.py)
 ```bash
 # Default (new-only)
-python3 scripts/check-story-continuity.py dist/allpaths-text allpaths-validation-status.json
+python3 scripts/check-story-continuity.py dist/allpaths-metadata allpaths-validation-status.json
 
 # Explicit mode selection
-python3 scripts/check-story-continuity.py --mode new-only dist/allpaths-text allpaths-validation-status.json
-python3 scripts/check-story-continuity.py --mode modified dist/allpaths-text allpaths-validation-status.json
-python3 scripts/check-story-continuity.py --mode all dist/allpaths-text allpaths-validation-status.json
+python3 scripts/check-story-continuity.py --mode new-only dist/allpaths-metadata allpaths-validation-status.json
+python3 scripts/check-story-continuity.py --mode modified dist/allpaths-metadata allpaths-validation-status.json
+python3 scripts/check-story-continuity.py --mode all dist/allpaths-metadata allpaths-validation-status.json
 ```
 
 #### Webhook (GitHub PR Comments)

@@ -203,13 +203,13 @@ def main():
         epilog="""
 Examples:
   # Check only new paths (default)
-  %(prog)s dist/allpaths-text allpaths-validation-status.json
+  %(prog)s dist/allpaths-metadata allpaths-validation-status.json
 
   # Check new and modified paths
-  %(prog)s --mode modified dist/allpaths-text allpaths-validation-status.json
+  %(prog)s --mode modified dist/allpaths-metadata allpaths-validation-status.json
 
   # Check all paths
-  %(prog)s --mode all dist/allpaths-text allpaths-validation-status.json
+  %(prog)s --mode all dist/allpaths-metadata allpaths-validation-status.json
         """
     )
 
@@ -640,7 +640,7 @@ python3 scripts/check-story-continuity.py test-paths test-cache.json --mode all
 #### Test 5: Statistics Accuracy
 ```bash
 # Verify output statistics match actual categorization
-python3 scripts/check-story-continuity.py dist/allpaths-text allpaths-validation-status.json --mode new-only
+python3 scripts/check-story-continuity.py dist/allpaths-metadata allpaths-validation-status.json --mode new-only
 # Check that stats.new + stats.modified + stats.unchanged == total files
 # Check that stats.checked + stats.skipped == total files
 ```
@@ -739,7 +739,7 @@ If issues are discovered post-deployment:
 2. **CLI:** Previous version still works (backward compatible)
    ```bash
    # Old usage still works (mode defaults to new-only)
-   python3 scripts/check-story-continuity.py dist/allpaths-text cache.json
+   python3 scripts/check-story-continuity.py dist/allpaths-metadata cache.json
    ```
 
 3. **Data:** No schema changes, cache format unchanged

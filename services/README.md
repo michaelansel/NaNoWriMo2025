@@ -152,14 +152,13 @@ Modify `.github/workflows/build-and-deploy.yml` to upload allpaths artifacts:
 ```yaml
 - name: Upload allpaths artifacts
   if: github.event_name == 'pull_request'
-  uses: actions/upload-artifact@v3
+  uses: actions/upload-artifact@v4
   with:
-    name: allpaths
+    name: story-preview
     path: |
-      dist/allpaths-text/
-      dist/allpaths-passage-mapping.json
+      dist/
       allpaths-validation-status.json
-    retention-days: 7
+    retention-days: 30
 ```
 
 ### 2. Configure Webhook
@@ -227,7 +226,7 @@ Test the AI checking script directly:
 
 ```bash
 cd /home/ubuntu/Code/NaNoWriMo2025
-python3 scripts/check-story-continuity.py dist/allpaths-text allpaths-validation-status.json
+python3 scripts/check-story-continuity.py dist/allpaths-metadata allpaths-validation-status.json
 ```
 
 This should process any unvalidated paths and output results.
