@@ -533,7 +533,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         paths_with_metadata.append((path, path_hash, commit_date, category))
 
     # Sort: newest commit date first, then by category (new, modified, unchanged)
-    category_order = {'new': 0, 'modified': 1, 'unchanged': 2}
+    category_order = {'new': 2, 'modified': 1, 'unchanged': 0}
     paths_with_metadata.sort(key=lambda x: (
         x[2] if x[2] else '',  # commit_date (empty strings go last)
         category_order.get(x[3], 3)  # category
