@@ -78,7 +78,8 @@ The service posts three types of comments to PRs:
    - Generate webhook secret
    - Prompt for GitHub token
    - Create environment file
-   - Install systemd service
+   - Install Python dependencies (Flask, requests, gunicorn)
+   - Install systemd service (configured to use Gunicorn WSGI server)
 
 2. **Start the service:**
    ```bash
@@ -582,7 +583,8 @@ python3 continuity-webhook.py
 ```bash
 cd services
 source venv/bin/activate
-pip install --upgrade flask requests
+pip install --upgrade flask requests gunicorn
+systemctl --user restart continuity-webhook  # Restart to use updated packages
 ```
 
 ### Rotate Secrets

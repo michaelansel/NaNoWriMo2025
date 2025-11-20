@@ -6,6 +6,29 @@ set -e
 echo "=== Continuity Webhook Service Setup ==="
 echo ""
 
+# Check for Python 3
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 is required but not found"
+    exit 1
+fi
+
+# Create virtual environment if it doesn't exist
+VENV_DIR="$(dirname "$0")/venv"
+if [ ! -d "$VENV_DIR" ]; then
+    echo "Creating virtual environment..."
+    python3 -m venv "$VENV_DIR"
+    echo "✓ Created virtual environment: $VENV_DIR"
+else
+    echo "✓ Virtual environment already exists: $VENV_DIR"
+fi
+
+# Install dependencies
+echo "Installing Python dependencies..."
+source "$VENV_DIR/bin/activate"
+pip install --upgrade pip
+pip install -r "$(dirname "$0")/requirements.txt"
+echo "✓ Installed dependencies (flask, requests, PyJWT, cryptography, gunicorn)"
+
 # Create config directory
 CONFIG_DIR="$HOME/.config/continuity-webhook"
 mkdir -p "$CONFIG_DIR"
@@ -67,36 +90,61 @@ echo "   $WEBHOOK_SECRET"
 echo ""
 echo "You'll need to add this to your GitHub webhook settings."
 
-# Install systemd service
+# Install systemd user service
 echo ""
-echo "Installing systemd service..."
+echo "Installing systemd user service..."
 
-SERVICE_FILE="/etc/systemd/system/continuity-webhook.service"
-sudo cp "$(dirname "$0")/continuity-webhook.service" "$SERVICE_FILE"
+USER_SERVICE_DIR="$HOME/.config/systemd/user"
+mkdir -p "$USER_SERVICE_DIR"
+
+# Create systemd service file
+SERVICE_FILE="$USER_SERVICE_DIR/continuity-webhook.service"
+cat > "$SERVICE_FILE" <<EOF
+[Unit]
+Description=Story Continuity Webhook Service
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=$HOME/Code/NaNoWriMo2025
+EnvironmentFile=%h/.config/continuity-webhook/env
+ExecStart=$VENV_DIR/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 --chdir $HOME/Code/NaNoWriMo2025/services --timeout 180 --access-logfile - --error-logfile - continuity-webhook:app
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=continuity-webhook
+
+[Install]
+WantedBy=default.target
+EOF
+
 echo "✓ Installed service file: $SERVICE_FILE"
 
 # Reload systemd
-sudo systemctl daemon-reload
+systemctl --user daemon-reload
 echo "✓ Reloaded systemd"
 
 # Enable service
-sudo systemctl enable continuity-webhook.service
+systemctl --user enable continuity-webhook.service
 echo "✓ Enabled service to start on boot"
 
 echo ""
 echo "=== Setup Complete ==="
 echo ""
 echo "To start the service:"
-echo "  sudo systemctl start continuity-webhook"
+echo "  systemctl --user start continuity-webhook"
 echo ""
 echo "To check status:"
-echo "  sudo systemctl status continuity-webhook"
+echo "  systemctl --user status continuity-webhook"
 echo ""
 echo "To view logs:"
-echo "  sudo journalctl -u continuity-webhook -f"
+echo "  journalctl --user -u continuity-webhook -f"
 echo ""
 echo "Next steps:"
-echo "1. Start the service: sudo systemctl start continuity-webhook"
+echo "1. Start the service: systemctl --user start continuity-webhook"
 echo "2. Configure HTTPS/reverse proxy (nginx/caddy)"
 echo "3. Open firewall port"
 echo "4. Add webhook to GitHub repository settings"
