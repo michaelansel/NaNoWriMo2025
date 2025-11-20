@@ -111,6 +111,10 @@ Start.twee
 StoryData.twee
   :: StoryData
 
+StoryStyles.twee
+  :: StoryStylesheet [stylesheet]
+  :: Footer [footer]
+
 StoryTitle.twee
   :: StoryTitle
 
