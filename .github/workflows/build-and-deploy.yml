@@ -135,8 +135,6 @@ jobs:
             4. Open \`proofread.html\` for linear proofreading
             5. Open \`graph.html\` to visualize the story structure
             6. Open \`allpaths.html\` to browse all ${pathCount} story paths
-            7. See \`allpaths-text/\` for clean prose paths (public deployment format)
-            8. See \`allpaths-continuity/\` for paths with metadata (AI continuity checking)
 
             **💡 Tip:** Once merged to main, this will be live at:
             - https://${context.repo.owner}.github.io/${context.repo.repo}/

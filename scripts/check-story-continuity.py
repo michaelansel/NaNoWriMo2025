@@ -567,13 +567,13 @@ def main():
         epilog="""
 Examples:
   # Check only new paths (default)
-  %(prog)s dist/allpaths-continuity allpaths-validation-status.json
+  %(prog)s dist/allpaths-metadata allpaths-validation-status.json
 
   # Check new and modified paths
-  %(prog)s --mode modified dist/allpaths-continuity allpaths-validation-status.json
+  %(prog)s --mode modified dist/allpaths-metadata allpaths-validation-status.json
 
   # Check all paths
-  %(prog)s --mode all dist/allpaths-continuity allpaths-validation-status.json
+  %(prog)s --mode all dist/allpaths-metadata allpaths-validation-status.json
 
 Validation Modes:
   new-only  - Check only brand new paths (default, fastest)

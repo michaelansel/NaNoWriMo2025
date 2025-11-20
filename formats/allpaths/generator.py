@@ -1098,7 +1098,7 @@ def main():
     print(f"Generated {html_file}", file=sys.stderr)
 
     # Generate individual text files for public deployment (clean prose, no metadata)
-    text_dir = output_dir / 'allpaths-text'
+    text_dir = output_dir / 'allpaths-clean'
     text_dir.mkdir(exist_ok=True)
 
     for i, path in enumerate(all_paths, 1):
@@ -1116,7 +1116,7 @@ def main():
     print(f"Generated {len(all_paths)} text files in {text_dir} (clean prose)", file=sys.stderr)
 
     # Generate text files for AI continuity checking (with metadata and passage markers)
-    continuity_dir = output_dir / 'allpaths-continuity'
+    continuity_dir = output_dir / 'allpaths-metadata'
     continuity_dir.mkdir(exist_ok=True)
 
     for i, path in enumerate(all_paths, 1):
