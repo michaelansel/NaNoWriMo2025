@@ -41,7 +41,7 @@ IMPORTANT INSTRUCTIONS:
 - These are INTERNAL IDENTIFIERS with NO MEANING - completely ignore them
 - The hex IDs are randomly generated and have ZERO semantic content
 - Only analyze the actual story text that appears between these markers
-- Lines marked "(not selected)" show choices the player did NOT take in this path - ignore these completely
+- Text marked "[unselected]" shows choices the player did NOT take in this path - ignore these completely
 - Focus ONLY on what the player actually sees and experiences in this specific path
 
 Check for:
@@ -53,7 +53,7 @@ Check for:
 
 DO NOT try to interpret the random hex IDs in passage markers - they are meaningless.
 DO NOT assume the player sees passage markers - they only see the text content.
-DO NOT consider non-selected choices as part of the story.
+DO NOT consider [unselected] choices as part of the story.
 
 === BEGIN STORY PATH ===
 {story_text}
@@ -567,13 +567,13 @@ def main():
         epilog="""
 Examples:
   # Check only new paths (default)
-  %(prog)s dist/allpaths-text allpaths-validation-status.json
+  %(prog)s dist/allpaths-continuity allpaths-validation-status.json
 
   # Check new and modified paths
-  %(prog)s --mode modified dist/allpaths-text allpaths-validation-status.json
+  %(prog)s --mode modified dist/allpaths-continuity allpaths-validation-status.json
 
   # Check all paths
-  %(prog)s --mode all dist/allpaths-text allpaths-validation-status.json
+  %(prog)s --mode all dist/allpaths-continuity allpaths-validation-status.json
 
 Validation Modes:
   new-only  - Check only brand new paths (default, fastest)

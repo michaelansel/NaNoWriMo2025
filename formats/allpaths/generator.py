@@ -1097,13 +1097,12 @@ def main():
 
     print(f"Generated {html_file}", file=sys.stderr)
 
-    # Generate individual text files for AI processing (uses random IDs)
+    # Generate individual text files for public deployment (clean prose, no metadata)
     text_dir = output_dir / 'allpaths-text'
     text_dir.mkdir(exist_ok=True)
 
     for i, path in enumerate(all_paths, 1):
         path_hash = calculate_path_hash(path, passages)
-        # Pass the mapping to use random IDs instead of passage names
         # Set include_metadata=False for clean prose output
         text_content = generate_path_text(path, passages, i, len(all_paths),
                                          include_metadata=False,
@@ -1114,7 +1113,25 @@ def main():
         with open(text_file, 'w', encoding='utf-8') as f:
             f.write(text_content)
 
-    print(f"Generated {len(all_paths)} text files in {text_dir} (using random IDs)", file=sys.stderr)
+    print(f"Generated {len(all_paths)} text files in {text_dir} (clean prose)", file=sys.stderr)
+
+    # Generate text files for AI continuity checking (with metadata and passage markers)
+    continuity_dir = output_dir / 'allpaths-continuity'
+    continuity_dir.mkdir(exist_ok=True)
+
+    for i, path in enumerate(all_paths, 1):
+        path_hash = calculate_path_hash(path, passages)
+        # Set include_metadata=True for continuity checking with passage markers
+        text_content = generate_path_text(path, passages, i, len(all_paths),
+                                         include_metadata=True,
+                                         passage_id_mapping=passage_id_mapping)
+
+        # Use content-based hash only (no sequential index)
+        text_file = continuity_dir / f'path-{path_hash}.txt'
+        with open(text_file, 'w', encoding='utf-8') as f:
+            f.write(text_content)
+
+    print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
 
     # Update validation cache with current paths (mark them as available for validation)
     for path in all_paths:
@@ -1151,7 +1168,8 @@ def main():
     print(f"Total paths: {len(all_paths)}", file=sys.stderr)
     print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
     print(f"HTML output: {html_file}", file=sys.stderr)
-    print(f"Text files: {text_dir}/ (using random IDs)", file=sys.stderr)
+    print(f"Text files (public): {text_dir}/", file=sys.stderr)
+    print(f"Text files (continuity): {continuity_dir}/", file=sys.stderr)
     print(f"Passage mapping: {mapping_file}", file=sys.stderr)
     print(f"Validation cache: {cache_file}", file=sys.stderr)
 
