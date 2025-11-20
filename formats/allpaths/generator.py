@@ -147,7 +147,7 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
 
     Args:
         text: The passage text to format
-        selected_target: If provided, only show this link and mark others as [not selected]
+        selected_target: If provided, only show this link and mark others as [unselected] if multiple links exist
 
     Returns:
         Formatted text with links converted to visible text
@@ -155,6 +155,10 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
     # Replace [[display->target]] with "display"
     # Replace [[target<-display]] with "display"
     # Replace [[target]] with "target"
+
+    # Count total links to determine if we should use placeholders
+    link_count = len(re.findall(r'\[\[([^\]]+)\]\]', text))
+    use_placeholder = link_count > 1
 
     def replace_link(match):
         link = match.group(1)
@@ -175,7 +179,8 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
             if target == selected_target:
                 return display
             else:
-                return ""  # Completely remove non-selected links
+                # Use placeholder if multiple links exist, otherwise remove completely
+                return "[unselected]" if use_placeholder else ""
         else:
             return display
 
