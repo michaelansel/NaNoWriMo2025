@@ -175,7 +175,7 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
             if target == selected_target:
                 return display
             else:
-                return f"[{display}] (not selected)"
+                return ""  # Completely remove non-selected links
         else:
             return display
 
@@ -294,19 +294,22 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
 
     for i, passage_name in enumerate(path):
         if passage_name not in passages:
-            # Use ID if mapping provided
-            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
-            lines.append(f"\n[PASSAGE: {display_name}]")
-            lines.append("[Passage not found]")
-            lines.append("")
+            if include_metadata:
+                # Use ID if mapping provided
+                display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+                lines.append(f"\n[PASSAGE: {display_name}]")
+                lines.append("[Passage not found]")
+                lines.append("")
             continue
 
         passage = passages[passage_name]
 
-        # Use random ID instead of passage name if mapping provided
-        display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
-        lines.append(f"[PASSAGE: {display_name}]")
-        lines.append("")
+        # Only include passage headings if metadata is enabled
+        if include_metadata:
+            # Use random ID instead of passage name if mapping provided
+            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+            lines.append(f"[PASSAGE: {display_name}]")
+            lines.append("")
 
         # Determine the next passage in the path (if any) to filter links
         next_passage = path[i + 1] if i + 1 < len(path) else None
@@ -1096,7 +1099,9 @@ def main():
     for i, path in enumerate(all_paths, 1):
         path_hash = calculate_path_hash(path, passages)
         # Pass the mapping to use random IDs instead of passage names
+        # Set include_metadata=False for clean prose output
         text_content = generate_path_text(path, passages, i, len(all_paths),
+                                         include_metadata=False,
                                          passage_id_mapping=passage_id_mapping)
 
         # Use content-based hash only (no sequential index)
