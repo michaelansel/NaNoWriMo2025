@@ -540,15 +540,15 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
         response.raise_for_status()
         artifacts_data = response.json()
 
-        # Find the "allpaths" artifact
-        allpaths_artifact = None
+        # Find the "story-preview" artifact
+        story_preview_artifact = None
         for artifact in artifacts_data.get('artifacts', []):
-            if artifact['name'] == 'allpaths':
-                allpaths_artifact = artifact
+            if artifact['name'] == 'story-preview':
+                story_preview_artifact = artifact
                 break
 
-        if not allpaths_artifact:
-            app.logger.info("[Background] No allpaths artifact found, nothing to check")
+        if not story_preview_artifact:
+            app.logger.info("[Background] No story-preview artifact found, nothing to check")
             return
 
         # Download and process artifact
@@ -556,7 +556,7 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
             tmpdir_path = Path(tmpdir)
 
             # Download artifact
-            artifact_url = allpaths_artifact['archive_download_url']
+            artifact_url = story_preview_artifact['archive_download_url']
             if not download_artifact(artifact_url, tmpdir_path):
                 app.logger.error("[Background] Failed to download artifact")
                 return
@@ -1307,7 +1307,7 @@ def get_latest_artifacts_url(pr_number: int) -> str:
 
 
 def download_artifact_for_pr(artifacts_url: str, dest_dir: Path) -> bool:
-    """Download allpaths artifact for approval processing."""
+    """Download story-preview artifact for approval processing."""
     token = get_github_token()
     headers = {
         "Authorization": f"Bearer {token}",
@@ -1320,9 +1320,9 @@ def download_artifact_for_pr(artifacts_url: str, dest_dir: Path) -> bool:
         response.raise_for_status()
         artifacts_data = response.json()
 
-        # Find the allpaths artifact
+        # Find the story-preview artifact
         for artifact in artifacts_data.get('artifacts', []):
-            if artifact['name'] == 'allpaths':
+            if artifact['name'] == 'story-preview':
                 return download_artifact(artifact['archive_download_url'], dest_dir)
 
         return False

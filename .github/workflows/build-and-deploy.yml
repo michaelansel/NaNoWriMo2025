@@ -89,24 +89,15 @@ jobs:
           chmod +x scripts/build-allpaths.sh
           ./scripts/build-allpaths.sh
 
-      - name: Upload build artifacts (for PR preview)
+      - name: Upload build artifacts (for PR preview and continuity checking)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: story-preview
-          path: dist/
-          retention-days: 30
-
-      - name: Upload allpaths artifacts for AI continuity checking
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: allpaths
           path: |
-            dist/allpaths-text/
-            dist/allpaths-passage-mapping.json
+            dist/
             allpaths-validation-status.json
-          retention-days: 7
+          retention-days: 30
 
       - name: Comment on PR with preview instructions
         if: github.event_name == 'pull_request'
@@ -144,7 +135,8 @@ jobs:
             4. Open \`proofread.html\` for linear proofreading
             5. Open \`graph.html\` to visualize the story structure
             6. Open \`allpaths.html\` to browse all ${pathCount} story paths
-            7. See \`allpaths-text/\` for individual path files for AI processing
+            7. See \`allpaths-text/\` for clean prose paths (public deployment format)
+            8. See \`allpaths-continuity/\` for paths with metadata (AI continuity checking)
 
             **💡 Tip:** Once merged to main, this will be live at:
             - https://${context.repo.owner}.github.io/${context.repo.repo}/
