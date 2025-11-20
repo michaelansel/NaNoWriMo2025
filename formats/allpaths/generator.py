@@ -147,7 +147,7 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
 
     Args:
         text: The passage text to format
-        selected_target: If provided, only show this link and mark others as [not selected]
+        selected_target: If provided, only show this link and mark others as [unselected] if multiple links exist
 
     Returns:
         Formatted text with links converted to visible text
@@ -155,6 +155,10 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
     # Replace [[display->target]] with "display"
     # Replace [[target<-display]] with "display"
     # Replace [[target]] with "target"
+
+    # Count total links to determine if we should use placeholders
+    link_count = len(re.findall(r'\[\[([^\]]+)\]\]', text))
+    use_placeholder = link_count > 1
 
     def replace_link(match):
         link = match.group(1)
@@ -175,7 +179,8 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
             if target == selected_target:
                 return display
             else:
-                return f"[{display}] (not selected)"
+                # Use placeholder if multiple links exist, otherwise remove completely
+                return "[unselected]" if use_placeholder else ""
         else:
             return display
 
@@ -294,19 +299,22 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
 
     for i, passage_name in enumerate(path):
         if passage_name not in passages:
-            # Use ID if mapping provided
-            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
-            lines.append(f"\n[PASSAGE: {display_name}]")
-            lines.append("[Passage not found]")
-            lines.append("")
+            if include_metadata:
+                # Use ID if mapping provided
+                display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+                lines.append(f"\n[PASSAGE: {display_name}]")
+                lines.append("[Passage not found]")
+                lines.append("")
             continue
 
         passage = passages[passage_name]
 
-        # Use random ID instead of passage name if mapping provided
-        display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
-        lines.append(f"[PASSAGE: {display_name}]")
-        lines.append("")
+        # Only include passage headings if metadata is enabled
+        if include_metadata:
+            # Use random ID instead of passage name if mapping provided
+            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+            lines.append(f"[PASSAGE: {display_name}]")
+            lines.append("")
 
         # Determine the next passage in the path (if any) to filter links
         next_passage = path[i + 1] if i + 1 < len(path) else None
@@ -916,7 +924,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 
         html += f'''
                     <div class="path-meta-item">
-                        📄 <a href="allpaths-text/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
+                        📄 <a href="allpaths-clean/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
                     </div>
                 </div>
                 <div style="margin-top: 1rem;">
@@ -1089,14 +1097,15 @@ def main():
 
     print(f"Generated {html_file}", file=sys.stderr)
 
-    # Generate individual text files for AI processing (uses random IDs)
-    text_dir = output_dir / 'allpaths-text'
+    # Generate individual text files for public deployment (clean prose, no metadata)
+    text_dir = output_dir / 'allpaths-clean'
     text_dir.mkdir(exist_ok=True)
 
     for i, path in enumerate(all_paths, 1):
         path_hash = calculate_path_hash(path, passages)
-        # Pass the mapping to use random IDs instead of passage names
+        # Set include_metadata=False for clean prose output
         text_content = generate_path_text(path, passages, i, len(all_paths),
+                                         include_metadata=False,
                                          passage_id_mapping=passage_id_mapping)
 
         # Use content-based hash only (no sequential index)
@@ -1104,7 +1113,25 @@ def main():
         with open(text_file, 'w', encoding='utf-8') as f:
             f.write(text_content)
 
-    print(f"Generated {len(all_paths)} text files in {text_dir} (using random IDs)", file=sys.stderr)
+    print(f"Generated {len(all_paths)} text files in {text_dir} (clean prose)", file=sys.stderr)
+
+    # Generate text files for AI continuity checking (with metadata and passage markers)
+    continuity_dir = output_dir / 'allpaths-metadata'
+    continuity_dir.mkdir(exist_ok=True)
+
+    for i, path in enumerate(all_paths, 1):
+        path_hash = calculate_path_hash(path, passages)
+        # Set include_metadata=True for continuity checking with passage markers
+        text_content = generate_path_text(path, passages, i, len(all_paths),
+                                         include_metadata=True,
+                                         passage_id_mapping=passage_id_mapping)
+
+        # Use content-based hash only (no sequential index)
+        text_file = continuity_dir / f'path-{path_hash}.txt'
+        with open(text_file, 'w', encoding='utf-8') as f:
+            f.write(text_content)
+
+    print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
 
     # Update validation cache with current paths (mark them as available for validation)
     for path in all_paths:
@@ -1141,7 +1168,8 @@ def main():
     print(f"Total paths: {len(all_paths)}", file=sys.stderr)
     print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
     print(f"HTML output: {html_file}", file=sys.stderr)
-    print(f"Text files: {text_dir}/ (using random IDs)", file=sys.stderr)
+    print(f"Text files (public): {text_dir}/", file=sys.stderr)
+    print(f"Text files (continuity): {continuity_dir}/", file=sys.stderr)
     print(f"Passage mapping: {mapping_file}", file=sys.stderr)
     print(f"Validation cache: {cache_file}", file=sys.stderr)
 

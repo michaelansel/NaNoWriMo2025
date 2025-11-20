@@ -27,11 +27,19 @@ The AllPaths format uses depth-first search (DFS) to explore the entire story gr
 - Statistics dashboard showing path counts and lengths
 - Visual route diagrams for each path
 
-**Individual Text Files (`allpaths-text/*.txt`)**
-- One file per path
-- Plain text format perfect for AI processing
+**Individual Text Files (Two Formats)**
+
+*Clean Format (`allpaths-clean/*.txt`)*
+- Clean prose for public deployment
+- No metadata headers or passage markers
+- Only selected choices shown (with [unselected] placeholders for inline choices)
+- Ideal for human reading
+
+*Metadata Format (`allpaths-metadata/*.txt`)*
 - Includes path metadata (route, length, ID)
-- Stable filenames with path hash for tracking
+- Passage markers with random IDs
+- Formatted for AI continuity checking
+- One file per path with stable hash-based filenames
 
 **Validation Cache (`allpaths-validation-status.json`)**
 - Tracks all discovered paths with unique IDs
@@ -83,9 +91,13 @@ After building, you'll find:
 ```
 dist/
 ├── allpaths.html                      # Browse all paths in browser
-├── allpaths-text/                     # Individual path files (with random IDs)
-│   ├── path-001-6e587dcb.txt
-│   ├── path-002-1bf824a1.txt
+├── allpaths-clean/                    # Clean prose paths (for public deployment)
+│   ├── path-6e587dcb.txt
+│   ├── path-1bf824a1.txt
+│   └── ...
+├── allpaths-metadata/                 # Paths with metadata (for AI checking)
+│   ├── path-6e587dcb.txt
+│   ├── path-1bf824a1.txt
 │   └── ...
 ├── allpaths-passage-mapping.json      # Maps random IDs back to passage names
 └── allpaths-validation-status.json     # Validation tracking (at repository root)
@@ -102,7 +114,7 @@ Open `dist/allpaths.html` in a web browser to:
 
 ### AI Continuity Checking
 
-The text files in `allpaths-text/` are formatted for AI processing.
+The text files in `allpaths-metadata/` are formatted for AI processing with passage markers and metadata.
 
 **Validation Modes:**
 
@@ -114,13 +126,13 @@ The continuity checker supports three modes:
 **Example CLI workflow:**
 ```bash
 # Check only new paths (default)
-python3 scripts/check-story-continuity.py dist/allpaths-text allpaths-validation-status.json
+python3 scripts/check-story-continuity.py dist/allpaths-metadata allpaths-validation-status.json
 
 # Check new and modified paths
-python3 scripts/check-story-continuity.py --mode modified dist/allpaths-text allpaths-validation-status.json
+python3 scripts/check-story-continuity.py --mode modified dist/allpaths-metadata allpaths-validation-status.json
 
 # Check all paths
-python3 scripts/check-story-continuity.py --mode all dist/allpaths-text allpaths-validation-status.json
+python3 scripts/check-story-continuity.py --mode all dist/allpaths-metadata allpaths-validation-status.json
 ```
 
 **GitHub PR workflow:**
@@ -249,9 +261,9 @@ This prevents the AI from being confused by passage names that contain timeline 
     ↓
   generator.py
     ↓
-  ┌─────────────┬──────────────────┬────────────────────┐
-  ↓             ↓                  ↓                    ↓
-allpaths.html  allpaths-text/  validation-status.json
+  ┌─────────────┬──────────────────┬────────────────────┬──────────────────┐
+  ↓             ↓                  ↓                    ↓                  ↓
+allpaths.html  allpaths-clean/  allpaths-metadata/  validation-status.json
 ```
 
 ### Algorithm
