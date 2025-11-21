@@ -104,7 +104,7 @@ new_prose_fp = hash(strip_links("Javlyn opened her eyes..."))  # "path2"
 
 ## Test Results
 
-Comprehensive test coverage (39/40 tests passing - 97.5%):
+Comprehensive test coverage (40/40 tests passing - 100%):
 
 ### Unit Tests
 - ✓ `test_strip_links()` - Link removal and whitespace normalization
@@ -122,9 +122,6 @@ All tests are in `formats/allpaths/test_generator.py`. Run with:
 ```bash
 python3 formats/allpaths/test_generator.py
 ```
-
-### Known Issues
-- ✗ `format_passage_text - marks unselected links` (pre-existing, unrelated)
 
 ## Breaking Changes & Migration
 

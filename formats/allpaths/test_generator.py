@@ -573,7 +573,7 @@ def test_format_passage_text_selected():
     formatted = format_passage_text(text, selected_target='NextPassage')
 
     assert 'Continue' in formatted, "Should show selected link"
-    assert '(not selected)' in formatted, "Should mark unselected links"
+    assert '[unselected]' in formatted, "Should mark unselected links"
 
 @test("generate_passage_id_mapping - creates stable IDs")
 def test_generate_passage_id_mapping():
