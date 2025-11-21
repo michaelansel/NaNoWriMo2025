@@ -43,9 +43,10 @@ The AllPaths format uses depth-first search (DFS) to explore the entire story gr
 
 **Validation Cache (`allpaths-validation-status.json`)**
 - Tracks all discovered paths with unique IDs
-- Records first seen date
-- Stores validation status
+- Records first seen date and creation date
+- Stores validation status and commit metadata
 - Enables incremental checking
+- Tracks path completion dates for progress monitoring
 
 ### 3. Path Identification
 - Each path has a stable MD5-based ID from its route
@@ -182,15 +183,50 @@ Path ID: 6e587dcb
 
 ### Validation Tracking
 
-**Mark a path as validated:**
+**Validation Cache Structure:**
 
-Edit `allpaths-validation-status.json`:
+The `allpaths-validation-status.json` file tracks metadata for each path:
+
 ```json
 {
   "6e587dcb": {
     "route": "Start → Continue on → ...",
+    "route_hash": "a1b2c3d4",
     "first_seen": "2025-11-10T07:06:05.514940",
-    "validated": true  // Change this to true
+    "validated": true,
+    "content_fingerprint": "e5f6g7h8",
+    "raw_content_fingerprint": "i9j0k1l2",
+    "commit_date": "2025-11-12T15:30:00-05:00",
+    "created_date": "2025-11-02T19:00:37-05:00",
+    "category": "unchanged"
+  }
+}
+```
+
+**Field descriptions:**
+- `route`: Human-readable path through passages
+- `route_hash`: Hash of the route structure
+- `first_seen`: When this path was first generated
+- `validated`: Whether path has been reviewed for continuity
+- `content_fingerprint`: Hash of prose content (excluding links)
+- `raw_content_fingerprint`: Hash including link text
+- `commit_date`: Most recent commit date of any passage in this path
+- `created_date`: Date when path became complete (when last passage was added)
+- `category`: Path status - `new`, `modified`, or `unchanged`
+
+**Understanding `created_date` vs `commit_date`:**
+- `created_date`: When the path became fully available to players (most recent passage creation date)
+- `commit_date`: When the path's content was last modified (most recent passage update)
+- For tracking progress, `created_date` shows when new paths were completed during writing
+- The "Committed" date in the HTML interface shows `created_date`
+
+**Mark a path as validated:**
+
+Edit the `validated` field to `true`:
+```json
+{
+  "6e587dcb": {
+    "validated": true
   }
 }
 ```
@@ -234,6 +270,63 @@ The continuity checker automatically:
 4. Ensures human-readable output even though AI sees only random IDs
 
 This prevents the AI from being confused by passage names that contain timeline markers, character names, or other semantic information that isn't visible to players.
+
+## Utility Scripts
+
+### Update Creation Dates
+
+**Script:** `scripts/update_creation_dates.py`
+
+This script recalculates the `created_date` field for all paths in the validation cache by analyzing git history:
+
+```bash
+python3 scripts/update_creation_dates.py
+```
+
+**What it does:**
+- Scans all paths in the validation cache
+- For each path, finds when each passage file was first committed
+- Sets `created_date` to the most recent passage creation date (when path became complete)
+- Updates the cache file with corrected dates
+
+**When to use:**
+- After fetching full git history (if working with a shallow clone)
+- If `created_date` fields are missing or incorrect
+- To regenerate dates after repository changes
+
+The script includes merge commits (`-m` flag) to ensure accurate dates when passages are added via pull requests.
+
+### Show Twee File Paths
+
+**Script:** `scripts/show_twee_file_paths.py`
+
+Display a tree view of which paths use which twee files, sorted by creation date:
+
+```bash
+python3 scripts/show_twee_file_paths.py
+```
+
+**Example output:**
+```
+Twee files and their associated paths (sorted by path creation date):
+
+================================================================================
+
+KEB-251102.twee:
+  Used in 2 path(s)
+    2025-11-02: Start → ... → Metal object
+    2025-11-11: Start → ... → Day 11 KEB
+
+KEB-251103.twee:
+  Used in 1 path(s)
+    2025-11-03: Start → ... → Day 3 KEB
+```
+
+**When to use:**
+- To visualize daily writing progress during NaNoWriMo
+- To see which content files contribute to which story paths
+- To verify that new passages are opening up expected paths
+- To track when paths became available as you write
 
 ## Architecture
 
