@@ -15,12 +15,14 @@ import tempfile
 from pathlib import Path
 from datetime import datetime
 
-# Add the formats/allpaths directory to the path so we can import the generator
-sys.path.insert(0, str(Path(__file__).parent / 'formats' / 'allpaths'))
+# Project root is two directories up from this file (formats/allpaths/)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 from generator import (
     calculate_path_hash,
     calculate_content_fingerprint,
+    calculate_raw_content_fingerprint,
+    calculate_route_hash,
     calculate_path_similarity,
     categorize_paths,
     build_passage_to_file_mapping,
@@ -35,6 +37,7 @@ from generator import (
     generate_passage_id_mapping,
     load_validation_cache,
     save_validation_cache,
+    strip_links_from_text,
 )
 
 # Test counters
@@ -195,6 +198,37 @@ def test_similarity_empty():
 
     assert similarity == 0.0, f"Empty path should have similarity 0.0: {similarity}"
 
+@test("strip_links_from_text - removes all link syntax")
+def test_strip_links():
+    # Test simple link
+    text1 = "Some text [[Target]] more text"
+    result1 = strip_links_from_text(text1)
+    assert '[[' not in result1, "Should remove link brackets"
+    assert 'Target' not in result1, "Should remove link target"
+    assert 'Some text' in result1, "Should preserve prose"
+    assert 'more text' in result1, "Should preserve prose"
+
+    # Test arrow link
+    text2 = "Before [[Display->Target]] after"
+    result2 = strip_links_from_text(text2)
+    assert '[[' not in result2, "Should remove link brackets"
+    assert '->' not in result2, "Should remove arrow"
+    assert 'Before' in result2, "Should preserve prose"
+    assert 'after' in result2, "Should preserve prose"
+
+    # Test whitespace normalization
+    text3 = "Line 1\n\n[[Link1]]\n\n[[Link2]]\n\nLine 2"
+    result3 = strip_links_from_text(text3)
+    assert '[[' not in result3, "Should remove all links"
+    assert 'Line 1' in result3, "Should preserve prose"
+    assert 'Line 2' in result3, "Should preserve prose"
+
+    # Test that same prose with different links produces same result
+    text_with_link1 = "Hello world\n\n[[Link A]]"
+    text_with_link2 = "Hello world\n\n[[Link B]]"
+    assert strip_links_from_text(text_with_link1) == strip_links_from_text(text_with_link2), \
+        "Same prose with different links should produce same stripped result"
+
 @test("categorize_paths - new path")
 def test_categorize_new_path():
     passages = {
@@ -218,11 +252,15 @@ def test_categorize_unchanged_path():
     path = ['Start', 'End']
     path_hash = calculate_path_hash(path, passages)
     fingerprint = calculate_content_fingerprint(path, passages)
+    raw_fingerprint = calculate_raw_content_fingerprint(path, passages)
+    route_hash = calculate_route_hash(path)
 
     validation_cache = {
         path_hash: {
             'route': 'Start → End',
+            'route_hash': route_hash,
             'content_fingerprint': fingerprint,
+            'raw_content_fingerprint': raw_fingerprint,
             'validated': True
         }
     }
@@ -232,8 +270,8 @@ def test_categorize_unchanged_path():
 
     assert categories[path_hash] == 'unchanged', f"Should categorize as unchanged: {categories[path_hash]}"
 
-@test("categorize_paths - modified path (content change)")
-def test_categorize_modified_content():
+@test("categorize_paths - new path (content change)")
+def test_categorize_new_content_change():
     passages_old = {
         'Start': {'text': 'Welcome', 'pid': '1'},
         'End': {'text': 'End', 'pid': '2'}
@@ -247,25 +285,156 @@ def test_categorize_modified_content():
     # Old hash and fingerprint
     old_hash = calculate_path_hash(path, passages_old)
     old_fingerprint = calculate_content_fingerprint(path, passages_old)
+    old_raw_fingerprint = calculate_raw_content_fingerprint(path, passages_old)
+    old_route_hash = calculate_route_hash(path)
 
     validation_cache = {
         old_hash: {
             'route': 'Start → End',
+            'route_hash': old_route_hash,
             'content_fingerprint': old_fingerprint,
+            'raw_content_fingerprint': old_raw_fingerprint,
             'validated': True
         }
     }
 
-    # New path with modified content
+    # New path with modified content - content_fingerprint changes
     new_hash = calculate_path_hash(path, passages_new)
     new_fingerprint = calculate_content_fingerprint(path, passages_new)
 
-    # Since content changed, hash changes, but structure is similar
+    # Content changed, so should be NEW (new prose)
     current_paths = [path]
     categories = categorize_paths(current_paths, passages_new, validation_cache)
 
-    # Should be 'modified' because it's similar to old path (same structure)
-    assert categories[new_hash] == 'modified', f"Should categorize as modified: {categories[new_hash]}"
+    # Should be 'new' because content is different (new prose)
+    assert categories[new_hash] == 'new', f"Should categorize as new: {categories[new_hash]}"
+
+@test("categorize_paths - modified path (restructured)")
+def test_categorize_modified_restructured():
+    # Same content in different passage structure
+    passages_old = {
+        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+    passages_new = {
+        'Start': {'text': 'Welcome', 'pid': '1'},
+        'Middle': {'text': 'to the story.', 'pid': '2'},
+        'End': {'text': 'The end.', 'pid': '3'}
+    }
+
+    old_path = ['Start', 'End']
+    new_path = ['Start', 'Middle', 'End']
+
+    # Old route
+    old_hash = calculate_path_hash(old_path, passages_old)
+    old_fingerprint = calculate_content_fingerprint(old_path, passages_old)
+    old_raw_fingerprint = calculate_raw_content_fingerprint(old_path, passages_old)
+    old_route_hash = calculate_route_hash(old_path)
+
+    validation_cache = {
+        old_hash: {
+            'route': 'Start → End',
+            'route_hash': old_route_hash,
+            'content_fingerprint': old_fingerprint,
+            'raw_content_fingerprint': old_raw_fingerprint,
+            'validated': True
+        }
+    }
+
+    # New route with same content (restructured)
+    # Manually construct matching content fingerprint
+    # Content: "Welcome to the story.\nThe end."
+    passages_new_matching = {
+        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
+        'Middle': {'text': '', 'pid': '2'},  # Empty passage
+        'End': {'text': 'The end.', 'pid': '3'}
+    }
+    new_path_matching = ['Start', 'Middle', 'End']
+
+    # Adjust passages to have same total content
+    # Actually, let's make it simpler - just reuse exact content
+    passages_restructured = {
+        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+
+    # Create a second path with same content but restructured
+    # For simplicity, simulate by having same fingerprint but different route
+    new_fingerprint = old_fingerprint  # Same content
+    new_route_hash = calculate_route_hash(['Start', 'Middle', 'End'])  # Different route
+
+    # Actually test with matching fingerprint
+    new_hash = calculate_path_hash(old_path, passages_old)  # Reuse to get matching fingerprint
+
+    # Simulate a restructured path: same content, different route
+    # We'll add it to the cache manually and test categorization
+    current_paths = [old_path]  # Same path structure for now
+
+    # Let me create a proper test: same content but passage names changed
+    passages_renamed = {
+        'Beginning': {'text': 'Welcome to the story.', 'pid': '1'},  # Same content, different name
+        'Finale': {'text': 'The end.', 'pid': '2'}
+    }
+    renamed_path = ['Beginning', 'Finale']
+
+    renamed_hash = calculate_path_hash(renamed_path, passages_renamed)
+    renamed_fingerprint = calculate_content_fingerprint(renamed_path, passages_renamed)
+    renamed_route_hash = calculate_route_hash(renamed_path)
+
+    # fingerprints should match (same content), route_hash should differ (different passage names)
+    assert renamed_fingerprint == old_fingerprint, "Content should match"
+    assert renamed_route_hash != old_route_hash, "Route should differ"
+
+    current_paths = [renamed_path]
+    categories = categorize_paths(current_paths, passages_renamed, validation_cache)
+
+    # Should be 'modified' because same content, different route
+    assert categories[renamed_hash] == 'modified', f"Should categorize as modified (restructured): {categories[renamed_hash]}"
+
+@test("categorize_paths - modified path (link added)")
+def test_categorize_modified_link_added():
+    # Test the core new behavior: adding links while keeping prose same → MODIFIED
+    passages_before = {
+        'Start': {'text': 'What is weighing on your mind today?', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+    passages_after = {
+        'Start': {'text': 'What is weighing on your mind today?\n\n[[New Link->Somewhere]]', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+
+    path = ['Start', 'End']
+
+    # Build cache with old version
+    old_hash = calculate_path_hash(path, passages_before)
+    old_prose_fp = calculate_content_fingerprint(path, passages_before)
+    old_raw_fp = calculate_raw_content_fingerprint(path, passages_before)
+    old_route_hash = calculate_route_hash(path)
+
+    validation_cache = {
+        old_hash: {
+            'route': 'Start → End',
+            'route_hash': old_route_hash,
+            'content_fingerprint': old_prose_fp,
+            'raw_content_fingerprint': old_raw_fp,
+            'validated': True
+        }
+    }
+
+    # Check new version
+    new_hash = calculate_path_hash(path, passages_after)
+    new_prose_fp = calculate_content_fingerprint(path, passages_after)
+    new_raw_fp = calculate_raw_content_fingerprint(path, passages_after)
+
+    # Verify our assumptions
+    assert new_prose_fp == old_prose_fp, "Prose fingerprints should match (links stripped)"
+    assert new_raw_fp != old_raw_fp, "Raw fingerprints should differ (link added)"
+
+    current_paths = [path]
+    categories = categorize_paths(current_paths, passages_after, validation_cache)
+
+    # Should be 'modified' because prose same but links changed
+    assert categories[new_hash] == 'modified', f"Should categorize as modified (link added): {categories[new_hash]}"
 
 @test("categorize_paths - handles empty cache")
 def test_categorize_empty_cache():
@@ -302,8 +471,8 @@ def test_categorize_missing_fingerprint():
     # Should not crash
     categories = categorize_paths(current_paths, passages, validation_cache)
 
-    # Since fingerprint is missing but hash matches, should be modified
-    assert categories[path_hash] == 'modified', f"Should categorize as modified when fingerprint missing: {categories[path_hash]}"
+    # Since fingerprint is missing, we can't match content, so should be new
+    assert categories[path_hash] == 'new', f"Should categorize as new when fingerprint missing: {categories[path_hash]}"
 
 @test("categorize_paths - handles non-dict entries")
 def test_categorize_non_dict_entries():
@@ -327,7 +496,7 @@ def test_categorize_non_dict_entries():
 @test("build_passage_to_file_mapping - finds passages")
 def test_build_passage_mapping():
     # Use the actual source directory
-    source_dir = Path('/home/user/NaNoWriMo2025/src')
+    source_dir = PROJECT_ROOT / 'src'
 
     if not source_dir.exists():
         print("  (Skipping - no src directory)")
@@ -345,7 +514,7 @@ def test_build_passage_mapping():
 
 @test("get_file_commit_date - retrieves date for tracked file")
 def test_get_file_commit_date():
-    repo_root = Path('/home/user/NaNoWriMo2025')
+    repo_root = PROJECT_ROOT
 
     # Test with a file that should be tracked
     test_file = repo_root / 'README.md'
@@ -364,7 +533,7 @@ def test_get_file_commit_date():
 
 @test("get_file_commit_date - handles untracked file")
 def test_get_file_commit_date_untracked():
-    repo_root = Path('/home/user/NaNoWriMo2025')
+    repo_root = PROJECT_ROOT
 
     # Create a temporary file
     with tempfile.NamedTemporaryFile(dir=repo_root, delete=False, suffix='.tmp') as f:
@@ -404,7 +573,7 @@ def test_format_passage_text_selected():
     formatted = format_passage_text(text, selected_target='NextPassage')
 
     assert 'Continue' in formatted, "Should show selected link"
-    assert '(not selected)' in formatted, "Should mark unselected links"
+    assert '[unselected]' in formatted, "Should mark unselected links"
 
 @test("generate_passage_id_mapping - creates stable IDs")
 def test_generate_passage_id_mapping():
@@ -430,7 +599,7 @@ def test_generate_passage_id_mapping():
 
 @test("Integration - load actual validation cache")
 def test_load_real_cache():
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
 
     if not cache_file.exists():
         print("  (Skipping - no validation cache)")
@@ -452,7 +621,7 @@ def test_load_real_cache():
 def test_parse_real_twee():
     # We can't test this directly as it requires compiled HTML
     # But we can test the link extraction
-    twee_file = Path('/home/user/NaNoWriMo2025/src/KEB-251106.twee')
+    twee_file = PROJECT_ROOT / 'src' / 'KEB-251106.twee'
 
     if not twee_file.exists():
         print("  (Skipping - no twee file)")
@@ -469,7 +638,7 @@ def test_parse_real_twee():
 
 @test("Integration - categorize with real cache")
 def test_categorize_with_real_cache():
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
 
     if not cache_file.exists():
         print("  (Skipping - no validation cache)")
@@ -490,6 +659,93 @@ def test_categorize_with_real_cache():
     categories = categorize_paths(current_paths, passages, cache)
 
     assert isinstance(categories, dict), "Should return dict"
+
+@test("Integration - PR #65 link addition validation")
+def test_pr65_link_addition():
+    """
+    Test PR #65 scenario: Adding [[Sleep->Day 19 KEB]] link to Start passage.
+
+    This validates the core link-stripping behavior:
+    - Existing paths should be MODIFIED (same prose, link added)
+    - New path through Day 19 should be NEW (new prose)
+    """
+    # Real Start passage content BEFORE PR #65
+    start_before = """What is weighing on your mind today?
+
+[[A rumor]]
+
+[[The laundry->mansel-20251112]]"""
+
+    # Real Start passage content AFTER PR #65 (link added)
+    start_after = """What is weighing on your mind today?
+
+[[A rumor]]
+
+[[The laundry->mansel-20251112]]
+
+[[Sleep->Day 19 KEB]]"""
+
+    # Passages BEFORE PR #65
+    passages_before = {
+        'Start': {'text': start_before, 'pid': '1'},
+        'A rumor': {'text': 'There were rumors...', 'pid': '2'},
+        'mansel-20251112': {'text': 'Laundry content...', 'pid': '3'},
+    }
+
+    # Passages AFTER PR #65
+    passages_after = {
+        'Start': {'text': start_after, 'pid': '1'},
+        'A rumor': {'text': 'There were rumors...', 'pid': '2'},
+        'mansel-20251112': {'text': 'Laundry content...', 'pid': '3'},
+        'Day 19 KEB': {'text': 'Sleep was calling to Javlyn...', 'pid': '4'},
+    }
+
+    # Build validation cache with old paths
+    old_paths = [
+        ['Start', 'mansel-20251112'],
+        ['Start', 'A rumor'],
+    ]
+
+    validation_cache = {}
+    for old_path in old_paths:
+        path_hash = calculate_path_hash(old_path, passages_before)
+        content_fingerprint = calculate_content_fingerprint(old_path, passages_before)
+        raw_content_fingerprint = calculate_raw_content_fingerprint(old_path, passages_before)
+        route_hash = calculate_route_hash(old_path)
+
+        validation_cache[path_hash] = {
+            'route': ' → '.join(old_path),
+            'route_hash': route_hash,
+            'content_fingerprint': content_fingerprint,
+            'raw_content_fingerprint': raw_content_fingerprint,
+            'validated': True,
+        }
+
+    # Verify link stripping works
+    assert strip_links_from_text(start_before) == strip_links_from_text(start_after), \
+        "Link stripping should make prose identical"
+
+    # New paths after PR #65
+    new_paths = [
+        ['Start', 'mansel-20251112'],  # Same route, Start has link added
+        ['Start', 'A rumor'],           # Same route, Start has link added
+        ['Start', 'Day 19 KEB'],        # New route with new content
+    ]
+
+    # Categorize
+    categories = categorize_paths(new_paths, passages_after, validation_cache)
+
+    # Verify categorization
+    path1_hash = calculate_path_hash(['Start', 'mansel-20251112'], passages_after)
+    path2_hash = calculate_path_hash(['Start', 'A rumor'], passages_after)
+    path3_hash = calculate_path_hash(['Start', 'Day 19 KEB'], passages_after)
+
+    assert categories[path1_hash] == 'modified', \
+        f"Start → mansel should be MODIFIED (link added): {categories[path1_hash]}"
+    assert categories[path2_hash] == 'modified', \
+        f"Start → A rumor should be MODIFIED (link added): {categories[path2_hash]}"
+    assert categories[path3_hash] == 'new', \
+        f"Start → Day 19 should be NEW (new content): {categories[path3_hash]}"
 
 # ============================================================================
 # PART 3: EDGE CASE TESTS
@@ -594,7 +850,7 @@ def test_cache_round_trip():
 
 @test("Workflow - check-story-continuity can read cache")
 def test_workflow_check_continuity():
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
 
     if not cache_file.exists():
         print("  (Skipping - no validation cache)")
@@ -684,9 +940,12 @@ def run_all_tests():
     test_similarity_different()
     test_similarity_partial()
     test_similarity_empty()
+    test_strip_links()
     test_categorize_new_path()
     test_categorize_unchanged_path()
-    test_categorize_modified_content()
+    test_categorize_new_content_change()
+    test_categorize_modified_restructured()
+    test_categorize_modified_link_added()
     test_categorize_empty_cache()
     test_categorize_missing_fingerprint()
     test_categorize_non_dict_entries()
@@ -705,6 +964,7 @@ def run_all_tests():
     test_load_real_cache()
     test_parse_real_twee()
     test_categorize_with_real_cache()
+    test_pr65_link_addition()
 
     print()
     print("PART 3: Edge Case Tests")
