@@ -457,8 +457,9 @@ def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
     """
     try:
         # Get the most recent commit date for this file
+        # Use -m to include merge commits
         result = subprocess.run(
-            ['git', 'log', '-1', '--format=%aI', '--', str(file_path)],
+            ['git', 'log', '-m', '-1', '--format=%aI', '--', str(file_path)],
             cwd=str(repo_root),
             capture_output=True,
             text=True,
@@ -471,6 +472,36 @@ def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
             return None
     except Exception as e:
         print(f"Warning: Could not get commit date for {file_path}: {e}", file=sys.stderr)
+        return None
+
+def get_file_creation_date(file_path: Path, repo_root: Path) -> Optional[str]:
+    """
+    Get the earliest commit date for a file (when it was first added).
+
+    Args:
+        file_path: Path to the file
+        repo_root: Path to git repository root
+
+    Returns:
+        ISO format datetime string of earliest commit, or None if unavailable
+    """
+    try:
+        # Get all commit dates in reverse chronological order, with -m to include merge commits
+        result = subprocess.run(
+            ['git', 'log', '-m', '--format=%aI', '--reverse', '--', str(file_path)],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0 and result.stdout.strip():
+            dates = result.stdout.strip().split('\n')
+            return dates[0] if dates else None
+        else:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not get creation date for {file_path}: {e}", file=sys.stderr)
         return None
 
 def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
@@ -501,6 +532,38 @@ def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
     # Return the most recent date
     if commit_dates:
         return max(commit_dates)
+    else:
+        return None
+
+def get_path_creation_date(path: List[str], passage_to_file: Dict[str, Path],
+                          repo_root: Path) -> Optional[str]:
+    """
+    Get the date when a path became fully available (complete).
+    This finds the most recent creation date among all passages in the path.
+
+    Args:
+        path: List of passage names in the path
+        passage_to_file: Mapping from passage names to file paths
+        repo_root: Path to git repository root
+
+    Returns:
+        ISO format datetime string of when path became complete, or None if unavailable
+    """
+    creation_dates = []
+
+    for passage_name in path:
+        if passage_name not in passage_to_file:
+            continue
+
+        file_path = passage_to_file[passage_name]
+        creation_date = get_file_creation_date(file_path, repo_root)
+
+        if creation_date:
+            creation_dates.append(creation_date)
+
+    # Return the most recent creation date - when the path became complete
+    if creation_dates:
+        return max(creation_dates)
     else:
         return None
 
@@ -620,18 +683,18 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     path_lengths = [len(p) for p in all_paths]
     total_passages = sum(path_lengths)
 
-    # Sort paths by commit date (newest first), then by category
+    # Sort paths by creation date (newest first), then by category
     paths_with_metadata = []
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
-        commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
+        created_date = validation_cache.get(path_hash, {}).get('created_date', '')
         category = path_categories.get(path_hash, 'new')
-        paths_with_metadata.append((path, path_hash, commit_date, category))
+        paths_with_metadata.append((path, path_hash, created_date, category))
 
-    # Sort: newest commit date first, then by category (new, modified, unchanged)
+    # Sort: newest creation date first, then by category (new, modified, unchanged)
     category_order = {'new': 2, 'modified': 1, 'unchanged': 0}
     paths_with_metadata.sort(key=lambda x: (
-        x[2] if x[2] else '',  # commit_date (empty strings go last)
+        x[2] if x[2] else '',  # created_date (empty strings go last)
         category_order.get(x[3], 3)  # category
     ), reverse=True)
 
@@ -965,7 +1028,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 '''
 
     # Generate each path (using sorted paths with metadata)
-    for i, (path, path_hash, commit_date, category) in enumerate(paths_with_metadata, 1):
+    for i, (path, path_hash, created_date, category) in enumerate(paths_with_metadata, 1):
         is_validated = validation_cache.get(path_hash, {}).get('validated', False)
         first_seen = validation_cache.get(path_hash, {}).get('first_seen', '')
 
@@ -996,18 +1059,18 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
                         🔑 ID: {path_hash}
                     </div>'''
 
-        if commit_date:
-            # Format commit date nicely
+        if created_date:
+            # Format created date nicely
             try:
                 from datetime import datetime as dt
-                commit_dt = dt.fromisoformat(commit_date.replace('Z', '+00:00'))
-                commit_display = commit_dt.strftime('%Y-%m-%d')
+                created_dt = dt.fromisoformat(created_date.replace('Z', '+00:00'))
+                created_display = created_dt.strftime('%Y-%m-%d')
             except:
-                commit_display = commit_date[:10] if len(commit_date) >= 10 else commit_date
+                created_display = created_date[:10] if len(created_date) >= 10 else created_date
 
             html += f'''
                     <div class="path-meta-item">
-                        📅 Committed: {commit_display}
+                        📅 Committed: {created_display}
                     </div>'''
 
         html += f'''
@@ -1228,6 +1291,7 @@ def main():
         raw_content_fingerprint = calculate_raw_content_fingerprint(path, passages)
         route_hash = calculate_route_hash(path)
         commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
         category = path_categories.get(path_hash, 'new')
 
         if path_hash not in validation_cache:
@@ -1239,6 +1303,7 @@ def main():
                 'content_fingerprint': content_fingerprint,
                 'raw_content_fingerprint': raw_content_fingerprint,
                 'commit_date': commit_date,
+                'created_date': creation_date,  # Use earliest commit date (when content was first created)
                 'category': category,
             }
         else:
@@ -1247,6 +1312,11 @@ def main():
             validation_cache[path_hash]['raw_content_fingerprint'] = raw_content_fingerprint
             validation_cache[path_hash]['route_hash'] = route_hash
             validation_cache[path_hash]['commit_date'] = commit_date
+
+            # Update created_date to reflect the earliest passage creation date
+            # This ensures we show when content was first created, not when path structure appeared
+            if creation_date:
+                validation_cache[path_hash]['created_date'] = creation_date
 
             # Only update category if path is validated OR if new category is not 'unchanged'
             # This prevents unvalidated paths from being marked as 'unchanged'
