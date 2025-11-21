@@ -620,18 +620,18 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     path_lengths = [len(p) for p in all_paths]
     total_passages = sum(path_lengths)
 
-    # Sort paths by commit date (newest first), then by category
+    # Sort paths by creation date (newest first), then by category
     paths_with_metadata = []
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
-        commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
+        created_date = validation_cache.get(path_hash, {}).get('created_date', '')
         category = path_categories.get(path_hash, 'new')
-        paths_with_metadata.append((path, path_hash, commit_date, category))
+        paths_with_metadata.append((path, path_hash, created_date, category))
 
-    # Sort: newest commit date first, then by category (new, modified, unchanged)
+    # Sort: newest creation date first, then by category (new, modified, unchanged)
     category_order = {'new': 2, 'modified': 1, 'unchanged': 0}
     paths_with_metadata.sort(key=lambda x: (
-        x[2] if x[2] else '',  # commit_date (empty strings go last)
+        x[2] if x[2] else '',  # created_date (empty strings go last)
         category_order.get(x[3], 3)  # category
     ), reverse=True)
 
@@ -965,7 +965,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 '''
 
     # Generate each path (using sorted paths with metadata)
-    for i, (path, path_hash, commit_date, category) in enumerate(paths_with_metadata, 1):
+    for i, (path, path_hash, created_date, category) in enumerate(paths_with_metadata, 1):
         is_validated = validation_cache.get(path_hash, {}).get('validated', False)
         first_seen = validation_cache.get(path_hash, {}).get('first_seen', '')
 
@@ -996,18 +996,18 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
                         🔑 ID: {path_hash}
                     </div>'''
 
-        if commit_date:
-            # Format commit date nicely
+        if created_date:
+            # Format created date nicely
             try:
                 from datetime import datetime as dt
-                commit_dt = dt.fromisoformat(commit_date.replace('Z', '+00:00'))
-                commit_display = commit_dt.strftime('%Y-%m-%d')
+                created_dt = dt.fromisoformat(created_date.replace('Z', '+00:00'))
+                created_display = created_dt.strftime('%Y-%m-%d')
             except:
-                commit_display = commit_date[:10] if len(commit_date) >= 10 else commit_date
+                created_display = created_date[:10] if len(created_date) >= 10 else created_date
 
             html += f'''
                     <div class="path-meta-item">
-                        📅 Committed: {commit_display}
+                        📅 Committed: {created_display}
                     </div>'''
 
         html += f'''
@@ -1239,6 +1239,7 @@ def main():
                 'content_fingerprint': content_fingerprint,
                 'raw_content_fingerprint': raw_content_fingerprint,
                 'commit_date': commit_date,
+                'created_date': commit_date,  # Set created_date to current commit_date for new paths
                 'category': category,
             }
         else:
@@ -1247,6 +1248,10 @@ def main():
             validation_cache[path_hash]['raw_content_fingerprint'] = raw_content_fingerprint
             validation_cache[path_hash]['route_hash'] = route_hash
             validation_cache[path_hash]['commit_date'] = commit_date
+
+            # Preserve created_date if it exists, otherwise set it to commit_date
+            if 'created_date' not in validation_cache[path_hash]:
+                validation_cache[path_hash]['created_date'] = commit_date
 
             # Only update category if path is validated OR if new category is not 'unchanged'
             # This prevents unvalidated paths from being marked as 'unchanged'
