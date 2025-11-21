@@ -104,7 +104,7 @@ new_prose_fp = hash(strip_links("Javlyn opened her eyes..."))  # "path2"
 
 ## Test Results
 
-Comprehensive test coverage (38/39 tests passing - 97.4%):
+Comprehensive test coverage (39/40 tests passing - 97.5%):
 
 ### Unit Tests
 - ✓ `test_strip_links()` - Link removal and whitespace normalization
@@ -114,7 +114,7 @@ Comprehensive test coverage (38/39 tests passing - 97.4%):
 - ✓ `test_categorize_modified_link_added()` - Links added (core new behavior)
 
 ### Integration Tests
-- ✓ Real PR scenarios validated (`test_pr65_real.py`)
+- ✓ `test_pr65_link_addition()` - Real PR #65 scenario validation
 - ✓ Backward compatibility with old cache formats
 - ✓ Edge cases (missing fields, empty cache, etc.)
 

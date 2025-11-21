@@ -660,6 +660,93 @@ def test_categorize_with_real_cache():
 
     assert isinstance(categories, dict), "Should return dict"
 
+@test("Integration - PR #65 link addition validation")
+def test_pr65_link_addition():
+    """
+    Test PR #65 scenario: Adding [[Sleep->Day 19 KEB]] link to Start passage.
+
+    This validates the core link-stripping behavior:
+    - Existing paths should be MODIFIED (same prose, link added)
+    - New path through Day 19 should be NEW (new prose)
+    """
+    # Real Start passage content BEFORE PR #65
+    start_before = """What is weighing on your mind today?
+
+[[A rumor]]
+
+[[The laundry->mansel-20251112]]"""
+
+    # Real Start passage content AFTER PR #65 (link added)
+    start_after = """What is weighing on your mind today?
+
+[[A rumor]]
+
+[[The laundry->mansel-20251112]]
+
+[[Sleep->Day 19 KEB]]"""
+
+    # Passages BEFORE PR #65
+    passages_before = {
+        'Start': {'text': start_before, 'pid': '1'},
+        'A rumor': {'text': 'There were rumors...', 'pid': '2'},
+        'mansel-20251112': {'text': 'Laundry content...', 'pid': '3'},
+    }
+
+    # Passages AFTER PR #65
+    passages_after = {
+        'Start': {'text': start_after, 'pid': '1'},
+        'A rumor': {'text': 'There were rumors...', 'pid': '2'},
+        'mansel-20251112': {'text': 'Laundry content...', 'pid': '3'},
+        'Day 19 KEB': {'text': 'Sleep was calling to Javlyn...', 'pid': '4'},
+    }
+
+    # Build validation cache with old paths
+    old_paths = [
+        ['Start', 'mansel-20251112'],
+        ['Start', 'A rumor'],
+    ]
+
+    validation_cache = {}
+    for old_path in old_paths:
+        path_hash = calculate_path_hash(old_path, passages_before)
+        content_fingerprint = calculate_content_fingerprint(old_path, passages_before)
+        raw_content_fingerprint = calculate_raw_content_fingerprint(old_path, passages_before)
+        route_hash = calculate_route_hash(old_path)
+
+        validation_cache[path_hash] = {
+            'route': ' → '.join(old_path),
+            'route_hash': route_hash,
+            'content_fingerprint': content_fingerprint,
+            'raw_content_fingerprint': raw_content_fingerprint,
+            'validated': True,
+        }
+
+    # Verify link stripping works
+    assert strip_links_from_text(start_before) == strip_links_from_text(start_after), \
+        "Link stripping should make prose identical"
+
+    # New paths after PR #65
+    new_paths = [
+        ['Start', 'mansel-20251112'],  # Same route, Start has link added
+        ['Start', 'A rumor'],           # Same route, Start has link added
+        ['Start', 'Day 19 KEB'],        # New route with new content
+    ]
+
+    # Categorize
+    categories = categorize_paths(new_paths, passages_after, validation_cache)
+
+    # Verify categorization
+    path1_hash = calculate_path_hash(['Start', 'mansel-20251112'], passages_after)
+    path2_hash = calculate_path_hash(['Start', 'A rumor'], passages_after)
+    path3_hash = calculate_path_hash(['Start', 'Day 19 KEB'], passages_after)
+
+    assert categories[path1_hash] == 'modified', \
+        f"Start → mansel should be MODIFIED (link added): {categories[path1_hash]}"
+    assert categories[path2_hash] == 'modified', \
+        f"Start → A rumor should be MODIFIED (link added): {categories[path2_hash]}"
+    assert categories[path3_hash] == 'new', \
+        f"Start → Day 19 should be NEW (new content): {categories[path3_hash]}"
+
 # ============================================================================
 # PART 3: EDGE CASE TESTS
 # ============================================================================
@@ -877,6 +964,7 @@ def run_all_tests():
     test_load_real_cache()
     test_parse_real_twee()
     test_categorize_with_real_cache()
+    test_pr65_link_addition()
 
     print()
     print("PART 3: Edge Case Tests")
