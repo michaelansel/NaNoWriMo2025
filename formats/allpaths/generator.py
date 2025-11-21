@@ -504,6 +504,38 @@ def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
     else:
         return None
 
+def get_path_creation_date(path: List[str], passage_to_file: Dict[str, Path],
+                          repo_root: Path) -> Optional[str]:
+    """
+    Get the most recent commit date among all passages in a path.
+    This represents when the path became fully available (complete).
+
+    Args:
+        path: List of passage names in the path
+        passage_to_file: Mapping from passage names to file paths
+        repo_root: Path to git repository root
+
+    Returns:
+        ISO format datetime string of most recent commit, or None if unavailable
+    """
+    commit_dates = []
+
+    for passage_name in path:
+        if passage_name not in passage_to_file:
+            continue
+
+        file_path = passage_to_file[passage_name]
+        commit_date = get_file_commit_date(file_path, repo_root)
+
+        if commit_date:
+            commit_dates.append(commit_date)
+
+    # Return the most recent date - when the path became complete
+    if commit_dates:
+        return max(commit_dates)
+    else:
+        return None
+
 def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
     """
     Calculate similarity between two paths based on shared passages.
@@ -1228,6 +1260,7 @@ def main():
         raw_content_fingerprint = calculate_raw_content_fingerprint(path, passages)
         route_hash = calculate_route_hash(path)
         commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
         category = path_categories.get(path_hash, 'new')
 
         if path_hash not in validation_cache:
@@ -1239,7 +1272,7 @@ def main():
                 'content_fingerprint': content_fingerprint,
                 'raw_content_fingerprint': raw_content_fingerprint,
                 'commit_date': commit_date,
-                'created_date': commit_date,  # Set created_date to current commit_date for new paths
+                'created_date': creation_date,  # Use earliest commit date (when content was first created)
                 'category': category,
             }
         else:
@@ -1249,9 +1282,10 @@ def main():
             validation_cache[path_hash]['route_hash'] = route_hash
             validation_cache[path_hash]['commit_date'] = commit_date
 
-            # Preserve created_date if it exists, otherwise set it to commit_date
-            if 'created_date' not in validation_cache[path_hash]:
-                validation_cache[path_hash]['created_date'] = commit_date
+            # Update created_date to reflect the earliest passage creation date
+            # This ensures we show when content was first created, not when path structure appeared
+            if creation_date:
+                validation_cache[path_hash]['created_date'] = creation_date
 
             # Only update category if path is validated OR if new category is not 'unchanged'
             # This prevents unvalidated paths from being marked as 'unchanged'
