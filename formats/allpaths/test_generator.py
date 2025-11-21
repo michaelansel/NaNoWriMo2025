@@ -15,8 +15,8 @@ import tempfile
 from pathlib import Path
 from datetime import datetime
 
-# Add the formats/allpaths directory to the path so we can import the generator
-sys.path.insert(0, str(Path(__file__).parent / 'formats' / 'allpaths'))
+# Project root is two directories up from this file (formats/allpaths/)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 from generator import (
     calculate_path_hash,
@@ -496,7 +496,7 @@ def test_categorize_non_dict_entries():
 @test("build_passage_to_file_mapping - finds passages")
 def test_build_passage_mapping():
     # Use the actual source directory
-    source_dir = Path('/home/user/NaNoWriMo2025/src')
+    source_dir = PROJECT_ROOT / 'src'
 
     if not source_dir.exists():
         print("  (Skipping - no src directory)")
@@ -514,7 +514,7 @@ def test_build_passage_mapping():
 
 @test("get_file_commit_date - retrieves date for tracked file")
 def test_get_file_commit_date():
-    repo_root = Path('/home/user/NaNoWriMo2025')
+    repo_root = PROJECT_ROOT
 
     # Test with a file that should be tracked
     test_file = repo_root / 'README.md'
@@ -533,7 +533,7 @@ def test_get_file_commit_date():
 
 @test("get_file_commit_date - handles untracked file")
 def test_get_file_commit_date_untracked():
-    repo_root = Path('/home/user/NaNoWriMo2025')
+    repo_root = PROJECT_ROOT
 
     # Create a temporary file
     with tempfile.NamedTemporaryFile(dir=repo_root, delete=False, suffix='.tmp') as f:
@@ -599,7 +599,7 @@ def test_generate_passage_id_mapping():
 
 @test("Integration - load actual validation cache")
 def test_load_real_cache():
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
 
     if not cache_file.exists():
         print("  (Skipping - no validation cache)")
@@ -621,7 +621,7 @@ def test_load_real_cache():
 def test_parse_real_twee():
     # We can't test this directly as it requires compiled HTML
     # But we can test the link extraction
-    twee_file = Path('/home/user/NaNoWriMo2025/src/KEB-251106.twee')
+    twee_file = PROJECT_ROOT / 'src' / 'KEB-251106.twee'
 
     if not twee_file.exists():
         print("  (Skipping - no twee file)")
@@ -638,7 +638,7 @@ def test_parse_real_twee():
 
 @test("Integration - categorize with real cache")
 def test_categorize_with_real_cache():
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
 
     if not cache_file.exists():
         print("  (Skipping - no validation cache)")
@@ -850,7 +850,7 @@ def test_cache_round_trip():
 
 @test("Workflow - check-story-continuity can read cache")
 def test_workflow_check_continuity():
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
 
     if not cache_file.exists():
         print("  (Skipping - no validation cache)")

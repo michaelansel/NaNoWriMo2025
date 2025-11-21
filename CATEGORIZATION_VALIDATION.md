@@ -118,6 +118,11 @@ Comprehensive test coverage (39/40 tests passing - 97.5%):
 - ✓ Backward compatibility with old cache formats
 - ✓ Edge cases (missing fields, empty cache, etc.)
 
+All tests are in `formats/allpaths/test_generator.py`. Run with:
+```bash
+python3 formats/allpaths/test_generator.py
+```
+
 ### Known Issues
 - ✗ `format_passage_text - marks unselected links` (pre-existing, unrelated)
 
