@@ -2,106 +2,158 @@
 
 ## Design Principles
 
-**Content-Based Categorization:**
-- **NEW**: Path contains genuinely new prose content that never appeared before
-- **MODIFIED**: Path contains existing prose (may be restructured across different passages)
-- **UNCHANGED**: Path contains identical prose delivered through identical structure
+**Two-Phase Content-Based Categorization:**
 
-## PR #70 Validation: "Updating for Day 20 - delayed light magic"
+The system uses two fingerprints to distinguish between prose changes and navigation changes:
 
-### What Changed
+1. **Prose Fingerprint** (`content_fingerprint`): Hash of passage text with links stripped
+   - Detects actual prose changes
+   - Ignores link additions/removals/changes
+   - Whitespace normalized
 
-PR #70 introduced a choice in the "Day 8 KEB" passage:
+2. **Raw Fingerprint** (`raw_content_fingerprint`): Hash of full passage text with links
+   - Detects ANY content change (prose OR links)
+   - Used to distinguish MODIFIED from UNCHANGED
 
-**Before:**
-```twee
-:: Day 8 KEB
-[prose content...]
-"Woah," Terence murmured.
-[continued...]
-```
+3. **Route Hash** (`route_hash`): Hash of passage sequence
+   - Identifies structural changes (different passage order)
 
-**After:**
-```twee
-:: Day 8 KEB
-[prose content...]
-Working was [[immediate]] or [[delayed->Day 20 KEB]]
-
-:: Immediate
-"Woah," Terence murmured.
-[continued...]
-```
-
-Plus a new file `KEB-251120.twee` with "Day 20 KEB" passage containing entirely new prose.
-
-### Expected Categorization
-
-1. **Path ending in "immediate"**: Same prose as old path (just split into more passages)
-   - Old: Start → ... → Day 8 KEB → [contains "Woah" inline]
-   - New: Start → ... → Day 8 KEB → immediate → [same "Woah" text]
-   - **Expected: MODIFIED** (same content, restructured)
-
-2. **Path ending in "Day 20 KEB"**: Brand new prose content
-   - New: Start → ... → Day 8 KEB → Day 20 KEB → [new prose: "Javlyn opened her eyes..."]
-   - **Expected: NEW** (genuinely new content)
-
-### How the Logic Works
+### Categorization Logic
 
 ```python
-# For path through "immediate":
-old_content_fingerprint = hash("Day 8 prose + Woah prose")
-new_content_fingerprint = hash("Day 8 prose + Woah prose")  # Same!
-old_route_hash = hash("Start → ... → Day 8 KEB")
-new_route_hash = hash("Start → ... → Day 8 KEB → immediate")  # Different!
-
-# Same content, different route → MODIFIED ✓
-
-# For path through "Day 20 KEB":
-new_content_fingerprint = hash("Day 8 prose + Day 20 new prose")
-# No matching fingerprint in old cache → NEW ✓
+if prose_fingerprint matches old path:
+    if route_hash matches AND raw_fingerprint matches:
+        → UNCHANGED (nothing changed)
+    else:
+        → MODIFIED (same prose, but links or structure changed)
+else:
+    → NEW (genuinely new prose content)
 ```
 
-## Recent PR Validation
+**Categories:**
+- **NEW**: Path contains genuinely new prose content that never appeared before
+- **MODIFIED**: Path contains existing prose, but links/navigation/structure changed
+- **UNCHANGED**: Path is completely unchanged (prose + links + structure)
 
-### Day 19 KEB (commits 1b149c7, f757bb2)
+## Link Stripping Implementation
 
-- Added new link from Start: `[[Sleep->Day 19 KEB]]`
-- Created new file with new prose content
-- **Status in cache**: `"category": "new"`
-- **Expected**: NEW ✓
-- **Reason**: Genuinely new prose content
+Links are stripped using `strip_links_from_text()` which:
+- Removes all `[[...]]` patterns (including `[[target]]`, `[[display->target]]`)
+- Normalizes whitespace (collapses multiple newlines/spaces)
+- Strips leading/trailing whitespace
 
-### Content Edits (Nov 19-20)
+This ensures that adding/removing/changing links doesn't affect the prose fingerprint.
 
-Paths marked as "modified" in current cache (e.g., path `a93cb8ed`):
-- Route: Start → A rumor → Continue on → No one → Javlyn continued → Day 10 KEB
-- Old fingerprint: `7a68c812` (Nov 19)
-- New fingerprint: `936b3bf7` (Nov 20)
-- **Current status**: "modified" (generated with old logic)
-- **With new logic**: Should be "new" (content changed, different prose)
+## Validation Against Real PRs
 
-Note: Current cache was generated before the fix, so some paths have incorrect categorization.
+### PR #65: "Updating for Day 19 - sleep"
+
+**What Changed:**
+- Added link in Start.twee: `[[Sleep->Day 19 KEB]]`
+- Created new file KEB-251119.twee with Day 19 prose
+
+**Expected Categorization:**
+1. `Start → mansel-20251112`: Same prose, link added → **MODIFIED** ✓
+2. `Start → A rumor`: Same prose, link added → **MODIFIED** ✓
+3. `Start → Day 19 KEB`: New prose content → **NEW** ✓
+
+**How It Works:**
+```python
+# For paths through Start:
+old_prose_fp = hash(strip_links("What is weighing..."))  # "abc123"
+new_prose_fp = hash(strip_links("What is weighing..."))  # "abc123" (same!)
+old_raw_fp = hash("What is weighing...\n[[Laundry]]")    # "def456"
+new_raw_fp = hash("What is weighing...\n[[Laundry]]\n[[Sleep]]")  # "xyz789" (different!)
+
+# prose_fp matches → same prose
+# raw_fp differs → links changed
+# Result: MODIFIED ✓
+
+# For path through Day 19:
+new_prose_fp = hash(strip_links("Sleep was calling..."))  # "new999"
+# No matching prose_fp in cache → NEW ✓
+```
+
+### PR #70: "Updating for Day 20 - delayed light magic"
+
+**What Changed:**
+- Split Day 8 passage, added choice: `[[immediate]]` or `[[delayed->Day 20 KEB]]`
+- Moved existing prose to new "immediate" passage
+- Created KEB-251120.twee with Day 20 prose
+
+**Expected Categorization:**
+1. Path through `immediate`: Same prose (just restructured) → **MODIFIED** ✓
+2. Path through `Day 20 KEB`: New prose content → **NEW** ✓
+
+**How It Works:**
+```python
+# For path through "immediate":
+old_prose_fp = hash(strip_links("Day 8 text + Woah text"))  # "path1"
+new_prose_fp = hash(strip_links("Day 8 text + Woah text"))  # "path1" (same!)
+old_route = "Start → ... → Day 8 KEB"
+new_route = "Start → ... → Day 8 KEB → immediate"
+
+# prose_fp matches → same prose
+# route differs → restructured
+# Result: MODIFIED ✓
+
+# For path through Day 20:
+new_prose_fp = hash(strip_links("Javlyn opened her eyes..."))  # "path2"
+# No matching prose_fp → NEW ✓
+```
 
 ## Test Results
 
-Tests updated to match content-based logic:
-- **36/37 passing (97.3% success rate)**
-- All categorization tests pass
-- One unrelated failure in `format_passage_text`
+Comprehensive test coverage (38/39 tests passing - 97.4%):
 
-Key test cases:
-1. ✓ NEW path (empty cache)
-2. ✓ UNCHANGED path (same content, same route)
-3. ✓ NEW path (content changed)
-4. ✓ MODIFIED path (same content, restructured/renamed passages)
-5. ✓ Missing fingerprint field (backward compatibility)
+### Unit Tests
+- ✓ `test_strip_links()` - Link removal and whitespace normalization
+- ✓ `test_categorize_unchanged_path()` - Nothing changed
+- ✓ `test_categorize_new_content_change()` - Prose edited
+- ✓ `test_categorize_modified_restructured()` - Passages renamed/restructured
+- ✓ `test_categorize_modified_link_added()` - Links added (core new behavior)
 
-## Validation Summary
+### Integration Tests
+- ✓ Real PR scenarios validated (`test_pr65_real.py`)
+- ✓ Backward compatibility with old cache formats
+- ✓ Edge cases (missing fields, empty cache, etc.)
 
-The content-based categorization logic correctly identifies:
-- ✅ New endings with new prose → **NEW**
-- ✅ Restructured passages with same prose → **MODIFIED**
-- ✅ Edited prose in existing routes → **NEW**
+### Known Issues
+- ✗ `format_passage_text - marks unselected links` (pre-existing, unrelated)
+
+## Breaking Changes & Migration
+
+### Cache Format Changes
+
+**New fields added to validation cache:**
+- `route_hash`: Hash of passage sequence (for structure comparison)
+- `raw_content_fingerprint`: Hash with links (for link change detection)
+
+**Changed field meaning:**
+- `content_fingerprint`: Now prose-only (links stripped) - previously included links
+
+### Backward Compatibility
+
+The code handles old caches gracefully:
+- Missing `route_hash`: Calculated from `route` string
+- Missing `raw_content_fingerprint`: Path marked as MODIFIED (conservative)
+
+**Note:** Old caches with `content_fingerprint` from before link-stripping was added will have different fingerprints. Paths may be re-categorized as NEW/MODIFIED on first run after upgrade.
+
+### Migration Recommendation
+
+For cleanest results, regenerate the validation cache after deploying this change:
+```bash
+rm allpaths-validation-status.json
+./scripts/build-allpaths.sh
+```
+
+## Implementation Summary
+
+This fix addresses the original issue where new endings were incorrectly marked as "modified" based on structural similarity (>70% passage overlap). The two-phase fingerprinting approach correctly distinguishes:
+
+- ✅ Adding new prose → **NEW**
+- ✅ Adding/removing/changing links → **MODIFIED**
+- ✅ Restructuring passages (same prose) → **MODIFIED**
+- ✅ Editing prose → **NEW**
 - ✅ No changes → **UNCHANGED**
-
-This fixes the original issue where new endings were incorrectly marked as "modified" based on structural similarity (>70% passage overlap).

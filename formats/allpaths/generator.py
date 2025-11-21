@@ -595,6 +595,9 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     categories[path_hash] = 'unchanged'
                     found_exact_match = True
                     break
+                    # Note: If old_raw_fp is None (old cache without raw_content_fingerprint),
+                    # the comparison above will fail, and path will be marked MODIFIED.
+                    # This is conservative but correct: we can't verify links match.
 
             if not found_exact_match:
                 # Same prose but different route/links = MODIFIED
