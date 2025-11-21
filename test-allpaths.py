@@ -198,6 +198,37 @@ def test_similarity_empty():
 
     assert similarity == 0.0, f"Empty path should have similarity 0.0: {similarity}"
 
+@test("strip_links_from_text - removes all link syntax")
+def test_strip_links():
+    # Test simple link
+    text1 = "Some text [[Target]] more text"
+    result1 = strip_links_from_text(text1)
+    assert '[[' not in result1, "Should remove link brackets"
+    assert 'Target' not in result1, "Should remove link target"
+    assert 'Some text' in result1, "Should preserve prose"
+    assert 'more text' in result1, "Should preserve prose"
+
+    # Test arrow link
+    text2 = "Before [[Display->Target]] after"
+    result2 = strip_links_from_text(text2)
+    assert '[[' not in result2, "Should remove link brackets"
+    assert '->' not in result2, "Should remove arrow"
+    assert 'Before' in result2, "Should preserve prose"
+    assert 'after' in result2, "Should preserve prose"
+
+    # Test whitespace normalization
+    text3 = "Line 1\n\n[[Link1]]\n\n[[Link2]]\n\nLine 2"
+    result3 = strip_links_from_text(text3)
+    assert '[[' not in result3, "Should remove all links"
+    assert 'Line 1' in result3, "Should preserve prose"
+    assert 'Line 2' in result3, "Should preserve prose"
+
+    # Test that same prose with different links produces same result
+    text_with_link1 = "Hello world\n\n[[Link A]]"
+    text_with_link2 = "Hello world\n\n[[Link B]]"
+    assert strip_links_from_text(text_with_link1) == strip_links_from_text(text_with_link2), \
+        "Same prose with different links should produce same stripped result"
+
 @test("categorize_paths - new path")
 def test_categorize_new_path():
     passages = {
@@ -359,6 +390,51 @@ def test_categorize_modified_restructured():
 
     # Should be 'modified' because same content, different route
     assert categories[renamed_hash] == 'modified', f"Should categorize as modified (restructured): {categories[renamed_hash]}"
+
+@test("categorize_paths - modified path (link added)")
+def test_categorize_modified_link_added():
+    # Test the core new behavior: adding links while keeping prose same → MODIFIED
+    passages_before = {
+        'Start': {'text': 'What is weighing on your mind today?', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+    passages_after = {
+        'Start': {'text': 'What is weighing on your mind today?\n\n[[New Link->Somewhere]]', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+
+    path = ['Start', 'End']
+
+    # Build cache with old version
+    old_hash = calculate_path_hash(path, passages_before)
+    old_prose_fp = calculate_content_fingerprint(path, passages_before)
+    old_raw_fp = calculate_raw_content_fingerprint(path, passages_before)
+    old_route_hash = calculate_route_hash(path)
+
+    validation_cache = {
+        old_hash: {
+            'route': 'Start → End',
+            'route_hash': old_route_hash,
+            'content_fingerprint': old_prose_fp,
+            'raw_content_fingerprint': old_raw_fp,
+            'validated': True
+        }
+    }
+
+    # Check new version
+    new_hash = calculate_path_hash(path, passages_after)
+    new_prose_fp = calculate_content_fingerprint(path, passages_after)
+    new_raw_fp = calculate_raw_content_fingerprint(path, passages_after)
+
+    # Verify our assumptions
+    assert new_prose_fp == old_prose_fp, "Prose fingerprints should match (links stripped)"
+    assert new_raw_fp != old_raw_fp, "Raw fingerprints should differ (link added)"
+
+    current_paths = [path]
+    categories = categorize_paths(current_paths, passages_after, validation_cache)
+
+    # Should be 'modified' because prose same but links changed
+    assert categories[new_hash] == 'modified', f"Should categorize as modified (link added): {categories[new_hash]}"
 
 @test("categorize_paths - handles empty cache")
 def test_categorize_empty_cache():
@@ -777,10 +853,12 @@ def run_all_tests():
     test_similarity_different()
     test_similarity_partial()
     test_similarity_empty()
+    test_strip_links()
     test_categorize_new_path()
     test_categorize_unchanged_path()
     test_categorize_new_content_change()
     test_categorize_modified_restructured()
+    test_categorize_modified_link_added()
     test_categorize_empty_cache()
     test_categorize_missing_fingerprint()
     test_categorize_non_dict_entries()
