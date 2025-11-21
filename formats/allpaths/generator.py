@@ -245,6 +245,22 @@ def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) ->
     combined = '\n'.join(content_parts)
     return hashlib.md5(combined.encode()).hexdigest()[:8]
 
+def calculate_route_hash(path: List[str]) -> str:
+    """Calculate hash based ONLY on passage names (route structure), not content.
+
+    This identifies the path structure independent of content changes.
+    Two paths with the same sequence of passages will have the same route_hash
+    even if the content in those passages has been edited.
+
+    Args:
+        path: List of passage names in order
+
+    Returns:
+        8-character hex hash based on route structure only
+    """
+    route_string = ' → '.join(path)
+    return hashlib.md5(route_string.encode()).hexdigest()[:8]
+
 def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
     """
     Generate a stable mapping from passage names to random-looking hex IDs.
@@ -457,7 +473,18 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     validation_cache: Dict) -> Dict[str, str]:
     """
-    Categorize paths as New, Modified, or Unchanged based on comparison with validation cache.
+    Categorize paths as New, Modified, or Unchanged based on prose content.
+
+    Categorization logic:
+    - NEW: Path contains genuinely new prose content that never appeared before
+    - MODIFIED: Path contains existing prose (may be restructured across different passages)
+    - UNCHANGED: Path contains identical prose delivered through identical structure
+
+    This means:
+    - Adding new prose (new ending, new content) → NEW path
+    - Restructuring existing prose (splitting passages, renaming) → MODIFIED path
+    - Editing prose in existing passages → NEW path (content changed)
+    - No changes → UNCHANGED path
 
     Args:
         current_paths: List of current paths
@@ -469,9 +496,8 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
     """
     categories = {}
 
-    # Build a mapping of old fingerprints to old paths for comparison
-    old_paths_by_fingerprint = {}
-    old_paths_by_hash = {}
+    # Build lookup of old content fingerprints to old data
+    old_fingerprints = {}  # content_fingerprint -> list of (path_hash, route_hash)
 
     for old_hash, old_data in validation_cache.items():
         # Skip non-path entries (like 'last_updated') and non-dict values
@@ -480,43 +506,41 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
         old_route = old_data.get('route', '').split(' → ')
         old_fingerprint = old_data.get('content_fingerprint')
+        old_route_hash = old_data.get('route_hash')
 
-        old_paths_by_hash[old_hash] = old_route
+        # If route_hash doesn't exist (old cache format), calculate it from route
+        if not old_route_hash:
+            old_route_hash = calculate_route_hash(old_route)
 
         if old_fingerprint:
-            if old_fingerprint not in old_paths_by_fingerprint:
-                old_paths_by_fingerprint[old_fingerprint] = []
-            old_paths_by_fingerprint[old_fingerprint].append((old_hash, old_route))
+            if old_fingerprint not in old_fingerprints:
+                old_fingerprints[old_fingerprint] = []
+            old_fingerprints[old_fingerprint].append((old_hash, old_route_hash))
 
     # Categorize each current path
     for path in current_paths:
         path_hash = calculate_path_hash(path, passages)
         content_fingerprint = calculate_content_fingerprint(path, passages)
+        route_hash = calculate_route_hash(path)
 
-        # Check if exact hash existed before
-        if path_hash in validation_cache:
-            old_fingerprint = validation_cache[path_hash].get('content_fingerprint')
+        # Does this exact content exist in any old path?
+        if content_fingerprint in old_fingerprints:
+            # Same content exists somewhere - check if route also matches
+            route_matches = False
+            for old_path_hash, old_route_hash in old_fingerprints[content_fingerprint]:
+                if old_route_hash == route_hash:
+                    route_matches = True
+                    break
 
-            if old_fingerprint == content_fingerprint:
-                # Exact same path (hash and fingerprint match)
+            if route_matches:
+                # Same content + same route = UNCHANGED
                 categories[path_hash] = 'unchanged'
             else:
-                # Same structure but content changed
+                # Same content + different route = MODIFIED (restructured)
                 categories[path_hash] = 'modified'
         else:
-            # Hash is new - check if it's a variation of an existing path
-            # Look for paths with similar content or structure
-            max_similarity = 0.0
-            for old_hash, old_route in old_paths_by_hash.items():
-                similarity = calculate_path_similarity(path, old_route)
-                max_similarity = max(max_similarity, similarity)
-
-            # If path is very similar to an existing path (>70% overlap), consider it modified
-            # Otherwise, it's a completely new path
-            if max_similarity > 0.7:
-                categories[path_hash] = 'modified'
-            else:
-                categories[path_hash] = 'new'
+            # Content doesn't match any old path = NEW
+            categories[path_hash] = 'new'
 
     return categories
 
@@ -1137,12 +1161,14 @@ def main():
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
         content_fingerprint = calculate_content_fingerprint(path, passages)
+        route_hash = calculate_route_hash(path)
         commit_date = get_path_commit_date(path, passage_to_file, repo_root)
         category = path_categories.get(path_hash, 'new')
 
         if path_hash not in validation_cache:
             validation_cache[path_hash] = {
                 'route': ' → '.join(path),
+                'route_hash': route_hash,
                 'first_seen': datetime.now().isoformat(),
                 'validated': False,
                 'content_fingerprint': content_fingerprint,
@@ -1150,8 +1176,9 @@ def main():
                 'category': category,
             }
         else:
-            # Update fingerprint, commit date, and category for existing entries
+            # Update fingerprint, route hash, commit date, and category for existing entries
             validation_cache[path_hash]['content_fingerprint'] = content_fingerprint
+            validation_cache[path_hash]['route_hash'] = route_hash
             validation_cache[path_hash]['commit_date'] = commit_date
 
             # Only update category if path is validated OR if new category is not 'unchanged'
