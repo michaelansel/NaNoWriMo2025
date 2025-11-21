@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'formats' / 'allpaths'))
 from generator import (
     calculate_path_hash,
     calculate_content_fingerprint,
+    calculate_route_hash,
     calculate_path_similarity,
     categorize_paths,
     build_passage_to_file_mapping,
@@ -218,10 +219,12 @@ def test_categorize_unchanged_path():
     path = ['Start', 'End']
     path_hash = calculate_path_hash(path, passages)
     fingerprint = calculate_content_fingerprint(path, passages)
+    route_hash = calculate_route_hash(path)
 
     validation_cache = {
         path_hash: {
             'route': 'Start → End',
+            'route_hash': route_hash,
             'content_fingerprint': fingerprint,
             'validated': True
         }
@@ -232,8 +235,8 @@ def test_categorize_unchanged_path():
 
     assert categories[path_hash] == 'unchanged', f"Should categorize as unchanged: {categories[path_hash]}"
 
-@test("categorize_paths - modified path (content change)")
-def test_categorize_modified_content():
+@test("categorize_paths - new path (content change)")
+def test_categorize_new_content_change():
     passages_old = {
         'Start': {'text': 'Welcome', 'pid': '1'},
         'End': {'text': 'End', 'pid': '2'}
@@ -247,25 +250,107 @@ def test_categorize_modified_content():
     # Old hash and fingerprint
     old_hash = calculate_path_hash(path, passages_old)
     old_fingerprint = calculate_content_fingerprint(path, passages_old)
+    old_route_hash = calculate_route_hash(path)
 
     validation_cache = {
         old_hash: {
             'route': 'Start → End',
+            'route_hash': old_route_hash,
             'content_fingerprint': old_fingerprint,
             'validated': True
         }
     }
 
-    # New path with modified content
+    # New path with modified content - content_fingerprint changes
     new_hash = calculate_path_hash(path, passages_new)
     new_fingerprint = calculate_content_fingerprint(path, passages_new)
 
-    # Since content changed, hash changes, but structure is similar
+    # Content changed, so should be NEW (new prose)
     current_paths = [path]
     categories = categorize_paths(current_paths, passages_new, validation_cache)
 
-    # Should be 'modified' because it's similar to old path (same structure)
-    assert categories[new_hash] == 'modified', f"Should categorize as modified: {categories[new_hash]}"
+    # Should be 'new' because content is different (new prose)
+    assert categories[new_hash] == 'new', f"Should categorize as new: {categories[new_hash]}"
+
+@test("categorize_paths - modified path (restructured)")
+def test_categorize_modified_restructured():
+    # Same content in different passage structure
+    passages_old = {
+        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+    passages_new = {
+        'Start': {'text': 'Welcome', 'pid': '1'},
+        'Middle': {'text': 'to the story.', 'pid': '2'},
+        'End': {'text': 'The end.', 'pid': '3'}
+    }
+
+    old_path = ['Start', 'End']
+    new_path = ['Start', 'Middle', 'End']
+
+    # Old route
+    old_hash = calculate_path_hash(old_path, passages_old)
+    old_fingerprint = calculate_content_fingerprint(old_path, passages_old)
+    old_route_hash = calculate_route_hash(old_path)
+
+    validation_cache = {
+        old_hash: {
+            'route': 'Start → End',
+            'route_hash': old_route_hash,
+            'content_fingerprint': old_fingerprint,
+            'validated': True
+        }
+    }
+
+    # New route with same content (restructured)
+    # Manually construct matching content fingerprint
+    # Content: "Welcome to the story.\nThe end."
+    passages_new_matching = {
+        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
+        'Middle': {'text': '', 'pid': '2'},  # Empty passage
+        'End': {'text': 'The end.', 'pid': '3'}
+    }
+    new_path_matching = ['Start', 'Middle', 'End']
+
+    # Adjust passages to have same total content
+    # Actually, let's make it simpler - just reuse exact content
+    passages_restructured = {
+        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
+        'End': {'text': 'The end.', 'pid': '2'}
+    }
+
+    # Create a second path with same content but restructured
+    # For simplicity, simulate by having same fingerprint but different route
+    new_fingerprint = old_fingerprint  # Same content
+    new_route_hash = calculate_route_hash(['Start', 'Middle', 'End'])  # Different route
+
+    # Actually test with matching fingerprint
+    new_hash = calculate_path_hash(old_path, passages_old)  # Reuse to get matching fingerprint
+
+    # Simulate a restructured path: same content, different route
+    # We'll add it to the cache manually and test categorization
+    current_paths = [old_path]  # Same path structure for now
+
+    # Let me create a proper test: same content but passage names changed
+    passages_renamed = {
+        'Beginning': {'text': 'Welcome to the story.', 'pid': '1'},  # Same content, different name
+        'Finale': {'text': 'The end.', 'pid': '2'}
+    }
+    renamed_path = ['Beginning', 'Finale']
+
+    renamed_hash = calculate_path_hash(renamed_path, passages_renamed)
+    renamed_fingerprint = calculate_content_fingerprint(renamed_path, passages_renamed)
+    renamed_route_hash = calculate_route_hash(renamed_path)
+
+    # fingerprints should match (same content), route_hash should differ (different passage names)
+    assert renamed_fingerprint == old_fingerprint, "Content should match"
+    assert renamed_route_hash != old_route_hash, "Route should differ"
+
+    current_paths = [renamed_path]
+    categories = categorize_paths(current_paths, passages_renamed, validation_cache)
+
+    # Should be 'modified' because same content, different route
+    assert categories[renamed_hash] == 'modified', f"Should categorize as modified (restructured): {categories[renamed_hash]}"
 
 @test("categorize_paths - handles empty cache")
 def test_categorize_empty_cache():
@@ -302,8 +387,8 @@ def test_categorize_missing_fingerprint():
     # Should not crash
     categories = categorize_paths(current_paths, passages, validation_cache)
 
-    # Since fingerprint is missing but hash matches, should be modified
-    assert categories[path_hash] == 'modified', f"Should categorize as modified when fingerprint missing: {categories[path_hash]}"
+    # Since fingerprint is missing, we can't match content, so should be new
+    assert categories[path_hash] == 'new', f"Should categorize as new when fingerprint missing: {categories[path_hash]}"
 
 @test("categorize_paths - handles non-dict entries")
 def test_categorize_non_dict_entries():
@@ -686,7 +771,8 @@ def run_all_tests():
     test_similarity_empty()
     test_categorize_new_path()
     test_categorize_unchanged_path()
-    test_categorize_modified_content()
+    test_categorize_new_content_change()
+    test_categorize_modified_restructured()
     test_categorize_empty_cache()
     test_categorize_missing_fingerprint()
     test_categorize_non_dict_entries()
