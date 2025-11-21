@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent / 'formats' / 'allpaths'))
 from generator import (
     calculate_path_hash,
     calculate_content_fingerprint,
+    calculate_raw_content_fingerprint,
     calculate_route_hash,
     calculate_path_similarity,
     categorize_paths,
@@ -36,6 +37,7 @@ from generator import (
     generate_passage_id_mapping,
     load_validation_cache,
     save_validation_cache,
+    strip_links_from_text,
 )
 
 # Test counters
@@ -219,6 +221,7 @@ def test_categorize_unchanged_path():
     path = ['Start', 'End']
     path_hash = calculate_path_hash(path, passages)
     fingerprint = calculate_content_fingerprint(path, passages)
+    raw_fingerprint = calculate_raw_content_fingerprint(path, passages)
     route_hash = calculate_route_hash(path)
 
     validation_cache = {
@@ -226,6 +229,7 @@ def test_categorize_unchanged_path():
             'route': 'Start → End',
             'route_hash': route_hash,
             'content_fingerprint': fingerprint,
+            'raw_content_fingerprint': raw_fingerprint,
             'validated': True
         }
     }
@@ -250,6 +254,7 @@ def test_categorize_new_content_change():
     # Old hash and fingerprint
     old_hash = calculate_path_hash(path, passages_old)
     old_fingerprint = calculate_content_fingerprint(path, passages_old)
+    old_raw_fingerprint = calculate_raw_content_fingerprint(path, passages_old)
     old_route_hash = calculate_route_hash(path)
 
     validation_cache = {
@@ -257,6 +262,7 @@ def test_categorize_new_content_change():
             'route': 'Start → End',
             'route_hash': old_route_hash,
             'content_fingerprint': old_fingerprint,
+            'raw_content_fingerprint': old_raw_fingerprint,
             'validated': True
         }
     }
@@ -291,6 +297,7 @@ def test_categorize_modified_restructured():
     # Old route
     old_hash = calculate_path_hash(old_path, passages_old)
     old_fingerprint = calculate_content_fingerprint(old_path, passages_old)
+    old_raw_fingerprint = calculate_raw_content_fingerprint(old_path, passages_old)
     old_route_hash = calculate_route_hash(old_path)
 
     validation_cache = {
@@ -298,6 +305,7 @@ def test_categorize_modified_restructured():
             'route': 'Start → End',
             'route_hash': old_route_hash,
             'content_fingerprint': old_fingerprint,
+            'raw_content_fingerprint': old_raw_fingerprint,
             'validated': True
         }
     }
