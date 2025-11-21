@@ -10,8 +10,8 @@ import tempfile
 from pathlib import Path
 from datetime import datetime
 
-# Add the formats/allpaths directory to the path
-sys.path.insert(0, str(Path(__file__).parent / 'formats' / 'allpaths'))
+# Project root is two directories up from this file (formats/allpaths/)
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 from generator import (
     parse_story_html,
@@ -410,9 +410,9 @@ def test_real_data():
     print("=" * 80)
     print()
 
-    cache_file = Path('/home/user/NaNoWriMo2025/allpaths-validation-status.json')
-    src_dir = Path('/home/user/NaNoWriMo2025/src')
-    repo_root = Path('/home/user/NaNoWriMo2025')
+    cache_file = PROJECT_ROOT / 'allpaths-validation-status.json'
+    src_dir = PROJECT_ROOT / 'src'
+    repo_root = PROJECT_ROOT
 
     if cache_file.exists():
         print("Test 1: Loading real validation cache...")
