@@ -457,8 +457,9 @@ def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
     """
     try:
         # Get the most recent commit date for this file
+        # Use -m to include merge commits
         result = subprocess.run(
-            ['git', 'log', '-1', '--format=%aI', '--', str(file_path)],
+            ['git', 'log', '-m', '-1', '--format=%aI', '--', str(file_path)],
             cwd=str(repo_root),
             capture_output=True,
             text=True,
@@ -471,6 +472,36 @@ def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
             return None
     except Exception as e:
         print(f"Warning: Could not get commit date for {file_path}: {e}", file=sys.stderr)
+        return None
+
+def get_file_creation_date(file_path: Path, repo_root: Path) -> Optional[str]:
+    """
+    Get the earliest commit date for a file (when it was first added).
+
+    Args:
+        file_path: Path to the file
+        repo_root: Path to git repository root
+
+    Returns:
+        ISO format datetime string of earliest commit, or None if unavailable
+    """
+    try:
+        # Get all commit dates in reverse chronological order, with -m to include merge commits
+        result = subprocess.run(
+            ['git', 'log', '-m', '--format=%aI', '--reverse', '--', str(file_path)],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0 and result.stdout.strip():
+            dates = result.stdout.strip().split('\n')
+            return dates[0] if dates else None
+        else:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not get creation date for {file_path}: {e}", file=sys.stderr)
         return None
 
 def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
@@ -507,8 +538,8 @@ def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
 def get_path_creation_date(path: List[str], passage_to_file: Dict[str, Path],
                           repo_root: Path) -> Optional[str]:
     """
-    Get the most recent commit date among all passages in a path.
-    This represents when the path became fully available (complete).
+    Get the date when a path became fully available (complete).
+    This finds the most recent creation date among all passages in the path.
 
     Args:
         path: List of passage names in the path
@@ -516,23 +547,23 @@ def get_path_creation_date(path: List[str], passage_to_file: Dict[str, Path],
         repo_root: Path to git repository root
 
     Returns:
-        ISO format datetime string of most recent commit, or None if unavailable
+        ISO format datetime string of when path became complete, or None if unavailable
     """
-    commit_dates = []
+    creation_dates = []
 
     for passage_name in path:
         if passage_name not in passage_to_file:
             continue
 
         file_path = passage_to_file[passage_name]
-        commit_date = get_file_commit_date(file_path, repo_root)
+        creation_date = get_file_creation_date(file_path, repo_root)
 
-        if commit_date:
-            commit_dates.append(commit_date)
+        if creation_date:
+            creation_dates.append(creation_date)
 
-    # Return the most recent date - when the path became complete
-    if commit_dates:
-        return max(commit_dates)
+    # Return the most recent creation date - when the path became complete
+    if creation_dates:
+        return max(creation_dates)
     else:
         return None
 

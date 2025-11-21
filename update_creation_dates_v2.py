@@ -16,27 +16,31 @@ def get_file_commit_date(file_path: Path, earliest: bool = True) -> str:
     """Get the earliest or most recent commit date for a file."""
     try:
         # Get commit date for this file
-        # Use --follow to track renames, --diff-filter=A to find when file was added
+        # Use -m to include merge commits, --follow to track renames
         if earliest:
             result = subprocess.run(
-                ['git', 'log', '--all', '--format=%aI', '--diff-filter=A', '--', str(file_path)],
+                ['git', 'log', '--all', '-m', '--format=%aI', '--reverse', '--', str(file_path)],
                 capture_output=True,
                 text=True,
                 timeout=10
             )
+            # With --reverse, first entry is the earliest
+            if result.returncode == 0 and result.stdout.strip():
+                dates = result.stdout.strip().split('\n')
+                return dates[0] if dates else None
+            else:
+                return None
         else:
             result = subprocess.run(
-                ['git', 'log', '-1', '--format=%aI', '--', str(file_path)],
+                ['git', 'log', '--all', '-m', '-1', '--format=%aI', '--', str(file_path)],
                 capture_output=True,
                 text=True,
                 timeout=10
             )
-
-        if result.returncode == 0 and result.stdout.strip():
-            dates = result.stdout.strip().split('\n')
-            return dates[-1] if earliest and dates else dates[0]
-        else:
-            return None
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip().split('\n')[0]
+            else:
+                return None
     except Exception as e:
         print(f"Error getting commit date for {file_path}: {e}", file=sys.stderr)
         return None

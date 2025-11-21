@@ -13,7 +13,7 @@
     "validated": true,
     "validated_at": "2025-11-12T18:57:13.399505",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-10-17T10:03:30-04:00"
   },
   "e4b905a1": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
@@ -37,7 +37,7 @@
     "validated": true,
     "validated_at": "2025-11-12T20:01:14.329900",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-02T19:00:37-05:00"
   },
   "b0dd9b98": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
@@ -53,7 +53,7 @@
     "validated": true,
     "validated_at": "2025-11-12T20:29:06.061488",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T14:59:34-04:00"
   },
   "b7273d73": {
     "route": "Start \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
@@ -69,7 +69,7 @@
     "validated": true,
     "validated_at": "2025-11-12T21:05:14.499945",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-03T19:43:34-05:00"
   },
   "1ff5b506": {
     "route": "Start \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Defense magic",
@@ -77,7 +77,7 @@
     "validated": true,
     "validated_at": "2025-11-12T20:29:06.061477",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T17:51:17-04:00"
   },
   "bbd913f9": {
     "route": "Start \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Day 8 KEB",
@@ -111,7 +111,7 @@
     "validated_by": "michaelansel",
     "created_date": "2025-11-07T19:43:00-05:00"
   },
-  "last_updated": "2025-11-21T20:16:22.520924",
+  "last_updated": "2025-11-21T21:40:37.539570",
   "997a7749": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 Day 10 KEB",
     "first_seen": "2025-11-13T00:20:56.582572",
@@ -126,7 +126,7 @@
     "validated": true,
     "validated_at": "2025-11-13T00:34:05.095789",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-10-17T10:03:30-04:00"
   },
   "0d7ba758": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
@@ -150,7 +150,7 @@
     "validated": true,
     "validated_at": "2025-11-13T00:34:05.095790",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-02T19:00:37-05:00"
   },
   "a8f27821": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
@@ -166,7 +166,7 @@
     "validated": true,
     "validated_at": "2025-11-13T00:34:05.095786",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T14:59:34-04:00"
   },
   "99db9aae": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
@@ -178,7 +178,7 @@
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 3 KEB",
     "first_seen": "2025-11-13T00:20:56.582849",
     "validated": false,
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-03T19:43:34-05:00"
   },
   "55652b30": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Defense magic",
@@ -186,7 +186,7 @@
     "validated": true,
     "validated_at": "2025-11-13T00:34:05.095787",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T17:51:17-04:00"
   },
   "b3a35317": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Day 8 KEB",
@@ -241,7 +241,7 @@
     "validated": true,
     "validated_at": "2025-11-13T01:33:06.752755",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T14:59:34-04:00"
   },
   "35b2de1f": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
@@ -257,7 +257,7 @@
     "validated": true,
     "validated_at": "2025-11-13T01:33:06.752756",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-03T19:43:34-05:00"
   },
   "2c69fc25": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Day 5 KEB \u2192 Flee",
@@ -281,7 +281,7 @@
     "validated": true,
     "validated_at": "2025-11-13T03:22:24.825616",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T17:51:17-04:00"
   },
   "3ff2466f": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 Day 1 KEB \u2192 Join them \u2192 Day 8 KEB",
@@ -319,7 +319,7 @@
     "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595783",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-10-17T10:03:30-04:00"
   },
   "58e7c6ad": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
@@ -352,7 +352,7 @@
     "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595778",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-02T19:00:37-05:00"
   },
   "1469f61c": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
@@ -374,7 +374,7 @@
     "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595777",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T14:59:34-04:00"
   },
   "4fc91f47": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
@@ -396,7 +396,7 @@
     "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595784",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-03T19:43:34-05:00"
   },
   "8c5d9e78": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 Day 14 KEB",
@@ -429,7 +429,7 @@
     "category": "unchanged",
     "validated_at": "2025-11-19T08:25:45.595782",
     "validated_by": "michaelansel",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T17:51:17-04:00"
   },
   "009f416f": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Day 8 KEB",
@@ -565,7 +565,7 @@
     "validated_by": "michaelansel",
     "raw_content_fingerprint": "f72b8c16",
     "route_hash": "313b77b4",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-10-17T10:03:30-04:00"
   },
   "84d0fad3": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
@@ -604,7 +604,7 @@
     "validated_by": "michaelansel",
     "raw_content_fingerprint": "03efc88f",
     "route_hash": "c4879231",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-02T19:00:37-05:00"
   },
   "86d4b25c": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
@@ -630,7 +630,7 @@
     "validated_by": "michaelansel",
     "raw_content_fingerprint": "42b7d354",
     "route_hash": "30ee2480",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T14:59:34-04:00"
   },
   "15daca5d": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Re-enter the cave \u2192 mansel-20251102",
@@ -656,7 +656,7 @@
     "validated_by": "michaelansel",
     "raw_content_fingerprint": "3731e56e",
     "route_hash": "c4fb01b0",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-03T19:43:34-05:00"
   },
   "8d2d689c": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 Day 14 KEB",
@@ -695,7 +695,7 @@
     "validated_by": "michaelansel",
     "raw_content_fingerprint": "3827b420",
     "route_hash": "c8dc9133",
-    "created_date": "2025-11-04T18:16:26-05:00"
+    "created_date": "2025-11-01T17:51:17-04:00"
   },
   "75a1b4dc": {
     "route": "Start \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Join them \u2192 Day 8 KEB",
