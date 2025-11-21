@@ -494,6 +494,7 @@ def check_paths_with_progress(
 
     # Check each path
     paths_with_issues = []
+    all_checked_paths = []
     checked_count = 0
 
     for path_id, text_file in unvalidated:
@@ -538,6 +539,9 @@ def check_paths_with_progress(
             path_result["issues"] = result.get("issues", [])
             paths_with_issues.append(path_result)
 
+        # Collect all checked paths (for bulk approval commands)
+        all_checked_paths.append(path_result)
+
         print(f"  Result: {result.get('severity', 'none')} - {result.get('summary', '')}", file=sys.stderr)
 
         # Call progress callback
@@ -553,6 +557,7 @@ def check_paths_with_progress(
     return {
         "checked_count": checked_count,
         "paths_with_issues": paths_with_issues,
+        "all_checked_paths": all_checked_paths,
         "summary": f"Checked {checked_count} path(s), found issues in {len(paths_with_issues)}",
         "mode": mode,
         "statistics": stats
