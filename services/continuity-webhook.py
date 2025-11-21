@@ -333,6 +333,7 @@ def format_pr_comment(results: dict) -> str:
     """Format the continuity check results as a PR comment."""
     mode = results.get('mode', 'new-only')
     stats = results.get('statistics', {})
+    all_checked_paths = results.get('all_checked_paths', [])
 
     # Mode explanation
     mode_explanations = {
@@ -400,6 +401,46 @@ _No paths to check with this mode._
             comment += f"#### 🟢 Minor Issues ({len(minor)})\n\n"
             for path in minor:
                 comment += format_path_issues(path)
+
+    # Add bulk approval commands section
+    if all_checked_paths:
+        comment += "\n### 💡 Quick Approval Commands\n\n"
+        comment += "Copy-paste these commands to approve multiple paths at once:\n\n"
+
+        # Group paths by severity for bulk approval
+        no_issues = [p for p in all_checked_paths if p["severity"] == "none"]
+        minor_only = [p for p in all_checked_paths if p["severity"] == "minor"]
+        major_only = [p for p in all_checked_paths if p["severity"] == "major"]
+        critical_only = [p for p in all_checked_paths if p["severity"] == "critical"]
+
+        # All paths
+        all_ids = ' '.join(p["id"] for p in all_checked_paths)
+        comment += f"**All paths ({len(all_checked_paths)} total):**\n"
+        comment += f"```\n/approve-path {all_ids}\n```\n\n"
+
+        # No issues
+        if no_issues:
+            no_issue_ids = ' '.join(p["id"] for p in no_issues)
+            comment += f"**✅ No issues ({len(no_issues)} paths):**\n"
+            comment += f"```\n/approve-path {no_issue_ids}\n```\n\n"
+
+        # Minor issues only
+        if minor_only:
+            minor_ids = ' '.join(p["id"] for p in minor_only)
+            comment += f"**🟢 Minor issues only ({len(minor_only)} paths):**\n"
+            comment += f"```\n/approve-path {minor_ids}\n```\n\n"
+
+        # Major issues (with warning)
+        if major_only:
+            major_ids = ' '.join(p["id"] for p in major_only)
+            comment += f"**🟡 Major issues ({len(major_only)} paths - review recommended):**\n"
+            comment += f"```\n/approve-path {major_ids}\n```\n\n"
+
+        # Critical issues (with strong warning)
+        if critical_only:
+            critical_ids = ' '.join(p["id"] for p in critical_only)
+            comment += f"**🔴 Critical issues ({len(critical_only)} paths - review required):**\n"
+            comment += f"```\n/approve-path {critical_ids}\n```\n\n"
 
     comment += "\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_\n"
 
