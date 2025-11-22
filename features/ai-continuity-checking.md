@@ -99,21 +99,57 @@
 
 ---
 
+### Understanding Path Categories
+
+When you make changes to your story, the system categorizes each path to help you understand what needs validation:
+
+#### NEW Paths
+**What it means:** You wrote genuinely new prose that's never existed before.
+
+**What causes this:**
+- You created a new passage file with new story content
+- A path goes through that new passage for the first time
+- Players will read prose they've never seen before
+
+**Example:** You create `KEB-251121.twee` with a new scene. Any path that includes this passage is NEW.
+
+**User impact:** This is what you care about day-to-day. It's the content you wrote today and want feedback on.
+
+---
+
+#### MODIFIED Paths
+**What it means:** The path already existed, but you changed the navigation (added/removed/changed links).
+
+**What causes this:**
+- You added a new choice to an existing passage (new `[[link]]`)
+- You removed a choice from an existing passage
+- You changed where a link points
+- The prose in the passages didn't change, just the navigation options
+
+**Example:** You edit an existing passage to add `[[Empty kitchen->Day 21 KEB]]`. All paths that go through this passage are now MODIFIED - same prose, but now there's an additional choice available.
+
+**User impact:** These paths have the same prose you've already read/validated. The only difference is navigation. You typically don't need immediate feedback on these during daily writing.
+
+**Common scenario:** When you add a link to a passage near the story root (like the Start passage), this can create 10+ MODIFIED paths. But you only added one line - the link - so there's very little new to validate.
+
+---
+
+#### UNCHANGED Paths
+**What it means:** Nothing changed at all. Same prose, same links, same structure.
+
+**What causes this:**
+- You made changes to other parts of the story
+- This path doesn't include any passages you touched
+
+**Example:** You add a new passage for one story branch. Paths in completely different branches remain UNCHANGED.
+
+**User impact:** These don't need re-validation. You already validated them, nothing changed.
+
+---
+
 ### Three Validation Modes
 
-The system automatically tracks which paths need validation based on what you changed:
-
-**Path Categories:**
-- **NEW** = Path contains genuinely new prose content (what you wrote today)
-- **MODIFIED** = Path exists with same prose, but links/structure changed (navigation changes)
-- **UNCHANGED** = Nothing changed (prose, links, or structure all identical)
-
-**Daily workflow example:**
-When you add today's new passage:
-1. Your new path → **NEW** (validated automatically)
-2. You add a link to an existing passage → paths through it become **MODIFIED**
-3. Adding a link near the story root can mark 10+ paths as MODIFIED
-4. But those paths only changed navigation, not prose - you typically only care about your NEW path day-of
+Based on these categories, you can choose how thoroughly to validate:
 
 ---
 
