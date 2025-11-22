@@ -34,6 +34,7 @@ We decided to implement a **persistent validation cache** as a JSON file in the 
     "validated": true,
     "validated_at": "2025-11-12T...",
     "validated_by": "username",
+    "commit_date": "2025-11-20T...",
     "created_date": "2025-11-02T...",
     "category": "unchanged"
   }
@@ -46,7 +47,8 @@ We decided to implement a **persistent validation cache** as a JSON file in the 
 - `validated`: Whether path has been manually approved (boolean)
 - `validated_at`: When path was approved (ISO datetime, optional)
 - `validated_by`: Who approved the path (username, optional)
-- `created_date`: When path became available to players (git commit date)
+- `commit_date`: Most recent commit affecting any passage in this path (ISO datetime, optional)
+- `created_date`: When path became available to players (earliest passage creation date, ISO datetime, optional)
 - `category`: Change status computed on each build ('new', 'modified', 'unchanged')
 
 **Key Design Decisions**:
