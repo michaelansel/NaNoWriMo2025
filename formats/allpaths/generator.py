@@ -389,10 +389,18 @@ def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
 
     Returns:
         Dict mapping passage name -> hex ID
+
+    Implementation notes:
+    - WHY: Passage names like "Day 5" or "Day 19" can confuse AI continuity checking
+      by making it think the timeline is wrong when it's actually correct
+    - Uses MD5 hash of passage name for stability (same name = same ID across builds)
+    - 12-character IDs provide enough entropy to avoid collisions
+    - Sorted by passage name to ensure deterministic output
     """
     mapping = {}
     for passage_name in sorted(passages.keys()):
         # Use hash of passage name for stable IDs across builds
+        # MD5 is fine here (not security-critical, just need stable random-looking IDs)
         passage_hash = hashlib.md5(passage_name.encode()).hexdigest()[:12]
         mapping[passage_name] = passage_hash
     return mapping
@@ -517,10 +525,17 @@ def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
 
     Returns:
         ISO format datetime string of most recent commit, or None if unavailable
+
+    Implementation notes:
+    - Uses -m flag to include merge commits (important for PR-based workflows)
+    - Returns author date (%aI) not committer date for consistency
+    - 5-second timeout prevents hangs on large repos
     """
     try:
         # Get the most recent commit date for this file
-        # Use -m to include merge commits
+        # -m: Include merge commits (without this, merge commits are skipped)
+        # -1: Only get the most recent commit
+        # --format=%aI: ISO 8601 author date format
         result = subprocess.run(
             ['git', 'log', '-m', '-1', '--format=%aI', '--', str(file_path)],
             cwd=str(repo_root),
@@ -746,10 +761,17 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
     Returns:
         Dict mapping path hash -> category ('new', 'modified', 'unchanged')
+
+    Implementation notes:
+    - Uses three-phase detection to handle edge cases like passage splits
+    - Requires git integration for file-level prose change detection
+    - Falls back gracefully when git data unavailable (backward compatibility)
+    - Aggressive normalization in prose fingerprints catches reorganizations
     """
     categories = {}
 
     # Build lookup of old path-level fingerprints
+    # This allows O(1) lookup instead of O(n) for each current path
     old_by_prose = {}  # prose_fingerprint -> list of (path_hash, route_hash, raw_fingerprint)
 
     for old_hash, old_data in validation_cache.items():
@@ -761,7 +783,7 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         old_raw_fp = old_data.get('raw_content_fingerprint')  # with links
         old_route_hash = old_data.get('route_hash')
 
-        # If route_hash doesn't exist (old cache format), calculate it from route
+        # Backward compatibility: calculate route_hash if missing from old cache
         if not old_route_hash:
             old_route_hash = calculate_route_hash(old_route)
 
@@ -779,11 +801,13 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
         # Phase 1: Check path-level prose fingerprint (with aggressive normalization)
         # This catches splits/reorganizations where prose is preserved
+        # Example: "Passage A" split into "Passage A1" + "Passage A2" with same total prose
         if prose_fp in old_by_prose:
             # Path-level prose matches (even if split/reorganized) - check if unchanged
             found_exact_match = False
 
             for old_path_hash, old_route_hash, old_raw_fp in old_by_prose[prose_fp]:
+                # All three must match for UNCHANGED: prose, route, AND links
                 if old_route_hash == route_hash and old_raw_fp == raw_fp:
                     # Same prose + same route + same links = UNCHANGED
                     categories[path_hash] = 'unchanged'
@@ -792,41 +816,46 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
             if not found_exact_match:
                 # Same prose but different route/links = MODIFIED
-                # This includes passage splits with link additions
+                # This includes:
+                # - Passage splits with link additions (PR #65 scenario)
+                # - Link-only changes (same prose, different navigation)
+                # - Passage renames (same content, different names)
                 categories[path_hash] = 'modified'
         else:
             # Phase 2: Path-level prose doesn't match - check file-level prose changes
             # Use git diff to detect if files have genuinely new prose vs just reorganization
+            # This is the expensive operation, so only do it when path-level check fails
             has_file_prose_changes = False
 
             if passage_to_file and repo_root:
                 # Check each file that contains passages in this path
+                # Only check each file once (passages can share files)
                 files_checked = set()
                 for passage_name in path:
                     if passage_name in passage_to_file:
                         file_path = passage_to_file[passage_name]
 
-                        # Only check each file once
                         if file_path not in files_checked:
                             files_checked.add(file_path)
 
-                            # Check if this file has prose changes (not just link/structure)
+                            # Git diff with link stripping to detect prose-only changes
                             if file_has_prose_changes(file_path, repo_root):
                                 has_file_prose_changes = True
-                                break
+                                break  # Early exit - one file with new prose = NEW path
 
             if has_file_prose_changes:
                 # At least one file has genuinely new prose
                 categories[path_hash] = 'new'
             elif passage_to_file and repo_root:
                 # No files have prose changes - this is reorganization/splitting
+                # Same prose distributed differently across files
                 categories[path_hash] = 'modified'
             else:
-                # No file-level data available
-                # Check if path exists in old cache (backward compatibility)
+                # No file-level data available (git not available or no mapping)
+                # Fall back to cache-based detection for backward compatibility
                 if path_hash in validation_cache and isinstance(validation_cache[path_hash], dict):
                     # Path existed before but no fingerprint data - mark as modified
-                    # to prompt re-validation without falsely claiming it's completely new
+                    # This prompts re-validation without falsely claiming it's completely new
                     categories[path_hash] = 'modified'
                 else:
                     # Path didn't exist before - mark as new

@@ -264,113 +264,49 @@ curl -X POST http://localhost:5000/webhook \
 
 ## Validation Modes
 
-The continuity checker supports three validation modes to balance speed and thoroughness:
+The continuity checker supports three validation modes to balance speed and thoroughness.
 
-### 🆕 `new-only` Mode (Default)
+**For detailed product requirements and technical architecture, see:**
+- [features/path-validation-cache.md](../features/path-validation-cache.md) - Product specification
+- [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) - Technical architecture and design decisions
 
-**Validates:** Only brand new paths (never seen before)
-**Skips:** Modified and unchanged paths
-**Use case:** Quick validation during active development
+### Quick Reference
 
-**Commands:**
+**🆕 new-only (Default)** - Check only new paths
+
 ```
 /check-continuity
 ```
-or explicitly:
-```
-/check-continuity new-only
-```
 
-**When to use:**
-- During active development
-- Quick feedback on new story branches
-- Every commit (automatic workflow triggers)
+**📝 modified** - Check new and modified paths
 
-### 📝 `modified` Mode
-
-**Validates:** New paths + modified paths (content changed since last validation)
-**Skips:** Unchanged paths
-**Use case:** Pre-merge validation - ensure all changes are checked
-
-**Command:**
 ```
 /check-continuity modified
 ```
 
-**When to use:**
-- Before requesting PR review
-- Pre-merge validation
-- After fixing issues in new paths
+**🔍 all** - Check all paths
 
-### 🔍 `all` Mode
-
-**Validates:** Every single path, regardless of validation status
-**Skips:** Nothing
-**Use case:** Major refactoring, model changes, periodic full audits
-
-**Command:**
 ```
 /check-continuity all
 ```
 
-**When to use:**
-- After major story refactoring
-- After updating the AI model
-- Periodic full story audits
-- Investigating suspected cross-path issues
-
-### Default Behavior
-
-- **Automatic PR builds:** Always use `new-only` mode for fast feedback
-- **Manual commands:** Default to `new-only` if no mode specified
-- **CLI usage:** Default to `new-only` unless `--mode` flag provided
-
 ### Understanding Path Categories
 
 The checker categorizes paths as:
-- **New:** Path hash never seen before (new story branch added)
-- **Modified:** Path existed before but content changed (passage text edited, hash changed)
-- **Unchanged:** Path validated and no changes since last validation (same hash)
+- **New:** Path never seen before (new story branch)
+- **Modified:** Path content changed since last validation (hash changed)
+- **Unchanged:** Path validated and no changes (same hash)
 
-The content-based hash system automatically detects changes. If you edit any passage in a validated path, the hash changes and it becomes "modified" and requires re-validation.
+The content-based hash system automatically detects changes.
 
 ### Recommended Workflow
 
-1. **During development:** Let automatic checks run with `new-only` mode
-   - Fast feedback on new content
-   - Don't wait to validate unchanged paths
+1. **During development:** Automatic `new-only` mode (fast feedback)
+2. **Before review:** `/check-continuity modified` (validate all changes)
+3. **After refactoring:** `/check-continuity all` (full audit)
+4. **After validation:** `/approve-path [ids]` (mark as reviewed)
 
-2. **Before requesting review:** Run `/check-continuity modified`
-   - Validate all your changes
-   - Ensure modified paths haven't broken continuity
-
-3. **After major refactoring:** Run `/check-continuity all`
-   - Full audit of entire story
-   - Catch any cross-path issues
-
-4. **After addressing issues:** Approve validated paths with `/approve-path`
-   - Mark paths as reviewed
-   - Skip them in future checks (until content changes)
-
-### Example Session
-
-```markdown
-# PR opened, automatic workflow runs
-→ Comment: "Checking 2 new paths (skipped 3 modified, 25 unchanged)"
-
-# Fix issues in new paths, push commit
-→ Comment: "Checking 2 new paths (skipped 3 modified, 25 unchanged)"
-
-# Before requesting review
-You: /check-continuity modified
-→ Comment: "Checking 5 paths (2 new + 3 modified, skipped 25 unchanged)"
-
-# All pass, approve them
-You: /approve-path abc12345 def67890 e4f5a678 f9g8h7i6 j5k4l3m2
-→ Paths marked as validated
-
-# Merge PR
-```
+**For complete documentation including use cases, examples, and design rationale, see the links above.**
 
 ## Approving Validated Paths
 

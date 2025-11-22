@@ -146,7 +146,13 @@ def get_github_token() -> str:
 
 
 def verify_signature(payload_body: bytes, signature_header: str) -> bool:
-    """Verify GitHub webhook signature."""
+    """Verify GitHub webhook signature.
+
+    Implementation notes:
+    - WHY: Prevents unauthorized webhook calls that could trigger expensive AI operations
+    - Fails closed: rejects webhooks if WEBHOOK_SECRET not configured
+    - Uses constant-time comparison to prevent timing attacks
+    """
     if not WEBHOOK_SECRET:
         app.logger.error("WEBHOOK_SECRET not set, rejecting webhook for security")
         return False  # Fail closed - require secret to be configured
@@ -170,18 +176,26 @@ def verify_signature(payload_body: bytes, signature_header: str) -> bool:
     )
     expected_signature = mac.hexdigest()
 
-    # Compare signatures (constant time comparison)
+    # Compare signatures using constant-time comparison
+    # WHY: Prevents timing attacks that could leak the secret
     return hmac.compare_digest(expected_signature, github_signature)
 
 
 def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
-    """Download and extract a GitHub artifact."""
+    """Download and extract a GitHub artifact.
+
+    Implementation notes:
+    - SECURITY: Validates URL to prevent SSRF attacks
+    - SECURITY: Validates ZIP contents to prevent path traversal (Zip Slip)
+    - Size limit enforced during extraction (MAX_TEXT_FILE_SIZE)
+    """
     token = get_github_token()
     if not token:
         app.logger.error("GitHub token not available, cannot download artifacts")
         return False
 
     # Validate artifact URL is from GitHub (prevent SSRF)
+    # WHY: Prevent attackers from triggering requests to internal services
     from urllib.parse import urlparse
     parsed_url = urlparse(artifact_url)
     allowed_hosts = ['api.github.com', 'github.com', 'objects.githubusercontent.com', 'pipelines.actions.githubusercontent.com']
@@ -207,19 +221,22 @@ def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
                 f.write(chunk)
 
         # Extract zip file with path traversal protection
+        # SECURITY: Zip Slip vulnerability - malicious ZIPs can contain paths like "../../etc/passwd"
         app.logger.info(f"Extracting artifact to {dest_dir}")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             # Validate each member to prevent path traversal (Zip Slip)
             for member in zip_ref.namelist():
+                # Normalize paths to resolve any .. components
                 member_path = os.path.normpath(os.path.join(dest_dir, member))
                 dest_dir_normalized = os.path.normpath(dest_dir)
 
                 # Ensure the member path is within dest_dir
+                # This blocks paths like "../../../etc/passwd"
                 if not member_path.startswith(dest_dir_normalized + os.sep) and member_path != dest_dir_normalized:
                     app.logger.error(f"Attempted path traversal in ZIP: {member}")
                     raise ValueError(f"Invalid path in ZIP archive: {member}")
 
-                # Extract the member
+                # Extract the member (safe after validation)
                 zip_ref.extract(member, dest_dir)
 
         # Remove zip file
@@ -280,17 +297,25 @@ def sanitize_ai_content(text: str) -> str:
     Sanitize AI-generated content before including in PR comments.
 
     Protects against markdown injection, XSS, and malicious links.
+
+    Implementation notes:
+    - WHY: AI could be manipulated to output malicious markdown/HTML
+    - DEFENSE IN DEPTH: GitHub already sanitizes, but we add extra layer
+    - DoS protection: Limit markdown nesting depth to prevent renderer issues
     """
     if not text:
         return text
 
     # Remove any javascript: protocol links
+    # WHY: javascript:alert(1) in markdown link would execute in some viewers
     text = re.sub(r'javascript:', 'blocked-javascript:', text, flags=re.IGNORECASE)
 
     # Remove data: protocol links (can be used for XSS)
+    # WHY: data:text/html,<script>alert(1)</script> can execute
     text = re.sub(r'data:', 'blocked-data:', text, flags=re.IGNORECASE)
 
     # Remove file: protocol links
+    # WHY: file:///etc/passwd could leak local files
     text = re.sub(r'file:', 'blocked-file:', text, flags=re.IGNORECASE)
 
     # Escape HTML entities that could be used for injection
@@ -301,6 +326,7 @@ def sanitize_ai_content(text: str) -> str:
     text = text.replace('</iframe', '&lt;/iframe')
 
     # Limit excessive markdown nesting (can cause DoS in some renderers)
+    # WHY: Deeply nested markdown like [[[[[...]]]]] can slow/crash renderers
     if text.count('[') > 50 or text.count('![') > 20:
         app.logger.warning("AI content has suspicious number of markdown links, truncating")
         text = text[:1000] + "\n\n[Content truncated for safety]"
@@ -940,6 +966,8 @@ def handle_workflow_webhook(payload):
         return jsonify({"error": "No artifacts URL"}), 400
 
     # Cancel any existing job for this PR
+    # WHY: New commits supersede old ones, so stop checking outdated code
+    # This prevents wasted AI computation and confusing duplicate comments
     with metrics_lock:
         if pr_number in pr_active_jobs:
             old_workflow_id = pr_active_jobs[pr_number]
@@ -947,14 +975,16 @@ def handle_workflow_webhook(payload):
                 app.logger.info(f"Cancelling existing job (workflow {old_workflow_id}) for PR #{pr_number}")
                 cancel_event = active_jobs[old_workflow_id].get("cancel_event")
                 if cancel_event:
-                    cancel_event.set()  # Signal cancellation
+                    # Signal cancellation - checked in process_webhook_async loop
+                    cancel_event.set()
 
     # Spawn background thread to process webhook
-    # Always use 'new-only' mode for automatic workflow triggers
+    # WHY: Return immediately (202 Accepted) so GitHub doesn't timeout
+    # Always use 'new-only' mode for automatic workflow triggers (fastest)
     thread = threading.Thread(
         target=process_webhook_async,
         args=(workflow_id, pr_number, artifacts_url, 'new-only'),
-        daemon=True
+        daemon=True  # Dies when main process exits
     )
     thread.start()
 

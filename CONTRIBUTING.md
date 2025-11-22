@@ -2,6 +2,10 @@
 
 These instructions help you add a new branching path to the story. See [Pull Request #7](https://github.com/michaelansel/NaNoWriMo2025/pull/7) for a good example.
 
+## Our Philosophy
+
+This project follows the **"Writers First, Always"** principle - every decision optimizes for the writer's experience, not the developer's convenience. See [PRINCIPLES.md](PRINCIPLES.md) for our complete guiding principles and [VISION.md](VISION.md) to understand why this project exists.
+
 ## Overview
 
 When you want to add a choice that branches the story, you'll:
