@@ -45,7 +45,11 @@ def test_pr75_scenario():
             'pid': '1', 'name': 'Start', 'tags': []
         },
         'mansel-20251112': {
-            'text': 'The laundry story without the collect snacks branch.',
+            'text': '''The laundry story.
+
+"Okay, just hang tight and I'll bring something back", she said gently.
+
+As she collected an armful of various snacks, Javlyn pondered what to do.''',
             'pid': '2', 'name': 'mansel-20251112', 'tags': []
         },
     }
@@ -82,13 +86,16 @@ def test_pr75_scenario():
             'pid': '1', 'name': 'Start', 'tags': []
         },
         'mansel-20251112': {
-            'text': '''The laundry story without the collect snacks branch.
+            'text': '''The laundry story.
+
+"Okay, just hang tight and I'll bring something back", she said gently.
 
 [[Collect snacks]]
 [[Empty kitchen->Day 21 KEB]]''',
             'pid': '2', 'name': 'mansel-20251112', 'tags': []
         },
         'Collect snacks': {
+            # THIS PROSE ALREADY EXISTED - it was part of mansel-20251112 before!
             'text': 'As she collected an armful of various snacks, Javlyn pondered what to do.',
             'pid': '3', 'name': 'Collect snacks', 'tags': []
         },
@@ -121,12 +128,12 @@ def test_pr75_scenario():
 
         # Verify
         if path == ['Start', 'mansel-20251112']:
-            # This path existed before, but now has new links in the last passage
-            # The prose is different (added link text)
+            # This path existed before, but now has links added
             expected = 'modified'  # Links added to existing passage
         else:
-            # This path includes "Collect snacks" which is genuinely new prose
-            expected = 'new'
+            # This path includes "Collect snacks" which is SPLIT from existing prose
+            # The combined prose is the same, just reorganized
+            expected = 'modified'  # Split passage, not new prose
 
         status = "✓ PASS" if category == expected else f"✗ FAIL (expected {expected})"
         print(f"  {status}")
