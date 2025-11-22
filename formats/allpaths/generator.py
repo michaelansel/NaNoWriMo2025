@@ -691,11 +691,12 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         category = path_categories.get(path_hash, 'new')
         paths_with_metadata.append((path, path_hash, created_date, category))
 
-    # Sort: newest creation date first, then by category (new, modified, unchanged)
+    # Sort: by category first (new, modified, unchanged), then newest creation date within each category
+    # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
     category_order = {'new': 2, 'modified': 1, 'unchanged': 0}
     paths_with_metadata.sort(key=lambda x: (
-        x[2] if x[2] else '',  # created_date (empty strings go last)
-        category_order.get(x[3], 3)  # category
+        category_order.get(x[3], 3),  # category (new=2, modified=1, unchanged=0 - higher sorts first with reverse=True)
+        x[2] if x[2] else '0',  # created_date (newest first within category, '0' sorts last)
     ), reverse=True)
 
     # Count paths by category
