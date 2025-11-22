@@ -4,6 +4,15 @@ Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego
 
 **Play the story:** https://michaelansel.github.io/NaNoWriMo2025/
 
+## Documentation Guide
+
+- **[Vision](VISION.md)** - Why this project exists and who it serves
+- **[Roadmap](ROADMAP.md)** - Feature roadmap and releases
+- **[Contributing](CONTRIBUTING.md)** - How to contribute story content
+- **[Writing Workflow](WRITING-WORKFLOW.md)** - Daily writing checklist
+- **[Development Guide](CLAUDE.md)** - For developers working on the codebase
+- **[Documentation Map](DOCUMENTATION.md)** - Complete documentation guide
+
 ## Quick Start: Contributing
 
 ### Option 1: Edit on GitHub (No Setup Required)

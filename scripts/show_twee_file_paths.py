@@ -4,6 +4,11 @@ Show twee files and their associated paths, sorted by path creation date.
 
 This script reads the allpaths validation cache and displays which paths use
 each twee file, along with when those paths were completed (became available).
+
+Implementation notes:
+- PURPOSE: Debug tool to understand which .twee files contribute to which paths
+- USE CASE: Find which files to review when specific paths have issues
+- Requires: allpaths-validation-status.json with created_date field populated
 """
 
 import json

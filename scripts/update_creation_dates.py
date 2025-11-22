@@ -2,6 +2,13 @@
 """
 Update validation cache with correct creation dates based on earliest passage commits.
 For each path, finds the earliest commit date among all passages in that path.
+
+Implementation notes:
+- PURPOSE: One-time migration script to populate created_date field in cache
+- LOGIC: created_date = max(earliest commit of each passage in path)
+  - This represents when the path became "complete" (all passages existed)
+- USE CASE: Run after adding created_date tracking to populate existing cache
+- LIMITATION: Only checks git history, not file timestamps
 """
 
 import json
