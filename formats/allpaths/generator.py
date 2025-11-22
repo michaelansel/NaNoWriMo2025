@@ -221,6 +221,7 @@ def strip_links_from_text(text: str) -> str:
     - [[target]]
     - [[display->target]]
     - [[target<-display]]
+    - :: passage markers (passage names/boundaries)
 
     Also normalizes whitespace to prevent link-count differences from
     affecting the fingerprint.
@@ -236,6 +237,10 @@ def strip_links_from_text(text: str) -> str:
     """
     # Remove all [[...]] patterns
     text = re.sub(r'\[\[([^\]]+)\]\]', '', text)
+
+    # Remove passage markers (lines starting with ::)
+    # These are structural metadata, not prose content
+    text = re.sub(r'^::.*$', '', text, flags=re.MULTILINE)
 
     # Normalize whitespace: collapse multiple newlines/spaces to single ones
     # This prevents different numbers of links from creating different whitespace patterns
