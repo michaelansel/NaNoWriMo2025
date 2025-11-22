@@ -221,6 +221,7 @@ def strip_links_from_text(text: str) -> str:
     - [[target]]
     - [[display->target]]
     - [[target<-display]]
+    - :: passage markers (passage names/boundaries)
 
     Also normalizes whitespace to prevent link-count differences from
     affecting the fingerprint.
@@ -236,6 +237,10 @@ def strip_links_from_text(text: str) -> str:
     """
     # Remove all [[...]] patterns
     text = re.sub(r'\[\[([^\]]+)\]\]', '', text)
+
+    # Remove passage markers (lines starting with ::)
+    # These are structural metadata, not prose content
+    text = re.sub(r'^::.*$', '', text, flags=re.MULTILINE)
 
     # Normalize whitespace: collapse multiple newlines/spaces to single ones
     # This prevents different numbers of links from creating different whitespace patterns
@@ -267,6 +272,26 @@ def calculate_raw_content_fingerprint(path: List[str], passages: Dict[str, Dict]
     combined = '\n'.join(content_parts)
     return hashlib.md5(combined.encode()).hexdigest()[:8]
 
+def normalize_prose_for_comparison(text: str) -> str:
+    """Aggressively normalize prose for split-resistant comparison.
+
+    This normalization handles cases where passages are split/reorganized:
+    - Collapses all whitespace (spaces, newlines, tabs) to single spaces
+    - Strips leading/trailing whitespace
+
+    This allows detecting that "First part. Second part." is the same as
+    "First part." + "\n" + "Second part." when concatenated.
+
+    Args:
+        text: Prose text (already with links stripped)
+
+    Returns:
+        Normalized text with all whitespace collapsed
+    """
+    # Replace all whitespace (including newlines) with single space
+    normalized = re.sub(r'\s+', ' ', text)
+    return normalized.strip()
+
 def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
     """Calculate fingerprint based ONLY on prose content, not names or links.
 
@@ -274,11 +299,12 @@ def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) ->
     - Strips link syntax ([[...]]) to focus on prose changes
     - Ignores passage names
     - Ignores route structure
+    - Normalizes whitespace aggressively to detect splits/reorganizations
 
     This means:
     - Adding/removing/changing links → No fingerprint change
     - Adding/editing prose → Fingerprint changes
-    - Restructuring passages → No fingerprint change (if prose is same)
+    - Restructuring/splitting passages → No fingerprint change (if prose is same)
 
     Args:
         path: List of passage names in order
@@ -298,8 +324,10 @@ def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) ->
             # Passage doesn't exist (shouldn't happen, but be defensive)
             content_parts.append("MISSING")
 
-    combined = '\n'.join(content_parts)
-    return hashlib.md5(combined.encode()).hexdigest()[:8]
+    # Join all prose and normalize aggressively to handle splits
+    combined = ' '.join(content_parts)
+    normalized = normalize_prose_for_comparison(combined)
+    return hashlib.md5(normalized.encode()).hexdigest()[:8]
 
 def calculate_route_hash(path: List[str]) -> str:
     """Calculate hash based ONLY on passage names (route structure), not content.
@@ -316,6 +344,41 @@ def calculate_route_hash(path: List[str]) -> str:
     """
     route_string = ' → '.join(path)
     return hashlib.md5(route_string.encode()).hexdigest()[:8]
+
+def calculate_passage_prose_fingerprint(passage_text: str) -> str:
+    """Calculate fingerprint for a single passage's prose content (no links).
+
+    This allows detecting when prose content is reused/split across passages.
+    For example, if passage A is split into A1 and A2, we can detect that
+    the prose in A1 and A2 existed before in A.
+
+    Args:
+        passage_text: The text content of a single passage
+
+    Returns:
+        8-character hex hash based on prose-only content
+    """
+    prose_only = strip_links_from_text(passage_text)
+    return hashlib.md5(prose_only.encode()).hexdigest()[:8]
+
+def build_passage_fingerprints(path: List[str], passages: Dict[str, Dict]) -> Dict[str, str]:
+    """Build a mapping of passage names to their prose fingerprints for a path.
+
+    Args:
+        path: List of passage names in the path
+        passages: Dict of all passages
+
+    Returns:
+        Dict mapping passage name -> prose fingerprint
+    """
+    fingerprints = {}
+    for passage_name in path:
+        if passage_name in passages:
+            passage_text = passages[passage_name].get('text', '')
+            fingerprints[passage_name] = calculate_passage_prose_fingerprint(passage_text)
+        else:
+            fingerprints[passage_name] = 'MISSING'
+    return fingerprints
 
 def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
     """
@@ -589,22 +652,88 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 
     return intersection / union if union > 0 else 0.0
 
-def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
-                    validation_cache: Dict) -> Dict[str, str]:
-    """
-    Categorize paths as New, Modified, or Unchanged using two-phase comparison.
+def get_file_content_from_git(file_path: Path, repo_root: Path) -> Optional[str]:
+    """Get file content from git HEAD (last commit).
 
-    Phase 1: Check prose content (links stripped)
-    Phase 2: Check raw content (links included) to detect link changes
+    Args:
+        file_path: Absolute path to the file
+        repo_root: Path to git repository root
+
+    Returns:
+        File content from HEAD, or None if file doesn't exist in git
+    """
+    try:
+        rel_path = file_path.relative_to(repo_root)
+        result = subprocess.run(
+            ['git', 'show', f'HEAD:{rel_path}'],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout
+        else:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not get git content for {file_path}: {e}", file=sys.stderr)
+        return None
+
+def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
+    """Check if a .twee file has prose changes vs just link/structure changes.
+
+    Compares current file content against git HEAD. If prose (with links stripped
+    and whitespace normalized) is identical, returns False (no prose changes).
+
+    This allows detecting that a passage split is just reorganization, not new content.
+
+    Args:
+        file_path: Absolute path to the .twee file
+        repo_root: Path to git repository root
+
+    Returns:
+        True if file has prose changes, False if only links/structure changed
+    """
+    # Get old version from git
+    old_content = get_file_content_from_git(file_path, repo_root)
+    if old_content is None:
+        # File doesn't exist in git, it's new
+        return True
+
+    # Get current version
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            new_content = f.read()
+    except Exception as e:
+        print(f"Warning: Could not read file {file_path}: {e}", file=sys.stderr)
+        return True  # Can't read, assume changed
+
+    # Strip links and normalize whitespace
+    old_prose = normalize_prose_for_comparison(strip_links_from_text(old_content))
+    new_prose = normalize_prose_for_comparison(strip_links_from_text(new_content))
+
+    return old_prose != new_prose
+
+def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
+                    validation_cache: Dict,
+                    passage_to_file: Dict[str, Path] = None,
+                    repo_root: Path = None) -> Dict[str, str]:
+    """
+    Categorize paths as New, Modified, or Unchanged using file-level git diff.
+
+    Phase 1: Check path-level prose fingerprint (with aggressive normalization)
+    Phase 2: Check file-level prose changes (git diff with links stripped)
+    Phase 3: Check raw content (links included) to detect link changes
 
     Categorization logic:
-    - NEW: Path contains new prose content
-    - MODIFIED: Path has same prose but links/structure changed
+    - NEW: Path contains at least one file with genuinely new prose content
+    - MODIFIED: All files have same prose, but links/structure changed (splits/reorganizations)
     - UNCHANGED: Path is completely unchanged (prose AND links AND structure)
 
     This means:
-    - Adding new prose → NEW
-    - Adding/removing/changing links → MODIFIED
+    - Adding genuinely new prose to a file → NEW
+    - Splitting passages (same file prose, new links) → MODIFIED
+    - Adding/removing/changing links only → MODIFIED
     - Restructuring passages (same prose) → MODIFIED
     - No changes at all → UNCHANGED
 
@@ -612,17 +741,18 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         current_paths: List of current paths
         passages: Dict of passage data
         validation_cache: Previous validation cache
+        passage_to_file: Mapping from passage names to source file paths (optional)
+        repo_root: Path to git repository root (optional)
 
     Returns:
         Dict mapping path hash -> category ('new', 'modified', 'unchanged')
     """
     categories = {}
 
-    # Build lookup of old fingerprints
+    # Build lookup of old path-level fingerprints
     old_by_prose = {}  # prose_fingerprint -> list of (path_hash, route_hash, raw_fingerprint)
 
     for old_hash, old_data in validation_cache.items():
-        # Skip non-path entries (like 'last_updated') and non-dict values
         if not isinstance(old_data, dict):
             continue
 
@@ -647,9 +777,10 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         raw_fp = calculate_raw_content_fingerprint(path, passages)
         route_hash = calculate_route_hash(path)
 
-        # Phase 1: Check if prose exists
+        # Phase 1: Check path-level prose fingerprint (with aggressive normalization)
+        # This catches splits/reorganizations where prose is preserved
         if prose_fp in old_by_prose:
-            # Same prose exists - check details
+            # Path-level prose matches (even if split/reorganized) - check if unchanged
             found_exact_match = False
 
             for old_path_hash, old_route_hash, old_raw_fp in old_by_prose[prose_fp]:
@@ -658,16 +789,48 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     categories[path_hash] = 'unchanged'
                     found_exact_match = True
                     break
-                    # Note: If old_raw_fp is None (old cache without raw_content_fingerprint),
-                    # the comparison above will fail, and path will be marked MODIFIED.
-                    # This is conservative but correct: we can't verify links match.
 
             if not found_exact_match:
                 # Same prose but different route/links = MODIFIED
+                # This includes passage splits with link additions
                 categories[path_hash] = 'modified'
         else:
-            # Prose doesn't match = NEW
-            categories[path_hash] = 'new'
+            # Phase 2: Path-level prose doesn't match - check file-level prose changes
+            # Use git diff to detect if files have genuinely new prose vs just reorganization
+            has_file_prose_changes = False
+
+            if passage_to_file and repo_root:
+                # Check each file that contains passages in this path
+                files_checked = set()
+                for passage_name in path:
+                    if passage_name in passage_to_file:
+                        file_path = passage_to_file[passage_name]
+
+                        # Only check each file once
+                        if file_path not in files_checked:
+                            files_checked.add(file_path)
+
+                            # Check if this file has prose changes (not just link/structure)
+                            if file_has_prose_changes(file_path, repo_root):
+                                has_file_prose_changes = True
+                                break
+
+            if has_file_prose_changes:
+                # At least one file has genuinely new prose
+                categories[path_hash] = 'new'
+            elif passage_to_file and repo_root:
+                # No files have prose changes - this is reorganization/splitting
+                categories[path_hash] = 'modified'
+            else:
+                # No file-level data available
+                # Check if path exists in old cache (backward compatibility)
+                if path_hash in validation_cache and isinstance(validation_cache[path_hash], dict):
+                    # Path existed before but no fingerprint data - mark as modified
+                    # to prompt re-validation without falsely claiming it's completely new
+                    categories[path_hash] = 'modified'
+                else:
+                    # Path didn't exist before - mark as new
+                    categories[path_hash] = 'new'
 
     return categories
 
@@ -691,11 +854,12 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         category = path_categories.get(path_hash, 'new')
         paths_with_metadata.append((path, path_hash, created_date, category))
 
-    # Sort: newest creation date first, then by category (new, modified, unchanged)
+    # Sort: by category first (new, modified, unchanged), then newest creation date within each category
+    # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
     category_order = {'new': 2, 'modified': 1, 'unchanged': 0}
     paths_with_metadata.sort(key=lambda x: (
-        x[2] if x[2] else '',  # created_date (empty strings go last)
-        category_order.get(x[3], 3)  # category
+        category_order.get(x[3], 3),  # category (new=2, modified=1, unchanged=0 - higher sorts first with reverse=True)
+        x[2] if x[2] else '0',  # created_date (newest first within category, '0' sorts last)
     ), reverse=True)
 
     # Count paths by category
@@ -1233,7 +1397,8 @@ def main():
     validation_cache = load_validation_cache(cache_file)
 
     # Categorize paths (New/Modified/Unchanged)
-    path_categories = categorize_paths(all_paths, passages, validation_cache)
+    path_categories = categorize_paths(all_paths, passages, validation_cache,
+                                      passage_to_file, repo_root)
     print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
           f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
           f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
@@ -1290,6 +1455,7 @@ def main():
         content_fingerprint = calculate_content_fingerprint(path, passages)
         raw_content_fingerprint = calculate_raw_content_fingerprint(path, passages)
         route_hash = calculate_route_hash(path)
+        passage_fingerprints = build_passage_fingerprints(path, passages)
         commit_date = get_path_commit_date(path, passage_to_file, repo_root)
         creation_date = get_path_creation_date(path, passage_to_file, repo_root)
         category = path_categories.get(path_hash, 'new')
@@ -1302,6 +1468,7 @@ def main():
                 'validated': False,
                 'content_fingerprint': content_fingerprint,
                 'raw_content_fingerprint': raw_content_fingerprint,
+                'passage_fingerprints': passage_fingerprints,
                 'commit_date': commit_date,
                 'created_date': creation_date,  # Use earliest commit date (when content was first created)
                 'category': category,
@@ -1311,6 +1478,7 @@ def main():
             validation_cache[path_hash]['content_fingerprint'] = content_fingerprint
             validation_cache[path_hash]['raw_content_fingerprint'] = raw_content_fingerprint
             validation_cache[path_hash]['route_hash'] = route_hash
+            validation_cache[path_hash]['passage_fingerprints'] = passage_fingerprints
             validation_cache[path_hash]['commit_date'] = commit_date
 
             # Update created_date to reflect the earliest passage creation date

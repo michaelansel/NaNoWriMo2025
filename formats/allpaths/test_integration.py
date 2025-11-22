@@ -19,6 +19,8 @@ from generator import (
     generate_all_paths_dfs,
     calculate_path_hash,
     calculate_content_fingerprint,
+    calculate_raw_content_fingerprint,
+    calculate_route_hash,
     categorize_paths,
     build_passage_to_file_mapping,
     get_file_commit_date,
@@ -162,9 +164,13 @@ def test_full_workflow():
     for path in all_paths[:2]:  # Mark first 2 paths as existing
         path_hash = calculate_path_hash(path, passages)
         fingerprint = calculate_content_fingerprint(path, passages)
+        raw_fingerprint = calculate_raw_content_fingerprint(path, passages)
+        route_hash = calculate_route_hash(path)
         simulated_cache[path_hash] = {
             'route': ' → '.join(path),
+            'route_hash': route_hash,
             'content_fingerprint': fingerprint,
+            'raw_content_fingerprint': raw_fingerprint,
             'validated': True
         }
 

@@ -1017,29 +1017,41 @@ def handle_approve_path_command(payload):
     if any(marker in comment_body for marker in bot_markers):
         return jsonify({"message": "Ignoring bot's own comment"}), 200
 
-    # Extract path IDs (8-char hex hashes)
-    path_ids = re.findall(r'\b[a-f0-9]{8}\b', comment_body)
-
-    if not path_ids:
-        post_pr_comment(pr_number,
-            "⚠️ No valid path IDs found. Format: `/approve-path abc12345 def67890`")
-        return jsonify({"message": "No path IDs"}), 200
-
-    # Check authorization
+    # Check authorization first (before potentially expensive cache operations)
     if not is_authorized(username):
         post_pr_comment(pr_number,
             f"⚠️ @{username} is not authorized to approve paths. Only repository collaborators can approve.")
         return jsonify({"message": "Unauthorized"}), 403
 
-    # Process asynchronously
+    # Extract path IDs (8-char hex hashes) and category keywords
+    path_ids = re.findall(r'\b[a-f0-9]{8}\b', comment_body)
+
+    # Check for category keywords (all, new, modified, unchanged)
+    category_keywords = []
+    for keyword in ['all', 'new', 'modified', 'unchanged']:
+        # Match keyword as whole word (not part of another word)
+        if re.search(rf'\b{keyword}\b', comment_body, re.IGNORECASE):
+            category_keywords.append(keyword.lower())
+
+    # If no explicit path IDs and no keywords, show error
+    if not path_ids and not category_keywords:
+        post_pr_comment(pr_number,
+            "⚠️ No valid path IDs or categories found.\n\n" +
+            "**Format:**\n" +
+            "- Specific paths: `/approve-path abc12345 def67890`\n" +
+            "- All paths: `/approve-path all`\n" +
+            "- By category: `/approve-path new` or `/approve-path modified`")
+        return jsonify({"message": "No path IDs"}), 200
+
+    # Process asynchronously (will expand keywords inside the async function)
     thread = threading.Thread(
         target=process_approval_async,
-        args=(pr_number, path_ids, username),
+        args=(pr_number, path_ids, username, category_keywords),
         daemon=True
     )
     thread.start()
 
-    return jsonify({"message": "Processing approval", "path_count": len(path_ids)}), 202
+    return jsonify({"message": "Processing approval", "path_count": len(path_ids), "categories": category_keywords}), 202
 
 
 def handle_check_continuity_command(payload):
@@ -1189,13 +1201,27 @@ def parse_check_command_mode(comment_body: str) -> str:
     return 'new-only'  # Default if no mode specified
 
 
-def process_approval_async(pr_number: int, path_ids: List[str], username: str):
-    """Process path approvals in background."""
+def process_approval_async(pr_number: int, path_ids: List[str], username: str, category_keywords: List[str] = None):
+    """Process path approvals in background.
+
+    Args:
+        pr_number: Pull request number
+        path_ids: Explicit list of path IDs (8-char hex hashes)
+        username: User requesting approval
+        category_keywords: Optional list of category keywords ('all', 'new', 'modified', 'unchanged')
+    """
     try:
-        app.logger.info(f"[Approval] Processing {len(path_ids)} paths for PR #{pr_number} by {username}")
+        category_keywords = category_keywords or []
+
+        app.logger.info(f"[Approval] Processing paths for PR #{pr_number} by {username} - " +
+                       f"explicit IDs: {len(path_ids)}, categories: {category_keywords}")
 
         # Post initial acknowledgment
-        post_pr_comment(pr_number, f"✅ Processing approval for {len(path_ids)} path(s)...")
+        if category_keywords:
+            categories_str = ', '.join(f'`{k}`' for k in category_keywords)
+            post_pr_comment(pr_number, f"✅ Processing approval for categories: {categories_str}...")
+        else:
+            post_pr_comment(pr_number, f"✅ Processing approval for {len(path_ids)} path(s)...")
 
         # Get PR info to find branch name
         pr_info = get_pr_info(pr_number)
@@ -1234,13 +1260,44 @@ def process_approval_async(pr_number: int, path_ids: List[str], username: str):
             # Load cache
             cache = load_validation_cache(cache_file)
 
+            # Expand category keywords to actual path IDs
+            expanded_from_keywords = []
+            category_stats = {}
+
+            if category_keywords:
+                for keyword in category_keywords:
+                    if keyword == 'all':
+                        # Get all paths regardless of category
+                        for path_id, data in cache.items():
+                            if isinstance(data, dict) and path_id not in expanded_from_keywords:
+                                expanded_from_keywords.append(path_id)
+                        category_stats['all'] = len(expanded_from_keywords)
+                    else:
+                        # Get paths by specific category
+                        count = 0
+                        for path_id, data in cache.items():
+                            if isinstance(data, dict):
+                                if data.get('category') == keyword and path_id not in expanded_from_keywords:
+                                    expanded_from_keywords.append(path_id)
+                                    count += 1
+                        category_stats[keyword] = count
+
+                app.logger.info(f"[Approval] Expanded keywords to {len(expanded_from_keywords)} path IDs: {category_stats}")
+
+            # Combine explicit path IDs with expanded ones (remove duplicates)
+            all_path_ids = list(set(path_ids + expanded_from_keywords))
+
+            if not all_path_ids:
+                post_pr_comment(pr_number, "⚠️ No paths found to approve. The specified categories may be empty.")
+                return
+
             # Mark paths as validated
             approved_count = 0
             not_found = []
             already_approved = []
 
-            for path_id in path_ids:
-                if path_id in cache:
+            for path_id in all_path_ids:
+                if path_id in cache and isinstance(cache[path_id], dict):
                     if cache[path_id].get("validated", False):
                         already_approved.append(path_id)
                     else:
@@ -1256,10 +1313,26 @@ def process_approval_async(pr_number: int, path_ids: List[str], username: str):
 
             # Commit cache back to PR branch
             cache_content = cache_file.read_text()
-            commit_message = f"""Mark {approved_count} path(s) as validated
+
+            # Build commit message
+            if category_keywords:
+                categories_str = ', '.join(category_keywords)
+                commit_message = f"""Mark {approved_count} path(s) as validated ({categories_str})
+
+Categories approved by @{username}: {categories_str}
+- Total paths: {len(all_path_ids)}
+- Newly approved: {approved_count}
+- Already approved: {len(already_approved)}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+            else:
+                commit_message = f"""Mark {approved_count} path(s) as validated
 
 Paths approved by @{username}:
-{chr(10).join(f'- {pid}' for pid in path_ids if pid not in not_found and pid not in already_approved)}
+{chr(10).join(f'- {pid}' for pid in all_path_ids if pid not in not_found and pid not in already_approved)}
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -1272,20 +1345,33 @@ Co-Authored-By: Claude <noreply@anthropic.com>
                 return
 
             # Post success comment
-            success_lines = [f"✅ Successfully validated {approved_count} path(s) by @{username}\n"]
+            if category_keywords:
+                categories_str = ', '.join(f'`{k}`' for k in category_keywords)
+                success_lines = [f"✅ Successfully validated {approved_count} path(s) from categories: {categories_str} by @{username}\n"]
+                if category_stats:
+                    success_lines.append("**Category breakdown:**")
+                    for cat, count in category_stats.items():
+                        success_lines.append(f"- `{cat}`: {count} path(s)")
+                    success_lines.append("")
+            else:
+                success_lines = [f"✅ Successfully validated {approved_count} path(s) by @{username}\n"]
 
-            if approved_count > 0:
+            if approved_count > 0 and not category_keywords:
                 success_lines.append("**Approved paths:**")
-                for pid in path_ids:
+                for pid in all_path_ids:
                     if pid not in not_found and pid not in already_approved:
                         route = cache.get(pid, {}).get("route", pid)
                         success_lines.append(f"- `{pid}` ({route})")
 
             if already_approved:
-                success_lines.append(f"\n**Already approved:** {', '.join(f'`{p}`' for p in already_approved)}")
+                success_lines.append(f"\n**Already approved:** {len(already_approved)} path(s)")
+                if len(already_approved) <= 10:
+                    success_lines.append(', '.join(f'`{p}`' for p in already_approved))
 
             if not_found:
-                success_lines.append(f"\n**Not found:** {', '.join(f'`{p}`' for p in not_found)}")
+                success_lines.append(f"\n**Not found:** {len(not_found)} path(s)")
+                if len(not_found) <= 10:
+                    success_lines.append(', '.join(f'`{p}`' for p in not_found))
 
             success_lines.append("\nThese paths won't be re-checked unless their content changes.")
 

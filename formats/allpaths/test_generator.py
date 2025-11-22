@@ -471,8 +471,10 @@ def test_categorize_missing_fingerprint():
     # Should not crash
     categories = categorize_paths(current_paths, passages, validation_cache)
 
-    # Since fingerprint is missing, we can't match content, so should be new
-    assert categories[path_hash] == 'new', f"Should categorize as new when fingerprint missing: {categories[path_hash]}"
+    # Since fingerprint is missing, we can't verify if unchanged, but path exists
+    # in old cache, so mark as modified (backward compatibility - prompts re-validation
+    # without falsely claiming it's completely new content)
+    assert categories[path_hash] == 'modified', f"Should categorize as modified when fingerprint missing: {categories[path_hash]}"
 
 @test("categorize_paths - handles non-dict entries")
 def test_categorize_non_dict_entries():
