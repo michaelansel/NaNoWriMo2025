@@ -42,6 +42,29 @@ Stack-ranked priorities for the NaNoWriMo2025 project. Higher priorities get res
 - Efficient validation (check only what changed)
 - Easy approval workflow for validated paths
 
+**Strategic Decision: Focused Validation**
+
+Writer Experience Goal:
+- Writers receive fast feedback on only what they changed
+- System never makes writers wait to revalidate unchanged content
+- Validation results are relevant to the writer's contribution
+
+Why This Matters:
+- Full story validation can take hours as the story grows
+- Writers contributing during NaNoWriMo need feedback in minutes
+- Irrelevant validation feedback is noise that distracts from writing
+- Waiting blocks momentum and breaks flow state
+
+Success Metrics:
+- PR validation completes in under 5 minutes for typical contributions
+- Validation feedback mentions only paths affected by changes
+- Writers can continue working while validation runs
+- Zero false positives (checking things that didn't change)
+
+Trade-off Accepted:
+- More complex categorization/tracking to enable selective validation
+- Worth it because writer time and focus are the scarcest resources
+
 ---
 
 ### Priority 3: Collaborative Workflow Excellence
