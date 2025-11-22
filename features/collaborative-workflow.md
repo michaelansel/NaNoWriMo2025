@@ -352,28 +352,7 @@ main (production branch)
 
 **Status:** Working as intended - review is optional, automation handles validation
 
----
-
-## Technical Implementation
-
-### Git Branching Model
-- **Main branch:** Production, always deployable
-- **Feature branches:** Individual writer work
-- **Branch naming:** Descriptive (e.g., `add-forest-path`, `fix-timeline`)
-- **Merge strategy:** Merge commits (preserves history)
-
-### GitHub Features Used
-- **Pull Requests:** Change review and discussion
-- **Branch protection:** Prevent force pushes to main (optional)
-- **Actions artifacts:** Preview builds
-- **PR comments:** Build status and AI validation
-- **Web editor:** Branch creation and editing
-
-### Automation
-- **GitHub Actions:** Build on every push
-- **Resource generation:** Auto-update passage tracking
-- **AI validation:** Continuity checking
-- **Deployment:** Automatic on merge to main
+See [architecture/collaborative-workflow.md](../architecture/collaborative-workflow.md) for technical design.
 
 ---
 
@@ -421,22 +400,6 @@ main (production branch)
 
 - **Review requirements:** Require approval before merge
   - **Why not:** Slows iteration, automation provides validation
-
----
-
-## Dependencies
-
-### External Dependencies
-- **GitHub:** Git hosting, PR interface, Actions
-- **Git:** Version control system
-- **GitHub Actions:** Build automation
-- **Web browser:** For web-based editing
-
-### Internal Dependencies
-- **Automated build workflow:** Preview generation
-- **Resource tracking:** Passage name management
-- **AI validation:** Continuity checking
-- **CONTRIBUTING.md:** Documentation
 
 ---
 

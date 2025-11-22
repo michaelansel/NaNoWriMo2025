@@ -216,34 +216,7 @@
 
 **Status:** Working as intended - GitHub is inherently online, but workaround is simple
 
----
-
-## Technical Implementation
-
-### GitHub Features Used
-- **Web-based editor:** GitHub's built-in file editing
-- **Branch creation:** Visual branch workflow
-- **Pull requests:** PR interface with preview and discussion
-- **Actions artifacts:** Download preview builds
-
-### Repository Structure
-```
-src/
-├── StoryData.twee      # Story metadata
-├── StoryTitle.twee     # Story title
-└── *.twee              # Story content files
-```
-
-### File Format
-- **Twee 3 syntax:** Simple text format for interactive fiction
-- **Passage syntax:** `:: PassageName` followed by content
-- **Link syntax:** `[[Link text->DestinationPassage]]`
-- **Comments:** `<!-- Comment -->`
-
-### Documentation
-- **CONTRIBUTING.md:** Step-by-step guide for web-based contribution
-- **README.md:** Quick start and overview
-- **Twee syntax cheat sheet:** Quick reference for common patterns
+See [architecture/github-web-editing.md](../architecture/github-web-editing.md) for technical design.
 
 ---
 
@@ -288,21 +261,6 @@ src/
 
 - **Real-time preview:** See changes without building
   - **Why not:** Build time is already <2 minutes, fast enough
-
----
-
-## Dependencies
-
-### External Dependencies
-- **GitHub:** Hosting, web interface, Actions, Pages
-- **GitHub Actions:** Build automation
-- **Tweego:** Story compilation (installed by workflow)
-- **Internet connection:** Required for web-based editing
-
-### Internal Dependencies
-- **Automated build workflow:** Must complete successfully for preview
-- **CONTRIBUTING.md:** Must stay current with workflow changes
-- **Story formats:** Harlowe, Paperthin, DotGraph, AllPaths
 
 ---
 

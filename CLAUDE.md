@@ -101,6 +101,12 @@ Product Requirements Documents should capture:
 - **Acceptance criteria**: Testable conditions for "done"
 - **Edge cases**: What could go wrong or behave unexpectedly?
 
+**Keep PRDs focused** (~100-200 lines):
+- Describe user-facing behavior, not system internals
+- Stop at "what happens" not "how it works technically"
+- If discussing architecture/implementation, you've crossed into Architect territory
+- Trust Architect to document technical design in ADRs
+
 ### Architect Documents (ADRs)
 Architecture Decision Records should capture:
 - **Context**: What forces are at play? What are we trying to achieve?

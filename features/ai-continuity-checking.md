@@ -97,34 +97,6 @@
 
 ## How It Works
 
-### System Architecture
-
-```
-GitHub PR Workflow
-    ↓ Builds story formats
-    ↓ Uploads AllPaths artifacts
-    ↓ Workflow completes
-    ↓
-GitHub sends webhook
-    ↓
-Continuity Webhook Service
-    ↓ Verifies signature
-    ↓ Downloads artifacts
-    ↓ Determines validation mode
-    ↓ Categorizes paths (new/modified/unchanged)
-    ↓
-Runs AI Continuity Checker
-    ↓ Loads validation cache
-    ↓ Selects paths based on mode
-    ↓ For each path:
-    │   ↓ Sends to Ollama API
-    │   ↓ Receives AI analysis
-    │   ↓ Posts progress update to PR
-    │   ↓ Updates validation cache
-    ↓
-Posts final summary to PR
-```
-
 ---
 
 ### Three Validation Modes
@@ -172,40 +144,20 @@ Posts final summary to PR
 
 ---
 
-### AI Analysis Process
+### What AI Checks
 
-**For each path:**
+**For each path, AI analyzes:**
+- Character consistency (names, traits, relationships)
+- Plot coherence (events flow logically)
+- Timeline accuracy (event sequences make sense)
+- Setting/world consistency (locations, rules)
+- Contradictions or plot holes
 
-1. **Load path content** from allpaths-metadata/*.txt
-2. **Send to Ollama** with continuity checking prompt
-3. **AI analyzes** for:
-   - Character consistency (names, traits, relationships)
-   - Plot coherence (events flow logically)
-   - Timeline accuracy (event sequences make sense)
-   - Setting/world consistency (locations, rules)
-   - Contradictions or plot holes
-4. **AI returns** structured JSON with issues
-5. **Parse results** and extract:
-   - Severity (none/minor/major/critical)
-   - Issue type (character/plot/timeline/setting/contradiction)
-   - Description and location
-   - Specific quotes demonstrating the problem
-6. **Post progress update** to PR with results
-7. **Update validation cache** with results
-
----
-
-### Key Innovation: Random Passage IDs
-
-**Problem:** Passage names like "Day 5 KEB" contain semantic information (timeline markers) that players never see, but confuse AI models.
-
-**Solution:** AllPaths format replaces passage names with random hex IDs in AI prompts:
-- `[PASSAGE: a1b2c3d4e5f6]` instead of `[PASSAGE: Day 5 KEB]`
-- AI only sees meaningless random IDs with zero semantic content
-- Mapping file (`allpaths-passage-mapping.json`) translates IDs back to names for reporting
-- AI focuses on actual prose players see, not internal passage structure
-
-**Result:** Dramatically improved AI accuracy - no longer confused by timeline markers or technical passage names.
+**AI provides:**
+- Severity rating (none/minor/major/critical)
+- Issue type (character/plot/timeline/setting/contradiction)
+- Description and location of issues
+- Specific quotes demonstrating problems
 
 ---
 
@@ -414,95 +366,7 @@ These paths won't be re-checked unless their content changes.
 
 **Status:** Working as intended - thread-based concurrency handles this
 
----
-
-## Technical Implementation
-
-### Components
-
-**Webhook Service:** `services/continuity-webhook.py`
-- Flask web service listening for GitHub webhooks
-- Webhook signature verification (HMAC-SHA256)
-- Artifact download from GitHub Actions
-- Background thread processing
-- PR comment posting
-- Status endpoint for monitoring
-
-**Continuity Checker:** `scripts/check-story-continuity.py`
-- Path categorization (new/modified/unchanged)
-- Mode filtering logic
-- Ollama API integration
-- Progress callback support
-- Validation cache management
-- Content fingerprinting
-
-**AllPaths Generator:** `formats/allpaths/generator.py`
-- Path enumeration via depth-first search
-- Random ID generation for passages
-- Metadata and clean format generation
-- Validation cache initialization
-
----
-
-### Validation Cache Structure
-
-**File:** `allpaths-validation-status.json`
-
-```json
-{
-  "a3f8b912": {
-    "route": "Start → Continue on → Cave → Victory",
-    "route_hash": "abc123...",
-    "first_seen": "2025-11-10T07:06:05.514940",
-    "validated": true,
-    "content_fingerprint": "def456...",
-    "raw_content_fingerprint": "ghi789...",
-    "commit_date": "2025-11-12T15:30:00-05:00",
-    "created_date": "2025-11-02T19:00:37-05:00",
-    "category": "unchanged"
-  }
-}
-```
-
-**Path Categorization Logic:**
-- **New:** Path ID not in cache (never seen before)
-- **Modified:** Path ID in cache but not validated (content changed)
-- **Unchanged:** Path ID in cache and validated (no changes)
-
-**Content-Based Change Detection:**
-- `content_fingerprint`: Hash of prose only (excludes link text)
-- `raw_content_fingerprint`: Hash including link text
-- Hash changes automatically when any passage in path is edited
-- Triggers re-categorization from "unchanged" to "modified"
-
----
-
-### AI Prompt Template
-
-**Key Instructions to AI:**
-```
-IMPORTANT INSTRUCTIONS:
-- Lines marked with "[PASSAGE: xxxxxxxxxxxx]" are METADATA ONLY containing random hex IDs
-- These are INTERNAL IDENTIFIERS with NO MEANING - completely ignore them
-- Only analyze the actual story text that appears between these markers
-- Text marked "[unselected]" shows choices NOT taken - ignore these completely
-- Focus ONLY on what the player actually sees in this specific path
-
-Check for:
-1. Character consistency
-2. Plot coherence
-3. Timeline accuracy
-4. Setting/world consistency
-5. Contradictions or plot holes
-
-Respond with JSON:
-{
-  "has_issues": true/false,
-  "severity": "none/minor/major/critical",
-  "issues": [...],
-  "summary": "..."
-}
-```
+See [architecture/ai-continuity-checking.md](../architecture/ai-continuity-checking.md) for technical design.
 
 ---
 
@@ -550,22 +414,6 @@ Respond with JSON:
 
 - **GitHub status checks:** Block merge on critical issues
   - **Why not:** Writers should make judgment call, not automatic blocks
-
----
-
-## Dependencies
-
-### External Dependencies
-- **Ollama:** Local AI model API
-- **gpt-oss:20b-fullcontext:** AI model for analysis
-- **GitHub API:** Webhook delivery, artifact download, comment posting
-- **GitHub Actions:** Build and artifact upload
-
-### Internal Dependencies
-- **AllPaths format:** Path enumeration and formatting
-- **Validation cache:** Path tracking and state management
-- **Webhook service:** Orchestration and PR communication
-- **Build workflow:** Artifact generation
 
 ---
 

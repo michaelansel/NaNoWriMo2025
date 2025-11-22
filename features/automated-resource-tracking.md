@@ -99,22 +99,17 @@
 
 ### Automatic Generation
 
-**Trigger:** Every build (both PRs and main branch)
+**When It Happens:**
+- Every build (both PRs and main branch)
+- Automatically scans all .twee files
+- Updates `Resource-Passage Names` file
+- For PRs: Commits updated file back to PR branch
 
-**Process:**
-1. Build workflow checks out repository
-2. Runs `scripts/generate-resources.sh`
-3. Script scans all .twee files in src/
-4. Extracts passage definitions (`:: PassageName`)
-5. Extracts lines containing links (`[[...]]`)
-6. Groups links under their respective passages
-7. Organizes by source filename (alphabetically)
-8. Writes to `Resource-Passage Names` file
-
-**For PRs Only:**
-9. Commits updated file back to PR branch
-10. Auto-commit message: "Auto-update Resource-Passage Names"
-11. Triggers new build with updated file
+**What It Contains:**
+- All passage names organized by source file
+- Links shown under each passage
+- Alphabetically sorted for easy navigation
+- Always up-to-date with latest changes
 
 ---
 
@@ -154,46 +149,6 @@ Start.twee
 - Link lines indented (2 spaces)
 - Blank line between files
 - Alphabetically sorted by filename
-
----
-
-### Generation Script
-
-**File:** `scripts/generate-resources.sh`
-
-**Logic:**
-```bash
-for file in src/*.twee; do
-    basename=$(basename "$file")
-    echo "$basename"
-
-    awk '
-    /^::/ {
-        # Found passage definition
-        print "  " $0
-        current_passage = $0
-        link_count = 0
-    }
-    /\[\[/ {
-        # Found line with links
-        link_count++
-        links[link_count] = "  " $0
-    }
-    END {
-        # Print accumulated links
-        for (i = 1; i <= link_count; i++) {
-            print links[i]
-        }
-    }
-    ' "$file"
-done
-```
-
-**Key Features:**
-- Simple shell script with awk
-- Processes files in sorted order
-- Groups links with their passages
-- Minimal dependencies (bash, awk)
 
 ---
 
@@ -299,41 +254,7 @@ done
 
 **Status:** Working correctly - no-change check prevents loops
 
----
-
-## Technical Implementation
-
-### Generation Script
-**File:** `scripts/generate-resources.sh`
-**Language:** Bash + awk
-**Dependencies:** Standard Unix tools (bash, awk, sort)
-
-### Build Integration
-**File:** `.github/workflows/build-and-deploy.yml`
-
-**Steps:**
-```yaml
-- name: Generate resources file
-  run: |
-    chmod +x scripts/generate-resources.sh
-
-- name: Commit updated resources file
-  if: github.event_name == 'pull_request'
-  run: |
-    git checkout ${{ github.head_ref }}
-    ./scripts/generate-resources.sh
-    git add "Resource-Passage Names"
-    if ! git diff --staged --quiet; then
-      git commit -m "Auto-update Resource-Passage Names"
-      git push
-    fi
-```
-
-### Output File
-**File:** `Resource-Passage Names` (no extension)
-**Location:** Repository root
-**Format:** Plain text, human-readable
-**Version control:** Committed to repository
+See [architecture/automated-resource-tracking.md](../architecture/automated-resource-tracking.md) for technical design.
 
 ---
 
@@ -381,21 +302,6 @@ done
 
 - **Passage statistics:** Word counts, link counts, etc.
   - **Why not:** Not needed for current workflow
-
----
-
-## Dependencies
-
-### External Dependencies
-- **Bash:** Shell script execution
-- **awk:** Text processing
-- **Git:** Committing updated file
-- **GitHub Actions:** Build automation
-
-### Internal Dependencies
-- **Source .twee files:** Passage definitions
-- **Build workflow:** Triggers generation
-- **PR workflow:** Auto-commit mechanism
 
 ---
 

@@ -96,218 +96,32 @@
 
 ## How It Works
 
-### Cache Structure
+### What Writers See
 
-**File:** `allpaths-validation-status.json`
-**Location:** Repository root
-**Format:** JSON
+**Cache File:** `allpaths-validation-status.json` in repository root
 
-```json
-{
-  "a3f8b912": {
-    "route": "Start → Continue on → Cave → Victory",
-    "route_hash": "abc123def456",
-    "first_seen": "2025-11-10T07:06:05.514940",
-    "validated": true,
-    "content_fingerprint": "e5f6g7h8i9j0",
-    "raw_content_fingerprint": "k1l2m3n4o5p6",
-    "commit_date": "2025-11-12T15:30:00-05:00",
-    "created_date": "2025-11-02T19:00:37-05:00",
-    "category": "unchanged"
-  },
-  "b4c7d843": {
-    "route": "Start → Continue on → Cave → Retreat",
-    "route_hash": "ghi789jkl012",
-    "first_seen": "2025-11-15T10:23:45.123456",
-    "validated": false,
-    "content_fingerprint": "q7r8s9t0u1v2",
-    "raw_content_fingerprint": "w3x4y5z6a7b8",
-    "commit_date": "2025-11-15T10:23:00-05:00",
-    "created_date": "2025-11-15T10:23:00-05:00",
-    "category": "new"
-  }
-}
-```
+**Path Categories:**
+- **New:** Path never seen before (always validated)
+- **Modified:** Path exists but content changed (validated if requested)
+- **Unchanged:** Path validated and content unchanged (skipped)
 
----
+**Automatic Change Detection:**
+- System tracks content of each path
+- Any edit to passage text automatically invalidates validation
+- Ensures validated paths stay current with content
 
-### Field Descriptions
+**Path Approval:**
+- Writer reviews AI feedback
+- Types `/approve-path [path-id]` to mark path as validated
+- Approved paths skipped in future validations (unless content changes)
+- Cache updates automatically
 
-**Path ID (key):**
-- 8-character hash of route structure
-- Stable across builds if route unchanged
-- Used as filename for path text files
-- Example: `a3f8b912`
+**Validation Modes:**
+- **new-only:** Check only new paths (fastest, default)
+- **modified:** Check new and modified paths (pre-merge)
+- **all:** Check everything (periodic audit)
 
-**route:**
-- Human-readable path through passages
-- Example: `"Start → Continue on → Cave → Victory"`
-- Used for display in UI and PR comments
-
-**route_hash:**
-- Hash of the route structure
-- Changes if passage sequence changes
-- Longer than path ID for uniqueness
-
-**first_seen:**
-- Timestamp when path first discovered
-- ISO 8601 format with microseconds
-- Never changes once set
-
-**validated:**
-- Boolean - has path been reviewed/approved?
-- `true` = validated, skip in future checks
-- `false` = needs validation
-- Reset to `false` if content changes
-
-**content_fingerprint:**
-- Hash of prose content only (excludes link text)
-- Changes when any passage text in path changes
-- Used for change detection
-
-**raw_content_fingerprint:**
-- Hash including link text
-- More sensitive to changes
-- Used for comprehensive change detection
-
-**commit_date:**
-- Most recent commit date of any passage in path
-- Updated when any passage modified
-- Used to track content freshness
-
-**created_date:**
-- Date when path became complete
-- Most recent creation date of passages in path
-- Used to track when path was added to story
-- Represents when players could first experience this path
-
-**category:**
-- Current categorization: `"new"`, `"modified"`, or `"unchanged"`
-- Computed dynamically based on other fields
-- Used for selective validation
-
----
-
-### Path Categorization Logic
-
-**New Path:**
-```python
-if path_id not in cache:
-    return 'new'
-```
-- Path ID never seen before
-- New story branch added
-- Always validated
-
-**Modified Path:**
-```python
-if path_id in cache and not cache[path_id]['validated']:
-    return 'modified'
-```
-- Path existed before but not validated
-- Content changed since last validation
-- Hash changed, triggered re-categorization
-- Validated in `modified` mode
-
-**Unchanged Path:**
-```python
-if path_id in cache and cache[path_id]['validated']:
-    return 'unchanged'
-```
-- Path validated and no changes since
-- Hash matches previous validation
-- Skipped in `new-only` and `modified` modes
-- Only checked in `all` mode
-
----
-
-### Content-Based Change Detection
-
-**How it works:**
-1. **Generate path content** from .twee source
-2. **Extract prose** (without link text) for content_fingerprint
-3. **Hash full content** (with link text) for raw_content_fingerprint
-4. **Compare hashes** to cache entry
-5. **If different:** Content changed, invalidate validation
-6. **If same:** Content unchanged, keep validation status
-
-**Why it's accurate:**
-- Any passage edit changes the hash
-- Renaming passages changes the hash
-- Changing link text changes raw hash
-- Adding/removing choices changes both hashes
-- Zero false negatives (every change detected)
-
-**Example - Content Change:**
-```
-Original: "Javlyn entered the cave." → Hash: abc123
-Modified: "Javlyn entered the dark cave." → Hash: def456
-Different hash → Category: modified → Re-validate
-```
-
-**Example - No Change:**
-```
-Build 1: "Javlyn entered the cave." → Hash: abc123
-Build 2: "Javlyn entered the cave." → Hash: abc123
-Same hash → Category: unchanged → Skip validation
-```
-
----
-
-### Validation Modes Using Cache
-
-**new-only (Default):**
-```python
-validate_paths = [p for p in paths if category[p] == 'new']
-```
-- Check only new paths
-- Skip modified and unchanged
-- Fastest feedback
-
-**modified:**
-```python
-validate_paths = [p for p in paths if category[p] in ('new', 'modified')]
-```
-- Check new and modified paths
-- Skip unchanged
-- Pre-merge validation
-
-**all:**
-```python
-validate_paths = paths  # All paths
-```
-- Check everything
-- No skipping
-- Full audit
-
----
-
-### Path Approval Workflow
-
-**Writer approves path:**
-```
-/approve-path a3f8b912
-```
-
-**Service updates cache:**
-```python
-cache['a3f8b912']['validated'] = True
-# Commit cache to PR branch
-```
-
-**Future validations:**
-```python
-if cache['a3f8b912']['validated']:
-    # Skip this path (unless content changed)
-    pass
-```
-
-**Content change invalidates:**
-```python
-if content_fingerprint != cache['a3f8b912']['content_fingerprint']:
-    cache['a3f8b912']['validated'] = False
-    # Re-validate on next run
-```
+See [architecture/path-validation-cache.md](../architecture/path-validation-cache.md) for technical design.
 
 ---
 
@@ -416,116 +230,6 @@ if content_fingerprint != cache['a3f8b912']['content_fingerprint']:
 
 ---
 
-## Technical Implementation
-
-### Cache Management
-
-**Initialization:**
-```python
-# formats/allpaths/generator.py
-cache = {}
-if os.path.exists('allpaths-validation-status.json'):
-    with open('allpaths-validation-status.json', 'r') as f:
-        cache = json.load(f)
-```
-
-**Update:**
-```python
-# For each discovered path
-path_id = hash(route)[:8]
-if path_id not in cache:
-    cache[path_id] = {
-        'route': route,
-        'route_hash': hash(route),
-        'first_seen': datetime.now().isoformat(),
-        'validated': False,
-        'content_fingerprint': hash(content),
-        'raw_content_fingerprint': hash(raw_content),
-        'commit_date': get_latest_commit_date(path),
-        'created_date': get_creation_date(path),
-        'category': 'new'
-    }
-else:
-    # Update fingerprints and dates
-    cache[path_id]['content_fingerprint'] = hash(content)
-    cache[path_id]['raw_content_fingerprint'] = hash(raw_content)
-    cache[path_id]['commit_date'] = get_latest_commit_date(path)
-```
-
-**Save:**
-```python
-with open('allpaths-validation-status.json', 'w') as f:
-    json.dump(cache, f, indent=2)
-```
-
----
-
-### Fingerprinting
-
-**Content Fingerprint (Prose Only):**
-```python
-import hashlib
-
-def compute_content_fingerprint(path_text):
-    # Remove link text, keep only prose
-    prose_only = re.sub(r'\[\[.*?\]\]', '', path_text)
-    return hashlib.md5(prose_only.encode()).hexdigest()
-```
-
-**Raw Content Fingerprint (Full Text):**
-```python
-def compute_raw_fingerprint(path_text):
-    # Hash full content including links
-    return hashlib.md5(path_text.encode()).hexdigest()
-```
-
----
-
-### Date Tracking
-
-**Commit Date (Latest Modification):**
-```bash
-# Most recent commit touching any passage in path
-git log -1 --format=%cI --follow -- src/passage-file.twee
-```
-
-**Creation Date (Path Completion):**
-```bash
-# Earliest commit for most recent passage in path
-git log --diff-filter=A --format=%cI -- src/latest-passage.twee | tail -1
-```
-
----
-
-### Validation Integration
-
-**Categorization:**
-```python
-# scripts/check-story-continuity.py
-
-def categorize_path(path_id, cache):
-    if path_id not in cache:
-        return 'new'
-    entry = cache[path_id]
-    if not entry.get('validated', False):
-        return 'modified'
-    return 'unchanged'
-```
-
-**Mode Filtering:**
-```python
-def should_validate_path(path_id, category, mode):
-    if mode == 'all':
-        return True
-    if mode == 'modified':
-        return category in ('new', 'modified')
-    if mode == 'new-only':
-        return category == 'new'
-    raise ValueError(f"Unknown mode: {mode}")
-```
-
----
-
 ## What Could Go Wrong?
 
 ### Risk 1: False Negatives in Change Detection
@@ -570,21 +274,6 @@ def should_validate_path(path_id, category, mode):
 
 - **Cache compression:** Reduce file size
   - **Why not:** File size not an issue currently
-
----
-
-## Dependencies
-
-### External Dependencies
-- **Python 3:** Cache generation and validation
-- **Git:** Date tracking and history
-- **JSON:** Cache file format
-
-### Internal Dependencies
-- **AllPaths generator:** Cache initialization
-- **Continuity checker:** Cache usage for validation
-- **Build workflow:** Cache persistence
-- **Webhook service:** Cache updates and commits
 
 ---
 

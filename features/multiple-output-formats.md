@@ -191,38 +191,6 @@
 
 ---
 
-### Build Process
-
-```
-.twee source files
-    ↓
-GitHub Actions Workflow
-    ↓
-┌───────────┬────────────┬───────────┬────────────┐
-↓           ↓            ↓           ↓            ↓
-Harlowe   Paperthin   DotGraph   AllPaths      AllPaths
-(play)    (proofread) (visualize) (browse)     (validate)
-    ↓           ↓            ↓           ↓            ↓
-index.html proofread.html graph.html allpaths.html  *.txt files
-```
-
-**Build Commands:**
-```bash
-# Harlowe format (playable)
-tweego src -o dist/index.html -f harlowe-3
-
-# Paperthin format (proofreading)
-tweego src -o dist/proofread.html -f paperthin-1
-
-# DotGraph format (visualization)
-tweego src -o dist/graph.html -f dotgraph-2
-
-# AllPaths format (AI validation)
-./scripts/build-allpaths.sh
-```
-
----
-
 ## Edge Cases
 
 ### Edge Case 1: Format-Specific Bugs
@@ -329,36 +297,7 @@ tweego src -o dist/graph.html -f dotgraph-2
 
 **Status:** Working as intended - cycles handled correctly
 
----
-
-## Technical Implementation
-
-### Format Sources
-- **Harlowe 3:** Built-in Tweego format
-- **Paperthin 1:** Built-in Tweego format
-- **DotGraph 2:** Downloaded from GitHub releases
-- **AllPaths:** Custom format (generator.py)
-
-### Build Scripts
-- `.github/workflows/build-and-deploy.yml` - Main workflow
-- `scripts/build-allpaths.sh` - AllPaths build script
-- `formats/allpaths/generator.py` - AllPaths path generation
-
-### Output Structure
-```
-dist/
-├── index.html                    # Harlowe playable
-├── proofread.html                # Paperthin linear
-├── graph.html                    # DotGraph visualization
-├── allpaths.html                 # AllPaths browser
-├── allpaths-clean/               # Clean prose paths
-│   ├── path-001-abc12345.txt
-│   └── ...
-├── allpaths-metadata/            # Metadata paths for AI
-│   ├── path-001-abc12345.txt
-│   └── ...
-└── allpaths-passage-mapping.json # ID to name mapping
-```
+See [architecture/multiple-output-formats.md](../architecture/multiple-output-formats.md) for technical design.
 
 ---
 
@@ -406,22 +345,6 @@ dist/
 
 - **Statistics format:** Word counts, branch stats, etc.
   - **Why deferred:** Valuable for retrospective, not needed during writing
-
----
-
-## Dependencies
-
-### External Dependencies
-- **Tweego:** Story compilation tool
-- **Harlowe format:** Interactive fiction format
-- **Paperthin format:** Linear reading format
-- **DotGraph format:** Graph visualization format
-- **Python 3:** AllPaths path generation
-
-### Internal Dependencies
-- **GitHub Actions workflow:** Orchestrates all builds
-- **Source .twee files:** Single source of truth
-- **Build scripts:** Automate format generation
 
 ---
 

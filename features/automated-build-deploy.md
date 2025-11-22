@@ -117,159 +117,22 @@
 
 ---
 
-### Build Steps
-
-#### Step 1: Checkout Repository
-```yaml
-- uses: actions/checkout@v4
-```
-Checks out the code, including PR merge commit for PRs.
-
----
-
-#### Step 2: Generate Resources File
-```bash
-chmod +x scripts/generate-resources.sh
-./scripts/generate-resources.sh
-```
-Auto-generates "Resource-Passage Names" file listing all passages.
-
----
-
-#### Step 3: Commit Updated Resources (PR Only)
-```bash
-git checkout ${{ github.head_ref }}
-./scripts/generate-resources.sh
-git add "Resource-Passage Names"
-git commit -m "Auto-update Resource-Passage Names"
-git push
-```
-Commits updated resource file back to PR branch.
-
----
-
-#### Step 4: Install Tweego
-```bash
-wget https://github.com/tmedwards/tweego/releases/download/v2.1.1/tweego-2.1.1-linux-x64.zip
-unzip tweego-2.1.1-linux-x64.zip
-sudo mv tweego-files/tweego /usr/local/bin/
-mv tweego-files/storyformats .
-```
-Downloads and installs Tweego compiler.
-
----
-
-#### Step 5: Download DotGraph Format
-```bash
-wget https://github.com/mcdemarco/dotgraph/releases/download/v2.2.0/release.zip
-unzip release.zip
-mv dotgraph-2 storyformats/
-```
-Downloads DotGraph visualization format.
-
----
-
-#### Step 6: Build Harlowe Version
-```bash
-mkdir -p dist
-tweego src -o dist/index.html -f harlowe-3
-```
-Builds playable interactive story.
-
----
-
-#### Step 7: Build Paperthin Version
-```bash
-tweego src -o dist/proofread.html -f paperthin-1
-```
-Builds linear proofreading format.
-
----
-
-#### Step 8: Build DotGraph Version
-```bash
-tweego src -o dist/graph.html -f dotgraph-2
-```
-Builds story structure visualization.
-
----
-
-#### Step 9: Build AllPaths Version
-```bash
-chmod +x scripts/build-allpaths.sh
-./scripts/build-allpaths.sh
-```
-Builds path enumeration for AI validation.
-
----
-
-#### Step 10: Upload Preview Artifacts (PR Only)
-```yaml
-- uses: actions/upload-artifact@v4
-  with:
-    name: story-preview
-    path: |
-      dist/
-      allpaths-validation-status.json
-    retention-days: 30
-```
-Uploads build outputs as downloadable artifacts.
-
----
-
-#### Step 11: Comment on PR (PR Only)
-```javascript
-const fs = require('fs');
-const indexSize = fs.statSync('dist/index.html').size;
-const proofreadSize = fs.statSync('dist/proofread.html').size;
-const graphSize = fs.statSync('dist/graph.html').size;
-const allpathsSize = fs.statSync('dist/allpaths.html').size;
-const pathCount = fs.readdirSync('dist/allpaths-clean').filter(f => f.endsWith('.txt')).length;
-
-github.rest.issues.createComment({
-  body: `## ✅ Build Successful
-
-**📊 Build Stats:**
-- Harlowe version: ${(indexSize / 1024).toFixed(2)} KB
-- Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
-- DotGraph version: ${(graphSize / 1024).toFixed(2)} KB
-- AllPaths version: ${(allpathsSize / 1024).toFixed(2)} KB (${pathCount} paths)
-
-**🎮 Preview Your Changes:**
-1. Download \`story-preview\` artifact from [workflow run](...)
-2. Extract the zip file
-3. Open \`index.html\` to play the story
-...`
-});
-```
-Posts detailed build results to PR.
-
----
-
-#### Step 12: Deploy to GitHub Pages (Main Only)
-```yaml
-- uses: actions/upload-pages-artifact@v3
-  with:
-    path: './dist'
-- uses: actions/deploy-pages@v4
-```
-Deploys to live GitHub Pages site.
-
----
-
-### Build Output
+### What Happens During Build
 
 **For Pull Requests:**
-- Preview artifact uploaded
-- PR comment posted
-- No deployment to production
-- Resources file committed back to PR branch
+- All 4 output formats generated (Harlowe, Paperthin, DotGraph, AllPaths)
+- Preview artifact uploaded for download
+- PR comment posted with build stats and download link
+- Resources file updated and committed back to PR branch
+- No deployment to production (preview only)
 
 **For Main Branch:**
-- Full build completed
-- Deployed to GitHub Pages
-- Live site updated
-- No PR comment (already merged)
+- All 4 output formats generated
+- Deployed to GitHub Pages automatically
+- Live site updated within 2 minutes
+- Available at https://michaelansel.github.io/NaNoWriMo2025/
+
+See [architecture/automated-build-deploy.md](../architecture/automated-build-deploy.md) for technical design.
 
 ---
 
@@ -377,70 +240,6 @@ Deploys to live GitHub Pages site.
 
 ---
 
-## Technical Implementation
-
-### GitHub Actions Workflow
-**File:** `.github/workflows/build-and-deploy.yml`
-
-**Triggers:**
-```yaml
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-```
-
-**Permissions:**
-```yaml
-permissions:
-  contents: write      # Commit resource file
-  pages: write         # Deploy to Pages
-  id-token: write      # Pages deployment
-  pull-requests: write # Post PR comments
-```
-
-**Concurrency:**
-```yaml
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
-```
-
----
-
-### Build Tools
-
-**Tweego:**
-- Version: 2.1.1
-- Platform: Linux x64
-- Downloaded during workflow
-- Installed to `/usr/local/bin/`
-
-**Story Formats:**
-- Harlowe 3 (built-in)
-- Paperthin 1 (built-in)
-- DotGraph 2 (downloaded from releases)
-- AllPaths (custom format)
-
-**Python:**
-- Version: 3.x (GitHub runner default)
-- Used for AllPaths generation
-- No external dependencies
-
----
-
-### Deployment Target
-
-**GitHub Pages:**
-- Branch: `gh-pages` (auto-managed by Actions)
-- URL: `https://michaelansel.github.io/NaNoWriMo2025/`
-- CDN: GitHub's global CDN
-- HTTPS: Automatic
-- Custom domain: Supported (not currently used)
-
----
-
 ## What Could Go Wrong?
 
 ### Risk 1: GitHub Actions Outage
@@ -485,23 +284,6 @@ concurrency:
 
 - **Build notifications:** Slack/email notifications for builds
   - **Why not:** PR comments sufficient, notifications would be noise
-
----
-
-## Dependencies
-
-### External Dependencies
-- **GitHub Actions:** Build automation platform
-- **GitHub Pages:** Hosting platform
-- **Tweego:** Story compilation
-- **DotGraph:** Visualization format
-- **Internet connection:** Required for downloading tools
-
-### Internal Dependencies
-- **Source .twee files:** Story content
-- **Build scripts:** Orchestrate compilation
-- **Story formats:** Output format generators
-- **Resource generation script:** Auto-tracking
 
 ---
 
