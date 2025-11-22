@@ -822,8 +822,15 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                 # No files have prose changes - this is reorganization/splitting
                 categories[path_hash] = 'modified'
             else:
-                # No file-level data available, conservatively mark as new
-                categories[path_hash] = 'new'
+                # No file-level data available
+                # Check if path exists in old cache (backward compatibility)
+                if path_hash in validation_cache and isinstance(validation_cache[path_hash], dict):
+                    # Path existed before but no fingerprint data - mark as modified
+                    # to prompt re-validation without falsely claiming it's completely new
+                    categories[path_hash] = 'modified'
+                else:
+                    # Path didn't exist before - mark as new
+                    categories[path_hash] = 'new'
 
     return categories
 
