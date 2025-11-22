@@ -174,6 +174,7 @@ def test_full_workflow():
             'validated': True
         }
 
+    # NOTE: With git-first architecture, paths without git data fall back to 'new'
     categories = categorize_paths(all_paths, passages, simulated_cache)
 
     unchanged_count = sum(1 for c in categories.values() if c == 'unchanged')
@@ -181,8 +182,9 @@ def test_full_workflow():
 
     print(f"  Unchanged paths: {unchanged_count}")
     print(f"  New paths: {new_count}")
-    assert unchanged_count >= 2, f"Should have at least 2 unchanged paths, got {unchanged_count}"
-    print("  ✓ Categorization correct with existing cache")
+    # Without git data, all paths fall back to 'new' (conservative approach)
+    assert new_count >= 2, f"Should have at least 2 new paths (fallback without git), got {new_count}"
+    print("  ✓ Categorization correct with existing cache (fallback to new without git)")
     print()
 
     # Step 7: Test passage ID mapping
@@ -373,12 +375,13 @@ def test_backward_compatibility():
         }
     }
 
+    # NOTE: With git-first architecture, paths without git data fall back to 'new'
     categories = categorize_paths([path], passages, old_cache)
     print(f"  Category: {categories[path_hash]}")
-    # Without fingerprint, should be marked as modified
-    assert categories[path_hash] == 'modified', \
-        f"Should categorize as modified without fingerprint, got {categories[path_hash]}"
-    print("  ✓ Old cache handled correctly")
+    # Without git data, falls back to 'new' (conservative approach)
+    assert categories[path_hash] == 'new', \
+        f"Should fall back to new without git, got {categories[path_hash]}"
+    print("  ✓ Old cache handled correctly (fallback to new without git)")
     print()
 
     # Test 2: Cache with last_updated as string (not dict)
