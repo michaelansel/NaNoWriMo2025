@@ -2,7 +2,7 @@
 
 ## Overview
 
-NaNoWriMo2025 is an interactive fiction project built using Twee3/Tweego with SugarCube 2.36.1. The project implements a sophisticated build, validation, and deployment pipeline that combines:
+NaNoWriMo2025 is an interactive fiction project built using Twee3/Tweego with Harlowe 3.3.9. The project implements a sophisticated build, validation, and deployment pipeline that combines:
 
 - **Interactive Fiction Development**: Twee source files compiled with Tweego
 - **Multi-Format Output**: HTML playable story, static site deployment, and AllPaths format
@@ -18,7 +18,7 @@ NaNoWriMo2025 is an interactive fiction project built using Twee3/Tweego with Su
 
 Story content is written in Twee3 format, a plain-text markup language for interactive fiction:
 
-- **Format**: Twee3 with SugarCube 2.36.1 macros
+- **Format**: Twee3 with Harlowe 3.3.9 macros
 - **Structure**: Passages (story nodes) with links between them
 - **Metadata**: StoryData passage defines title, IFID, and start passage
 - **Organization**: Separate .twee files for different story branches or days
@@ -436,7 +436,7 @@ python3 continuity-webhook.py  # Run webhook service locally
 **Rationale**:
 - Plain text format works well with git
 - No proprietary tools required
-- Supports SugarCube (rich macro system)
+- Supports Harlowe (accessible, natural-language macro system)
 - Command-line compilation for CI/CD
 - Open source and actively maintained
 

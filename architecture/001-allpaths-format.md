@@ -95,7 +95,7 @@ The format is implemented as a Python script that post-processes Tweego's output
 
 **Rejected because**:
 - Too complex for interactive fiction
-- Doesn't work well with SugarCube macros
+- Doesn't work well with Harlowe macros
 - Overkill for the problem domain
 
 ### 4. Native Tweego Format

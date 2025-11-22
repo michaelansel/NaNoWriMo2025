@@ -145,7 +145,7 @@ function build_story() {
 }
 ```
 
-**Twee/SugarCube**:
+**Twee/Harlowe**:
 ```twee
 :: PassageName [tags]
 Passage content with Twee syntax
@@ -159,7 +159,7 @@ Passage content with Twee syntax
 - **Examples**: `Start`, `Continue on`, `Day 5 KEB`, `Metal object`
 - **Spaces**: Allowed and encouraged for readability
 - **Tags**: Use square brackets for passage metadata
-- **Special passages**: `StoryData`, `StoryInit`, etc. (SugarCube conventions)
+- **Special passages**: `StoryData`, `StoryTitle`, `StoryStyles`, etc. (Harlowe conventions)
 
 **Conventions**:
 - Use natural language
@@ -301,21 +301,21 @@ echo "=== Build Complete ==="
 
 ### Twee Style
 
-**SugarCube 2 Conventions**:
+**Harlowe 3 Conventions**:
 ```twee
 :: PassageName [tag1 tag2]
 Passage content goes here.
 
 Regular text uses standard prose formatting.
 
-[[Link Text|Destination]]
+[[Link Text->Destination]]
 [[Simple Link]]
 
-<<if $variable>>
+(if: $variable)[
     Conditional content
-<</if>>
+]
 
-<<set $variable to "value">>
+(set: $variable to "value")
 ```
 
 **Best Practices**:
@@ -323,7 +323,7 @@ Regular text uses standard prose formatting.
 - Use meaningful passage names
 - Tag passages for organization
 - Keep macros readable with whitespace
-- Use SugarCube 2 macro syntax consistently
+- Use Harlowe 3 macro syntax consistently
 
 ### YAML Style (GitHub Actions)
 
