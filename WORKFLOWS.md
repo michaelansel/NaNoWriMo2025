@@ -1,371 +1,345 @@
-# Story Writing Workflows
+# Daily Story Writing Workflow
 
-This document explains the common workflows and patterns used in this repository for collaborative story writing.
+This document explains the standard daily workflow for adding new content to the story.
 
-## Overview
+## The Daily Pattern
 
-This is an interactive fiction project using Twee/Twine. Multiple authors contribute daily story content, creating a branching narrative. All changes go through GitHub pull requests with automated builds and validations.
+Every day's contribution follows the same two-step pattern:
 
-## File Naming Convention
+### 1. Edit an Existing Passage (Add the Branch)
+### 2. Create Today's File (Write the New Content)
 
-Story files follow a consistent naming pattern:
+Let's walk through exactly how this works.
 
-- **Format**: `{INITIALS}-YYMMDD.twee`
-- **Examples**:
-  - `KEB-251121.twee` (Author KEB, November 21, 2025)
-  - `mansel-20251112.twee` (Author mansel, November 12, 2025)
-- **Requirements**: Must end with `.twee` extension
+---
 
-### Why This Pattern?
+## Step-by-Step: Adding Today's Story
 
-- Identifies which author wrote the content
-- Shows chronological writing order
-- Keeps file organization simple
-- One file typically represents one day's writing contribution
+### Step 1: Update an Existing Passage
 
-## Daily Writing Workflow
+First, you need to connect today's new content to the existing story by adding a branching choice.
 
-### Option 1: GitHub Web Interface (Most Common)
+**Example:** Day 21 addition
 
-This is the most frequently used workflow based on commit history:
+Go to an existing file like `src/mansel-20251112.twee` and edit it to add a choice:
 
-1. **Navigate to a file** in the `src/` folder on GitHub
-2. **Click the pencil icon (✏️)** to edit an existing file, or use "Add file" → "Create new file" for new content
-3. **Make your changes** using Twee syntax (see below)
-4. **Commit changes**:
-   - Select "Create a new branch for this commit and start a pull request"
-   - GitHub auto-names branches like `Tavlae-patch-1`, `Tavlae-patch-2`, etc.
-   - Click "Propose changes"
-5. **Wait for automation**:
-   - GitHub Actions automatically runs
-   - Builds all output formats (Harlowe, Paperthin, DotGraph, AllPaths)
-   - **Auto-commits** an update to `Resource-Passage Names` file
-   - Posts a comment with build stats and preview download link
-6. **Download and test** the preview from the Actions artifacts
-7. **Merge the PR** when satisfied
+**Before:**
+```twee
+:: mansel-20251112
 
-### Option 2: Local Development
+...story content...
 
-1. **Clone the repository** and create a branch:
-   ```bash
-   git checkout -b my-story-branch
-   ```
+As she collected an armful of various snacks, Javlyn pondered...
+```
 
-2. **Create or edit `.twee` files** in the `src/` directory:
-   ```bash
-   # Create today's file
-   touch src/KEB-$(date +%y%m%d).twee
-   ```
+**After:**
+```twee
+:: mansel-20251112
 
-3. **Write your story content** (see Twee syntax below)
+...story content...
 
-4. **Test locally** (optional):
-   ```bash
-   npm run dev
-   open dist/index.html
-   ```
+[[Collect snacks]]
+[[Empty kitchen->Day 21 KEB]]
 
-5. **Commit and push**:
-   ```bash
-   git add src/
-   git commit -m "Add Day 21 - creature encounter"
-   git push -u origin my-story-branch
-   ```
+::Collect snacks
 
-6. **Create PR** on GitHub
-7. **Wait for automation** to run (same as Option 1)
-8. **Merge when ready**
+As she collected an armful of various snacks, Javlyn pondered...
+```
 
-## Twee Syntax Essentials
+**What changed:**
+- Added two new choices at a decision point
+- One choice (`[[Empty kitchen->Day 21 KEB]]`) links to today's new passage
+- The other choice continues the existing story path
+- Created a new passage `::Collect snacks` for the alternate path
 
-### Passage Definition
+### Step 2: Create Today's File
 
-Every passage starts with `::` followed by the passage name:
+Now create the new file with today's content.
+
+**Create:** `src/KEB-251121.twee`
 
 ```twee
 :: Day 21 KEB
 
-Your story content goes here...
+Javlyn checked the cabinet and found it bare of any meat...
+
+[...today's story content...]
 ```
 
-### Links
+**File naming:**
+- Pattern: `{YOUR-INITIALS}-YYMMDD.twee`
+- Examples: `KEB-251121.twee`, `mansel-20251112.twee`
+- **Important:** Must end with `.twee` extension!
 
-Create choices using double-bracket syntax:
+### Step 3: Commit Both Changes
 
+When using GitHub's web interface:
+
+1. **First edit:** Update the existing passage file
+   - Click "Commit changes"
+   - Select "Create a new branch" (GitHub names it like `Tavlae-patch-1`)
+   - Create pull request
+
+2. **Second edit:** On the SAME branch, add the new file
+   - Use "Add file" → "Create new file"
+   - Name it `src/KEB-YYMMDD.twee` (use today's date)
+   - Add your passage content
+   - Commit to the SAME branch (important!)
+
+3. **Automation runs:**
+   - GitHub Actions automatically commits: `Auto-update Resource-Passage Names`
+   - Builds all formats and creates preview artifact
+   - Posts comment with build stats
+
+4. **Test the preview:**
+   - Download the `story-preview` artifact from Actions
+   - Open `index.html` to play through your new content
+   - Verify your branching choice works correctly
+
+5. **Merge when satisfied**
+
+---
+
+## Real Examples from History
+
+### Example 1: Day 21 (The Laundry Branch)
+
+**PR #75 commits:**
+1. `Create KEB-251121` - Created new file with Day 21 content
+2. `Auto-update Resource-Passage Names` - Automation
+3. `Updating for a branch in laundry - day 21` - Updated `mansel-20251112.twee` to add the branching choice
+
+**What was added to existing file:**
 ```twee
-:: Morning Walk
-
-You step outside into the crisp morning air.
-
-[[Head to the park->ParkBench]]
-[[Explore the forest->ForestPath]]
+[[Collect snacks]]
+[[Empty kitchen->Day 21 KEB]]
 ```
 
-**Link patterns:**
-- `[[Destination]]` - Uses passage name as visible text
-- `[[Display text->Destination]]` - Custom display text
-
-### Multiple Passages Per File
-
-You can define multiple passages in one file:
-
+**What was in the new file:**
 ```twee
-:: Start Passage
+:: Day 21 KEB
 
-Some text here.
-
-[[Next passage]]
-
-:: Next passage
-
-More story content.
-
-[[Another choice->Third Passage]]
-
-:: Third Passage
-
-The adventure continues...
+Javlyn checked the cabinet and found it bare of any meat...
 ```
 
-### Important Rules
+### Example 2: Day 20 (Delayed Light Magic)
 
-1. **Passage names must be unique** across ALL `.twee` files
-2. **Links reference passage names**, not filenames
-3. **File names don't matter** to the build system (only the `.twee` extension matters)
-4. **Passage names are case-sensitive**
+**PR #70 commits:**
+1. `Create KEB-251120.twee` - Created new file with Day 20 content
+2. `Auto-update Resource-Passage Names` - Automation
+3. `Updating for Day 20 - delayed light magic` - Updated `KEB-251108.twee` to add the choice
 
-## Automated Processes
+**What was added to existing file (`KEB-251108.twee`):**
+```twee
+Working was [[immediate]] or [[delayed->Day 20 KEB]]
 
-When you create a PR, several automations run:
+:: immediate
 
-### 1. Resource-Passage Names Auto-Update
-
-**What it does:**
-- Scans all `.twee` files
-- Extracts passage names and their links
-- Generates a `Resource-Passage Names` file showing the story structure
-- **Auto-commits** this update to your PR branch
-
-**Example commit message:**
-```
-Auto-update Resource-Passage Names
+[...existing content moved into this passage...]
 ```
 
-**Why this happens:**
-This file provides a quick reference showing all passages and their connections, organized by source file.
+**What was in the new file (`KEB-251120.twee`):**
+```twee
+:: Day 20 KEB
 
-### 2. Multi-Format Builds
-
-Your story is compiled into 4 different formats:
-
-- **index.html** (Harlowe) - The playable story
-- **proofread.html** (Paperthin) - Linear text view for proofreading
-- **graph.html** (DotGraph) - Visual story structure diagram
-- **allpaths.html** (AllPaths) - All possible story paths for continuity checking
-
-### 3. Build Preview Artifacts
-
-**Location:** GitHub Actions → Your workflow run → Artifacts section
-
-**Contents:**
-- All 4 HTML outputs
-- `allpaths-clean/` directory with text versions of each path
-- `allpaths-metadata/` directory for AI continuity checking
-- `allpaths-validation-status.json` for tracking which paths have been reviewed
-
-**How to test:**
-1. Go to your PR
-2. Click "Show all checks" → "Details" next to the build
-3. Scroll to "Artifacts" section
-4. Download `story-preview.zip`
-5. Extract and open `index.html` in your browser
-
-### 4. PR Comment with Build Stats
-
-GitHub Actions automatically posts a comment showing:
-- Build sizes for each format
-- Number of story paths generated
-- Instructions for downloading the preview
-- URLs where it will be published after merge
-
-## Common Workflow Patterns
-
-Based on the commit history, here are the most common patterns:
-
-### Pattern 1: Single-Day Addition
-
-**Typical commits:**
-1. `Create KEB-251121` (or `Create KEB-251121.twee`)
-2. `Auto-update Resource-Passage Names`
-
-**What happened:**
-- Author created a new file with today's content
-- Automation updated the resource file
-- PR merged to main
-
-### Pattern 2: Multi-Commit Refinement
-
-**Typical commits:**
-1. `Create KEB-251120.twee`
-2. `Auto-update Resource-Passage Names`
-3. `Updating for Day 20 - delayed light magic`
-4. `Auto-update Resource-Passage Names`
-
-**What happened:**
-- Author created initial content
-- Made refinements after reviewing preview
-- Each edit triggered auto-update
-- PR merged when satisfied
-
-### Pattern 3: File Rename
-
-**Typical commits:**
-1. `Create KEB-251121` (without .twee extension)
-2. `Auto-update Resource-Passage Names`
-3. `Rename KEB-251121 to KEB-251121.twee`
-4. `Auto-update Resource-Passage Names`
-
-**What happened:**
-- Author forgot `.twee` extension initially
-- File wasn't included in build
-- Author renamed to add extension
-- PR merged
-
-**Tip:** Always include the `.twee` extension on first commit!
-
-### Pattern 4: Branching Story Paths
-
-**Typical commits:**
-1. `Update Start.twee` (adds new choice)
-2. `Create mansel-20251114.twee` (new branch content)
-3. `Auto-update Resource-Passage Names`
-
-**What happened:**
-- Author modified an existing passage to add a new choice
-- Created new file with the branching story path
-- PR merged
-
-## Understanding Auto-Commits
-
-**Q: Why does GitHub Actions commit to my branch?**
-
-A: The `Resource-Passage Names` file is automatically regenerated whenever story files change. This gives everyone a quick reference to see all passages and their links without having to read every `.twee` file.
-
-**Q: Will this create merge conflicts?**
-
-A: Rarely. The file is completely regenerated each time, so it automatically incorporates everyone's changes. Only conflicts if two PRs merge simultaneously, which is resolved by re-running the action.
-
-**Q: Should I commit this file myself?**
-
-A: No need! Let the automation handle it. If you're working locally, you can run `./scripts/generate-resources.sh` before committing, but it's optional.
-
-## Merge and Deploy
-
-### What Happens When You Merge
-
-1. **PR is merged** to `main` branch
-2. **GitHub Actions runs** the build again
-3. **All outputs are generated**
-4. **Story is deployed** to GitHub Pages
-5. **Live site updates** in ~2 minutes
-
-### Published URLs
-
-After merge, your changes are live at:
-- https://michaelansel.github.io/NaNoWriMo2025/ (playable story)
-- https://michaelansel.github.io/NaNoWriMo2025/proofread.html (linear text)
-- https://michaelansel.github.io/NaNoWriMo2025/graph.html (visualization)
-- https://michaelansel.github.io/NaNoWriMo2025/allpaths.html (all paths browser)
-
-## Story Path Validation
-
-For more advanced workflows involving AI continuity checking:
-
-### What Are Story Paths?
-
-A "path" is one complete playthrough of the story from start to finish, making specific choices at each decision point.
-
-**Example path:**
-```
-Start → Continue on → one creature → proactive attack →
-Find the lantern → Check the creature
+[...new story content for the "delayed" branch...]
 ```
 
-This represents a reader who:
-1. Chose "Continue on" instead of "Perhaps another day"
-2. Found "one creature" in the cave
-3. Chose "proactive attack" instead of retreat
-4. Found the lantern in the dark
-5. Checked the creature's body
+---
 
-### Continuity Checking
+## Understanding the Pattern
 
-The AllPaths format generates text files for each possible path, which can be reviewed for:
-- Plot consistency
-- Character continuity
-- Logical flow
-- Grammar and style
+### Why Two Changes?
 
-**See:** `formats/allpaths/README.md` for detailed documentation on path validation workflows.
+Your new content doesn't exist in isolation - it needs to be **connected** to the existing story.
 
-## Tips and Best Practices
+1. **The link** (in existing file): Creates the player's choice that leads to your new content
+2. **The destination** (in new file): The actual new story content
 
-### File Organization
+### Passage Names vs Filenames
 
-✅ **Do:**
-- One file per day of writing
-- Name files with your initials and date
-- Keep passage names descriptive and unique
-- Test your changes before merging
+**Important distinction:**
+- Links use **passage names** (the text after `::`)
+- NOT filenames
+- `[[Empty kitchen->Day 21 KEB]]` looks for a passage named `:: Day 21 KEB` anywhere in any `.twee` file
 
-❌ **Don't:**
-- Forget the `.twee` extension
-- Create duplicate passage names
-- Link to passages that don't exist
-- Skip testing the preview build
+### File Naming Convention
 
-### Writing Style
+While filenames don't affect the build, we use a convention for organization:
 
-Based on existing files, common patterns:
+- `KEB-YYMMDD.twee` - Author "KEB", date November 21 = 251121
+- `mansel-YYYYMMDD.twee` - Author "mansel", date 20251112
 
-- **Clear passage names**: `Day 21 KEB`, `Morning Walk`, `proactive attack`
-- **Descriptive link text**: `[[Attack the monster->proactive attack]]`
-- **Multiple choice points**: Give readers meaningful decisions
-- **Natural flow**: Each passage should feel complete but lead to next choices
+This helps everyone see:
+- Who wrote what
+- When it was written
+- Chronological order in the file list
 
-### Debugging Common Issues
+---
 
-**Links don't work:**
-- Check that target passage name exists
-- Verify spelling and capitalization
-- Look in `Resource-Passage Names` to see all available passages
+## Twee Syntax Quick Reference
 
-**File not included in build:**
-- Ensure filename ends in `.twee`
-- Check that file is in `src/` directory
-- Review GitHub Actions output for errors
+### Define a Passage
+```twee
+:: Passage Name
 
-**Preview shows old content:**
-- Make sure you downloaded the latest artifact
-- Check that your commits are in the PR
-- Wait for build to complete (green checkmark)
+Content goes here...
+```
 
-## Getting Help
+### Create Links (Choices)
+```twee
+[[Simple link]]                    → Links to passage named "Simple link"
+[[Custom text->Passage Name]]      → Shows "Custom text", goes to "Passage Name"
+```
+
+### Multiple Choices
+```twee
+:: At the crossroads
+
+Which way do you go?
+
+[[North->Forest Path]]
+[[South->Desert Road]]
+[[East->Mountain Trail]]
+```
+
+### Multiple Passages in One File
+```twee
+:: First Passage
+
+Some content here.
+
+[[Next]]
+
+:: Next
+
+More content.
+
+[[Continue->Third]]
+
+:: Third
+
+Final content.
+```
+
+---
+
+## Common Mistakes
+
+### ❌ Forgetting the `.twee` Extension
+
+**Wrong:**
+```
+Create file: src/KEB-251121
+```
+
+**Right:**
+```
+Create file: src/KEB-251121.twee
+```
+
+**Result if wrong:** File won't be included in the build. You'll need to rename it (like in PR #76).
+
+### ❌ Creating New Content Without Linking to It
+
+**Wrong:**
+- Just creating `KEB-251121.twee` with new passages
+- Not updating any existing files
+
+**Result:** New content is isolated - no way for readers to reach it in the story!
+
+**Right:**
+- Create the new file AND
+- Update an existing passage to add a link to your new content
+
+### ❌ Duplicate Passage Names
+
+**Wrong:**
+```twee
+File 1:
+:: Day 5 KEB
+
+File 2:
+:: Day 5 KEB   ← Error! Name already exists
+```
+
+**Right:** Every `:: Passage Name` must be unique across ALL files.
+
+### ❌ Linking to Non-Existent Passages
+
+**Wrong:**
+```twee
+[[Go to the castle->Day 99 KEB]]
+```
+
+But no file contains `:: Day 99 KEB`
+
+**Result:** Broken link in the story. Always create the destination passage!
+
+---
+
+## After You Merge
+
+### Automatic Deployment
+
+When your PR merges to `main`:
+1. GitHub Actions builds all formats
+2. Deploys to GitHub Pages
+3. Live in ~2 minutes at https://michaelansel.github.io/NaNoWriMo2025/
+
+### Four Output Formats
+
+Your story is published in multiple formats:
+
+- **index.html** - Playable interactive story (Harlowe format)
+- **proofread.html** - Linear text for proofreading (Paperthin format)
+- **graph.html** - Visual story structure diagram (DotGraph format)
+- **allpaths.html** - All possible paths for continuity checking (AllPaths format)
+
+---
+
+## Tips for Success
+
+### Before You Start Writing
+
+1. **Pick your branching point** - Where in the existing story will your choice appear?
+2. **Choose your passage name** - What will you call today's passage? (e.g., "Day 21 KEB")
+3. **Plan the choice text** - What will the link say? (e.g., "Empty kitchen")
+
+### While Writing
+
+1. **Edit existing file first** - Add the branching choice
+2. **Create new file second** - Write your new content
+3. **Use descriptive passage names** - "Day 21 KEB" is better than "passage123"
+4. **Keep existing style** - Match the tone and format of existing content
+
+### After Writing
+
+1. **Wait for automation** - Let GitHub Actions complete
+2. **Download the preview** - Test your changes
+3. **Play through your branch** - Make sure links work
+4. **Check for typos** - Use the proofread.html format
+5. **Merge when ready** - Your content goes live!
+
+---
+
+## Need More Help?
 
 - **CONTRIBUTING.md** - Detailed guide for adding story branches
-- **README.md** - Quick start and setup instructions
-- **formats/allpaths/README.md** - Path validation and continuity checking
-- **PR Examples** - Look at merged PRs for workflow examples
+- **README.md** - Setup instructions for local development
+- **formats/allpaths/README.md** - Advanced path validation workflows
+- **Example PRs** - Look at merged PRs like #75, #70 to see the pattern
 
-## Summary: The Standard Workflow
+---
 
-For most contributors, the workflow is:
+## Summary: Your Daily Checklist
 
-1. **Edit or create** a `.twee` file on GitHub
-2. **Commit to new branch** and create PR
-3. **Wait for automation** (auto-commit + build)
-4. **Download and test** the preview
-5. **Merge** when satisfied
-6. **Story goes live** in ~2 minutes
+- [ ] Edit an existing `.twee` file to add a branching choice
+- [ ] Create a new `.twee` file with today's passage (use naming convention)
+- [ ] Commit both changes to the same branch
+- [ ] Wait for automation (Auto-update commit + build)
+- [ ] Download and test the preview artifact
+- [ ] Merge when satisfied
+- [ ] Story goes live in ~2 minutes!
 
-The system handles all the complexity of building, validating, and deploying. You just write the story!
+**Remember:** Every day = 2 changes (one update + one new file)
