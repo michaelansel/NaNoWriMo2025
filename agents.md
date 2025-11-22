@@ -84,9 +84,40 @@ CEO (Strategic) → PM (Tactical) → Architect (Structural) → Developer (Impl
 
 **Escalation**: Developer → Architect (implementation issues) → PM (feasibility) → CEO (strategic conflicts)
 
+## Document Formats
+
+Each role documents their perspective through structured artifacts:
+
+### CEO Documents
+- **Vision statements**: Why we exist, who we serve, what success means
+- **Strategic decisions**: Log major go/no-go decisions with rationale
+- **Priority stack rank**: Ordered list with strategic reasoning
+
+### PM Documents (PRDs)
+Product Requirements Documents should capture:
+- **User problem**: What pain point does this solve?
+- **Success metrics**: How do we measure if this works?
+- **User stories**: As a [user], I want [goal], so that [outcome]
+- **Acceptance criteria**: Testable conditions for "done"
+- **Edge cases**: What could go wrong or behave unexpectedly?
+
+### Architect Documents (ADRs)
+Architecture Decision Records should capture:
+- **Context**: What forces are at play? What are we trying to achieve?
+- **Decision**: What did we decide?
+- **Consequences**: What becomes easier/harder? Trade-offs?
+- **Alternatives considered**: What else did we evaluate and why not?
+
+Also: System design docs (components, interfaces, data flow), refactoring proposals (why, scope, risks)
+
+### Developer Documents
+- **Implementation notes**: Non-obvious decisions, why this approach
+- **Test coverage**: What's tested, what scenarios
+- **Known limitations**: What doesn't work yet or needs follow-up
+
 ## Principles
 
 - **Stay in lane**: Focus on your level
 - **Trust handoffs**: Consume artifacts from previous role, don't second-guess
 - **Escalate up**: Don't skip levels or override decisions
-- **Complete artifacts**: Reduce friction through clear documentation
+- **Complete artifacts**: Structure captures your mindset for others to consume
