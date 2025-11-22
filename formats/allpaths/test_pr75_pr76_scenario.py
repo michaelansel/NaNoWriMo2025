@@ -114,8 +114,9 @@ As she collected an armful of various snacks, Javlyn pondered what to do.''',
     print(f"Missing passage (broken link): Day 21 KEB")
     print()
 
-    # Categorize
-    categories = categorize_paths(new_paths, new_passages, validation_cache)
+    # Categorize (without file-level checking for this test)
+    categories = categorize_paths(new_paths, new_passages, validation_cache,
+                                 passage_to_file=None, repo_root=None)
 
     print("CATEGORIZATION RESULTS:")
     print("-" * 70)
@@ -231,8 +232,9 @@ def test_pr76_scenario():
     print(f"New passages added: Day 21 KEB")
     print()
 
-    # Categorize
-    categories = categorize_paths(new_paths, new_passages, validation_cache)
+    # Categorize (without file-level checking for this test)
+    categories = categorize_paths(new_paths, new_passages, validation_cache,
+                                 passage_to_file=None, repo_root=None)
 
     print("CATEGORIZATION RESULTS:")
     print("-" * 70)

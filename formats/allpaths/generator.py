@@ -647,23 +647,87 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 
     return intersection / union if union > 0 else 0.0
 
-def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
-                    validation_cache: Dict) -> Dict[str, str]:
-    """
-    Categorize paths as New, Modified, or Unchanged using three-phase comparison.
+def get_file_content_from_git(file_path: Path, repo_root: Path) -> Optional[str]:
+    """Get file content from git HEAD (last commit).
 
-    Phase 1: Check if path contains any passages with genuinely new prose
-    Phase 2: Check prose content (links stripped)
+    Args:
+        file_path: Absolute path to the file
+        repo_root: Path to git repository root
+
+    Returns:
+        File content from HEAD, or None if file doesn't exist in git
+    """
+    try:
+        rel_path = file_path.relative_to(repo_root)
+        result = subprocess.run(
+            ['git', 'show', f'HEAD:{rel_path}'],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout
+        else:
+            return None
+    except Exception as e:
+        print(f"Warning: Could not get git content for {file_path}: {e}", file=sys.stderr)
+        return None
+
+def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
+    """Check if a .twee file has prose changes vs just link/structure changes.
+
+    Compares current file content against git HEAD. If prose (with links stripped
+    and whitespace normalized) is identical, returns False (no prose changes).
+
+    This allows detecting that a passage split is just reorganization, not new content.
+
+    Args:
+        file_path: Absolute path to the .twee file
+        repo_root: Path to git repository root
+
+    Returns:
+        True if file has prose changes, False if only links/structure changed
+    """
+    # Get old version from git
+    old_content = get_file_content_from_git(file_path, repo_root)
+    if old_content is None:
+        # File doesn't exist in git, it's new
+        return True
+
+    # Get current version
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            new_content = f.read()
+    except Exception as e:
+        print(f"Warning: Could not read file {file_path}: {e}", file=sys.stderr)
+        return True  # Can't read, assume changed
+
+    # Strip links and normalize whitespace
+    old_prose = normalize_prose_for_comparison(strip_links_from_text(old_content))
+    new_prose = normalize_prose_for_comparison(strip_links_from_text(new_content))
+
+    return old_prose != new_prose
+
+def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
+                    validation_cache: Dict,
+                    passage_to_file: Dict[str, Path] = None,
+                    repo_root: Path = None) -> Dict[str, str]:
+    """
+    Categorize paths as New, Modified, or Unchanged using file-level git diff.
+
+    Phase 1: Check path-level prose fingerprint (with aggressive normalization)
+    Phase 2: Check file-level prose changes (git diff with links stripped)
     Phase 3: Check raw content (links included) to detect link changes
 
     Categorization logic:
-    - NEW: Path contains at least one passage with genuinely new prose content
-    - MODIFIED: All passages have existing prose, but links/structure changed
+    - NEW: Path contains at least one file with genuinely new prose content
+    - MODIFIED: All files have same prose, but links/structure changed (splits/reorganizations)
     - UNCHANGED: Path is completely unchanged (prose AND links AND structure)
 
     This means:
-    - Adding genuinely new prose → NEW
-    - Splitting passages (same prose, new links) → MODIFIED
+    - Adding genuinely new prose to a file → NEW
+    - Splitting passages (same file prose, new links) → MODIFIED
     - Adding/removing/changing links only → MODIFIED
     - Restructuring passages (same prose) → MODIFIED
     - No changes at all → UNCHANGED
@@ -672,26 +736,15 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         current_paths: List of current paths
         passages: Dict of passage data
         validation_cache: Previous validation cache
+        passage_to_file: Mapping from passage names to source file paths (optional)
+        repo_root: Path to git repository root (optional)
 
     Returns:
         Dict mapping path hash -> category ('new', 'modified', 'unchanged')
     """
     categories = {}
 
-    # Build set of all old passage-level prose fingerprints
-    old_passage_prose_fps = set()
-
-    for old_hash, old_data in validation_cache.items():
-        # Skip non-path entries (like 'last_updated') and non-dict values
-        if not isinstance(old_data, dict):
-            continue
-
-        # Extract passage fingerprints if available (new cache format)
-        old_passage_fps = old_data.get('passage_fingerprints', {})
-        if old_passage_fps:
-            old_passage_prose_fps.update(old_passage_fps.values())
-
-    # Build lookup of old path-level fingerprints (for fallback/matching)
+    # Build lookup of old path-level fingerprints
     old_by_prose = {}  # prose_fingerprint -> list of (path_hash, route_hash, raw_fingerprint)
 
     for old_hash, old_data in validation_cache.items():
@@ -737,29 +790,34 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                 # This includes passage splits with link additions
                 categories[path_hash] = 'modified'
         else:
-            # Phase 2: Path-level prose doesn't match - check for genuinely new prose
-            # Use passage-level fingerprints to detect if individual passages have new content
-            has_new_prose = False
-            if old_passage_prose_fps:  # Only if we have passage-level data
+            # Phase 2: Path-level prose doesn't match - check file-level prose changes
+            # Use git diff to detect if files have genuinely new prose vs just reorganization
+            has_file_prose_changes = False
+
+            if passage_to_file and repo_root:
+                # Check each file that contains passages in this path
+                files_checked = set()
                 for passage_name in path:
-                    if passage_name in passages:
-                        passage_text = passages[passage_name].get('text', '')
-                        passage_prose_fp = calculate_passage_prose_fingerprint(passage_text)
+                    if passage_name in passage_to_file:
+                        file_path = passage_to_file[passage_name]
 
-                        # If this passage's prose didn't exist in any old passage, it's new
-                        if passage_prose_fp not in old_passage_prose_fps:
-                            has_new_prose = True
-                            break
+                        # Only check each file once
+                        if file_path not in files_checked:
+                            files_checked.add(file_path)
 
-            if has_new_prose:
-                # At least one passage has genuinely new prose
+                            # Check if this file has prose changes (not just link/structure)
+                            if file_has_prose_changes(file_path, repo_root):
+                                has_file_prose_changes = True
+                                break
+
+            if has_file_prose_changes:
+                # At least one file has genuinely new prose
                 categories[path_hash] = 'new'
-            elif old_passage_prose_fps:
-                # No genuinely new prose detected (all passage prose exists somewhere)
-                # But path-level prose doesn't match - this is reorganization beyond simple splits
+            elif passage_to_file and repo_root:
+                # No files have prose changes - this is reorganization/splitting
                 categories[path_hash] = 'modified'
             else:
-                # No passage-level data available, use old behavior
+                # No file-level data available, conservatively mark as new
                 categories[path_hash] = 'new'
 
     return categories
@@ -1327,7 +1385,8 @@ def main():
     validation_cache = load_validation_cache(cache_file)
 
     # Categorize paths (New/Modified/Unchanged)
-    path_categories = categorize_paths(all_paths, passages, validation_cache)
+    path_categories = categorize_paths(all_paths, passages, validation_cache,
+                                      passage_to_file, repo_root)
     print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
           f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
           f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
