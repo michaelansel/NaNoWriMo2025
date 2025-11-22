@@ -4,6 +4,7 @@ AllPaths Story Format Generator
 Generates all possible story paths using depth-first search for AI-based continuity checking.
 """
 
+import os
 import re
 import sys
 import json
@@ -682,20 +683,21 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 
     return intersection / union if union > 0 else 0.0
 
-def get_file_content_from_git(file_path: Path, repo_root: Path) -> Optional[str]:
-    """Get file content from git HEAD (last commit).
+def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> Optional[str]:
+    """Get file content from git at a specific ref.
 
     Args:
         file_path: Absolute path to the file
         repo_root: Path to git repository root
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
-        File content from HEAD, or None if file doesn't exist in git
+        File content from the specified ref, or None if file doesn't exist in git
     """
     try:
         rel_path = file_path.relative_to(repo_root)
         result = subprocess.run(
-            ['git', 'show', f'HEAD:{rel_path}'],
+            ['git', 'show', f'{base_ref}:{rel_path}'],
             cwd=str(repo_root),
             capture_output=True,
             text=True,
@@ -706,13 +708,13 @@ def get_file_content_from_git(file_path: Path, repo_root: Path) -> Optional[str]
         else:
             return None
     except Exception as e:
-        print(f"Warning: Could not get git content for {file_path}: {e}", file=sys.stderr)
+        print(f"Warning: Could not get git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
         return None
 
-def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
+def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
     """Check if a .twee file has prose changes vs just link/structure changes.
 
-    Compares current file content against git HEAD. If prose (with links stripped
+    Compares current file content against git base ref. If prose (with links stripped
     and whitespace normalized) is identical, returns False (no prose changes).
 
     This allows detecting that a passage split is just reorganization, not new content.
@@ -720,12 +722,13 @@ def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
     Args:
         file_path: Absolute path to the .twee file
         repo_root: Path to git repository root
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
         True if file has prose changes, False if only links/structure changed
     """
     # Get old version from git
-    old_content = get_file_content_from_git(file_path, repo_root)
+    old_content = get_file_content_from_git(file_path, repo_root, base_ref)
     if old_content is None:
         # File doesn't exist in git, it's new
         return True
@@ -744,21 +747,22 @@ def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
 
     return old_prose != new_prose
 
-def file_has_any_changes(file_path: Path, repo_root: Path) -> bool:
+def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
     """Check if a .twee file has ANY changes (including links/structure).
 
-    Compares current file content against git HEAD. If any content changed
+    Compares current file content against git base ref. If any content changed
     (prose, links, or structure), returns True.
 
     Args:
         file_path: Absolute path to the .twee file
         repo_root: Path to git repository root
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
         True if file has any changes, False if completely unchanged
     """
     # Get old version from git
-    old_content = get_file_content_from_git(file_path, repo_root)
+    old_content = get_file_content_from_git(file_path, repo_root, base_ref)
     if old_content is None:
         # File doesn't exist in git, it's new
         return True
@@ -777,7 +781,8 @@ def file_has_any_changes(file_path: Path, repo_root: Path) -> bool:
 def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     validation_cache: Dict,
                     passage_to_file: Dict[str, Path] = None,
-                    repo_root: Path = None) -> Dict[str, str]:
+                    repo_root: Path = None,
+                    base_ref: str = 'HEAD') -> Dict[str, str]:
     """
     Categorize paths as New, Modified, or Unchanged using git-based change detection.
 
@@ -792,6 +797,7 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         validation_cache: Previous validation cache (not used for categorization)
         passage_to_file: Mapping from passage names to source file paths (optional)
         repo_root: Path to git repository root (optional)
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
         Dict mapping path hash -> category ('new', 'modified', 'unchanged')
@@ -830,11 +836,11 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         has_any_changes = False
 
         for file_path in files_in_path:
-            if file_has_prose_changes(file_path, repo_root):
+            if file_has_prose_changes(file_path, repo_root, base_ref):
                 has_prose_changes = True
                 break  # Early exit - found new prose
 
-            if file_has_any_changes(file_path, repo_root):
+            if file_has_any_changes(file_path, repo_root, base_ref):
                 has_any_changes = True
                 # Don't break - still need to check other files for prose changes
 
@@ -1410,9 +1416,22 @@ def main():
     cache_file = output_dir.parent / 'allpaths-validation-status.json'
     validation_cache = load_validation_cache(cache_file)
 
+    # Determine git base ref for comparison
+    # In PR context (GitHub Actions), compare against base branch
+    # In local context, compare against HEAD (for uncommitted changes)
+    base_ref = os.getenv('GITHUB_BASE_REF')
+    if base_ref:
+        # GitHub Actions PR context - use origin/base_branch
+        base_ref = f'origin/{base_ref}'
+        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF)", file=sys.stderr)
+    else:
+        # Local context - use HEAD to detect uncommitted changes
+        base_ref = 'HEAD'
+        print(f"Using git base ref: {base_ref} (local development)", file=sys.stderr)
+
     # Categorize paths (New/Modified/Unchanged)
     path_categories = categorize_paths(all_paths, passages, validation_cache,
-                                      passage_to_file, repo_root)
+                                      passage_to_file, repo_root, base_ref)
     print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
           f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
           f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
