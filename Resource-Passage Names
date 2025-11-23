@@ -38,6 +38,10 @@ KEB-251106.twee
 
 KEB-251107.twee
   :: Day 7 KEB
+  [[Continue the quest->Continue on]]
+  [[Turn back]]
+  [[Take a short break->Day 22 KEB]]
+  :: Turn back
   [[Abandon the quest->Day 16 KEB]]
   [[Someone joins Javlyn]]
   ::Someone joins Javlyn
@@ -88,6 +92,9 @@ KEB-251120.twee
 
 KEB-251121.twee
   :: Day 21 KEB
+
+KEB-251122.twee
+  :: Day 22 KEB
 
 Start.twee
   :: Start
