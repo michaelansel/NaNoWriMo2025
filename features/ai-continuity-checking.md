@@ -99,46 +99,104 @@
 
 ---
 
+### Understanding Path Categories
+
+When you make changes to your story, the system categorizes each path to help you understand what needs validation:
+
+#### NEW Paths
+**What it means:** You wrote genuinely new prose that's never existed before.
+
+**What causes this:**
+- You created a new passage file with new story content
+- A path goes through that new passage for the first time
+- Players will read prose they've never seen before
+
+**Example:** You create `KEB-251121.twee` with a new scene. Any path that includes this passage is NEW.
+
+**User impact:** This is what you care about day-to-day. It's the content you wrote today and want feedback on.
+
+---
+
+#### MODIFIED Paths
+**What it means:** The path already existed, but you changed the navigation (added/removed/changed links).
+
+**What causes this:**
+- You added a new choice to an existing passage (new `[[link]]`)
+- You removed a choice from an existing passage
+- You changed where a link points
+- The prose in the passages didn't change, just the navigation options
+
+**Example:** You edit an existing passage to add `[[Empty kitchen->Day 21 KEB]]`. All paths that go through this passage are now MODIFIED - same prose, but now there's an additional choice available.
+
+**User impact:** These paths have the same prose you've already read/validated. The only difference is navigation. You typically don't need immediate feedback on these during daily writing.
+
+**Common scenario:** When you add a link to a passage near the story root (like the Start passage), this can create 10+ MODIFIED paths. But you only added one line - the link - so there's very little new to validate.
+
+---
+
+#### UNCHANGED Paths
+**What it means:** Nothing changed at all. Same prose, same links, same structure.
+
+**What causes this:**
+- You made changes to other parts of the story
+- This path doesn't include any passages you touched
+
+**Example:** You add a new passage for one story branch. Paths in completely different branches remain UNCHANGED.
+
+**User impact:** These don't need re-validation. You already validated them, nothing changed.
+
+---
+
 ### Three Validation Modes
 
+Based on these categories, you can choose how thoroughly to validate:
+
+---
+
 #### Mode 1: new-only (Default)
-**Validates:** Only brand new paths (never seen before)
-**Skips:** Modified and unchanged paths
+**Validates:** Only NEW paths (genuinely new prose content)
+**Skips:** MODIFIED and UNCHANGED paths
 **Speed:** Fastest (~2-5 paths, 2-5 minutes typical)
 
 **When to Use:**
 - Automatic PR builds (default)
-- Quick feedback during active development
-- Testing new story branches
+- Daily writing - get fast feedback on what you wrote today
+- Don't wait for link-only changes to be validated
 
 **Command:** `/check-continuity` or `/check-continuity new-only`
+
+**Why this is the default:**
+Your daily workflow adds 1 new passage. That creates 1 NEW path (what you care about) and potentially 10+ MODIFIED paths (same prose, just new link added). You want fast feedback on your new content, not to wait for re-validation of prose you didn't change.
 
 ---
 
 #### Mode 2: modified
-**Validates:** New paths + modified paths (content changed)
-**Skips:** Unchanged paths
+**Validates:** NEW paths + MODIFIED paths (prose changes + navigation changes)
+**Skips:** UNCHANGED paths only
 **Speed:** Medium (~5-10 paths, 5-15 minutes typical)
 
 **When to Use:**
 - Before requesting PR review
-- Pre-merge validation
+- Pre-merge validation - ensure all affected paths checked
 - After fixing issues in new paths
 
 **Command:** `/check-continuity modified`
 
+**When to use this:**
+Eventually you want those MODIFIED paths checked (even though prose is the same, navigation changes could affect flow). Run this before merging, but not necessarily on every commit during development.
+
 ---
 
 #### Mode 3: all
-**Validates:** Every single path, regardless of status
+**Validates:** Every single path (NEW, MODIFIED, and UNCHANGED)
 **Skips:** Nothing
 **Speed:** Slow (~all paths, 20-40 minutes for large stories)
 
 **When to Use:**
 - After major story refactoring
-- After updating AI model
 - Periodic full story audits
 - Investigating cross-path issues
+- After updating AI model
 
 **Command:** `/check-continuity all`
 
@@ -444,10 +502,14 @@ See [architecture/ai-continuity-checking.md](../architecture/ai-continuity-check
 
 ## Related Documents
 
-- [services/README.md](/home/user/NaNoWriMo2025/services/README.md) - Webhook service documentation
-- [services/DESIGN-selective-validation.md](/home/user/NaNoWriMo2025/services/DESIGN-selective-validation.md) - Validation mode design
-- [formats/allpaths/README.md](/home/user/NaNoWriMo2025/formats/allpaths/README.md) - AllPaths format documentation
-- [PRINCIPLES.md](/home/user/NaNoWriMo2025/PRINCIPLES.md) - "Automation Over Gatekeeping" principle
+**User-facing:**
+- [services/README.md](../services/README.md) - Webhook service usage and commands
+- [PRINCIPLES.md](../PRINCIPLES.md) - "Automation Over Gatekeeping" principle
+
+**Architecture/Implementation:**
+- [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) - How selective validation works (categorization, cache, fingerprinting)
+- [formats/allpaths/README.md](../formats/allpaths/README.md) - AllPaths format technical documentation
+- [architecture/001-allpaths-format.md](../architecture/001-allpaths-format.md) - AllPaths architecture decision record
 
 ---
 

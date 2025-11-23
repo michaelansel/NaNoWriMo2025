@@ -4,6 +4,7 @@ AllPaths Story Format Generator
 Generates all possible story paths using depth-first search for AI-based continuity checking.
 """
 
+import os
 import re
 import sys
 import json
@@ -252,6 +253,9 @@ def strip_links_from_text(text: str) -> str:
 def calculate_raw_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
     """Calculate fingerprint based on raw passage content INCLUDING links.
 
+    DEPRECATED: No longer used for categorization (git-first approach).
+    Kept for backward compatibility with tests and old cache files.
+
     This detects ANY content change (prose OR links).
 
     Args:
@@ -295,6 +299,9 @@ def normalize_prose_for_comparison(text: str) -> str:
 def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
     """Calculate fingerprint based ONLY on prose content, not names or links.
 
+    DEPRECATED: No longer used for categorization (git-first approach).
+    Kept for backward compatibility with tests and old cache files.
+
     This fingerprint:
     - Strips link syntax ([[...]]) to focus on prose changes
     - Ignores passage names
@@ -332,6 +339,9 @@ def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) ->
 def calculate_route_hash(path: List[str]) -> str:
     """Calculate hash based ONLY on passage names (route structure), not content.
 
+    DEPRECATED: No longer used for categorization (git-first approach).
+    Kept for backward compatibility with tests and old cache files.
+
     This identifies the path structure independent of content changes.
     Two paths with the same sequence of passages will have the same route_hash
     even if the content in those passages has been edited.
@@ -348,6 +358,9 @@ def calculate_route_hash(path: List[str]) -> str:
 def calculate_passage_prose_fingerprint(passage_text: str) -> str:
     """Calculate fingerprint for a single passage's prose content (no links).
 
+    DEPRECATED: No longer used for categorization (git-first approach).
+    Kept for backward compatibility with tests and old cache files.
+
     This allows detecting when prose content is reused/split across passages.
     For example, if passage A is split into A1 and A2, we can detect that
     the prose in A1 and A2 existed before in A.
@@ -363,6 +376,9 @@ def calculate_passage_prose_fingerprint(passage_text: str) -> str:
 
 def build_passage_fingerprints(path: List[str], passages: Dict[str, Dict]) -> Dict[str, str]:
     """Build a mapping of passage names to their prose fingerprints for a path.
+
+    DEPRECATED: No longer used for categorization (git-first approach).
+    Kept for backward compatibility with tests and old cache files.
 
     Args:
         path: List of passage names in the path
@@ -667,20 +683,21 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 
     return intersection / union if union > 0 else 0.0
 
-def get_file_content_from_git(file_path: Path, repo_root: Path) -> Optional[str]:
-    """Get file content from git HEAD (last commit).
+def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> Optional[str]:
+    """Get file content from git at a specific ref.
 
     Args:
         file_path: Absolute path to the file
         repo_root: Path to git repository root
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
-        File content from HEAD, or None if file doesn't exist in git
+        File content from the specified ref, or None if file doesn't exist in git
     """
     try:
         rel_path = file_path.relative_to(repo_root)
         result = subprocess.run(
-            ['git', 'show', f'HEAD:{rel_path}'],
+            ['git', 'show', f'{base_ref}:{rel_path}'],
             cwd=str(repo_root),
             capture_output=True,
             text=True,
@@ -691,13 +708,13 @@ def get_file_content_from_git(file_path: Path, repo_root: Path) -> Optional[str]
         else:
             return None
     except Exception as e:
-        print(f"Warning: Could not get git content for {file_path}: {e}", file=sys.stderr)
+        print(f"Warning: Could not get git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
         return None
 
-def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
+def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
     """Check if a .twee file has prose changes vs just link/structure changes.
 
-    Compares current file content against git HEAD. If prose (with links stripped
+    Compares current file content against git base ref. If prose (with links stripped
     and whitespace normalized) is identical, returns False (no prose changes).
 
     This allows detecting that a passage split is just reorganization, not new content.
@@ -705,12 +722,13 @@ def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
     Args:
         file_path: Absolute path to the .twee file
         repo_root: Path to git repository root
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
         True if file has prose changes, False if only links/structure changed
     """
     # Get old version from git
-    old_content = get_file_content_from_git(file_path, repo_root)
+    old_content = get_file_content_from_git(file_path, repo_root, base_ref)
     if old_content is None:
         # File doesn't exist in git, it's new
         return True
@@ -729,137 +747,110 @@ def file_has_prose_changes(file_path: Path, repo_root: Path) -> bool:
 
     return old_prose != new_prose
 
+def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
+    """Check if a .twee file has ANY changes (including links/structure).
+
+    Compares current file content against git base ref. If any content changed
+    (prose, links, or structure), returns True.
+
+    Args:
+        file_path: Absolute path to the .twee file
+        repo_root: Path to git repository root
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
+
+    Returns:
+        True if file has any changes, False if completely unchanged
+    """
+    # Get old version from git
+    old_content = get_file_content_from_git(file_path, repo_root, base_ref)
+    if old_content is None:
+        # File doesn't exist in git, it's new
+        return True
+
+    # Get current version
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            new_content = f.read()
+    except Exception as e:
+        print(f"Warning: Could not read file {file_path}: {e}", file=sys.stderr)
+        return True  # Can't read, assume changed
+
+    # Compare raw content (no stripping)
+    return old_content != new_content
+
 def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     validation_cache: Dict,
                     passage_to_file: Dict[str, Path] = None,
-                    repo_root: Path = None) -> Dict[str, str]:
+                    repo_root: Path = None,
+                    base_ref: str = 'HEAD') -> Dict[str, str]:
     """
-    Categorize paths as New, Modified, or Unchanged using file-level git diff.
+    Categorize paths as New, Modified, or Unchanged using git-based change detection.
 
-    Phase 1: Check path-level prose fingerprint (with aggressive normalization)
-    Phase 2: Check file-level prose changes (git diff with links stripped)
-    Phase 3: Check raw content (links included) to detect link changes
-
-    Categorization logic:
+    Uses git as the single source of truth for change detection:
     - NEW: Path contains at least one file with genuinely new prose content
-    - MODIFIED: All files have same prose, but links/structure changed (splits/reorganizations)
-    - UNCHANGED: Path is completely unchanged (prose AND links AND structure)
-
-    This means:
-    - Adding genuinely new prose to a file → NEW
-    - Splitting passages (same file prose, new links) → MODIFIED
-    - Adding/removing/changing links only → MODIFIED
-    - Restructuring passages (same prose) → MODIFIED
-    - No changes at all → UNCHANGED
+    - MODIFIED: All files have same prose, but links/structure changed
+    - UNCHANGED: No files changed at all (prose, links, structure all same)
 
     Args:
         current_paths: List of current paths
         passages: Dict of passage data
-        validation_cache: Previous validation cache
+        validation_cache: Previous validation cache (not used for categorization)
         passage_to_file: Mapping from passage names to source file paths (optional)
         repo_root: Path to git repository root (optional)
+        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
 
     Returns:
         Dict mapping path hash -> category ('new', 'modified', 'unchanged')
 
-    Implementation notes:
-    - Uses three-phase detection to handle edge cases like passage splits
-    - Requires git integration for file-level prose change detection
-    - Falls back gracefully when git data unavailable (backward compatibility)
-    - Aggressive normalization in prose fingerprints catches reorganizations
+    Algorithm:
+        For each path:
+            1. Get .twee files containing passages in this path
+            2. For each file:
+               - Check if prose content changed (git diff with links stripped)
+               - Check if any content changed (including links)
+            3. Categorize:
+               - If any file has new prose → NEW
+               - If any file has link-only changes → MODIFIED
+               - If no files changed → UNCHANGED
+               - If git unavailable → NEW (fallback)
     """
     categories = {}
 
-    # Build lookup of old path-level fingerprints
-    # This allows O(1) lookup instead of O(n) for each current path
-    old_by_prose = {}  # prose_fingerprint -> list of (path_hash, route_hash, raw_fingerprint)
-
-    for old_hash, old_data in validation_cache.items():
-        if not isinstance(old_data, dict):
-            continue
-
-        old_route = old_data.get('route', '').split(' → ')
-        old_prose_fp = old_data.get('content_fingerprint')  # prose-only
-        old_raw_fp = old_data.get('raw_content_fingerprint')  # with links
-        old_route_hash = old_data.get('route_hash')
-
-        # Backward compatibility: calculate route_hash if missing from old cache
-        if not old_route_hash:
-            old_route_hash = calculate_route_hash(old_route)
-
-        if old_prose_fp:
-            if old_prose_fp not in old_by_prose:
-                old_by_prose[old_prose_fp] = []
-            old_by_prose[old_prose_fp].append((old_hash, old_route_hash, old_raw_fp))
-
-    # Categorize each current path
     for path in current_paths:
         path_hash = calculate_path_hash(path, passages)
-        prose_fp = calculate_content_fingerprint(path, passages)
-        raw_fp = calculate_raw_content_fingerprint(path, passages)
-        route_hash = calculate_route_hash(path)
 
-        # Phase 1: Check path-level prose fingerprint (with aggressive normalization)
-        # This catches splits/reorganizations where prose is preserved
-        # Example: "Passage A" split into "Passage A1" + "Passage A2" with same total prose
-        if prose_fp in old_by_prose:
-            # Path-level prose matches (even if split/reorganized) - check if unchanged
-            found_exact_match = False
+        # Require git integration for accurate categorization
+        if not passage_to_file or not repo_root:
+            # No git data available - mark as new (conservative fallback)
+            categories[path_hash] = 'new'
+            continue
 
-            for old_path_hash, old_route_hash, old_raw_fp in old_by_prose[prose_fp]:
-                # All three must match for UNCHANGED: prose, route, AND links
-                if old_route_hash == route_hash and old_raw_fp == raw_fp:
-                    # Same prose + same route + same links = UNCHANGED
-                    categories[path_hash] = 'unchanged'
-                    found_exact_match = True
-                    break
+        # Collect unique files for this path
+        files_in_path = set()
+        for passage_name in path:
+            if passage_name in passage_to_file:
+                files_in_path.add(passage_to_file[passage_name])
 
-            if not found_exact_match:
-                # Same prose but different route/links = MODIFIED
-                # This includes:
-                # - Passage splits with link additions (PR #65 scenario)
-                # - Link-only changes (same prose, different navigation)
-                # - Passage renames (same content, different names)
-                categories[path_hash] = 'modified'
+        # Check each file for changes
+        has_prose_changes = False
+        has_any_changes = False
+
+        for file_path in files_in_path:
+            if file_has_prose_changes(file_path, repo_root, base_ref):
+                has_prose_changes = True
+                break  # Early exit - found new prose
+
+            if file_has_any_changes(file_path, repo_root, base_ref):
+                has_any_changes = True
+                # Don't break - still need to check other files for prose changes
+
+        # Categorize based on what changed
+        if has_prose_changes:
+            categories[path_hash] = 'new'
+        elif has_any_changes:
+            categories[path_hash] = 'modified'
         else:
-            # Phase 2: Path-level prose doesn't match - check file-level prose changes
-            # Use git diff to detect if files have genuinely new prose vs just reorganization
-            # This is the expensive operation, so only do it when path-level check fails
-            has_file_prose_changes = False
-
-            if passage_to_file and repo_root:
-                # Check each file that contains passages in this path
-                # Only check each file once (passages can share files)
-                files_checked = set()
-                for passage_name in path:
-                    if passage_name in passage_to_file:
-                        file_path = passage_to_file[passage_name]
-
-                        if file_path not in files_checked:
-                            files_checked.add(file_path)
-
-                            # Git diff with link stripping to detect prose-only changes
-                            if file_has_prose_changes(file_path, repo_root):
-                                has_file_prose_changes = True
-                                break  # Early exit - one file with new prose = NEW path
-
-            if has_file_prose_changes:
-                # At least one file has genuinely new prose
-                categories[path_hash] = 'new'
-            elif passage_to_file and repo_root:
-                # No files have prose changes - this is reorganization/splitting
-                # Same prose distributed differently across files
-                categories[path_hash] = 'modified'
-            else:
-                # No file-level data available (git not available or no mapping)
-                # Fall back to cache-based detection for backward compatibility
-                if path_hash in validation_cache and isinstance(validation_cache[path_hash], dict):
-                    # Path existed before but no fingerprint data - mark as modified
-                    # This prompts re-validation without falsely claiming it's completely new
-                    categories[path_hash] = 'modified'
-                else:
-                    # Path didn't exist before - mark as new
-                    categories[path_hash] = 'new'
+            categories[path_hash] = 'unchanged'
 
     return categories
 
@@ -1425,9 +1416,22 @@ def main():
     cache_file = output_dir.parent / 'allpaths-validation-status.json'
     validation_cache = load_validation_cache(cache_file)
 
+    # Determine git base ref for comparison
+    # In PR context (GitHub Actions), compare against base branch
+    # In local context, compare against HEAD (for uncommitted changes)
+    base_ref = os.getenv('GITHUB_BASE_REF')
+    if base_ref:
+        # GitHub Actions PR context - use origin/base_branch
+        base_ref = f'origin/{base_ref}'
+        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF)", file=sys.stderr)
+    else:
+        # Local context - use HEAD to detect uncommitted changes
+        base_ref = 'HEAD'
+        print(f"Using git base ref: {base_ref} (local development)", file=sys.stderr)
+
     # Categorize paths (New/Modified/Unchanged)
     path_categories = categorize_paths(all_paths, passages, validation_cache,
-                                      passage_to_file, repo_root)
+                                      passage_to_file, repo_root, base_ref)
     print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
           f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
           f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
@@ -1481,10 +1485,6 @@ def main():
     # Update validation cache with current paths (mark them as available for validation)
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
-        content_fingerprint = calculate_content_fingerprint(path, passages)
-        raw_content_fingerprint = calculate_raw_content_fingerprint(path, passages)
-        route_hash = calculate_route_hash(path)
-        passage_fingerprints = build_passage_fingerprints(path, passages)
         commit_date = get_path_commit_date(path, passage_to_file, repo_root)
         creation_date = get_path_creation_date(path, passage_to_file, repo_root)
         category = path_categories.get(path_hash, 'new')
@@ -1492,22 +1492,14 @@ def main():
         if path_hash not in validation_cache:
             validation_cache[path_hash] = {
                 'route': ' → '.join(path),
-                'route_hash': route_hash,
                 'first_seen': datetime.now().isoformat(),
                 'validated': False,
-                'content_fingerprint': content_fingerprint,
-                'raw_content_fingerprint': raw_content_fingerprint,
-                'passage_fingerprints': passage_fingerprints,
                 'commit_date': commit_date,
-                'created_date': creation_date,  # Use earliest commit date (when content was first created)
+                'created_date': creation_date,
                 'category': category,
             }
         else:
-            # Update fingerprints, route hash, commit date, and category for existing entries
-            validation_cache[path_hash]['content_fingerprint'] = content_fingerprint
-            validation_cache[path_hash]['raw_content_fingerprint'] = raw_content_fingerprint
-            validation_cache[path_hash]['route_hash'] = route_hash
-            validation_cache[path_hash]['passage_fingerprints'] = passage_fingerprints
+            # Update commit date, created date, and category for existing entries
             validation_cache[path_hash]['commit_date'] = commit_date
 
             # Update created_date to reflect the earliest passage creation date
@@ -1515,11 +1507,8 @@ def main():
             if creation_date:
                 validation_cache[path_hash]['created_date'] = creation_date
 
-            # Only update category if path is validated OR if new category is not 'unchanged'
-            # This prevents unvalidated paths from being marked as 'unchanged'
-            is_validated = validation_cache[path_hash].get('validated', False)
-            if is_validated or category != 'unchanged':
-                validation_cache[path_hash]['category'] = category
+            # Always update category - it's computed fresh from git on each build
+            validation_cache[path_hash]['category'] = category
 
     save_validation_cache(cache_file, validation_cache)
 

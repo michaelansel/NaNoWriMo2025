@@ -8,22 +8,18 @@ This document contains implementation-level details for developers maintaining t
 
 ### Unit Tests (`test_generator.py`)
 
-**Path Hashing & Fingerprinting:**
+**Path Hashing:**
 - Hash consistency across builds
-- Hash changes with content modifications
-- Hash changes with structure changes
-- Content fingerprint independence from passage names
-- Route hash calculation
+- Path identification via MD5 hash
 
-**Path Categorization:**
-- New path detection
-- Unchanged path detection (exact match)
-- Modified path detection (content changes)
-- Modified path detection (restructuring/renames)
-- Modified path detection (link additions) - **PR #65 scenario**
+**Path Categorization (Git-First):**
+- NEW path detection (files with new prose via git diff)
+- MODIFIED path detection (files with link-only changes via git diff)
+- UNCHANGED path detection (no file changes in git)
+- Passage split detection (same prose reorganized across files)
+- Link addition detection - **PR #65 scenario**
+- Fallback behavior when git unavailable (mark as NEW)
 - Backward compatibility with old cache formats
-- Handling of missing fingerprint fields
-- Handling of non-dict cache entries
 
 **Link Stripping:**
 - Simple link removal (`[[Target]]`)
@@ -64,7 +60,7 @@ This document contains implementation-level details for developers maintaining t
 - Passage rename detection (structure unchanged)
 
 **Backward Compatibility:**
-- Old cache without fingerprint field
+- Old cache with deprecated fingerprint fields (ignored when reading)
 - Cache with non-dict entries (metadata)
 - Empty cache
 - Real project data (if available)
@@ -103,20 +99,21 @@ A → B → A → B → A → C  (blocked, A visited 3 times)
 
 **Future Improvement:** Could implement path length limit or detect when paths become too similar.
 
-### 2. Git Dependency for Optimal Categorization
+### 2. Git Dependency for Categorization
 
-**Issue:** Accurate detection of modified vs new paths requires git integration.
+**Requirement:** Path categorization requires git integration.
 
-**Current Mitigation:**
-- Falls back to cache-based detection when git unavailable
-- All paths marked as 'modified' if in cache but no file-level data
-- All paths marked as 'new' if not in cache
+**Git-First Architecture:**
+- Uses `git show HEAD:path` to get previous file versions
+- Compares prose content (with links stripped) to detect new prose
+- Compares full content to detect link/structure changes
+- Falls back to marking all paths as 'new' when git unavailable
 
-**Impact:** Without git:
-- May re-check unchanged reorganizations (marked as 'modified')
-- May miss some legitimate new content detection
+**Fallback Behavior:** Without git:
+- All paths marked as 'new' (conservative - ensures validation)
+- No MODIFIED or UNCHANGED categories (requires git diff)
 
-**Workaround:** Always run in git repository with clean working tree.
+**Best Practice:** Always run in git repository with committed work.
 
 ### 3. Passage ID Mapping Size
 
@@ -195,29 +192,31 @@ File A contains: Passage 1, Passage 2
 
 ## Implementation Decisions
 
-### Why Three Fingerprints?
+### Why Git-First Categorization?
 
-1. **path_hash**: Full identity (route + content + links) - uniquely identifies a specific path
-2. **content_fingerprint**: Prose-only - detects content changes vs reorganizations
-3. **raw_content_fingerprint**: Content + links - detects link changes vs prose changes
-4. **route_hash**: Route structure only - detects passage renames
+**Design Evolution:** Originally used cached fingerprints (content_fingerprint, raw_content_fingerprint, route_hash) with multi-phase comparison. Simplified to git-first approach in 2025-11.
 
-**Rationale:** Different operations need different granularity:
-- Categorization needs to distinguish new content from reorganization
-- Caching needs unique IDs that change on any modification
-- Split detection needs to ignore whitespace and links
+**Current Architecture:**
+- Single source of truth: git diff against HEAD
+- No fingerprint caching needed
+- Simpler algorithm: check file changes directly
 
-### Why Git Integration?
+**Benefits:**
+- Much simpler code (~40% reduction in categorize_paths complexity)
+- Single-phase algorithm vs three-phase
+- Easier to understand: "check git diff"
+- Same correctness as fingerprint approach
+- Git already available in CI environment
 
-**Alternatives Considered:**
-1. Only use path-level fingerprints (would miss file-level reorganizations)
-2. Store all old passage content in cache (would bloat cache file)
-3. Use file timestamps (unreliable with git operations)
+**Trade-offs:**
+- Slightly slower: +3 seconds per build (3-4 seconds vs 100ms)
+- Acceptable cost per strategic priorities (simplicity over 3 seconds)
 
-**Why Git:**
-- Already available in CI environment
-- Provides authoritative "what changed" data
-- Minimal overhead (uses existing git log)
+**Why Not Fingerprints?**
+- Optimized for machine time at cost of developer understanding
+- Complex multi-phase algorithm hard to maintain
+- Cache served dual purpose (categorization + validation tracking)
+- Git provides same correctness more simply
 
 ### Why Passage ID Mapping?
 
@@ -254,15 +253,20 @@ File A contains: Passage 1, Passage 2
 
 ### Path Categorization Issues
 
-**Symptom:** Paths marked as 'new' when should be 'unchanged'.
+**Symptom:** Paths marked incorrectly (e.g., NEW when should be UNCHANGED).
 
 **Debug Steps:**
-1. Check if git repo is clean: `git status`
+1. Check git repo state: `git status` (should be clean, all changes committed)
 2. Verify passage-to-file mapping: Run `scripts/show_twee_file_paths.py`
-3. Compare fingerprints:
+3. Test git diff manually:
+   ```bash
+   git show HEAD:src/yourfile.twee > /tmp/old.twee
+   diff <(grep -v '^\[\[' /tmp/old.twee) <(grep -v '^\[\[' src/yourfile.twee)
+   ```
+4. Check categorization logic:
    ```python
-   from generator import calculate_content_fingerprint, calculate_route_hash
-   # Calculate for old and new, compare
+   from generator import file_has_prose_changes, file_has_any_changes
+   # Test on specific file
    ```
 
 ### AI Continuity Checker Not Working
@@ -323,13 +327,14 @@ File A contains: Passage 1, Passage 2
 
 The validation cache should be regenerated (deleted) when:
 - Cache format changes (new fields added/removed)
-- Fingerprint algorithm changes
+- Git categorization logic changes significantly
 - Major refactoring of passage structure
 
 **Safe to Keep Cache When:**
 - Adding new passages (incremental)
-- Editing existing prose (fingerprints update automatically)
-- Changing links only (fingerprints update automatically)
+- Editing existing prose (category recomputed from git)
+- Changing links only (category recomputed from git)
+- Migrating from fingerprint to git-first architecture (backward compatible)
 
 ### Updating Test Fixtures
 
