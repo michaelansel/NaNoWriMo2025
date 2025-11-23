@@ -84,7 +84,16 @@ jobs:
         run: |
           tweego src -o dist/graph.html -f dotgraph-2
 
+      - name: Fetch base branch for PR categorization
+        if: github.event_name == 'pull_request'
+        run: |
+          # Fetch the base branch so git comparisons work for path categorization
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+          echo "Fetched base branch: origin/${{ github.base_ref }}"
+
       - name: Build AllPaths version (AI continuity checking)
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
         run: |
           chmod +x scripts/build-allpaths.sh
           ./scripts/build-allpaths.sh
