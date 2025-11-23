@@ -115,23 +115,43 @@ Open `dist/allpaths.html` in a web browser to:
 
 **Understanding Path Categories:**
 
-Path categories adapt to the context where you're viewing them:
+AllPaths categorization adapts to provide the most useful information for your current context.
 
-**In Pull Requests (PR Build Artifacts):**
-- Categories show **what's changing IN THIS PR**
-- **New** = Paths that don't exist on the base branch (created by this PR)
-- **Modified** = Paths whose content changed in this PR
-- **Unchanged** = Paths not affected by this PR
-- Use this to validate PR changes and review impact
+**In Pull Requests:**
 
-**On Deployed Site (Main Branch):**
-- Categories show **recent activity in the story**
-- **Recent** = Paths created or modified in last 7 days
-- **Updated** = Paths modified in last 30 days
-- **Older** = Paths unchanged for 30+ days
-- Use this to track writing progress and find recent content
+When viewing allpaths.html in PR build artifacts, categories answer: *"What's changing in this PR?"*
 
-**Note:** It's normal for the same paths to have different categories in PR vs deployment contexts. They answer different questions: "What changed in this PR?" vs "What's recent in the story?"
+- **New** - Paths introduced by this PR (don't exist on base branch)
+- **Modified** - Paths whose content changed in this PR
+- **Unchanged** - Paths not affected by this PR
+
+Use these categories to:
+- Validate PR changes before merging
+- Understand the scope and impact of proposed changes
+- Review which story paths will be affected
+- Catch unintended consequences
+
+**On the Deployed Site:**
+
+When viewing allpaths.html on the deployed site (main branch), categories answer: *"What's recent in the story?"*
+
+- **Recent** - Paths created or modified in last 7 days
+- **Updated** - Paths modified in last 30 days
+- **Older** - Paths unchanged for more than 30 days
+
+Use these categories to:
+- Track NaNoWriMo writing progress
+- Find recently completed paths
+- Identify actively developed content
+- Coordinate collaborative writing work
+- Monitor writing velocity
+
+**Why Categories Differ:**
+
+The same paths may have different categories in PR vs deployment contexts. This is expected and correct:
+- PR context optimizes for understanding **changes** (diff-style view)
+- Deployment context optimizes for understanding **progress** (timeline view)
+- Each view answers different questions with different information needs
 
 ### AI Continuity Checking
 

@@ -198,24 +198,32 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 Features currently being built or refined based on usage.
 
 ### Context-Aware Path Categorization
-**Status:** 🔴 CRITICAL - Trust Violation
-**Target:** ASAP (November 2025)
+**Status:** ✅ Active Feature
+**Target:** Core Feature (Ongoing)
 **Priority:** HIGH
-**User Impact:** Restore trust by fixing confusing category behavior
+**User Impact:** Writers get meaningful path categorization in all contexts
 
-**Problem:** Writers see meaningful categorization in PR #82 (1 new, 23 modified, 23 unchanged), then view deployed site and see "47 unchanged." This creates confusion and destroys trust in automation.
+**Purpose:** Provide context-appropriate categorization that answers different questions in different situations:
+- In PRs: "What's changing in this PR?"
+- On deployed site: "What's recent in the story?"
 
-**Root Cause:** Deployment builds compare HEAD against HEAD, making everything appear "unchanged." Categories were designed only for PR context (git-relative), not deployment context.
+**How It Works:**
+- **PR builds:** Git-relative categories show changes in this PR (New/Modified/Unchanged)
+- **Deployment builds:** Time-based categories show recent activity (Recent/Updated/Older)
+- Clear UI indicators show active context
+- Documentation explains why categories differ
 
-**Solution:** Context-aware categorization:
-- **PR builds:** Continue using git-relative categories (what's changing in this PR?)
-- **Deployment builds:** Switch to time-based categories (what's recent in the story?)
+**Key Capabilities:**
+- Automatic context detection (PR vs deployment)
+- Configurable time thresholds (7 days for Recent, 30 days for Updated)
+- Consistent UI design with context-appropriate labels
+- Backward compatible with existing workflows
 
-**Key Requirements:**
-- Deployment builds show "Recent" (last 7 days), "Updated" (last 30 days), "Older"
-- PR builds unchanged (continue showing New/Modified/Unchanged relative to base branch)
-- Clear UI indicators showing which context is active
-- Zero breaking changes to existing PR workflow
+**User Benefits:**
+- PR reviewers understand scope of changes
+- Writers track NaNoWriMo progress and find recent work
+- Clear transparency about what categories mean
+- No confusion about why categories differ between contexts
 
 **Related Documents:** [features/allpaths-categorization.md](features/allpaths-categorization.md)
 
