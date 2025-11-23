@@ -113,6 +113,26 @@ Open `dist/allpaths.html` in a web browser to:
 3. **Browse paths** - Click "Show Content" to read each path
 4. **Track routes** - See the exact sequence of passages in each path
 
+**Understanding Path Categories:**
+
+Path categories adapt to the context where you're viewing them:
+
+**In Pull Requests (PR Build Artifacts):**
+- Categories show **what's changing IN THIS PR**
+- **New** = Paths that don't exist on the base branch (created by this PR)
+- **Modified** = Paths whose content changed in this PR
+- **Unchanged** = Paths not affected by this PR
+- Use this to validate PR changes and review impact
+
+**On Deployed Site (Main Branch):**
+- Categories show **recent activity in the story**
+- **Recent** = Paths created or modified in last 7 days
+- **Updated** = Paths modified in last 30 days
+- **Older** = Paths unchanged for 30+ days
+- Use this to track writing progress and find recent content
+
+**Note:** It's normal for the same paths to have different categories in PR vs deployment contexts. They answer different questions: "What changed in this PR?" vs "What's recent in the story?"
+
 ### AI Continuity Checking
 
 The text files in `allpaths-metadata/` are formatted for AI processing with passage markers and metadata.

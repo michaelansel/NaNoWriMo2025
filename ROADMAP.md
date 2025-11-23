@@ -197,6 +197,30 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 
 Features currently being built or refined based on usage.
 
+### Context-Aware Path Categorization
+**Status:** 🔴 CRITICAL - Trust Violation
+**Target:** ASAP (November 2025)
+**Priority:** HIGH
+**User Impact:** Restore trust by fixing confusing category behavior
+
+**Problem:** Writers see meaningful categorization in PR #82 (1 new, 23 modified, 23 unchanged), then view deployed site and see "47 unchanged." This creates confusion and destroys trust in automation.
+
+**Root Cause:** Deployment builds compare HEAD against HEAD, making everything appear "unchanged." Categories were designed only for PR context (git-relative), not deployment context.
+
+**Solution:** Context-aware categorization:
+- **PR builds:** Continue using git-relative categories (what's changing in this PR?)
+- **Deployment builds:** Switch to time-based categories (what's recent in the story?)
+
+**Key Requirements:**
+- Deployment builds show "Recent" (last 7 days), "Updated" (last 30 days), "Older"
+- PR builds unchanged (continue showing New/Modified/Unchanged relative to base branch)
+- Clear UI indicators showing which context is active
+- Zero breaking changes to existing PR workflow
+
+**Related Documents:** [features/allpaths-categorization.md](features/allpaths-categorization.md)
+
+---
+
 ### Selective Validation Optimization
 **Status:** 🚧 In Progress
 **Target:** November 2025
