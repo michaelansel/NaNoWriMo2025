@@ -53,7 +53,6 @@ CEO (Strategic) → PM (Tactical) → Architect (Structural) → Developer (Impl
 - `STANDARDS.md` - Coding, documentation, quality standards
 - `architecture/*.md` - Component/module designs
 - Technical design docs for features
-- Refactoring proposals
 
 **Boundaries**:
 - ✓ Translate PM specs to technical design, make structural decisions, set standards
@@ -70,7 +69,7 @@ CEO (Strategic) → PM (Tactical) → Architect (Structural) → Developer (Impl
 **Artifacts**:
 - Source code and tests
 - Implementation docs (per standards)
-- Bug reports, implementation notes
+- Implementation notes for non-obvious decisions
 
 **Boundaries**:
 - ✓ Implement per design and standards, raise concerns, suggest improvements
@@ -84,13 +83,26 @@ CEO (Strategic) → PM (Tactical) → Architect (Structural) → Developer (Impl
 
 **Escalation**: Developer → Architect (implementation issues) → PM (feasibility) → CEO (strategic conflicts)
 
+## Documentation Philosophy
+
+**Document current state, not history**:
+- Describe how things work now, not how they changed
+- No bug fix logs, issue tracking, or changelogs (git provides history)
+- Update docs to reflect reality as the codebase evolves
+- If you need to understand past decisions, check git history
+
+**Avoid transient documentation**:
+- Don't create permanent handoff docs or workstream status files
+- You may create temporary docs during active work, but clean them up when done
+- Documents should remain relevant indefinitely, not become stale artifacts
+
 ## Document Formats
 
 Each role documents their perspective through structured artifacts:
 
 ### CEO Documents
 - **Vision statements**: Why we exist, who we serve, what success means
-- **Strategic decisions**: Log major go/no-go decisions with rationale
+- **Strategic direction**: Current scope and focus areas with rationale
 - **Priority stack rank**: Ordered list with strategic reasoning
 
 ### PM Documents (PRDs)
@@ -105,21 +117,21 @@ Product Requirements Documents should capture:
 - Describe user-facing behavior, not system internals
 - Stop at "what happens" not "how it works technically"
 - If discussing architecture/implementation, you've crossed into Architect territory
-- Trust Architect to document technical design in ADRs
+- Trust Architect to document technical design separately
 
-### Architect Documents (ADRs)
-Architecture Decision Records should capture:
+### Architect Documents
+Technical design documents should capture:
 - **Context**: What forces are at play? What are we trying to achieve?
-- **Decision**: What did we decide?
+- **Design**: How is this structured? Key components and relationships
 - **Consequences**: What becomes easier/harder? Trade-offs?
-- **Alternatives considered**: What else did we evaluate and why not?
+- **Rationale**: Why this approach over alternatives?
 
-Also: System design docs (components, interfaces, data flow), refactoring proposals (why, scope, risks)
+Also: System design docs (components, interfaces, data flow), coding standards, patterns and conventions
 
 ### Developer Documents
 - **Implementation notes**: Non-obvious decisions, why this approach
 - **Test coverage**: What's tested, what scenarios
-- **Known limitations**: What doesn't work yet or needs follow-up
+- **Known limitations**: Current constraints or incomplete functionality
 
 ## Principles
 
