@@ -133,25 +133,29 @@ Use these categories to:
 
 **On the Deployed Site:**
 
-When viewing allpaths.html on the deployed site (main branch), categories answer: *"What's recent in the story?"*
+When viewing allpaths.html on the deployed site (main branch), you see: *"When were paths created and modified?"*
 
-- **Recent** - Paths created or modified in last 7 days
-- **Updated** - Paths modified in last 30 days
-- **Older** - Paths unchanged for more than 30 days
+All paths are displayed with their creation and modification dates. Use filters to view:
+- **Created Last Day** - Paths created in the last 24 hours
+- **Created Last Week** - Paths created in the last 7 days
+- **Modified Last Day** - Paths modified in the last 24 hours
+- **Modified Last Week** - Paths modified in the last 7 days
 
-Use these categories to:
-- Track NaNoWriMo writing progress
-- Find recently completed paths
-- Identify actively developed content
-- Coordinate collaborative writing work
-- Monitor writing velocity
+Use this information to:
+- Track NaNoWriMo daily and weekly writing progress
+- Find paths completed today or this week
+- Identify actively worked content (recently modified)
+- Coordinate collaborative writing (see what teammates worked on)
+- Monitor writing velocity over time
+- Review path history and timeline
 
-**Why Categories Differ:**
+**Why Information Differs:**
 
-The same paths may have different categories in PR vs deployment contexts. This is expected and correct:
-- PR context optimizes for understanding **changes** (diff-style view)
-- Deployment context optimizes for understanding **progress** (timeline view)
+Path information differs between PR and deployment contexts. This is expected and correct:
+- PR context optimizes for understanding **changes** - shows New/Modified/Unchanged categories
+- Deployment context optimizes for understanding **timeline** - shows creation/modification dates with filters
 - Each view answers different questions with different information needs
+- Same underlying data, different perspectives for different purposes
 
 ### AI Continuity Checking
 
