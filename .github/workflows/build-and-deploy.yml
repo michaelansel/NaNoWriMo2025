@@ -29,6 +29,8 @@ jobs:
           # For pull_request events, this checks out the merge commit (PR merged with base)
           # This ensures scripts from main are available even if PR branch is old
           token: ${{ secrets.GITHUB_TOKEN }}
+          # Fetch full git history so date collection can find file creation dates
+          fetch-depth: 0
 
       - name: Generate resources file
         run: |

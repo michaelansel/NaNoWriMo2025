@@ -6,6 +6,19 @@
 
 ---
 
+## Feature Overview
+
+AI Continuity Checking is a **validation feature** that automatically checks story paths for consistency issues. It determines which paths need validation based on what changed in a PR, then analyzes those paths and reports results in PR comments.
+
+**Relationship to AllPaths:**
+- **AllPaths HTML** is a separate browsing/tracking feature (see [allpaths-categorization.md](./allpaths-categorization.md))
+- AllPaths shows dates, filters, and validation status for progress tracking
+- Continuity checking uses internal git-based categories (NEW/MODIFIED/UNCHANGED) to determine what to validate
+- These internal categories don't appear in the AllPaths HTML
+- Validation results appear in PR comments, validation status appears as badges in HTML
+
+---
+
 ## User Problem
 
 **For collaborative branching narrative writers:**
@@ -99,26 +112,28 @@
 
 ---
 
-### Understanding Path Categories
+### How Continuity Checking Determines What to Validate
 
-When you make changes to your story, the system categorizes each path to help you understand what needs validation:
+When you make changes to your story, the continuity checker analyzes each path to determine what needs validation. This analysis happens internally and helps the checker focus on paths that actually need review.
 
-#### NEW Paths
-**What it means:** You wrote genuinely new prose that's never existed before.
+The checker categorizes paths into three internal states to decide what needs validation:
+
+#### NEW Paths (Internal Category)
+**What it means internally:** The path contains genuinely new prose that's never existed before.
 
 **What causes this:**
 - You created a new passage file with new story content
 - A path goes through that new passage for the first time
 - Players will read prose they've never seen before
 
-**Example:** You create `KEB-251121.twee` with a new scene. Any path that includes this passage is NEW.
+**Example:** You create `KEB-251121.twee` with a new scene. Any path that includes this passage is categorized as NEW internally.
 
-**User impact:** This is what you care about day-to-day. It's the content you wrote today and want feedback on.
+**Why this matters:** NEW paths always need validation because they contain content that hasn't been checked yet.
 
 ---
 
-#### MODIFIED Paths
-**What it means:** The path already existed, but you changed the navigation (added/removed/changed links).
+#### MODIFIED Paths (Internal Category)
+**What it means internally:** The path already existed, but you changed the navigation (added/removed/changed links).
 
 **What causes this:**
 - You added a new choice to an existing passage (new `[[link]]`)
@@ -126,30 +141,32 @@ When you make changes to your story, the system categorizes each path to help yo
 - You changed where a link points
 - The prose in the passages didn't change, just the navigation options
 
-**Example:** You edit an existing passage to add `[[Empty kitchen->Day 21 KEB]]`. All paths that go through this passage are now MODIFIED - same prose, but now there's an additional choice available.
+**Example:** You edit an existing passage to add `[[Empty kitchen->Day 21 KEB]]`. All paths that go through this passage are categorized as MODIFIED internally - same prose, but now there's an additional choice available.
 
-**User impact:** These paths have the same prose you've already read/validated. The only difference is navigation. You typically don't need immediate feedback on these during daily writing.
+**Why this matters:** MODIFIED paths may need re-validation if navigation changes affect flow or coherence.
 
-**Common scenario:** When you add a link to a passage near the story root (like the Start passage), this can create 10+ MODIFIED paths. But you only added one line - the link - so there's very little new to validate.
+**Common scenario:** When you add a link to a passage near the story root (like the Start passage), this can create 10+ MODIFIED paths. But you only added one line - the link - so there's very little new prose to validate.
 
 ---
 
-#### UNCHANGED Paths
-**What it means:** Nothing changed at all. Same prose, same links, same structure.
+#### UNCHANGED Paths (Internal Category)
+**What it means internally:** Nothing changed at all. Same prose, same links, same structure.
 
 **What causes this:**
 - You made changes to other parts of the story
 - This path doesn't include any passages you touched
 
-**Example:** You add a new passage for one story branch. Paths in completely different branches remain UNCHANGED.
+**Example:** You add a new passage for one story branch. Paths in completely different branches remain UNCHANGED internally.
 
-**User impact:** These don't need re-validation. You already validated them, nothing changed.
+**Why this matters:** UNCHANGED paths don't need re-validation - you already validated them, nothing changed.
 
 ---
 
 ### Three Validation Modes
 
-Based on these categories, you can choose how thoroughly to validate:
+Based on these internal categories, you can choose how thoroughly to validate:
+
+**Important:** These categories (NEW/MODIFIED/UNCHANGED) are used internally by the continuity checker to determine what to validate. They don't appear in the AllPaths HTML interface. The AllPaths HTML shows date-based filters (created/modified last day/week) and validation status (validated or not), which serve different purposes (progress tracking and quality monitoring).
 
 ---
 
@@ -216,6 +233,28 @@ Eventually you want those MODIFIED paths checked (even though prose is the same,
 - Issue type (character/plot/timeline/setting/contradiction)
 - Description and location of issues
 - Specific quotes demonstrating problems
+
+---
+
+### Where Validation Results Appear
+
+**Validation results are surfaced in two places:**
+
+1. **PR Comments (Primary Interface)**
+   - Detailed validation results posted as GitHub PR comments
+   - Shows progress updates as paths are checked
+   - Lists issues found in each path with severity and quotes
+   - Provides summary statistics (paths checked, issues found)
+   - Writers can respond with `/approve-path` command
+
+2. **Validation Cache (Status Tracking)**
+   - Validation status stored in `allpaths-validation-status.json`
+   - Tracks which paths have been validated
+   - Status displayed in AllPaths HTML as badges
+   - "Validated" badge: Path has been reviewed and approved
+   - "New" badge: Path has not yet been validated
+
+**Note:** The internal categorization (NEW/MODIFIED/UNCHANGED) is used by the checker to determine what to validate, but is not displayed in the HTML. The HTML shows validation status (validated or not) and date filters for progress tracking.
 
 ---
 

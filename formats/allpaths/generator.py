@@ -519,8 +519,9 @@ def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
             with open(twee_file, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-            # Find all passage declarations (:: PassageName)
-            passages_in_file = re.findall(r'^:: (.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
+            # Find all passage declarations (:: PassageName or ::PassageName)
+            # Allow optional space after :: to handle both formats
+            passages_in_file = re.findall(r'^::\s*(.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
 
             for passage_name in passages_in_file:
                 mapping[passage_name.strip()] = twee_file
@@ -866,30 +867,22 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     path_lengths = [len(p) for p in all_paths]
     total_passages = sum(path_lengths)
 
-    # Sort paths by creation date (newest first), then by category
+    # Prepare paths with metadata (no sorting by category - ADR-007 single interface)
     paths_with_metadata = []
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
         created_date = validation_cache.get(path_hash, {}).get('created_date', '')
-        category = path_categories.get(path_hash, 'new')
-        paths_with_metadata.append((path, path_hash, created_date, category))
+        commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
+        is_validated = validation_cache.get(path_hash, {}).get('validated', False)
+        paths_with_metadata.append((path, path_hash, created_date, commit_date, is_validated))
 
-    # Sort: by category first (new, modified, unchanged), then newest creation date within each category
+    # Sort by creation date (newest first)
     # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
-    category_order = {'new': 2, 'modified': 1, 'unchanged': 0}
-    paths_with_metadata.sort(key=lambda x: (
-        category_order.get(x[3], 3),  # category (new=2, modified=1, unchanged=0 - higher sorts first with reverse=True)
-        x[2] if x[2] else '0',  # created_date (newest first within category, '0' sorts last)
-    ), reverse=True)
+    paths_with_metadata.sort(key=lambda x: x[2] if x[2] else '0', reverse=True)
 
-    # Count paths by category
-    new_count = sum(1 for _, _, _, cat in paths_with_metadata if cat == 'new')
-    modified_count = sum(1 for _, _, _, cat in paths_with_metadata if cat == 'modified')
-    unchanged_count = sum(1 for _, _, _, cat in paths_with_metadata if cat == 'unchanged')
-
-    # Also count validation status
-    validated_count = sum(1 for path in all_paths
-                         if validation_cache.get(calculate_path_hash(path, passages), {}).get('validated', False))
+    # Count validation status
+    validated_count = sum(1 for _, _, _, _, is_validated in paths_with_metadata if is_validated)
+    new_count = len(paths_with_metadata) - validated_count
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -1024,18 +1017,6 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         }}
 
-        .path.new {{
-            border-left: 5px solid #007bff;
-        }}
-
-        .path.modified {{
-            border-left: 5px solid #ffc107;
-        }}
-
-        .path.unchanged {{
-            border-left: 5px solid #28a745;
-        }}
-
         .path-header {{
             background: #f8f9fa;
             padding: 1.5rem;
@@ -1072,23 +1053,13 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
             text-transform: uppercase;
         }}
 
-        .badge-new {{
-            background: #007bff;
-            color: white;
-        }}
-
-        .badge-modified {{
-            background: #ffc107;
-            color: #333;
-        }}
-
-        .badge-unchanged {{
+        .badge-validated {{
             background: #28a745;
             color: white;
         }}
 
-        .badge-validated {{
-            background: #6f42c1;
+        .badge-new {{
+            background: #6c757d;
             color: white;
         }}
 
@@ -1164,23 +1135,19 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         <div class="stats-grid">
             <div class="stat-item">
                 <div class="stat-label">Total Paths</div>
-                <div class="stat-value">{len(all_paths)}</div>
+                <div class="stat-value" id="total-paths">{len(all_paths)}</div>
             </div>
-            <div class="stat-item" style="border-left-color: #007bff;">
-                <div class="stat-label">New Paths</div>
-                <div class="stat-value">{new_count}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #ffc107;">
-                <div class="stat-label">Modified Paths</div>
-                <div class="stat-value">{modified_count}</div>
+            <div class="stat-item">
+                <div class="stat-label">Displayed Paths</div>
+                <div class="stat-value" id="displayed-paths">{len(all_paths)}</div>
             </div>
             <div class="stat-item" style="border-left-color: #28a745;">
-                <div class="stat-label">Unchanged Paths</div>
-                <div class="stat-value">{unchanged_count}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #6f42c1;">
                 <div class="stat-label">Validated Paths</div>
                 <div class="stat-value">{validated_count}</div>
+            </div>
+            <div class="stat-item" style="border-left-color: #6c757d;">
+                <div class="stat-label">New Paths</div>
+                <div class="stat-value">{new_count}</div>
             </div>
             <div class="stat-item">
                 <div class="stat-label">Shortest Path</div>
@@ -1198,13 +1165,30 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     </div>
 
     <div class="filter-section">
-        <div class="filter-buttons">
-            <button class="filter-btn active" onclick="filterPaths('all')">All Paths</button>
-            <button class="filter-btn" onclick="filterPaths('new')">New ({new_count})</button>
-            <button class="filter-btn" onclick="filterPaths('modified')">Modified ({modified_count})</button>
-            <button class="filter-btn" onclick="filterPaths('unchanged')">Unchanged ({unchanged_count})</button>
-            <button class="filter-btn" onclick="toggleAllPaths()">Expand All</button>
-            <button class="filter-btn" onclick="collapseAllPaths()">Collapse All</button>
+        <h3>Filter Paths</h3>
+        <div style="margin-bottom: 1rem;">
+            <strong>Time-Based Filters:</strong>
+            <div class="filter-buttons">
+                <button class="filter-btn" data-filter-type="created-day" onclick="toggleFilter(this, 'created-day')">Created Last Day</button>
+                <button class="filter-btn" data-filter-type="created-week" onclick="toggleFilter(this, 'created-week')">Created Last Week</button>
+                <button class="filter-btn" data-filter-type="modified-day" onclick="toggleFilter(this, 'modified-day')">Modified Last Day</button>
+                <button class="filter-btn" data-filter-type="modified-week" onclick="toggleFilter(this, 'modified-week')">Modified Last Week</button>
+            </div>
+        </div>
+        <div style="margin-bottom: 1rem;">
+            <strong>Validation Status:</strong>
+            <div class="filter-buttons">
+                <button class="filter-btn" data-filter-type="validated" onclick="toggleFilter(this, 'validated')">Validated ({validated_count})</button>
+                <button class="filter-btn" data-filter-type="new" onclick="toggleFilter(this, 'new')">New ({new_count})</button>
+            </div>
+        </div>
+        <div>
+            <strong>Actions:</strong>
+            <div class="filter-buttons">
+                <button class="filter-btn" onclick="clearAllFilters()">Clear All Filters</button>
+                <button class="filter-btn" onclick="toggleAllPaths()">Expand All</button>
+                <button class="filter-btn" onclick="collapseAllPaths()">Collapse All</button>
+            </div>
         </div>
     </div>
 
@@ -1212,52 +1196,56 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 '''
 
     # Generate each path (using sorted paths with metadata)
-    for i, (path, path_hash, created_date, category) in enumerate(paths_with_metadata, 1):
-        is_validated = validation_cache.get(path_hash, {}).get('validated', False)
-        first_seen = validation_cache.get(path_hash, {}).get('first_seen', '')
+    for i, (path, path_hash, created_date, commit_date, is_validated) in enumerate(paths_with_metadata, 1):
+        # Format dates for display
+        def format_date_for_display(date_str):
+            """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC)"""
+            if not date_str:
+                return "Unknown"
+            try:
+                from datetime import datetime as dt
+                # Parse date with timezone info
+                date_dt = dt.fromisoformat(date_str.replace('Z', '+00:00'))
+                # Convert to UTC if it has timezone info
+                if date_dt.tzinfo is not None:
+                    # Convert to UTC
+                    import datetime
+                    utc_dt = date_dt.astimezone(datetime.timezone.utc)
+                    return utc_dt.strftime('%Y-%m-%d %H:%M UTC')
+                else:
+                    # Assume it's already UTC if no timezone
+                    return date_dt.strftime('%Y-%m-%d %H:%M UTC')
+            except:
+                # Fallback to just showing the date part
+                return date_str[:10] if len(date_str) >= 10 else date_str
 
-        # Category badge
-        category_badge_class = f'badge-{category}'
-        category_text = category.capitalize()
+        created_display = format_date_for_display(created_date)
+        modified_display = format_date_for_display(commit_date)
+
+        # Validation status badge
+        validation_badge = 'badge-validated' if is_validated else 'badge-new'
+        validation_text = 'Validated' if is_validated else 'New'
 
         html += f'''
-        <div class="path {category}" data-status="{category}">
+        <div class="path" data-created-date="{created_date}" data-commit-date="{commit_date}" data-validated="{str(is_validated).lower()}">
             <div class="path-header">
                 <div class="path-title">Path {i} of {len(all_paths)}</div>
                 <div class="path-meta">
                     <div class="path-meta-item">
-                        <span class="badge {category_badge_class}">{category_text}</span>
-                    </div>'''
-
-        if is_validated:
-            html += '''
-                    <div class="path-meta-item">
-                        <span class="badge badge-validated">Validated</span>
-                    </div>'''
-
-        html += f'''
+                        <span class="badge {validation_badge}">{validation_text}</span>
+                    </div>
                     <div class="path-meta-item">
                         📏 Length: {len(path)} passages
                     </div>
                     <div class="path-meta-item">
                         🔑 ID: {path_hash}
-                    </div>'''
-
-        if created_date:
-            # Format created date nicely
-            try:
-                from datetime import datetime as dt
-                created_dt = dt.fromisoformat(created_date.replace('Z', '+00:00'))
-                created_display = created_dt.strftime('%Y-%m-%d')
-            except:
-                created_display = created_date[:10] if len(created_date) >= 10 else created_date
-
-            html += f'''
+                    </div>
                     <div class="path-meta-item">
-                        📅 Committed: {created_display}
-                    </div>'''
-
-        html += f'''
+                        📅 Created: {created_display}
+                    </div>
+                    <div class="path-meta-item">
+                        🔄 Modified: {modified_display}
+                    </div>
                     <div class="path-meta-item">
                         📄 <a href="allpaths-clean/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
                     </div>
@@ -1307,6 +1295,16 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     </div>
 
     <script>
+        // Track active filters (AND logic)
+        let activeFilters = {
+            'created-day': false,
+            'created-week': false,
+            'modified-day': false,
+            'modified-week': false,
+            'validated': false,
+            'new': false
+        };
+
         function togglePath(button) {
             const content = button.closest('.path').querySelector('.path-content');
             const isCollapsed = content.classList.contains('collapsed');
@@ -1320,22 +1318,116 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
             }
         }
 
-        function filterPaths(filter) {
+        function toggleFilter(button, filterType) {
+            // Toggle the filter state
+            activeFilters[filterType] = !activeFilters[filterType];
+
+            // Update button appearance
+            if (activeFilters[filterType]) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+
+            // Apply filters
+            applyFilters();
+        }
+
+        function clearAllFilters() {
+            // Reset all filters
+            Object.keys(activeFilters).forEach(key => {
+                activeFilters[key] = false;
+            });
+
+            // Reset all button states
+            document.querySelectorAll('.filter-btn[data-filter-type]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Apply filters (will show all paths)
+            applyFilters();
+        }
+
+        function applyFilters() {
             const paths = document.querySelectorAll('.path');
-            const buttons = document.querySelectorAll('.filter-btn');
+            const now = new Date();
+            const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
+            const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
 
-            // Update button states
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            let displayedCount = 0;
 
-            // Filter paths
             paths.forEach(path => {
-                if (filter === 'all') {
+                let shouldDisplay = true;
+
+                // Get path data
+                const createdDate = path.dataset.createdDate;
+                const commitDate = path.dataset.commitDate;
+                const isValidated = path.dataset.validated === 'true';
+
+                // Apply time-based filters (if any active)
+                if (activeFilters['created-day'] || activeFilters['created-week'] ||
+                    activeFilters['modified-day'] || activeFilters['modified-week']) {
+
+                    let matchesTimeFilter = false;
+
+                    // Created filters
+                    if (activeFilters['created-day']) {
+                        if (createdDate && new Date(createdDate) >= oneDayAgo) {
+                            matchesTimeFilter = true;
+                        }
+                    }
+                    if (activeFilters['created-week']) {
+                        if (createdDate && new Date(createdDate) >= oneWeekAgo) {
+                            matchesTimeFilter = true;
+                        }
+                    }
+
+                    // Modified filters
+                    if (activeFilters['modified-day']) {
+                        if (commitDate && new Date(commitDate) >= oneDayAgo) {
+                            matchesTimeFilter = true;
+                        }
+                    }
+                    if (activeFilters['modified-week']) {
+                        if (commitDate && new Date(commitDate) >= oneWeekAgo) {
+                            matchesTimeFilter = true;
+                        }
+                    }
+
+                    // If we have time filters active but this path doesn't match any, hide it
+                    if (!matchesTimeFilter) {
+                        shouldDisplay = false;
+                    }
+                }
+
+                // Apply validation status filters (if any active)
+                if (activeFilters['validated'] || activeFilters['new']) {
+                    let matchesStatusFilter = false;
+
+                    if (activeFilters['validated'] && isValidated) {
+                        matchesStatusFilter = true;
+                    }
+                    if (activeFilters['new'] && !isValidated) {
+                        matchesStatusFilter = true;
+                    }
+
+                    // If we have status filters active but this path doesn't match, hide it
+                    if (!matchesStatusFilter) {
+                        shouldDisplay = false;
+                    }
+                }
+
+                // Apply visibility
+                if (shouldDisplay) {
                     path.style.display = 'block';
+                    displayedCount++;
                 } else {
-                    path.style.display = path.dataset.status === filter ? 'block' : 'none';
+                    path.style.display = 'none';
                 }
             });
+
+            // Update displayed count
+            document.getElementById('displayed-paths').textContent = displayedCount;
         }
 
         function toggleAllPaths() {
@@ -1436,6 +1528,35 @@ def main():
           f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
           f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
 
+    # Update validation cache with current paths BEFORE generating HTML
+    # This ensures HTML has access to fresh dates
+    for path in all_paths:
+        path_hash = calculate_path_hash(path, passages)
+        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+        category = path_categories.get(path_hash, 'new')
+
+        if path_hash not in validation_cache:
+            validation_cache[path_hash] = {
+                'route': ' → '.join(path),
+                'first_seen': datetime.now().isoformat(),
+                'validated': False,
+                'commit_date': commit_date,
+                'created_date': creation_date,
+                'category': category,
+            }
+        else:
+            # Update commit date, created date, and category for existing entries
+            validation_cache[path_hash]['commit_date'] = commit_date
+
+            # Update created_date to reflect the earliest passage creation date
+            # This ensures we show when content was first created, not when path structure appeared
+            if creation_date:
+                validation_cache[path_hash]['created_date'] = creation_date
+
+            # Always update category - it's computed fresh from git on each build
+            validation_cache[path_hash]['category'] = category
+
     # Generate HTML output (uses original passage names for human readability)
     html_output = generate_html_output(story_data, passages, all_paths, validation_cache, path_categories)
 
@@ -1482,34 +1603,7 @@ def main():
 
     print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
 
-    # Update validation cache with current paths (mark them as available for validation)
-    for path in all_paths:
-        path_hash = calculate_path_hash(path, passages)
-        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
-        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
-        category = path_categories.get(path_hash, 'new')
-
-        if path_hash not in validation_cache:
-            validation_cache[path_hash] = {
-                'route': ' → '.join(path),
-                'first_seen': datetime.now().isoformat(),
-                'validated': False,
-                'commit_date': commit_date,
-                'created_date': creation_date,
-                'category': category,
-            }
-        else:
-            # Update commit date, created date, and category for existing entries
-            validation_cache[path_hash]['commit_date'] = commit_date
-
-            # Update created_date to reflect the earliest passage creation date
-            # This ensures we show when content was first created, not when path structure appeared
-            if creation_date:
-                validation_cache[path_hash]['created_date'] = creation_date
-
-            # Always update category - it's computed fresh from git on each build
-            validation_cache[path_hash]['category'] = category
-
+    # Save validation cache (already updated with dates before HTML generation)
     save_validation_cache(cache_file, validation_cache)
 
     # Print summary
