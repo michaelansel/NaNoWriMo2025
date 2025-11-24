@@ -519,8 +519,9 @@ def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
             with open(twee_file, 'r', encoding='utf-8') as f:
                 content = f.read()
 
-            # Find all passage declarations (:: PassageName)
-            passages_in_file = re.findall(r'^:: (.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
+            # Find all passage declarations (:: PassageName or ::PassageName)
+            # Allow optional space after :: to handle both formats
+            passages_in_file = re.findall(r'^::\s*(.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
 
             for passage_name in passages_in_file:
                 mapping[passage_name.strip()] = twee_file
