@@ -351,6 +351,85 @@ We will implement a **single consistent HTML interface** for AllPaths across all
 - **Mitigation**: Date parsing/comparison is trivial (<1ms per path), tested up to 200 paths
 - **Status**: Performance is excellent in practice
 
+## Implementation Constraints
+
+These constraints must be followed during implementation to ensure correct behavior:
+
+### 1. Execution Order: Date Collection Before HTML Generation
+
+**Constraint:** Date collection MUST occur before HTML generation in the build process.
+
+**Rationale:**
+- HTML generator reads `created_date` and `commit_date` from validation cache
+- If dates are collected AFTER HTML generation, HTML will use stale cache data
+- This causes a one-build delay where dates appear as "Unknown" on first run
+- In CI/CD environments where each build starts fresh, this means HTML always shows "Unknown" dates
+
+**Implementation:**
+```python
+# CORRECT ORDER:
+# 1. Collect dates from git history and update cache
+for path in all_paths:
+    commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+    creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+    # Update validation cache with dates...
+
+# 2. THEN generate HTML (reads dates from cache)
+html_output = generate_html_output(all_paths, validation_cache, ...)
+```
+
+**Why This Failed Initially:**
+- Original implementation collected dates AFTER HTML generation (lines 1577-1603 after line 1532)
+- Caused timing bug where 35 of 49 paths showed "Unknown" dates
+- Fixed by moving date collection to execute before HTML generation (commit 6ef6903)
+
+**Validation:**
+- Verify date collection loop executes before `generate_html_output()` call
+- Test that first build shows dates correctly (no "Unknown" values)
+- Ensure cache is populated with fresh data before HTML reads it
+
+---
+
+### 2. Git History Requirements
+
+**Constraint:** Full git history must be available for date collection.
+
+**Rationale:**
+- Date collection uses `git log` to find when passages were first added
+- Shallow clones (default in CI/CD) only have recent history
+- Without full history, creation dates will be incomplete or missing
+
+**Implementation:**
+```yaml
+# GitHub Actions checkout configuration
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0  # Fetch full history, not shallow clone
+```
+
+**Why This Matters:**
+- CI/CD environments often use shallow clones by default (fetch-depth: 1)
+- Creation dates require finding first commit that introduced a passage
+- Shallow clones can't find initial commits, resulting in missing dates
+
+---
+
+### 3. Lessons Learned
+
+**Finding Root Causes:**
+- Empirical testing is essential - replicate the failure before proposing fixes
+- "Unknown" dates indicated timing issue, not missing git history
+- Running actual build locally revealed one-build delay pattern
+- Second run showing correct dates confirmed timing hypothesis
+
+**Architecture Documentation:**
+- Original ADR showed "Load date metadata from cache" but didn't specify execution order
+- Architecture was imprecise, not wrong - didn't explicitly state constraint
+- Adding this constraints section prevents future developers from repeating the timing bug
+- Implementation details like execution order should be documented when they're critical
+
+---
+
 ## Alternatives Considered
 
 ### Alternative 1: Context-Aware Dual-Mode Rendering

@@ -2,7 +2,6 @@
 
 **Status:** ✅ Active Feature
 **Owner:** Product Manager
-**Last Updated:** 2025-11-24
 **Priority:** Core Feature
 
 ---
@@ -99,8 +98,6 @@ This browsing feature helps writers track NaNoWriMo progress, find recent work, 
 - Paths are clearly numbered and identified
 - Interface is usable on desktop and mobile
 
-**How We Deliver:** Single HTML file generated at build time with all paths, interactive JavaScript for collapsing/expanding content.
-
 ---
 
 ### Story 2: Tracking Writing Progress
@@ -119,8 +116,6 @@ This browsing feature helps writers track NaNoWriMo progress, find recent work, 
 - Filter buttons clearly indicate active state
 - Statistics update when filters are applied
 
-**How We Deliver:** Date metadata from validation cache displayed with each path, client-side JavaScript filtering for instant response.
-
 ---
 
 ### Story 3: Tracking Validation Status
@@ -134,8 +129,6 @@ This browsing feature helps writers track NaNoWriMo progress, find recent work, 
 - Can filter to show only validated or only new paths
 - Statistics show count of validated vs new paths
 - Validation status updates when paths are approved
-
-**How We Deliver:** Validation status from cache displayed as badges, filter buttons for validated/new paths, visual styling differentiates status.
 
 ---
 
@@ -151,8 +144,6 @@ This browsing feature helps writers track NaNoWriMo progress, find recent work, 
 - Same visual design and layout in both contexts
 - No surprising differences between PR and deployment
 - Documentation clarifies that interface is consistent
-
-**How We Deliver:** Single HTML generation logic produces identical output for PR and deployment builds, no context-specific UI variations.
 
 ---
 
