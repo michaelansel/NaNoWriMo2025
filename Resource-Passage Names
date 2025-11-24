@@ -3,6 +3,9 @@ KEB-251101.twee
   [[Wait on the road->wait for travelers to approach]]
   [[Hide in the brush->mansel-20251114]]
   :: wait for travelers to approach
+  [[What cave?]]
+  [[It was empty->Day 23 KEB]]
+  :: What cave?
   [[Join them]]
   [[Hold back->Day 5 KEB]]
   :: Join them
@@ -95,6 +98,9 @@ KEB-251121.twee
 
 KEB-251122.twee
   :: Day 22 KEB
+
+KEB-251123.twee
+  :: Day 23 KEB
 
 Start.twee
   :: Start
