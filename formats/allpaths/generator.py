@@ -1528,6 +1528,35 @@ def main():
           f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
           f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
 
+    # Update validation cache with current paths BEFORE generating HTML
+    # This ensures HTML has access to fresh dates
+    for path in all_paths:
+        path_hash = calculate_path_hash(path, passages)
+        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+        category = path_categories.get(path_hash, 'new')
+
+        if path_hash not in validation_cache:
+            validation_cache[path_hash] = {
+                'route': ' → '.join(path),
+                'first_seen': datetime.now().isoformat(),
+                'validated': False,
+                'commit_date': commit_date,
+                'created_date': creation_date,
+                'category': category,
+            }
+        else:
+            # Update commit date, created date, and category for existing entries
+            validation_cache[path_hash]['commit_date'] = commit_date
+
+            # Update created_date to reflect the earliest passage creation date
+            # This ensures we show when content was first created, not when path structure appeared
+            if creation_date:
+                validation_cache[path_hash]['created_date'] = creation_date
+
+            # Always update category - it's computed fresh from git on each build
+            validation_cache[path_hash]['category'] = category
+
     # Generate HTML output (uses original passage names for human readability)
     html_output = generate_html_output(story_data, passages, all_paths, validation_cache, path_categories)
 
@@ -1574,34 +1603,7 @@ def main():
 
     print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
 
-    # Update validation cache with current paths (mark them as available for validation)
-    for path in all_paths:
-        path_hash = calculate_path_hash(path, passages)
-        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
-        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
-        category = path_categories.get(path_hash, 'new')
-
-        if path_hash not in validation_cache:
-            validation_cache[path_hash] = {
-                'route': ' → '.join(path),
-                'first_seen': datetime.now().isoformat(),
-                'validated': False,
-                'commit_date': commit_date,
-                'created_date': creation_date,
-                'category': category,
-            }
-        else:
-            # Update commit date, created date, and category for existing entries
-            validation_cache[path_hash]['commit_date'] = commit_date
-
-            # Update created_date to reflect the earliest passage creation date
-            # This ensures we show when content was first created, not when path structure appeared
-            if creation_date:
-                validation_cache[path_hash]['created_date'] = creation_date
-
-            # Always update category - it's computed fresh from git on each build
-            validation_cache[path_hash]['category'] = category
-
+    # Save validation cache (already updated with dates before HTML generation)
     save_validation_cache(cache_file, validation_cache)
 
     # Print summary
