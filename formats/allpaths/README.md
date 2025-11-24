@@ -23,9 +23,12 @@ The AllPaths format uses depth-first search (DFS) to explore the entire story gr
 **HTML Browser (`allpaths.html`)**
 - Interactive web interface for browsing all paths
 - Collapsible path content
-- Filter by validation status (all/new/validated)
+- Time-based filters (created/modified last day/week)
+- Validation status filters (validated/new)
 - Statistics dashboard showing path counts and lengths
 - Visual route diagrams for each path
+- Creation and modification dates for all paths
+- Same consistent interface in PR preview and deployment
 
 **Individual Text Files (Two Formats)**
 
@@ -108,54 +111,59 @@ dist/
 
 Open `dist/allpaths.html` in a web browser to:
 
-1. **View statistics** - See total paths, lengths, new vs validated
-2. **Filter paths** - Show all, only new, or only validated paths
+1. **View statistics** - See total paths, lengths, validated vs new status
+2. **Filter paths** - Use time-based and validation status filters
 3. **Browse paths** - Click "Show Content" to read each path
-4. **Track routes** - See the exact sequence of passages in each path
+4. **Track progress** - View creation and modification dates for all paths
+5. **Track routes** - See the exact sequence of passages in each path
 
-**Understanding Path Categories:**
+**Single Consistent Interface:**
 
-AllPaths categorization adapts to provide the most useful information for your current context.
+AllPaths provides the same interface everywhere (PR preview and deployment). All paths display:
 
-**In Pull Requests:**
+- **Creation date** - When the path first became complete
+- **Modification date** - When the path's content was last changed
+- **Validation status** - Whether the path has been reviewed for continuity
+- **Route** - The sequence of passages
+- **Length** - Number of passages in the path
 
-When viewing allpaths.html in PR build artifacts, categories answer: *"What's changing in this PR?"*
+**Time-Based Filters:**
 
-- **New** - Paths introduced by this PR (don't exist on base branch)
-- **Modified** - Paths whose content changed in this PR
-- **Unchanged** - Paths not affected by this PR
-
-Use these categories to:
-- Validate PR changes before merging
-- Understand the scope and impact of proposed changes
-- Review which story paths will be affected
-- Catch unintended consequences
-
-**On the Deployed Site:**
-
-When viewing allpaths.html on the deployed site (main branch), you see: *"When were paths created and modified?"*
-
-All paths are displayed with their creation and modification dates. Use filters to view:
+Filter paths to find recent activity:
 - **Created Last Day** - Paths created in the last 24 hours
 - **Created Last Week** - Paths created in the last 7 days
 - **Modified Last Day** - Paths modified in the last 24 hours
 - **Modified Last Week** - Paths modified in the last 7 days
 
-Use this information to:
-- Track NaNoWriMo daily and weekly writing progress
-- Find paths completed today or this week
-- Identify actively worked content (recently modified)
-- Coordinate collaborative writing (see what teammates worked on)
-- Monitor writing velocity over time
-- Review path history and timeline
+**Validation Status Filters:**
 
-**Why Information Differs:**
+Track quality assurance progress:
+- **Validated** - Paths that have been reviewed and approved for continuity
+- **New** - Paths that have not yet been validated
 
-Path information differs between PR and deployment contexts. This is expected and correct:
-- PR context optimizes for understanding **changes** - shows New/Modified/Unchanged categories
-- Deployment context optimizes for understanding **timeline** - shows creation/modification dates with filters
-- Each view answers different questions with different information needs
-- Same underlying data, different perspectives for different purposes
+**Combining Filters:**
+
+Multiple filters can be active simultaneously (AND logic). For example:
+- "Created last week AND validated" - Recently created paths that have been reviewed
+- "Modified last day AND new" - Recently updated paths that need validation
+
+**Use Cases:**
+
+Use AllPaths browsing to:
+- **Track NaNoWriMo progress** - See paths created today or this week
+- **Monitor writing velocity** - Track daily and weekly creation rates
+- **Coordinate collaboration** - See what teammates worked on recently
+- **Focus validation work** - Find paths that need review
+- **Validate PR changes** - Verify new and modified paths before merging
+- **Review story timeline** - See when different branches were created and modified
+
+**Consistent Behavior:**
+
+The AllPaths HTML is identical in PR preview and deployment. This means:
+- PR preview shows exactly what will be deployed
+- No surprising differences between contexts
+- Same filters and features available everywhere
+- Writers can validate changes with confidence
 
 ### AI Continuity Checking
 
