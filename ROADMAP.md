@@ -74,10 +74,17 @@ AI-powered webhook service automatically checks story paths for continuity issue
 - Webhook service triggered on PR workflow completion
 - Ollama-based AI analysis of each story path
 - Real-time progress updates as paths complete
-- Detailed issue reporting with severity levels
+- Detailed issue reporting with severity levels in PR comments
 - Three validation modes: new-only (fast), modified (pre-merge), all (full audit)
 - Path approval workflow to skip validated paths
-- Content-based change detection
+- Content-based change detection using git-based categories (internal)
+
+**How It Determines What to Validate:**
+- Uses internal git-based categories (NEW/MODIFIED/UNCHANGED) to decide what needs checking
+- NEW paths: Contain genuinely new prose, always need validation
+- MODIFIED paths: Navigation changed but prose is same, may need validation
+- UNCHANGED paths: Nothing changed, skip validation
+- These categories are internal - not displayed in AllPaths HTML
 
 **Key Innovation:** Uses random passage IDs in AI prompts to prevent confusion from semantic passage names that players never see.
 
@@ -197,33 +204,34 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 
 Features currently being built or refined based on usage.
 
-### Context-Aware Path Categorization
+### AllPaths Progress Tracking
 **Status:** ✅ Active Feature
 **Target:** Core Feature (Ongoing)
 **Priority:** HIGH
-**User Impact:** Writers get meaningful path categorization in all contexts
+**User Impact:** Writers track progress and browse all story paths
 
-**Purpose:** Provide context-appropriate categorization that answers different questions in different situations:
-- In PRs: "What's changing in this PR?"
-- On deployed site: "What's recent in the story?"
+**Purpose:** Provide a comprehensive browsing interface for all story paths with progress tracking and validation status.
 
 **How It Works:**
-- **PR builds:** Git-relative categories show changes in this PR (New/Modified/Unchanged)
-- **Deployment builds:** Time-based categories show recent activity (Recent/Updated/Older)
-- Clear UI indicators show active context
-- Documentation explains why categories differ
+- **Consistent interface:** Same HTML generated for all builds (PR preview and deployment)
+- **Date display:** Shows creation and modification dates for all paths
+- **Time-based filters:** Created/Modified Last Day or Week filters for finding recent work
+- **Validation status:** Shows which paths have been validated for continuity
+- **Progress tracking:** Monitor NaNoWriMo daily and weekly writing progress
 
 **Key Capabilities:**
-- Automatic context detection (PR vs deployment)
-- Configurable time thresholds (7 days for Recent, 30 days for Updated)
-- Consistent UI design with context-appropriate labels
-- Backward compatible with existing workflows
+- View all paths with route, dates, and validation status
+- Filter by recent activity (1 day, 7 days)
+- Filter by validation status (validated or new)
+- Same interface in PR preview and deployment
+- Client-side filtering for instant response
 
 **User Benefits:**
-- PR reviewers understand scope of changes
-- Writers track NaNoWriMo progress and find recent work
-- Clear transparency about what categories mean
-- No confusion about why categories differ between contexts
+- Track daily and weekly writing progress toward NaNoWriMo goals
+- Find paths created or modified recently
+- Coordinate collaborative writing (see what teammates worked on)
+- Validate PR changes with confidence (preview matches deployment)
+- Monitor which paths have been reviewed for quality
 
 **Related Documents:** [features/allpaths-categorization.md](features/allpaths-categorization.md)
 

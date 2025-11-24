@@ -1,95 +1,112 @@
-# Feature PRD: AllPaths Context-Aware Categorization
+# Feature PRD: AllPaths Progress Tracking
 
 **Status:** ✅ Active Feature
 **Owner:** Product Manager
-**Last Updated:** 2025-11-23
+**Last Updated:** 2025-11-24
 **Priority:** Core Feature
 
 ---
 
 ## Executive Summary
 
-Writers need different information when viewing paths in different contexts. During pull request review, they need to see **what's changing in this PR**. On the deployed site, they need to see **when paths were created and modified**.
+Writers need to track progress and browse all story paths during active writing. AllPaths provides a comprehensive browsing interface showing all paths with their creation and modification dates, along with flexible filtering to find recent activity.
 
-AllPaths adapts to context, providing the right information at the right time:
-- **PR Context:** Git-relative categories show changes in this PR (New, Modified, Unchanged)
-- **Deployment Context:** All paths displayed with creation/modification dates and flexible filters (created/modified in last day or week)
+**Key Capabilities:**
+- View all story paths in a single browsable HTML interface
+- See when each path was created and last modified
+- Filter by recent activity (created/modified in last day or week)
+- Track validation status (which paths have been checked for continuity)
+- Same consistent interface in PR preview and deployment
 
-This context-aware approach ensures writers always get meaningful, actionable information regardless of where they're viewing paths.
+This browsing feature helps writers track NaNoWriMo progress, find recent work, and understand story evolution over time.
 
 ---
 
 ## User Needs
 
-Writers interact with AllPaths in two distinct contexts, each with different information needs:
+### Need 1: Browse All Story Paths
+**Context:** Writing and reviewing the story
 
-### Need 1: Understanding PR Changes
-**Context:** Reviewing a pull request before merging
-
-**User Goal:** Understand the impact of proposed changes on the story
+**User Goal:** See all possible paths through the story
 
 **Questions Writers Need Answered:**
-- Which paths are new in this PR?
-- Which existing paths will change if we merge?
-- Which paths are unaffected by this PR?
-- What's the scope of this change?
+- What are all the possible ways players can experience the story?
+- How many paths exist?
+- What's the route through each path?
+- What content appears in each path?
 
-**Why This Matters:** Writers need to validate changes, catch unintended consequences, and approve PRs with confidence.
+**Why This Matters:** Writers need to understand the full scope of the branching narrative and ensure all paths are intentional and complete.
 
 ---
 
-### Need 2: Tracking Writing Progress
-**Context:** Viewing the deployed site during active writing
+### Need 2: Track Writing Progress
+**Context:** Active writing during NaNoWriMo
 
-**User Goal:** Monitor recent writing activity and story evolution
+**User Goal:** Monitor recent writing activity and progress toward goals
 
 **Questions Writers Need Answered:**
 - Which paths were created in the last day or week?
 - Which paths were modified in the last day or week?
 - When was each path first created and last modified?
 - Where is the story growing and what's actively being worked on?
+- How much progress have I made today/this week?
 
-**Why This Matters:** Writers need to track progress toward NaNoWriMo goals, identify active versus stable content, and coordinate collaborative work.
+**Why This Matters:** Writers need to track progress toward NaNoWriMo goals (50,000 words), identify active versus stable content, and coordinate collaborative work.
 
 ---
 
-### Need 3: Clear Context Indicators
-**Context:** Using AllPaths in either PR or deployment context
+### Need 3: Track Validation Status
+**Context:** Reviewing story quality
 
-**User Goal:** Understand what the categories mean in the current view
+**User Goal:** Know which paths have been checked for continuity
 
 **Questions Writers Need Answered:**
-- What do these categories represent right now?
-- Why do categories differ between PR and deployed site?
-- How should I interpret this information?
+- Which paths have been validated for continuity?
+- Which paths still need review?
+- Has this path been checked by the AI?
+- Are there any known issues with this path?
 
-**Why This Matters:** Writers need transparency to trust the automation and make informed decisions.
+**Why This Matters:** Writers need to ensure story quality and track which paths have been reviewed, avoiding duplicate work and maintaining confidence in the story.
+
+---
+
+### Need 4: Consistent Interface
+**Context:** Viewing AllPaths in different environments (PR preview, deployment)
+
+**User Goal:** Get the same information regardless of where I'm viewing
+
+**Questions Writers Need Answered:**
+- Will the deployed version look the same as the PR preview?
+- Can I trust the PR preview to show what will be deployed?
+- Do I need to learn different interfaces for different contexts?
+
+**Why This Matters:** Writers need to validate changes in PR previews with confidence that the deployment will match what they see.
 
 ---
 
 ## User Stories
 
-### Story 1: Reviewing Pull Request Changes
-**As a** writer reviewing a pull request
-**I want** to see which paths are affected by this PR
-**So that** I can validate the changes and understand the impact before merging
+### Story 1: Browsing All Story Paths
+**As a** writer working on the story
+**I want** to see all possible paths in a single browsable interface
+**So that** I can understand the full scope of the branching narrative
 
 **Acceptance Criteria:**
-- Categorization shows changes relative to base branch
-- "New" category identifies paths introduced by this PR
-- "Modified" category identifies paths whose content changed in this PR
-- "Unchanged" category identifies paths not affected by this PR
-- Filter buttons allow focusing on new or modified paths
-- Clear indicators show this is PR-specific comparison
+- All paths displayed in a single HTML page
+- Each path shows its route (sequence of passages)
+- Path content is collapsible for easy navigation
+- Statistics show total paths, lengths, and counts
+- Paths are clearly numbered and identified
+- Interface is usable on desktop and mobile
 
-**How We Deliver:** Git-relative categorization compares PR branch against base branch, providing a diff-style view of story changes.
+**How We Deliver:** Single HTML file generated at build time with all paths, interactive JavaScript for collapsing/expanding content.
 
 ---
 
-### Story 2: Monitoring Writing Progress
-**As a** writer viewing the deployed site during active writing
-**I want** to see all paths with their creation and modification dates, with filters to view recent activity
-**So that** I can track progress and coordinate with other authors
+### Story 2: Tracking Writing Progress
+**As a** writer during active NaNoWriMo writing
+**I want** to see when paths were created and modified, with filters for recent activity
+**So that** I can track my progress toward goals and find recent work
 
 **Acceptance Criteria:**
 - All paths display their creation date and last modification date
@@ -99,86 +116,88 @@ Writers interact with AllPaths in two distinct contexts, each with different inf
 - Filter: "Modified last week" shows paths modified in the last 7 days
 - Multiple filters can be active simultaneously
 - Dates are shown in human-readable format with actual timestamps
-- Clear indicators explain what each filter does
+- Filter buttons clearly indicate active state
+- Statistics update when filters are applied
 
-**How We Deliver:** Display all paths with metadata, provide flexible filtering options based on creation and modification dates from validation cache.
+**How We Deliver:** Date metadata from validation cache displayed with each path, client-side JavaScript filtering for instant response.
 
 ---
 
-### Story 3: Understanding Context-Specific Information
-**As a** writer using AllPaths in different contexts
-**I want** to understand what information is shown and how to use it
-**So that** I can interpret the data correctly and make informed decisions
+### Story 3: Tracking Validation Status
+**As a** writer ensuring story quality
+**I want** to see which paths have been validated for continuity
+**So that** I can focus my review on unchecked paths
 
 **Acceptance Criteria:**
-- Banner or header clearly indicates current context (PR or Deployment)
-- In PR context: Categories (New/Modified/Unchanged) are clearly labeled
-- In deployment context: Filters and date metadata are clearly explained
-- Help text explains available features in current context
-- Documentation explains why information differs between contexts
-- Consistent UI design across both contexts
+- Paths show validation status badge ("Validated" or "New")
+- Visual indicator distinguishes validated from unvalidated paths
+- Can filter to show only validated or only new paths
+- Statistics show count of validated vs new paths
+- Validation status updates when paths are approved
 
-**How We Deliver:** Context detection determines environment, UI adapts to show categories (PR) or filters (deployment), clear documentation explains both modes.
+**How We Deliver:** Validation status from cache displayed as badges, filter buttons for validated/new paths, visual styling differentiates status.
+
+---
+
+### Story 4: Consistent Interface Everywhere
+**As a** writer reviewing PR previews
+**I want** to see the same AllPaths interface in PR preview and deployment
+**So that** I can validate changes with confidence that deployment will match
+
+**Acceptance Criteria:**
+- PR preview AllPaths HTML matches deployment AllPaths HTML
+- Same date filters available in both contexts
+- Same validation status displayed in both contexts
+- Same visual design and layout in both contexts
+- No surprising differences between PR and deployment
+- Documentation clarifies that interface is consistent
+
+**How We Deliver:** Single HTML generation logic produces identical output for PR and deployment builds, no context-specific UI variations.
 
 ---
 
 ## Feature Behavior
 
-AllPaths categorization adapts based on the build context, providing relevant information for each situation.
+AllPaths provides a consistent browsing interface showing all story paths with date metadata, filtering, and validation status.
 
-### Pull Request Context
+### Path Display
 
-**When Active:** Pull request builds (GITHUB_BASE_REF environment variable is set)
+**All paths are displayed with the following information:**
 
-**Purpose:** Show what's changing in this specific PR
+**Path Metadata:**
+- **Path Number and ID** - Unique identifier for each path
+- **Route** - Sequence of passages the path travels through
+- **Length** - Number of passages in the path
+- **Creation Date** - When the path first became complete (most recent passage in the path was added)
+- **Modification Date** - When the path's content was last changed
+- **Validation Status** - Whether the path has been checked for continuity
 
-**Categorization Method:** Git-relative comparison between PR branch and base branch
-
-**Categories:**
-- **NEW** - Paths that don't exist on base branch (introduced by this PR)
-- **MODIFIED** - Paths that exist but have different content (changed by this PR)
-- **UNCHANGED** - Paths that match base branch exactly (not affected by this PR)
-
-**User Interface:**
-- Filter buttons: "New (N) | Modified (M) | Unchanged (U)"
-- Category badges: "New" (blue), "Modified" (yellow), "Unchanged" (gray)
-- Context banner: "Showing changes in this PR (comparing against [base-branch])"
-- Statistics: "X new, Y modified, Z unchanged paths"
-
-**Use Cases:**
-- Validating PR changes before merge
-- Understanding PR impact on story
-- Reviewing scope of proposed changes
-- Identifying unintended consequences
+**Visual Presentation:**
+- Each path is collapsible (click to expand/collapse content)
+- Dates displayed in human-readable format (e.g., "2025-11-23 14:30 UTC")
+- Validation status shown as badge ("Validated" or "New")
+- Visual styling differentiates validated from unvalidated paths
+- Statistics dashboard at top shows counts and totals
 
 ---
 
-### Deployment Context
+### Time-Based Filtering
 
-**When Active:** Main branch builds (GITHUB_BASE_REF is not set)
+**Purpose:** Find paths based on recent activity
 
-**Purpose:** Show when paths were created and modified, with flexible filtering for recent activity
-
-**Display Method:** All paths shown with creation and modification date metadata
-
-**Path Metadata:**
-- **Creation Date** - When the path first became complete (last passage added)
-- **Modification Date** - When the path's content was last changed
-- Both dates displayed in human-readable format with actual timestamps
-
-**Filters:**
+**Available Filters:**
 - **Created Last Day** - Paths created in the last 24 hours
 - **Created Last Week** - Paths created in the last 7 days
 - **Modified Last Day** - Paths modified in the last 24 hours
 - **Modified Last Week** - Paths modified in the last 7 days
-- Filters can be combined (e.g., "created last week AND modified last day")
 
-**User Interface:**
-- All paths listed with visible creation and modification dates
-- Filter buttons allow showing specific subsets
-- Context banner: "Showing all paths with activity filters"
-- Statistics: "X total paths, Y match active filters"
-- Clear indication when filters are active
+**Filter Behavior:**
+- Multiple filters can be active simultaneously
+- Combined filters use AND logic (e.g., "created last week AND modified last day")
+- Filter buttons clearly indicate active state
+- Statistics update to show filtered count
+- Paths with missing dates excluded from filter results
+- All paths always visible when no filters are active
 
 **Use Cases:**
 - Tracking NaNoWriMo daily and weekly progress
@@ -190,29 +209,74 @@ AllPaths categorization adapts based on the build context, providing relevant in
 
 ---
 
+### Validation Status Display
+
+**Purpose:** Track which paths have been checked for continuity
+
+**Status Types:**
+- **Validated** - Path has been reviewed and approved for continuity
+- **New** - Path has not yet been validated
+
+**Visual Indicators:**
+- Badge showing status on each path
+- Color-coded visual styling (green for validated, neutral for new)
+- Filter buttons to show only validated or only new paths
+- Statistics showing validated vs new counts
+
+**How Status Changes:**
+- Paths start as "New" when first created
+- Status updates to "Validated" when approved via `/approve-path` command
+- Status may reset to "New" if path content changes after validation
+
+**Use Cases:**
+- Tracking which paths still need review
+- Focusing review effort on unvalidated paths
+- Monitoring quality assurance progress
+- Coordinating team validation work
+
+---
+
+### Consistent Behavior Across Contexts
+
+**The same AllPaths HTML is generated for all builds:**
+- PR preview builds show the same interface as deployment
+- Same date filters available everywhere
+- Same validation status displayed everywhere
+- Same visual design and layout everywhere
+
+**Why Consistency Matters:**
+- Writers can validate PR changes with confidence that deployment will match
+- No need to learn different interfaces for different contexts
+- PR preview accurately represents what will be deployed
+- Reduces confusion and builds trust in the automation
+
+---
+
 ## Success Metrics
 
 ### User Understanding
-- **Information clarity:** Writers can explain what information is shown in each context
-- **Context awareness:** Writers understand why PR shows categories and deployment shows dates/filters
-- **Trust:** Writers cite path information (categories, dates, filters) when making decisions
+- **Interface clarity:** Writers can explain what information is shown and how to use filters
+- **Consistency:** Writers trust that PR preview matches deployment
+- **Date interpretation:** Writers correctly interpret creation and modification dates
 
 ### Feature Usage
-- **Active filtering:** Writers regularly use filters to find paths of interest
-- **PR workflow:** Reviewers use categories to understand PR scope
-- **Progress tracking:** Writers use date filters and metadata to monitor activity
+- **Active filtering:** Writers regularly use date filters to find paths of interest
+- **Progress tracking:** Writers use date filters and metadata to monitor daily/weekly activity
+- **Validation tracking:** Writers use validation status to coordinate review work
 - **Collaboration:** Teams use date information to coordinate work and track progress
 
 ### Information Quality
-- **Meaningful information:** Path data and filters provide actionable information in both contexts
-- **Accurate detection:** Context detection reliably identifies PR vs deployment environments
+- **Meaningful information:** Path data and filters provide actionable information for tracking progress
+- **Accurate dates:** Creation and modification dates correctly reflect when paths became available and changed
 - **Useful filters:** Time-based filter windows (1 day, 7 days) align with writing patterns and tracking needs
+- **Reliable validation status:** Status accurately reflects which paths have been reviewed
 
 ### Qualitative Indicators
-- Writers reference PR categories in review discussions
-- Writers use filters and dates to answer "what changed?" and "what's recent?" questions
-- No confusion or misinterpretation of context-specific information
-- Date metadata and filters cited as valuable for understanding story evolution and tracking progress
+- Writers use filters to answer "what did I write today/this week?" questions
+- Writers cite date information when discussing progress and coordinating work
+- No confusion about interface differences between PR and deployment (because there are none)
+- Date metadata cited as valuable for understanding story evolution and tracking progress
+- Validation status helps teams coordinate review work
 
 ---
 
@@ -220,56 +284,52 @@ AllPaths categorization adapts based on the build context, providing relevant in
 
 These requirements define WHAT the system must do (not HOW to implement it).
 
-### Context Detection
-The system detects build context and selects appropriate categorization:
-- **PR context:** Triggered when GITHUB_BASE_REF environment variable is set
-- **Deployment context:** Triggered when GITHUB_BASE_REF is not set
-- Detection is reliable and unambiguous
+### Path Display Requirements
+The system displays all paths with complete metadata:
+- **Path identification:** Unique ID and route for each path
+- **Date metadata:** Creation date and modification date from validation cache
+- **Validation status:** Whether path has been validated for continuity
+- **Path content:** Full prose content, collapsible for navigation
+- **Statistics:** Counts, lengths, and filtered results
 
-### Context-Specific Display Logic
-The system provides two display modes:
+### Date Data Requirements
+Date metadata must be accurate and complete:
+- **Creation date:** Most recent commit date of passages in the path (when path became complete)
+- **Modification date:** Most recent modification date of any passage in the path
+- **Format:** Human-readable display (e.g., "2025-11-23 14:30 UTC")
+- **Missing data handling:** Display "Unknown" for missing dates, exclude from filters
+- **Time zone:** All dates in UTC to avoid ambiguity
 
-**Git-Relative Mode (PR Context):**
-- Compares PR branch against base branch
-- Identifies new, modified, and unchanged paths relative to base
-- Categorization reflects PR-specific changes
+### Time-Based Filtering Requirements
+The system provides flexible filtering based on time windows:
+- **Filter windows:** 1 day (24 hours) and 1 week (7 days) from current time
+- **Filter types:** Created and Modified for each window (4 total filters)
+- **Filter logic:** Multiple filters can be active with AND logic
+- **Filter state:** Clear visual indication of active filters
+- **Filter application:** Client-side filtering for instant response
+- **Statistics update:** Filtered counts displayed when filters are active
 
-**Date-Based Mode (Deployment Context):**
-- Displays all paths with creation and modification dates from validation cache
-- Provides filters based on time thresholds (1 day, 7 days)
-- No categorization - paths shown with metadata and flexible filtering
-- Supports multiple simultaneous filters
+### Validation Status Requirements
+The system tracks and displays validation status:
+- **Status types:** "Validated" and "New"
+- **Status source:** Validation cache `validated` field
+- **Status display:** Badge on each path, visual styling
+- **Status filters:** Can filter to show only validated or only new paths
+- **Status updates:** Updates when paths are approved via `/approve-path` command
 
-### Adaptive User Interface
-The allpaths.html interface adapts to context while maintaining consistent design:
-
-**Context Indicators:**
-- Banner clearly states current mode (PR comparison or deployment view)
-- Help text explains available features for current context
-
-**Context-Appropriate Controls:**
-- PR context: Category filter buttons (New/Modified/Unchanged) with badges
-- Deployment context: Time-based filter buttons (Created/Modified Last Day/Week) with date display
-- Clear indication of which filters are active
-- Filter controls appropriate to the information being shown
-
-**Consistent Visual Design:**
-- Same layout and structure across contexts
-- Same interaction patterns (filters, collapsible content, statistics)
-- Dates displayed in consistent, human-readable format
-
-### Filter Time Windows
-Time-based filters use fixed, meaningful windows:
-- "Last Day" filters: 24 hours from current time
-- "Last Week" filters: 7 days from current time
-- These windows align with typical writing rhythms and NaNoWriMo tracking needs
-- Filter labels clearly indicate the time window being used
+### Consistency Requirements
+The system generates identical output across all contexts:
+- **Single HTML generator:** Same code path for all builds
+- **No context detection:** No special behavior for PR vs deployment
+- **Same data displayed:** All builds show dates, filters, and validation status
+- **Same visual design:** Layout and styling identical everywhere
+- **PR preview matches deployment:** What you see in PR is what gets deployed
 
 ### Backward Compatibility
 Changes preserve existing functionality:
-- PR categorization behavior unchanged
 - Validation cache format unchanged
-- Validation modes (new-only, modified, all) work in both contexts
+- Validation modes (new-only, modified, all) work as before
+- Date fields already present in cache
 - No breaking changes to existing workflows
 
 ---
@@ -280,9 +340,10 @@ Changes preserve existing functionality:
 **Scenario:** First build with no prior history
 
 **Behavior:**
-- PR context: All paths categorized as "new" (nothing exists on base branch)
-- Deployment context: All paths show creation dates from initial commit, filters work based on actual dates
-- Both behaviors are correct and expected
+- All paths show creation dates from initial commit
+- Filters work based on actual dates
+- All paths likely match "created last day/week" filters
+- Validation status shows all paths as "New"
 
 **Why It Works:** Fresh repositories legitimately have all-new content with recent dates, filters accurately show what was created when.
 
@@ -292,7 +353,7 @@ Changes preserve existing functionality:
 **Scenario:** No changes for extended period (60+ days)
 
 **Behavior:**
-- Deployment context: All filters show zero results (nothing created or modified recently)
+- All filters show zero results (nothing created or modified recently)
 - All paths display with their actual (old) creation and modification dates
 - Statistics show 0 paths matching any time-based filter
 - Accurately represents repository inactivity
@@ -319,7 +380,7 @@ Changes preserve existing functionality:
 
 **Behavior:**
 - All date comparisons use UTC
-- Dates displayed in UTC or ISO format with clear timezone indicator
+- Dates displayed in UTC format with clear timezone indicator (e.g., "2025-11-23 14:30 UTC")
 - "Last Day" and "Last Week" filters operate on UTC time
 - Behavior consistent regardless of author or server time zones
 
@@ -327,15 +388,16 @@ Changes preserve existing functionality:
 
 ---
 
-### Non-Main Branch PRs
-**Scenario:** PR from feature-branch-B into feature-branch-A
+### Path Content Changes After Validation
+**Scenario:** Path is validated, then content changes
 
 **Behavior:**
-- Git-relative categorization compares against actual base branch (feature-branch-A)
-- Categories show changes relative to target branch, not main
-- Works correctly for any branch combination
+- Content-based hash detects the change
+- Validation status may reset to "New" (depending on implementation)
+- Path appears in "new" filter results if status resets
+- Writers can re-validate using `/approve-path` command
 
-**Why It Works:** Git comparison logic uses actual base branch reference, not hardcoded "main" assumption.
+**Why It Works:** Content changes may introduce new continuity issues, so re-validation ensures quality is maintained.
 
 ---
 
@@ -343,28 +405,16 @@ Changes preserve existing functionality:
 **Scenario:** Developer runs build locally (no CI environment)
 
 **Behavior:**
-- No GITHUB_BASE_REF environment variable present
-- System treats as deployment context (date display with filters)
-- Local builds show all paths with creation/modification dates and filters
+- Same interface as deployed version
+- Shows all paths with creation/modification dates and filters
+- Validation status displayed from cache
+- No special behavior for local builds
 
-**Why It Works:** Default to deployment context provides useful information for local testing, developers can manually set environment variable if needed.
+**Why It Works:** Consistent behavior everywhere makes local testing reliable and predictable.
 
 ---
 
 ## Risk Considerations
-
-### Context Confusion
-**Risk:** Writers may not understand why information differs between PR and deployment views
-
-**Mitigation:**
-- Prominent context banners on every allpaths page
-- Clear help text explaining available features (categories vs filters)
-- Documentation section addressing "why does this differ between contexts?"
-- Consistent terminology within each context
-
-**Monitoring:** Track user questions and feedback about context-specific features
-
----
 
 ### Filter Utility
 **Risk:** The "Last Day" and "Last Week" filters may not match writers' needs
@@ -394,15 +444,29 @@ Changes preserve existing functionality:
 ---
 
 ### Performance Concerns
-**Risk:** Date filtering may slow page rendering
+**Risk:** Date filtering may slow page rendering or interaction
 
 **Mitigation:**
 - Dates already stored in validation cache (no expensive operations)
 - Date comparisons are fast (simple arithmetic in browser JavaScript)
 - Filtering happens client-side for instant response
 - No additional build-time computation needed
+- Test with large path counts (100+) to ensure responsiveness
 
 **Monitoring:** Track page load and interaction performance
+
+---
+
+### Date Interpretation
+**Risk:** Writers may misunderstand what creation vs modification dates mean
+
+**Mitigation:**
+- Clear labels explaining each date type
+- Documentation defines "creation date" and "modification date"
+- Help text or tooltips explaining the difference
+- Consistent date formatting across the interface
+
+**Monitoring:** Track user questions about date meanings
 
 ---
 
@@ -411,82 +475,94 @@ Changes preserve existing functionality:
 These criteria define when the feature is working correctly.
 
 ### Core Functionality
-- Deployment builds display all paths with creation and modification dates
-- Deployment builds provide filters: Created Last Day, Created Last Week, Modified Last Day, Modified Last Week
-- PR builds display git-relative categories (New/Modified/Unchanged)
-- Context detection correctly identifies PR vs deployment environment
-- PR categorization logic produces accurate results
+- All builds display all paths with creation and modification dates
+- Filter buttons provided: Created Last Day, Created Last Week, Modified Last Day, Modified Last Week
 - Filter buttons work correctly and can be combined
 - Dates displayed in human-readable format with timestamps
+- Validation status displayed for each path (Validated or New)
+- Statistics show total paths, filtered counts, and validation counts
 
 ### User Experience
-- AllPaths page clearly indicates active context (banner or header)
-- PR context shows category labels (New/Modified/Unchanged)
-- Deployment context shows filter buttons and date metadata
-- Help text explains available features in current context
-- Documentation addresses why information differs between contexts
-- UI maintains consistent design across both contexts
+- AllPaths page shows consistent interface in all contexts
+- Date metadata visible on all paths
+- Filter buttons clearly indicate active state
+- Validation status badges clearly visible
+- Help text explains available features
+- UI maintains consistent design everywhere
 - Statistics accurately reflect total paths and filter results
+- No surprising differences between PR preview and deployment
 
 ### Data Requirements
 - Date display uses validation cache `created_date` and `commit_date` fields
+- Validation status uses validation cache `validated` field
 - Missing date metadata handled gracefully (shows "Unknown", doesn't break page)
 - Filter time windows: 24 hours (Last Day), 7 days (Last Week)
 - Date comparisons use UTC to avoid time zone issues
 - Paths with missing dates excluded from filter results
 
 ### Compatibility
-- PR workflow behavior unchanged (backward compatible)
-- Validation modes (new-only, modified, all) work in both contexts
 - Validation cache format unchanged
-- Existing PR comment format preserved
+- Validation modes (new-only, modified, all) work as before
 - No breaking changes to automation or workflows
+- Date fields already present in cache (no migration needed)
 
 ### Quality
 - Feature behavior documented in README
 - Edge cases handled appropriately
-- Performance impact negligible (build times unchanged)
+- Performance impact negligible (build times unchanged, filtering instant)
 - Code maintainable and well-documented
 
 ---
 
 ## User Documentation
 
-User-facing documentation explains how path information works and why it differs between contexts.
+User-facing documentation explains how to use the AllPaths browsing interface.
 
 ### AllPaths README
 
-The `formats/allpaths/README.md` includes a "Understanding Path Categories" section that explains:
+The `formats/allpaths/README.md` includes a "Using AllPaths for Progress Tracking" section that explains:
 
-**Context-Aware Behavior:**
-- Information adapts based on where you're viewing paths
-- Different contexts answer different questions
+**Browsing Paths:**
+- All paths displayed in a single HTML file
+- Each path shows its route, creation date, and modification date
+- Click to expand/collapse path content
+- Statistics show total paths and current filter results
 
-**Pull Request Context:**
-- Shows what's changing in the PR
-- Categories: New, Modified, Unchanged
-- Use case: Validating PR changes and understanding impact
+**Tracking Progress:**
+- Creation date: When the path first became complete
+- Modification date: When the path's content was last changed
+- Use date filters to find recent work
+- Track daily and weekly progress toward NaNoWriMo goals
 
-**Deployment Context:**
-- Shows all paths with creation and modification dates
-- Filters: Created Last Day/Week, Modified Last Day/Week
-- Use case: Tracking progress, finding recent work, monitoring writing velocity
+**Using Filters:**
+- Created Last Day: Paths created in the last 24 hours
+- Created Last Week: Paths created in the last 7 days
+- Modified Last Day: Paths modified in the last 24 hours
+- Modified Last Week: Paths modified in the last 7 days
+- Multiple filters can be active simultaneously
+- Statistics update to show filtered counts
 
-**Why Information Differs:**
-- PR view focuses on changes (what's different in this PR?)
-- Deployment view focuses on timeline (when were things created/modified?)
-- This is expected and correct behavior
-- Each view optimized for its specific purpose
+**Validation Status:**
+- "Validated" badge: Path has been checked for continuity
+- "New" badge: Path has not yet been validated
+- Filter to show only validated or only new paths
+- Status updates when paths are approved
+
+**Consistent Interface:**
+- Same interface in PR preview and deployment
+- What you see in PR preview is what gets deployed
+- No surprising differences between contexts
 
 ### Contributing Guide
 
 The CONTRIBUTING.md includes a section on PR build artifacts:
 
-**Understanding PR Information:**
-- Explains that PR builds show changes relative to base branch (New/Modified/Unchanged)
-- Clarifies that deployed site shows different information (dates and filters)
-- Helps contributors understand what they'll see in build artifacts
-- Sets expectations about why information differs between contexts
+**AllPaths in PR Previews:**
+- PR build artifacts include allpaths.html
+- Shows the same interface that will be deployed
+- Use date filters to see recent work
+- Validate that PR preview matches expectations
+- Deployment will match what you see in PR preview
 
 ---
 
@@ -500,16 +576,17 @@ The CONTRIBUTING.md includes a section on PR build artifacts:
 
 ## Design Decisions
 
-### Context Detection Method
-**Decision:** Use GITHUB_BASE_REF environment variable to detect PR context
+### Consistent Interface Everywhere
+**Decision:** Generate identical AllPaths HTML for all builds (PR and deployment)
 
 **Rationale:**
-- Reliable indicator of PR builds (set by GitHub Actions)
-- No additional git commands needed
-- Clear and unambiguous
-- Easy to override for testing if needed
+- Writers need to validate PR changes with confidence that deployment will match
+- Reduces confusion - same interface everywhere
+- Simplifies implementation - single code path
+- Aligns with principle: "PR build output should match deployment"
+- No surprising differences between contexts
 
-**Alternative Considered:** Git commands to check branch status (rejected due to complexity and potential errors)
+**Alternative Considered:** Context-aware UI with different displays for PR vs deployment (rejected - violates principle, confuses writers)
 
 ---
 
@@ -541,6 +618,20 @@ The CONTRIBUTING.md includes a section on PR build artifacts:
 
 ---
 
+### Display Validation Status in HTML
+**Decision:** Show validation status badges and filters in AllPaths HTML
+
+**Rationale:**
+- Writers need to see which paths have been validated
+- Helps coordinate review work across team
+- Integrates browsing with quality tracking
+- Status already in cache - no additional computation
+- Complements continuity checking feature
+
+**Alternative Considered:** Hide validation status from HTML (rejected - less useful, status is valuable information)
+
+---
+
 ### UI Transparency
 **Decision:** Always show actual dates and make filter behavior explicit
 
@@ -555,42 +646,30 @@ The CONTRIBUTING.md includes a section on PR build artifacts:
 
 ---
 
-### Local Build Behavior
-**Decision:** Local builds default to deployment context (date display with filters)
-
-**Rationale:**
-- More useful for local testing (see when paths were created/modified)
-- Consistent with deployed site behavior
-- Developers can manually set GITHUB_BASE_REF if PR context needed
-- Reasonable default for most use cases
-
-**Alternative Considered:** No date display in local builds (rejected as less useful)
-
----
-
 ## Design Principles Applied
 
 This feature demonstrates several core principles:
 
 **Writers First (Principle #1):**
-- Information provides value in both contexts
-- Display adapted to writer's current need (changes vs timeline)
-- All data transparent and accessible
-- Clear explanations prevent confusion
+- Consistent interface reduces cognitive load
+- Progress tracking helps writers monitor NaNoWriMo goals
+- Date filters provide actionable information for daily writing
+- Validation status helps coordinate review work
 
 **Transparency and Inspectability (Principle #5):**
-- Context clearly indicated on every page
 - Actual dates always visible - no hidden information
 - Filter behavior explicit and understandable
+- Validation status clearly displayed
 - No mysterious categories or hidden logic
-
-**Multiple Perspectives, Same Source (Principle #4):**
-- Same underlying data, different views
-- PR view shows changes, deployment view shows timeline
-- Each optimized for its specific purpose
 
 **Fast Feedback Loops (Principle #3):**
 - Date display happens automatically on every build
 - Filters respond instantly in browser
 - No manual work needed
 - Writers get immediate, actionable information
+
+**PR Preview Matches Deployment:**
+- Same HTML generated for all builds
+- Writers validate changes with confidence
+- No surprising differences between contexts
+- Reduces risk and builds trust
