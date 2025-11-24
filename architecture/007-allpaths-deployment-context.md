@@ -320,326 +320,6 @@ function updatePathVisibility() {
 
 ---
 
-## Implementation Plan
-
-### Phase 1: Generator Changes (Python)
-
-**File:** `/home/user/NaNoWriMo2025/formats/allpaths/generator.py`
-
-**Changes:**
-
-1. **Detect context in main()**
-```python
-# Around line 1422
-is_pr_context = bool(os.getenv('GITHUB_BASE_REF'))
-print(f"Context: {'PR' if is_pr_context else 'Deployment'}", file=sys.stderr)
-```
-
-2. **Pass context to HTML generator**
-```python
-# Around line 1440
-html_output = generate_html_output(story_data, passages, all_paths,
-                                   validation_cache, path_categories,
-                                   is_pr_context=is_pr_context)
-```
-
-3. **Update HTML generator signature**
-```python
-# Around line 857
-def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[str]],
-                        validation_cache: Dict = None, path_categories: Dict[str, str] = None,
-                        is_pr_context: bool = False) -> str:
-```
-
-4. **Add date data attributes to path elements**
-```python
-# Around line 1224 (in path HTML generation)
-created_date = validation_cache.get(path_hash, {}).get('created_date', '')
-commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
-
-html += f'''
-    <div class="path {category}" data-status="{category}"
-         data-created-date="{created_date}"
-         data-modified-date="{commit_date}">
-'''
-```
-
-5. **Conditional filter section rendering**
-```python
-# Around line 1200 (filter section)
-if is_pr_context:
-    # Render category filters (existing code)
-    html += generate_pr_filter_section(new_count, modified_count, unchanged_count)
-else:
-    # Render date filters (new code)
-    html += generate_deployment_filter_section()
-```
-
-6. **Conditional metadata display**
-```python
-# Around line 1240 (path metadata)
-if is_pr_context:
-    # Show category badge (existing)
-    html += f'<span class="badge {category_badge_class}">{category_text}</span>'
-else:
-    # Show creation and modification dates (new)
-    if created_date:
-        html += f'<div class="path-meta-item">📅 Created: {format_date(created_date)}</div>'
-    if commit_date:
-        html += f'<div class="path-meta-item">🔄 Modified: {format_date(commit_date)}</div>'
-```
-
-7. **Add date formatting helper**
-```python
-def format_date_for_display(iso_date: str) -> str:
-    """Format ISO date for human-readable display.
-
-    Args:
-        iso_date: ISO format datetime string from git
-
-    Returns:
-        Human-readable date string with UTC indicator
-    """
-    if not iso_date:
-        return "Unknown"
-
-    try:
-        dt = datetime.fromisoformat(iso_date.replace('Z', '+00:00'))
-        return dt.strftime('%Y-%m-%d %H:%M UTC')
-    except:
-        # Fallback: show first 16 chars (date + time)
-        return iso_date[:16] if len(iso_date) >= 16 else "Unknown"
-```
-
-### Phase 2: HTML/JavaScript Changes
-
-**File:** Generated HTML in `generate_html_output()` function
-
-**Changes:**
-
-1. **Add context banner**
-```html
-<!-- Around line 1160 (after header) -->
-<div class="context-banner {{'pr-context' if is_pr_context else 'deployment-context'}}">
-    {{% if is_pr_context %}}
-        📊 Pull Request View: Comparing changes against base branch
-        <div class="context-help">
-            Categories show what's changing in this PR. Use filters to focus on New or Modified paths.
-        </div>
-    {{% else %}}
-        📅 Deployment View: All paths with creation and modification dates
-        <div class="context-help">
-            Filters help you find paths created or modified recently. All paths remain visible.
-        </div>
-    {{% endif %}}
-</div>
-```
-
-2. **Add date filter buttons (deployment context)**
-```html
-<!-- Replaces category filters in deployment context -->
-<div class="filter-section">
-    <h3>Date Filters</h3>
-    <div class="filter-buttons">
-        <button class="filter-btn" onclick="filterCreatedLastDay(this)">
-            Created Last Day
-        </button>
-        <button class="filter-btn" onclick="filterCreatedLastWeek(this)">
-            Created Last Week
-        </button>
-        <button class="filter-btn" onclick="filterModifiedLastDay(this)">
-            Modified Last Day
-        </button>
-        <button class="filter-btn" onclick="filterModifiedLastWeek(this)">
-            Modified Last Week
-        </button>
-        <button class="filter-btn" onclick="clearAllFilters()">
-            Clear Filters
-        </button>
-    </div>
-    <div id="filter-status" class="filter-status"></div>
-</div>
-```
-
-3. **Add CSS for context banner**
-```css
-.context-banner {
-    background: white;
-    margin: 2rem auto;
-    max-width: 1200px;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    border-left: 5px solid #667eea;
-}
-
-.context-banner.pr-context {
-    border-left-color: #007bff;
-}
-
-.context-banner.deployment-context {
-    border-left-color: #28a745;
-}
-
-.context-help {
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-    color: #666;
-}
-
-.filter-status {
-    margin-top: 1rem;
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    color: #666;
-}
-```
-
-4. **Add JavaScript date filtering**
-```javascript
-// At bottom of HTML, in <script> section
-
-// Date filter state
-let activeFilters = {
-    createdLastDay: false,
-    createdLastWeek: false,
-    modifiedLastDay: false,
-    modifiedLastWeek: false
-};
-
-function filterCreatedLastDay(button) {
-    toggleFilter('createdLastDay', button);
-    applyFilters();
-}
-
-function filterCreatedLastWeek(button) {
-    toggleFilter('createdLastWeek', button);
-    applyFilters();
-}
-
-function filterModifiedLastDay(button) {
-    toggleFilter('modifiedLastDay', button);
-    applyFilters();
-}
-
-function filterModifiedLastWeek(button) {
-    toggleFilter('modifiedLastWeek', button);
-    applyFilters();
-}
-
-function toggleFilter(filterName, button) {
-    activeFilters[filterName] = !activeFilters[filterName];
-    button.classList.toggle('active');
-}
-
-function clearAllFilters() {
-    // Reset all filters
-    Object.keys(activeFilters).forEach(key => activeFilters[key] = false);
-
-    // Remove active class from all buttons
-    document.querySelectorAll('.filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
-    // Show all paths
-    document.querySelectorAll('.path').forEach(path => {
-        path.style.display = 'block';
-    });
-
-    updateFilterStatus();
-}
-
-function applyFilters() {
-    const now = Date.now();
-    const oneDayMs = 24 * 60 * 60 * 1000;
-    const oneWeekMs = 7 * oneDayMs;
-
-    const paths = document.querySelectorAll('.path');
-    let visibleCount = 0;
-
-    paths.forEach(path => {
-        let visible = true;
-
-        // Check created filters
-        if (activeFilters.createdLastDay || activeFilters.createdLastWeek) {
-            const createdDate = path.dataset.createdDate;
-            if (!createdDate || createdDate === 'Unknown') {
-                visible = false;
-            } else {
-                const pathDate = new Date(createdDate).getTime();
-                const threshold = activeFilters.createdLastDay ?
-                    (now - oneDayMs) : (now - oneWeekMs);
-
-                if (pathDate < threshold) {
-                    visible = false;
-                }
-            }
-        }
-
-        // Check modified filters (AND logic with created filters)
-        if (visible && (activeFilters.modifiedLastDay || activeFilters.modifiedLastWeek)) {
-            const modifiedDate = path.dataset.modifiedDate;
-            if (!modifiedDate || modifiedDate === 'Unknown') {
-                visible = false;
-            } else {
-                const pathDate = new Date(modifiedDate).getTime();
-                const threshold = activeFilters.modifiedLastDay ?
-                    (now - oneDayMs) : (now - oneWeekMs);
-
-                if (pathDate < threshold) {
-                    visible = false;
-                }
-            }
-        }
-
-        path.style.display = visible ? 'block' : 'none';
-        if (visible) visibleCount++;
-    });
-
-    updateFilterStatus();
-}
-
-function updateFilterStatus() {
-    const statusDiv = document.getElementById('filter-status');
-    if (!statusDiv) return;
-
-    const totalPaths = document.querySelectorAll('.path').length;
-    const visiblePaths = document.querySelectorAll('.path[style*="display: block"], .path:not([style*="display"])').length;
-
-    const activeFilterNames = Object.keys(activeFilters)
-        .filter(key => activeFilters[key])
-        .map(key => key.replace(/([A-Z])/g, ' $1').trim())
-        .map(s => s.charAt(0).toUpperCase() + s.slice(1));
-
-    if (activeFilterNames.length === 0) {
-        statusDiv.textContent = `Showing all ${totalPaths} paths`;
-    } else {
-        statusDiv.textContent = `Showing ${visiblePaths} of ${totalPaths} paths (filters: ${activeFilterNames.join(', ')})`;
-    }
-}
-
-// Initialize filter status on page load
-document.addEventListener('DOMContentLoaded', updateFilterStatus);
-```
-
-### Phase 3: Documentation Updates
-
-**Files to Update:**
-
-1. **`/home/user/NaNoWriMo2025/formats/allpaths/README.md`**
-   - Add "Context-Aware Behavior" section
-   - Explain PR context (categories)
-   - Explain deployment context (dates + filters)
-   - Document filter time windows
-   - Show example screenshots or descriptions
-
-2. **`/home/user/NaNoWriMo2025/features/allpaths-categorization.md`**
-   - Mark as "Implemented" after completion
-   - Add implementation notes
-   - Document any deviations from spec
-
 ## Consequences
 
 ### Positive
@@ -770,125 +450,67 @@ document.addEventListener('DOMContentLoaded', updateFilterStatus);
 - Harder to maintain (need to keep both UIs in sync)
 - No benefit over conditional rendering
 
-## Success Criteria
+## Validation
 
-The deployment context feature is successful if:
+The deployment context architecture can be validated by:
 
-1. ✅ Deployment builds show all paths with creation and modification dates
-2. ✅ Date filters work correctly (Created/Modified Last Day/Week)
-3. ✅ Filters can be combined (AND logic)
-4. ✅ Missing dates displayed as "Unknown" and excluded from filters
-5. ✅ PR builds continue to show categories (backward compatible)
-6. ✅ Context clearly indicated on every page (banner)
-7. ✅ Performance remains fast (build time <5 minutes, filtering instant)
-8. ✅ No breaking changes to existing workflows
+1. **Functional Tests**
+   - Deployment builds display date filters (not categories)
+   - PR builds display categories (not date filters)
+   - Date filters correctly show/hide paths based on timestamps
+   - Combined filters apply AND logic
+   - Missing dates show "Unknown" and are excluded from filters
 
-## Testing Strategy
+2. **Performance Tests**
+   - Build time remains under 5 minutes
+   - Client-side filtering completes in under 100ms for 100 paths
+   - No additional git operations during date collection
 
-### Unit Tests (Python)
+3. **Compatibility Tests**
+   - Date parsing works consistently across Chrome, Firefox, Safari
+   - Context banner displays correctly in both modes
+   - Responsive design functions on mobile devices
 
-1. **Context detection**
-   - Test with GITHUB_BASE_REF set (PR context)
-   - Test with GITHUB_BASE_REF unset (deployment context)
-
-2. **Date formatting**
-   - Test with valid ISO dates
-   - Test with missing dates
-   - Test with malformed dates (graceful degradation)
-
-3. **HTML generation**
-   - Test PR context HTML (category filters)
-   - Test deployment context HTML (date filters)
-   - Verify correct data attributes
-
-### Integration Tests (Browser)
-
-1. **Date filter functionality**
-   - Click "Created Last Day" - verify only recent paths shown
-   - Click multiple filters - verify AND logic
-   - Click "Clear Filters" - verify all paths shown
-
-2. **Context banner**
-   - PR build: Verify PR context banner shown
-   - Deployment build: Verify deployment context banner shown
-
-3. **Date display**
-   - Verify dates in human-readable format
-   - Verify "Unknown" shown for missing dates
-   - Verify dates in UTC
-
-4. **Browser compatibility**
-   - Test in Chrome, Firefox, Safari
-   - Verify date parsing works consistently
-   - Verify filtering works in all browsers
-
-### Manual Testing
-
-1. **PR workflow**
-   - Create PR with new paths
-   - Verify categories shown (not date filters)
-   - Verify category filtering works
-
-2. **Deployment workflow**
-   - Deploy to main branch
-   - Verify date filters shown (not categories)
-   - Verify date filtering works
-   - Verify date display accurate
-
-3. **Edge cases**
-   - Fresh repository (all new paths)
-   - Old repository (no recent activity)
-   - Missing date metadata
-   - Very large number of paths (100+)
-
-## Implementation Estimate
-
-**Complexity:** Medium
-
-**Estimated Effort:**
-- Python changes: 2-3 hours
-- HTML/JavaScript changes: 3-4 hours
-- CSS styling: 1 hour
-- Testing: 2-3 hours
-- Documentation: 1-2 hours
-
-**Total:** 9-13 hours of development work
-
-**Dependencies:**
-- None (all required data already available)
-
-**Risks:**
-- Low risk (incremental change, backward compatible)
+4. **Integration Tests**
+   - PR workflow remains unchanged (backward compatibility)
+   - Validation cache structure unchanged
+   - No breaking changes to existing scripts or workflows
 
 ## Future Enhancements
 
-Possible improvements beyond this ADR:
+Possible architectural improvements beyond this ADR:
 
 1. **Configurable time windows**
    - Allow custom date ranges (e.g., "Last 3 days", "Last month")
    - Store preferences in localStorage
+   - Architectural consideration: Need to maintain performance with arbitrary ranges
 
 2. **Date range picker**
    - Visual calendar for selecting arbitrary date ranges
    - More flexible than fixed time windows
+   - Architectural consideration: Calendar UI adds significant client-side complexity
 
 3. **Statistics by time period**
    - "15 paths created this week"
    - "8 paths modified today"
    - Progress graphs/charts
+   - Architectural consideration: May require server-side aggregation for large datasets
 
 4. **Sort by date**
    - Sort paths by creation date (newest first)
    - Sort paths by modification date
    - Combined with filtering for powerful queries
+   - Architectural consideration: Sorting large lists may require virtualization
 
 5. **Export filtered results**
    - Download list of paths matching filters
    - JSON export for programmatic processing
+   - Architectural consideration: Export mechanism needs to respect filter state
 
 6. **Path activity timeline**
    - Visual timeline showing when paths were created/modified
    - Heatmap of writing activity
+   - Architectural consideration: Requires data aggregation and visualization library
 
 ## References
 
@@ -902,95 +524,3 @@ Possible improvements beyond this ADR:
 - ADR-001: AllPaths Format for AI Continuity Validation
 - ADR-002: Validation Cache Architecture (date fields defined here)
 - ADR-004: Content-Based Hashing for Change Detection
-
-## Approval
-
-**Architect**: Ready for Developer implementation
-**Date**: 2025-11-23
-**Status**: Approved for implementation
-
----
-
-## Implementation Guidance for Developer
-
-When implementing this design, follow these guidelines:
-
-### Code Organization
-
-1. **Keep changes minimal**
-   - Modify existing `generate_html_output()` function (don't create new one)
-   - Add helper functions for date formatting and context-specific HTML
-   - Keep JavaScript in same file (don't create separate .js)
-
-2. **Maintain backward compatibility**
-   - Test PR workflow after changes
-   - Verify validation cache structure unchanged
-   - Ensure existing scripts continue to work
-
-3. **Follow existing patterns**
-   - Date formatting similar to existing date display (line 1246-1258)
-   - Filter buttons similar to existing category filters (line 1200-1208)
-   - JavaScript filtering similar to existing `filterPaths()` (line 1323-1338)
-
-### Critical Implementation Points
-
-1. **Context detection** (line ~1422)
-   - Use exact code from design: `is_pr_context = bool(os.getenv('GITHUB_BASE_REF'))`
-   - Pass to `generate_html_output()` as parameter
-
-2. **Data attributes** (line ~1224)
-   - Add `data-created-date` and `data-modified-date` to each path div
-   - Handle missing dates: use empty string, not null/None
-
-3. **JavaScript date comparison**
-   - All dates in UTC (already true from git)
-   - Use `Date.getTime()` for numeric comparison
-   - Check for "Unknown" before parsing
-
-4. **CSS classes**
-   - Add `.context-banner`, `.pr-context`, `.deployment-context` classes
-   - Style consistently with existing components
-
-### Testing Checklist
-
-Before submitting:
-
-- [ ] Test with GITHUB_BASE_REF set (PR context)
-- [ ] Test with GITHUB_BASE_REF unset (deployment context)
-- [ ] Test all four date filters individually
-- [ ] Test combining multiple filters
-- [ ] Test with missing date metadata
-- [ ] Test "Clear Filters" button
-- [ ] Verify PR workflow unchanged
-- [ ] Check browser console for errors
-- [ ] Validate HTML (no broken tags)
-- [ ] Test on mobile (responsive design)
-
-### Common Pitfalls to Avoid
-
-1. **Don't break existing PR workflow**
-   - Category filters must still work in PR context
-   - Categorization logic unchanged
-
-2. **Don't assume dates always present**
-   - Check for None/empty before formatting
-   - Show "Unknown" gracefully
-
-3. **Don't use local timezone**
-   - Keep everything in UTC
-   - Label dates with "UTC"
-
-4. **Don't hard-code strings**
-   - Use variables for filter labels
-   - Keep consistent with PM specification
-
-### Questions or Concerns?
-
-If you encounter any issues during implementation:
-
-1. **Design ambiguity**: Escalate to Architect (me) for clarification
-2. **Technical feasibility**: Document why and propose alternative
-3. **Performance issues**: Measure and report (target: build <5min, filter <100ms)
-4. **Scope creep**: Stay focused on PM specification, defer enhancements
-
-Good luck with implementation!
