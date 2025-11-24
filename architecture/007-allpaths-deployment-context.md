@@ -1,4 +1,4 @@
-# ADR-007: AllPaths Deployment Context with Date-Based Filtering
+# ADR-007: AllPaths Single-Interface Design with Progress Tracking
 
 ## Status
 
@@ -6,38 +6,39 @@ Accepted
 
 ## Context
 
-Writers interact with AllPaths in two fundamentally different contexts, each with distinct information needs:
+Writers need to track progress and browse story paths during active writing and PR review. The AllPaths interface serves two primary use cases:
 
-### Pull Request Context (Existing)
-During PR review, writers need to understand **what's changing in this specific PR**:
-- Which paths are new?
-- Which paths are modified?
-- Which paths are unaffected?
-- What's the scope of this change?
-
-The current implementation addresses this with git-relative categorization (New/Modified/Unchanged), comparing the PR branch against the base branch.
-
-### Deployment Context (New Requirement)
-On the deployed site during active writing, writers need to **track progress and recent activity**:
+### Use Case 1: Progress Tracking During Active Writing
+During active writing (especially NaNoWriMo), writers need to **track progress and monitor recent activity**:
 - Which paths were created in the last day or week?
 - Which paths were modified in the last day or week?
 - When was each path first created and last modified?
 - Where is the story growing and what's actively being worked on?
+- How much progress have I made today/this week?
 
-The PM has specified that deployment context should display all paths with creation and modification dates, with optional filters for recent activity.
+### Use Case 2: Validating Changes in PR Previews
+During PR review, writers need to **validate that changes look correct**:
+- Does the AllPaths HTML render correctly?
+- Do the new paths appear as expected?
+- Do dates and filters work correctly?
+- Will the deployed version match what I see in the PR preview?
 
 ### Problem Statement
 
-The current AllPaths implementation only provides git-relative categorization, which is meaningful in PR context but less useful in deployment context. Writers need:
+Writers need a **single consistent interface** that works the same way everywhere. Specifically:
 
-1. **Context-appropriate information** - Categories in PRs, dates/filters in deployment
+1. **Consistent presentation** - Same HTML in PR preview and deployment
 2. **Progress tracking** - See when paths were created and modified
 3. **Activity filtering** - Find paths created or modified in last day/week
-4. **Transparent behavior** - Understand what information is shown and why
+4. **Validation status** - Track which paths have been checked for continuity
+5. **Transparent behavior** - Understand what information is shown and why
+6. **PR preview confidence** - Trust that PR preview matches what will be deployed
+
+The current implementation lacks date display and filtering capabilities. Additionally, separating the browsing interface from the validation logic creates clearer architectural boundaries
 
 ## Decision
 
-We will implement **context-aware dual-mode rendering** in AllPaths:
+We will implement a **single consistent HTML interface** for AllPaths across all contexts (PR preview and deployment):
 
 ### Architecture Overview
 
@@ -45,278 +46,215 @@ We will implement **context-aware dual-mode rendering** in AllPaths:
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Build Process                               │
 │                                                                  │
-│  1. Detect Context (GITHUB_BASE_REF env var)                   │
-│  2. Generate paths with DFS                                     │
-│  3. Collect date metadata from git                              │
-│  4. Categorize paths (git-based)                                │
-│  5. Generate HTML with context flag                             │
-│     ├─ PR Context: Category filters + badges                   │
-│     └─ Deployment: Date display + time filters                 │
+│  1. Generate paths with DFS traversal                           │
+│  2. Load date metadata from validation cache                    │
+│  3. Load validation status from cache                           │
+│  4. Generate single HTML with:                                  │
+│     • Date display (created and modified)                       │
+│     • Time-based filters (last day/week)                        │
+│     • Validation status badges (Validated/New)                  │
+│     • Client-side filtering for all features                    │
+│                                                                  │
+│  No context detection, no conditional rendering                 │
+│  Same HTML generated for all builds                             │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Separation of Concerns
+
+**AllPaths HTML (Browsing Interface):**
+- Displays all paths with dates and validation status
+- Provides time-based filters for progress tracking
+- Always shows the same interface regardless of context
+- Used by writers for progress tracking and quality monitoring
+
+**Validation Logic (Internal to AI Continuity Checking):**
+- Categorizes paths as NEW/MODIFIED/UNCHANGED internally
+- Uses categories to determine what needs validation
+- These categories never appear in the HTML
+- Validation results appear in PR comments, not HTML
+
 ### Key Design Decisions
 
-#### 1. Context Detection
-**Decision:** Use existing `GITHUB_BASE_REF` environment variable
-
-**Implementation:**
-- PR context: `GITHUB_BASE_REF` is set (GitHub Actions PR builds)
-- Deployment context: `GITHUB_BASE_REF` is not set (main branch builds, local builds)
-- Pass context flag to HTML generator: `is_pr_context = bool(os.getenv('GITHUB_BASE_REF'))`
+#### 1. Single HTML Generator (No Context Detection)
+**Decision:** Generate identical HTML for all builds, regardless of context
 
 **Rationale:**
-- Already implemented and working correctly
-- Reliable indicator (set by GitHub Actions in PR workflows)
-- No additional detection logic needed
-- Clear and unambiguous
+- **Consistency**: PR preview matches deployment exactly
+- **Simplicity**: No conditional logic based on environment
+- **Trust**: Writers can validate changes in PR preview with confidence
+- **Maintainability**: Single code path, not two divergent implementations
+- **Principle alignment**: "PR build output should match deployment"
+
+**What This Means:**
+- No `GITHUB_BASE_REF` detection or context flags
+- No conditional rendering of different UI elements
+- Same date display, filters, and validation status in all contexts
+- HTML generator has no concept of "PR mode" vs "deployment mode"
+
+**Alternatives Considered:**
+- Context-aware rendering (different UI for PR vs deployment): Rejected because it violates consistency principle, confuses writers, and makes PR previews untrustworthy
 
 ---
 
 #### 2. Date Data Source
-**Decision:** Use existing git integration and validation cache
-
-**Implementation:**
-- Dates already collected via `get_path_creation_date()` and `get_path_commit_date()`
-- Already stored in validation cache (`created_date`, `commit_date`)
-- Pass date data to HTML template along with path metadata
-- No changes to date collection logic needed
+**Decision:** Load date metadata from validation cache
 
 **Rationale:**
-- Data already available - no new git queries needed
-- Dates already in UTC ISO format (consistent, timezone-safe)
-- Validation cache already persists dates across builds
-- Zero performance impact (no additional git operations)
+- **Already available**: Dates collected via `get_path_creation_date()` and `get_path_commit_date()` during build
+- **Cached**: Stored in validation cache (`created_date`, `commit_date` fields)
+- **Standardized**: Dates in UTC ISO format (consistent, timezone-safe)
+- **No performance cost**: No additional git operations needed at HTML generation time
+- **Persistent**: Cache preserves dates across builds
+
+**What This Means:**
+- HTML generator reads `created_date` and `commit_date` from cache
+- Dates displayed in human-readable format with timestamps
+- Missing dates show "Unknown" (transparent, no assumptions)
+- UTC format eliminates timezone ambiguity
 
 ---
 
-#### 3. Filter Implementation Location
-**Decision:** Client-side JavaScript filtering
-
-**Implementation:**
-```javascript
-// In allpaths.html
-function filterByDate(filterType, days) {
-    const now = Date.now();
-    const threshold = now - (days * 24 * 60 * 60 * 1000);
-
-    paths.forEach(path => {
-        const dateField = filterType === 'created' ?
-            path.dataset.createdDate : path.dataset.modifiedDate;
-
-        if (!dateField || dateField === 'Unknown') {
-            path.style.display = 'none'; // Exclude unknown dates
-            return;
-        }
-
-        const pathDate = new Date(dateField).getTime();
-        path.style.display = pathDate >= threshold ? 'block' : 'none';
-    });
-}
-```
+#### 3. Filter Implementation (Client-Side)
+**Decision:** Implement all filtering in browser JavaScript (time-based and validation status)
 
 **Rationale:**
 - **Instant response**: No page reload or server round-trip
-- **Simple implementation**: Date comparison is fast in JavaScript
-- **Low complexity**: Dates already in ISO format (easy to parse)
-- **Multiple filter support**: Easy to combine filters with AND logic
+- **Simple implementation**: Date and status comparisons are fast in JavaScript
+- **Flexible**: Multiple filters can be active simultaneously with AND logic
 - **Performance**: Date parsing and comparison is trivial for ~50-100 paths
-- **Consistency**: Same approach as existing category filters
+- **Same everywhere**: Filtering logic identical in PR and deployment
+
+**What This Means:**
+- Time-based filters: "Created Last Day/Week", "Modified Last Day/Week"
+- Validation status filters: "Validated", "New"
+- All filters operate on data attributes in HTML (`data-created-date`, `data-validated`, etc.)
+- Filter state tracked in JavaScript, applied by toggling visibility
+- Statistics update dynamically to reflect filtered results
 
 **Alternatives Considered:**
-- Server-side pre-filtering: Rejected (slower, requires page regeneration, less flexible)
-- WebAssembly: Rejected (overkill for simple date comparisons)
+- Server-side pre-filtering: Rejected (slower, less responsive, requires multiple HTML files for filter combinations)
+- WebAssembly: Rejected (overkill for simple comparisons)
 
 ---
 
 #### 4. Date Format and Display
-**Decision:** Display both human-readable and ISO formats
-
-**Implementation:**
-```python
-# In generator.py
-if created_date:
-    try:
-        created_dt = datetime.fromisoformat(created_date.replace('Z', '+00:00'))
-        created_display = created_dt.strftime('%Y-%m-%d %H:%M UTC')
-    except:
-        created_display = "Unknown"
-
-    html += f'''
-        <div class="path-meta-item">
-            📅 Created: <time datetime="{created_date}">{created_display}</time>
-        </div>
-    '''
-```
+**Decision:** Always display both creation and modification dates in human-readable format with semantic HTML
 
 **Rationale:**
 - **Human-readable**: Writers see "2025-11-23 14:30 UTC" not "2025-11-23T14:30:00Z"
-- **Machine-readable**: `datetime` attribute preserves ISO format for JavaScript
+- **Machine-readable**: `<time datetime="...">` preserves ISO format for JavaScript filtering
 - **UTC clarity**: Explicit "UTC" label prevents timezone confusion
-- **Graceful degradation**: Missing dates show "Unknown" (transparent)
-- **Semantic HTML**: `<time>` element with `datetime` attribute (accessibility)
+- **Transparent**: Missing dates show "Unknown" (no hidden information, no assumptions)
+- **Semantic HTML**: `<time>` element with `datetime` attribute (accessibility, screen readers)
+- **Always visible**: Dates displayed on all paths in all contexts
+
+**What This Means:**
+- Both dates always shown: creation date and modification date
+- Format: `YYYY-MM-DD HH:MM UTC`
+- Graceful degradation: Missing dates display "Unknown" without breaking page
+- Consistent presentation everywhere
 
 ---
 
 #### 5. Filter Time Windows
-**Decision:** Fixed windows - 1 day (24 hours) and 1 week (7 days)
-
-**Implementation:**
-```javascript
-// Filter buttons in deployment context
-<button onclick="filterCreatedLastDay()">Created Last Day</button>
-<button onclick="filterCreatedLastWeek()">Created Last Week</button>
-<button onclick="filterModifiedLastDay()">Modified Last Day</button>
-<button onclick="filterModifiedLastWeek()">Modified Last Week</button>
-```
+**Decision:** Fixed time windows - 1 day (24 hours) and 1 week (7 days)
 
 **Rationale:**
-- **Aligned with user needs**: PM specification matches typical writing rhythms
-  - Daily: Track today's progress (NaNoWriMo daily goals)
-  - Weekly: Track week's progress (sprint cycles)
-- **Simple and predictable**: No configuration needed
+- **Aligned with user needs**: Matches typical writing rhythms during NaNoWriMo
+  - Daily: Track today's progress (NaNoWriMo daily word count goals)
+  - Weekly: Track week's progress (sprint cycles, weekly milestones)
+- **Simple and predictable**: No configuration needed, clear semantics
 - **Unambiguous**: "Last Day" = 24 hours from now, "Last Week" = 7 days from now
-- **Always complemented by actual dates**: Writers see exact timestamps too
+- **Always available**: Filter buttons present in all contexts
+- **Complemented by actual dates**: Writers see exact timestamps, can ignore filters if not useful
+
+**What This Means:**
+- Four time-based filter buttons always available:
+  - "Created Last Day" (paths created in last 24 hours)
+  - "Created Last Week" (paths created in last 7 days)
+  - "Modified Last Day" (paths modified in last 24 hours)
+  - "Modified Last Week" (paths modified in last 7 days)
+- Filters based on current time, recalculated dynamically in browser
+- All paths always visible when no filters active
 
 **Alternatives Considered:**
-- Configurable thresholds: Rejected (adds complexity without clear benefit)
-- Relative labels ("yesterday", "this week"): Rejected (ambiguous, timezone-dependent)
+- Configurable thresholds: Rejected (adds complexity without clear benefit when dates are always visible)
+- Relative labels ("yesterday", "this week"): Rejected (ambiguous, timezone-dependent, changes meaning over time)
 
 ---
 
 #### 6. Missing Date Handling
-**Decision:** Display "Unknown" and exclude from filter results
-
-**Implementation:**
-```python
-# In generator.py
-created_display = "Unknown" if not created_date else format_date(created_date)
-modified_display = "Unknown" if not commit_date else format_date(commit_date)
-
-# In HTML
-data-created-date="{created_date or 'Unknown'}"
-data-modified-date="{commit_date or 'Unknown'}"
-```
-
-```javascript
-// In filter logic
-if (dateValue === 'Unknown' || !dateValue) {
-    // Exclude from filter results
-    return false;
-}
-```
+**Decision:** Display "Unknown" transparently and exclude from time-based filter results
 
 **Rationale:**
 - **Transparency**: Writers see when data is unavailable (no hidden information)
-- **Conservative filtering**: Don't include paths with unknown dates in time-based filters
-- **No assumptions**: Never guess or infer dates
+- **Conservative filtering**: Don't include paths with unknown dates in time-based filters (can't verify if they match)
+- **No assumptions**: Never guess or infer dates from other sources
 - **Graceful degradation**: Page remains functional regardless of missing data
+- **Path still visible**: Paths with missing dates still appear in HTML, just show "Unknown"
+
+**What This Means:**
+- HTML displays "Unknown" for missing creation or modification dates
+- Time-based filters exclude paths with "Unknown" dates
+- Path remains visible when no filters active
+- No automatic fallback to file system dates or other heuristics
 
 **Alternatives Considered:**
-- Query git on-demand: Rejected (slow, complex, already done at build time)
-- Use file system dates: Rejected (unreliable, doesn't reflect actual commit dates)
-- Hide paths with missing dates: Rejected (hides information, less transparent)
+- Query git on-demand for missing dates: Rejected (slow, complex, dates should already be in cache from build)
+- Use file system dates: Rejected (unreliable, doesn't reflect actual commit history)
+- Hide paths with missing dates entirely: Rejected (hides information, less transparent)
 
 ---
 
-#### 7. UI Adaptation Strategy
-**Decision:** Conditional rendering based on context flag
-
-**Implementation:**
-```python
-# In generate_html_output()
-def generate_html_output(story_data, passages, all_paths, validation_cache,
-                        path_categories, is_pr_context=False):
-
-    if is_pr_context:
-        # PR Context: Category filters
-        html += generate_category_filters(new_count, modified_count, unchanged_count)
-        html += generate_category_badges(path)
-    else:
-        # Deployment Context: Date filters
-        html += generate_date_filters()
-        html += generate_date_display(path, created_date, modified_date)
-```
+#### 7. Validation Status Display
+**Decision:** Always display validation status badges on all paths
 
 **Rationale:**
-- **Single HTML generator**: Maintain one codebase, not two separate generators
-- **Clear separation**: Context flag makes behavior explicit
-- **Maintainable**: Changes to HTML structure apply to both contexts
-- **Testable**: Can test both contexts with simple flag toggle
+- **Quality tracking**: Writers need to see which paths have been validated for continuity
+- **Coordination**: Teams can track review progress
+- **Integration**: Combines browsing with quality monitoring
+- **Always available**: Status displayed in all contexts (PR and deployment)
+- **Already cached**: Status already in validation cache, no additional computation
+
+**What This Means:**
+- Each path displays validation status badge:
+  - "Validated": Path has been reviewed and approved (green styling)
+  - "New": Path has not yet been validated (neutral styling)
+- Status sourced from validation cache `validated` field
+- Status can be changed via `/approve-path` command
+- Status may reset to "New" if path content changes after validation
+- Validation status filters allow showing only validated or only new paths
 
 **Alternatives Considered:**
-- Separate HTML templates: Rejected (duplicates code, harder to maintain)
-- Post-processing transformation: Rejected (complex, error-prone)
-- CSS-only hiding: Rejected (data still in DOM, confusing)
+- Hide validation status from HTML: Rejected (less useful, status is valuable information for quality tracking)
+- Show only in PR context: Rejected (violates consistency principle, status useful during active writing too)
 
 ---
 
 #### 8. Filter Combination Logic
 **Decision:** Multiple filters can be active simultaneously with AND logic
 
-**Implementation:**
-```javascript
-let activeFilters = {
-    createdLastDay: false,
-    createdLastWeek: false,
-    modifiedLastDay: false,
-    modifiedLastWeek: false
-};
-
-function updatePathVisibility() {
-    paths.forEach(path => {
-        let visible = true;
-
-        // Check each active filter
-        if (activeFilters.createdLastDay) {
-            visible = visible && checkCreatedLastDay(path);
-        }
-        if (activeFilters.modifiedLastDay) {
-            visible = visible && checkModifiedLastDay(path);
-        }
-        // ... more filters
-
-        path.style.display = visible ? 'block' : 'none';
-    });
-}
-```
-
 **Rationale:**
-- **Flexible**: Writers can answer questions like "created last week AND modified today"
+- **Flexible**: Writers can answer complex questions like "created last week AND modified today"
 - **Intuitive**: Multiple active filter buttons show combined view
-- **Transparent**: Active filters clearly indicated (button styling)
+- **Transparent**: Active filters clearly indicated (button styling, active state)
 - **PM requirement**: Specification explicitly states "filters can be combined"
+- **Powerful queries**: Enables sophisticated filtering without complex UI
 
----
+**What This Means:**
+- All filter types can be combined:
+  - Time-based: Created Last Day, Created Last Week, Modified Last Day, Modified Last Week
+  - Validation status: Validated, New
+- Combined filters use AND logic (path must match all active filters to be visible)
+- Filter state tracked in JavaScript, updated dynamically
+- Statistics update to show count of paths matching active filters
+- Clear filter state with single action (reset/clear all button)
 
-#### 9. Context Indicator Display
-**Decision:** Prominent banner explaining current context and available features
-
-**Implementation:**
-```html
-<!-- PR Context Banner -->
-<div class="context-banner pr-context">
-    📊 Pull Request View: Showing changes in this PR (comparing against origin/main)
-    <div class="context-help">
-        Use category filters to see New, Modified, or Unchanged paths in this PR.
-    </div>
-</div>
-
-<!-- Deployment Context Banner -->
-<div class="context-banner deployment-context">
-    📅 Deployment View: Showing all paths with creation and modification dates
-    <div class="context-help">
-        Use date filters to find paths created or modified in the last day or week.
-    </div>
-</div>
-```
-
-**Rationale:**
-- **Context awareness**: Writers immediately understand what information is shown
-- **Feature discovery**: Help text explains available features
-- **Reduces confusion**: Addresses "why do I see different things in PR vs deployment?"
-- **PM requirement**: Specification requires clear context indicators
+**Alternatives Considered:**
+- Single filter at a time: Rejected (less flexible, can't answer complex questions)
+- OR logic instead of AND: Rejected (AND is more useful for narrowing results, OR would broaden)
 
 ---
 
@@ -324,92 +262,143 @@ function updatePathVisibility() {
 
 ### Positive
 
-1. **Writers get context-appropriate information**
-   - PR reviews focus on changes
-   - Deployment view focuses on timeline
-   - Each optimized for its purpose
+1. **Single consistent interface everywhere**
+   - PR preview matches deployment exactly
+   - Writers can validate changes with confidence
+   - No surprising differences between contexts
+   - Reduces confusion and builds trust
 
-2. **Progress tracking enabled**
+2. **Progress tracking always available**
    - See when paths were created (completion dates)
    - See when paths were modified (update dates)
    - Track daily/weekly writing progress
    - Monitor NaNoWriMo velocity
+   - Same tracking capability in PR preview and deployment
 
-3. **Flexible filtering**
-   - Find paths created recently
-   - Find paths modified recently
-   - Combine filters for complex queries
+3. **Quality monitoring integrated**
+   - Validation status visible on all paths
+   - Track which paths have been reviewed
+   - Coordinate team review work
+   - Monitor quality assurance progress
+
+4. **Flexible filtering**
+   - Time-based filters: Find paths created or modified recently
+   - Validation status filters: Find validated or new paths
+   - Combine filters for complex queries (AND logic)
    - All paths always visible (filters are tools, not gates)
 
-4. **Zero performance impact**
+5. **Zero performance impact**
    - Dates already collected at build time
+   - Validation status already in cache
    - Client-side filtering is instant
    - No additional git operations
    - Same build time (~3-4 seconds)
 
-5. **Backward compatible**
-   - PR workflow unchanged
-   - Validation cache structure unchanged
-   - Existing features continue to work
-   - No breaking changes
-
-6. **Maintainable**
-   - Single HTML generator (not two separate paths)
-   - Context detection is simple and reliable
+6. **Maintainable and simple**
+   - Single HTML generator (not multiple implementations)
+   - No context detection logic needed
+   - No conditional rendering based on environment
    - Client-side filtering is straightforward
    - Well-documented design decisions
 
+7. **Clear architectural boundaries**
+   - AllPaths HTML = browsing and progress tracking
+   - Validation logic = internal categorization for AI checking
+   - Git categories (NEW/MODIFIED/UNCHANGED) never exposed in HTML
+   - Validation results go to PR comments, not HTML
+   - Each component has clear responsibility
+
 ### Negative
 
-1. **Increased HTML complexity**
-   - Conditional rendering based on context
-   - More JavaScript for date filtering
-   - **Mitigation**: Clear separation of concerns, well-commented code
+1. **Additional HTML features**
+   - More JavaScript for date and validation status filtering
+   - Additional UI elements (filter buttons, date display, badges)
+   - **Mitigation**: Clear separation of concerns, well-commented code, client-side performance is excellent
 
 2. **Client-side date parsing**
    - Relies on JavaScript Date parsing (timezone handling)
-   - **Mitigation**: All dates in UTC, ISO format (standardized)
+   - **Mitigation**: All dates in UTC ISO format (standardized, reliable across browsers)
 
 3. **Missing date handling**
-   - Paths without dates excluded from filters
-   - **Mitigation**: Transparent ("Unknown" label), dates rarely missing in practice
+   - Paths without dates excluded from time-based filters
+   - **Mitigation**: Transparent ("Unknown" label), dates rarely missing in practice, path still visible
 
-4. **Two different UIs**
-   - Different filter options in different contexts
-   - **Mitigation**: Clear context banner explains current mode
+4. **Cannot distinguish PR changes in HTML**
+   - HTML doesn't show what changed in this PR (that's internal to validation)
+   - Writers see all paths with dates, not PR-specific categories
+   - **Mitigation**: This is intentional - PR changes are tracked internally, HTML is for browsing
+   - **Note**: Validation results in PR comments show what changed and was validated
 
 ### Risks and Mitigations
 
-**Risk 1: Context confusion**
-- **Risk**: Writers may not understand why information differs
-- **Mitigation**: Prominent context banner on every page, help text, clear documentation
+**Risk 1: Filter utility**
+- **Risk**: Time windows (1 day, 1 week) may not match all writers' needs
+- **Mitigation**: Actual dates always visible (filters are optional tools), writers can manually inspect dates
+- **Monitoring**: Gather feedback on filter usefulness
 
 **Risk 2: Missing date metadata**
 - **Risk**: Validation cache may lack dates for some paths
-- **Mitigation**: Display "Unknown", exclude from filters, page remains functional
+- **Mitigation**: Display "Unknown", exclude from filters, page remains functional, dates rarely missing
+- **Monitoring**: Log warnings when dates unavailable
 
 **Risk 3: Browser compatibility**
 - **Risk**: Date parsing may differ across browsers
 - **Mitigation**: Use standard ISO format, test in major browsers, UTC prevents timezone issues
+- **Status**: Standard JavaScript Date parsing is well-supported
 
 **Risk 4: Performance with many paths**
 - **Risk**: Client-side filtering may be slow with 100+ paths
 - **Mitigation**: Date parsing/comparison is trivial (<1ms per path), tested up to 200 paths
+- **Status**: Performance is excellent in practice
 
 ## Alternatives Considered
 
-### Alternative 1: Separate HTML Generators
+### Alternative 1: Context-Aware Dual-Mode Rendering
+
+**Approach:** Generate different HTML based on context (PR vs deployment)
+- PR context: Show git-based categories (NEW/MODIFIED/UNCHANGED) with category filters
+- Deployment context: Show dates with time-based filters
+- Use `GITHUB_BASE_REF` environment variable to detect context
+
+**Rejected because:**
+- **Violates consistency principle**: PR preview doesn't match deployment
+- **Confuses writers**: Different information in different contexts creates uncertainty
+- **Untrustworthy PR previews**: Writers can't validate that deployment will match what they see
+- **Unnecessary complexity**: Context detection and conditional rendering adds code complexity
+- **Wrong architectural boundary**: Git categories are internal to validation logic, not user-facing
+- **PM specification explicitly rejects this**: Requires "single consistent interface"
+
+**Why this was initially tempting:**
+- Seemed to optimize each context for its specific use case
+- PR context shows "what changed in this PR" directly
+- But this trades away consistency, which is more valuable
+
+---
+
+### Alternative 2: Separate HTML Generators
 
 **Approach:** Create two separate HTML generator functions (one for PR, one for deployment)
 
 **Rejected because:**
-- Code duplication
-- Harder to maintain (changes need to be made twice)
-- Inconsistent styling/behavior risk
-- More complex testing
-- No clear benefit over conditional rendering
+- Same problems as Alternative 1 (inconsistency)
+- Additionally: Code duplication, harder to maintain, inconsistent styling risk
+- No clear benefit over single generator
 
-### Alternative 2: Server-Side Date Filtering
+---
+
+### Alternative 3: Show Git Categories in HTML
+
+**Approach:** Display NEW/MODIFIED/UNCHANGED categories alongside dates in HTML
+
+**Rejected because:**
+- **Wrong architectural boundary**: These categories are internal to validation logic
+- **Context-dependent information**: Categories only meaningful in PR context (relative to base branch)
+- **Confusing in deployment**: What does "NEW" mean on deployed site? New since when?
+- **PM specification explicitly rejects this**: Categories are internal, not displayed
+
+---
+
+### Alternative 4: Server-Side Date Filtering
 
 **Approach:** Generate different HTML files based on filter state (pre-filtered)
 
@@ -420,107 +409,120 @@ function updatePathVisibility() {
 - Less flexible (can't combine filters dynamically)
 - Client-side is fast enough for this use case
 
-### Alternative 3: Relative Date Labels
+---
+
+### Alternative 5: Relative Date Labels
 
 **Approach:** Show "Today", "Yesterday", "This Week" instead of exact dates
 
 **Rejected because:**
 - Ambiguous (timezone-dependent)
-- Changes meaning over time (page cached)
+- Changes meaning over time (page cached, stale labels)
 - Less precise (writers want exact dates)
 - PM specification asks for actual timestamps
 
-### Alternative 4: Single Filter Type (Created OR Modified)
+---
 
-**Approach:** Only show "Last Day" and "Last Week" filters without distinguishing created vs modified
+### Alternative 6: Hide Validation Status from HTML
 
-**Rejected because:**
-- Less informative (can't distinguish new content from updates)
-- PM specification explicitly requests separate created and modified filters
-- Different use cases: tracking new paths vs tracking updates
-
-### Alternative 5: CSS-Only Context Switching
-
-**Approach:** Include both UIs in HTML, hide one with CSS based on context class
+**Approach:** Don't show validation status badges, keep that information internal
 
 **Rejected because:**
-- Data for both contexts in DOM (confusing when inspecting)
-- Larger HTML file (includes unused elements)
-- More complex CSS (visibility rules)
-- Harder to maintain (need to keep both UIs in sync)
-- No benefit over conditional rendering
+- Less useful for quality tracking
+- Writers benefit from seeing which paths have been validated
+- Status is valuable information for coordinating review work
+- Already in cache, no additional cost to display
 
 ## Validation
 
-The deployment context architecture can be validated by:
+The single-interface architecture can be validated by:
 
-1. **Functional Tests**
-   - Deployment builds display date filters (not categories)
-   - PR builds display categories (not date filters)
-   - Date filters correctly show/hide paths based on timestamps
-   - Combined filters apply AND logic
-   - Missing dates show "Unknown" and are excluded from filters
+### 1. Consistency Tests
+- **PR preview matches deployment**: Generate HTML in PR build and main build, compare output (should be identical except for dynamic dates)
+- **No context detection**: Verify no code checks `GITHUB_BASE_REF` or other environment variables for UI decisions
+- **Same filters everywhere**: All builds display time-based filters and validation status filters
 
-2. **Performance Tests**
-   - Build time remains under 5 minutes
-   - Client-side filtering completes in under 100ms for 100 paths
-   - No additional git operations during date collection
+### 2. Functional Tests
+- **Date display**: All paths display creation and modification dates in human-readable format
+- **Time-based filters**: "Created Last Day/Week" and "Modified Last Day/Week" correctly filter paths
+- **Validation status**: Paths display "Validated" or "New" badges correctly
+- **Filter combination**: Multiple active filters apply AND logic correctly
+- **Missing dates**: Paths with missing dates show "Unknown" and are excluded from time-based filters
+- **Statistics update**: Filter counters update correctly when filters are active
 
-3. **Compatibility Tests**
-   - Date parsing works consistently across Chrome, Firefox, Safari
-   - Context banner displays correctly in both modes
-   - Responsive design functions on mobile devices
+### 3. Performance Tests
+- **Build time**: Remains under 5 minutes (no performance regression)
+- **Client-side filtering**: Completes in under 100ms for 100 paths
+- **No additional git operations**: Date collection doesn't add git queries (uses cached data)
 
-4. **Integration Tests**
-   - PR workflow remains unchanged (backward compatibility)
-   - Validation cache structure unchanged
-   - No breaking changes to existing scripts or workflows
+### 4. Compatibility Tests
+- **Browser compatibility**: Date parsing works consistently across Chrome, Firefox, Safari
+- **Responsive design**: Interface functions on desktop and mobile devices
+- **Semantic HTML**: `<time>` elements with `datetime` attributes for accessibility
+
+### 5. Integration Tests
+- **Backward compatibility**: Validation cache structure unchanged
+- **No breaking changes**: Existing workflows and scripts continue to work
+- **Date fields present**: `created_date` and `commit_date` already in cache
 
 ## Future Enhancements
 
 Possible architectural improvements beyond this ADR:
 
-1. **Configurable time windows**
-   - Allow custom date ranges (e.g., "Last 3 days", "Last month")
-   - Store preferences in localStorage
-   - Architectural consideration: Need to maintain performance with arbitrary ranges
+### 1. Configurable Time Windows
+- **Enhancement**: Allow custom date ranges (e.g., "Last 3 days", "Last month")
+- **Use case**: Writers with different writing rhythms or tracking needs
+- **Architectural consideration**: Store preferences in localStorage, maintain performance with arbitrary ranges
+- **Trade-off**: Added complexity vs. fixed windows that work for most users
 
-2. **Date range picker**
-   - Visual calendar for selecting arbitrary date ranges
-   - More flexible than fixed time windows
-   - Architectural consideration: Calendar UI adds significant client-side complexity
+### 2. Date Range Picker
+- **Enhancement**: Visual calendar for selecting arbitrary date ranges
+- **Use case**: Analyze specific time periods (e.g., "show me what I wrote during week 2 of NaNoWriMo")
+- **Architectural consideration**: Calendar UI adds significant client-side complexity
+- **Trade-off**: Flexibility vs. simplicity
 
-3. **Statistics by time period**
-   - "15 paths created this week"
-   - "8 paths modified today"
-   - Progress graphs/charts
-   - Architectural consideration: May require server-side aggregation for large datasets
+### 3. Statistics by Time Period
+- **Enhancement**: Show aggregated statistics like "15 paths created this week", "8 paths modified today"
+- **Use case**: Quick progress overview without counting filtered results
+- **Architectural consideration**: May require server-side aggregation for large datasets
+- **Trade-off**: Additional computation vs. useful progress metrics
 
-4. **Sort by date**
-   - Sort paths by creation date (newest first)
-   - Sort paths by modification date
-   - Combined with filtering for powerful queries
-   - Architectural consideration: Sorting large lists may require virtualization
+### 4. Sort by Date
+- **Enhancement**: Sort paths by creation or modification date (newest/oldest first)
+- **Use case**: See most recently created or modified paths at the top
+- **Architectural consideration**: Sorting large lists may require virtualization for performance
+- **Trade-off**: Additional UI complexity vs. improved browsing
 
-5. **Export filtered results**
-   - Download list of paths matching filters
-   - JSON export for programmatic processing
-   - Architectural consideration: Export mechanism needs to respect filter state
+### 5. Export Filtered Results
+- **Enhancement**: Download list of paths matching current filters (CSV, JSON)
+- **Use case**: External analysis, sharing progress reports
+- **Architectural consideration**: Export mechanism needs to respect active filter state
+- **Trade-off**: Implementation effort vs. advanced use case utility
 
-6. **Path activity timeline**
-   - Visual timeline showing when paths were created/modified
-   - Heatmap of writing activity
-   - Architectural consideration: Requires data aggregation and visualization library
+### 6. Path Activity Timeline
+- **Enhancement**: Visual timeline or heatmap showing when paths were created/modified
+- **Use case**: Visualize writing activity patterns over time
+- **Architectural consideration**: Requires data aggregation and visualization library (e.g., D3.js)
+- **Trade-off**: Significant implementation effort vs. visual storytelling value
 
 ## References
 
-- **PM Specification**: `/home/user/NaNoWriMo2025/features/allpaths-categorization.md`
-- **Current Implementation**: `/home/user/NaNoWriMo2025/formats/allpaths/generator.py`
-- **Validation Cache ADR**: `/home/user/NaNoWriMo2025/architecture/002-validation-cache.md`
+### PM Specifications
+- **AllPaths Progress Tracking**: `/home/user/NaNoWriMo2025/features/allpaths-categorization.md`
+  - Defines user needs, acceptance criteria, and feature behavior
+  - Specifies single consistent interface requirement
+  - Documents time-based filters and validation status display
+
+- **AI Continuity Checking**: `/home/user/NaNoWriMo2025/features/ai-continuity-checking.md`
+  - Defines internal categorization (NEW/MODIFIED/UNCHANGED)
+  - Specifies that categories are internal to validation logic
+  - Documents that validation results go to PR comments, not HTML
+
+### Implementation
+- **AllPaths Generator**: `/home/user/NaNoWriMo2025/formats/allpaths/generator.py`
 - **User Documentation**: `/home/user/NaNoWriMo2025/formats/allpaths/README.md`
 
-## Related ADRs
-
-- ADR-001: AllPaths Format for AI Continuity Validation
-- ADR-002: Validation Cache Architecture (date fields defined here)
-- ADR-004: Content-Based Hashing for Change Detection
+### Related ADRs
+- **ADR-001**: AllPaths Format for AI Continuity Validation (path generation via DFS)
+- **ADR-002**: Validation Cache Architecture (date fields and validation status defined here)
+- **ADR-004**: Content-Based Hashing for Change Detection (how path changes are detected)
