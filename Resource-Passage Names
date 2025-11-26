@@ -114,6 +114,9 @@ KEB-251124.twee
 KEB-251125.twee
   :: Day 25 KEB
 
+KEB-251126.twee
+  :: Day 26 KEB
+
 Start.twee
   :: Start
   [[A rumor]]
@@ -153,6 +156,9 @@ StoryTitle.twee
 
 mansel-20251101.twee
   :: mansel-20251101
+  [[Successfully escape]]
+  [[Chased->Day 26 KEB]]
+  :: Successfully escape
   [[Re-enter the cave]]
   [[Hesitate->Day 3 KEB]]
   :: Re-enter the cave
