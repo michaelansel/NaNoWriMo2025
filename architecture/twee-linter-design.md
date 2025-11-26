@@ -793,7 +793,7 @@ fix-twee:
 
 ### Why Single File?
 
-- **Scope**: 6 rules don't justify multi-module architecture
+- **Scope**: 8 rules don't justify multi-module architecture
 - **Simplicity**: Easier to understand, debug, and deploy
 - **Pattern**: Follows `check-story-continuity.py` (similar scale tool)
 - **Future**: Can split into modules if rules grow significantly (>20 rules)
@@ -821,7 +821,7 @@ These are explicitly **not** part of this design but noted for future considerat
 
 This design succeeds if:
 
-1. ✓ All 6 rules are implemented correctly
+1. ✓ All 8 rules are implemented correctly
 2. ✓ Check mode reports all violations accurately
 3. ✓ Fix mode corrects all violations idempotently
 4. ✓ Special passages are properly exempted from Rule 2
