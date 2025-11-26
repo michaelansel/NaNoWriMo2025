@@ -684,6 +684,41 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 
     return intersection / union if union > 0 else 0.0
 
+def verify_base_ref_accessible(repo_root: Path, base_ref: str) -> bool:
+    """Verify that the base_ref is accessible in the git repository.
+
+    Args:
+        repo_root: Path to git repository root
+        base_ref: Git ref to verify (e.g., 'origin/main', 'HEAD')
+
+    Returns:
+        True if base_ref is accessible, False otherwise
+    """
+    try:
+        print(f"[INFO] Verifying git base ref: {base_ref}", file=sys.stderr)
+        result = subprocess.run(
+            ['git', 'rev-parse', '--verify', base_ref],
+            cwd=str(repo_root),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+
+        if result.returncode == 0:
+            commit_sha = result.stdout.strip()
+            print(f"[INFO] Base ref '{base_ref}' is accessible (commit: {commit_sha})", file=sys.stderr)
+            return True
+        else:
+            print(f"[ERROR] Base ref '{base_ref}' is NOT accessible!", file=sys.stderr)
+            print(f"[ERROR] Git command failed with return code: {result.returncode}", file=sys.stderr)
+            if result.stderr:
+                print(f"[ERROR] Git stderr: {result.stderr.strip()}", file=sys.stderr)
+            print(f"[ERROR] This will cause all paths to be incorrectly categorized as 'new'", file=sys.stderr)
+            return False
+    except Exception as e:
+        print(f"[ERROR] Exception verifying base ref '{base_ref}': {e}", file=sys.stderr)
+        return False
+
 def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> Optional[str]:
     """Get file content from git at a specific ref.
 
@@ -697,19 +732,28 @@ def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 
     """
     try:
         rel_path = file_path.relative_to(repo_root)
+        cmd = ['git', 'show', f'{base_ref}:{rel_path}']
+        print(f"[DEBUG] Running git command: {' '.join(cmd)}", file=sys.stderr)
+
         result = subprocess.run(
-            ['git', 'show', f'{base_ref}:{rel_path}'],
+            cmd,
             cwd=str(repo_root),
             capture_output=True,
             text=True,
             timeout=5
         )
+
         if result.returncode == 0:
+            print(f"[DEBUG] Successfully retrieved git content for {rel_path} at {base_ref}", file=sys.stderr)
             return result.stdout
         else:
+            print(f"[ERROR] Git command failed for {rel_path} at {base_ref}", file=sys.stderr)
+            print(f"[ERROR] Return code: {result.returncode}", file=sys.stderr)
+            if result.stderr:
+                print(f"[ERROR] Stderr: {result.stderr.strip()}", file=sys.stderr)
             return None
     except Exception as e:
-        print(f"Warning: Could not get git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
+        print(f"[ERROR] Exception getting git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
         return None
 
 def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
@@ -728,10 +772,13 @@ def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HE
     Returns:
         True if file has prose changes, False if only links/structure changed
     """
+    print(f"[DEBUG] Checking prose changes for: {file_path.relative_to(repo_root)}", file=sys.stderr)
+
     # Get old version from git
     old_content = get_file_content_from_git(file_path, repo_root, base_ref)
     if old_content is None:
         # File doesn't exist in git, it's new
+        print(f"[DEBUG] File not found in git (new file) - has prose changes: True", file=sys.stderr)
         return True
 
     # Get current version
@@ -739,14 +786,16 @@ def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HE
         with open(file_path, 'r', encoding='utf-8') as f:
             new_content = f.read()
     except Exception as e:
-        print(f"Warning: Could not read file {file_path}: {e}", file=sys.stderr)
+        print(f"[ERROR] Could not read file {file_path}: {e}", file=sys.stderr)
         return True  # Can't read, assume changed
 
     # Strip links and normalize whitespace
     old_prose = normalize_prose_for_comparison(strip_links_from_text(old_content))
     new_prose = normalize_prose_for_comparison(strip_links_from_text(new_content))
 
-    return old_prose != new_prose
+    has_changes = old_prose != new_prose
+    print(f"[DEBUG] Prose comparison result: {'CHANGED' if has_changes else 'UNCHANGED'}", file=sys.stderr)
+    return has_changes
 
 def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
     """Check if a .twee file has ANY changes (including links/structure).
@@ -762,10 +811,13 @@ def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD
     Returns:
         True if file has any changes, False if completely unchanged
     """
+    print(f"[DEBUG] Checking any changes for: {file_path.relative_to(repo_root)}", file=sys.stderr)
+
     # Get old version from git
     old_content = get_file_content_from_git(file_path, repo_root, base_ref)
     if old_content is None:
         # File doesn't exist in git, it's new
+        print(f"[DEBUG] File not found in git (new file) - has changes: True", file=sys.stderr)
         return True
 
     # Get current version
@@ -773,11 +825,13 @@ def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD
         with open(file_path, 'r', encoding='utf-8') as f:
             new_content = f.read()
     except Exception as e:
-        print(f"Warning: Could not read file {file_path}: {e}", file=sys.stderr)
+        print(f"[ERROR] Could not read file {file_path}: {e}", file=sys.stderr)
         return True  # Can't read, assume changed
 
     # Compare raw content (no stripping)
-    return old_content != new_content
+    has_changes = old_content != new_content
+    print(f"[DEBUG] Raw content comparison result: {'CHANGED' if has_changes else 'UNCHANGED'}", file=sys.stderr)
+    return has_changes
 
 def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     validation_cache: Dict,
@@ -815,7 +869,14 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                - If no files changed → UNCHANGED
                - If git unavailable → NEW (fallback)
     """
+    print(f"\n[INFO] ===== Starting Path Categorization =====", file=sys.stderr)
+    print(f"[INFO] Total paths to categorize: {len(current_paths)}", file=sys.stderr)
+    print(f"[INFO] Base ref for comparison: {base_ref}", file=sys.stderr)
+
     categories = {}
+    total_files_checked = 0
+    git_lookups_succeeded = 0
+    git_lookups_failed = 0
 
     for path in current_paths:
         path_hash = calculate_path_hash(path, passages)
@@ -823,6 +884,7 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         # Require git integration for accurate categorization
         if not passage_to_file or not repo_root:
             # No git data available - mark as new (conservative fallback)
+            print(f"[WARN] No git data available for path {path_hash}, marking as 'new'", file=sys.stderr)
             categories[path_hash] = 'new'
             continue
 
@@ -832,11 +894,28 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
             if passage_name in passage_to_file:
                 files_in_path.add(passage_to_file[passage_name])
 
+        print(f"\n[INFO] Categorizing path {path_hash} ({len(files_in_path)} files)", file=sys.stderr)
+
         # Check each file for changes
         has_prose_changes = False
         has_any_changes = False
+        files_checked_for_path = 0
+        git_success_for_path = 0
+        git_fail_for_path = 0
 
         for file_path in files_in_path:
+            files_checked_for_path += 1
+            total_files_checked += 1
+
+            # Track whether git lookup succeeded by checking if we got content
+            git_content = get_file_content_from_git(file_path, repo_root, base_ref)
+            if git_content is not None:
+                git_success_for_path += 1
+                git_lookups_succeeded += 1
+            else:
+                git_fail_for_path += 1
+                git_lookups_failed += 1
+
             if file_has_prose_changes(file_path, repo_root, base_ref):
                 has_prose_changes = True
                 break  # Early exit - found new prose
@@ -848,10 +927,28 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         # Categorize based on what changed
         if has_prose_changes:
             categories[path_hash] = 'new'
+            print(f"[INFO] Path {path_hash}: NEW (has prose changes)", file=sys.stderr)
         elif has_any_changes:
             categories[path_hash] = 'modified'
+            print(f"[INFO] Path {path_hash}: MODIFIED (link/structure changes only)", file=sys.stderr)
         else:
             categories[path_hash] = 'unchanged'
+            print(f"[INFO] Path {path_hash}: UNCHANGED", file=sys.stderr)
+
+        print(f"[INFO] Git lookups for this path: {git_success_for_path} succeeded, {git_fail_for_path} failed", file=sys.stderr)
+
+    # Summary statistics
+    new_count = sum(1 for c in categories.values() if c == 'new')
+    modified_count = sum(1 for c in categories.values() if c == 'modified')
+    unchanged_count = sum(1 for c in categories.values() if c == 'unchanged')
+
+    print(f"\n[INFO] ===== Categorization Complete =====", file=sys.stderr)
+    print(f"[INFO] Total files checked: {total_files_checked}", file=sys.stderr)
+    print(f"[INFO] Git lookups: {git_lookups_succeeded} succeeded, {git_lookups_failed} failed", file=sys.stderr)
+    print(f"[INFO] Category breakdown:", file=sys.stderr)
+    print(f"[INFO]   - NEW: {new_count} paths", file=sys.stderr)
+    print(f"[INFO]   - MODIFIED: {modified_count} paths", file=sys.stderr)
+    print(f"[INFO]   - UNCHANGED: {unchanged_count} paths", file=sys.stderr)
 
     return categories
 
@@ -1520,6 +1617,12 @@ def main():
         # Local context - use HEAD to detect uncommitted changes
         base_ref = 'HEAD'
         print(f"Using git base ref: {base_ref} (local development)", file=sys.stderr)
+
+    # Verify that the base ref is accessible before proceeding
+    if not verify_base_ref_accessible(repo_root, base_ref):
+        print(f"[ERROR] Cannot access base ref '{base_ref}' - path categorization will be incorrect!", file=sys.stderr)
+        print(f"[ERROR] All paths will be marked as 'new' instead of properly categorized.", file=sys.stderr)
+        # Continue execution but warn user that results will be incorrect
 
     # Categorize paths (New/Modified/Unchanged)
     path_categories = categorize_paths(all_paths, passages, validation_cache,
