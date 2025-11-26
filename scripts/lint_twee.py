@@ -13,6 +13,7 @@ Rules enforced:
 5. final-newline: File ends with exactly one newline
 6. single-blank-lines: No multiple consecutive blank lines
 7. link-block-spacing: Blank line before and after link blocks, no blanks between links
+8. smart-quotes: Replace Unicode smart quotes with ASCII equivalents
 
 Special passages exempt from blank-line-after-header:
 - By name: StoryData, StoryTitle, StoryStylesheet, StoryBanner, StoryMenu, StoryInit
@@ -207,6 +208,24 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
             )
             if fix:
                 line_content = line_content.rstrip()
+
+        # Rule 8: smart-quotes
+        # Replace Unicode smart quotes with ASCII equivalents
+        smart_quotes = {
+            '\u201c': '"',  # Left double quotation mark
+            '\u201d': '"',  # Right double quotation mark
+            '\u2018': "'",  # Left single quotation mark
+            '\u2019': "'",  # Right single quotation mark
+        }
+        smart_quote_count = sum(line_content.count(sq) for sq in smart_quotes.keys())
+        if smart_quote_count > 0:
+            violations.append(
+                f"{file_path}:{line_num}: [smart-quotes] "
+                f"Found {smart_quote_count} smart quote(s)"
+            )
+            if fix:
+                for smart, ascii_equiv in smart_quotes.items():
+                    line_content = line_content.replace(smart, ascii_equiv)
 
         # Rule 7: link-block-spacing
         # Check if current line is a block link

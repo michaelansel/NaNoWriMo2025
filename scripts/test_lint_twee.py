@@ -10,6 +10,7 @@ Tests all linting rules including:
 5. final-newline
 6. single-blank-lines
 7. link-block-spacing
+8. smart-quotes
 
 Each test covers detection (check mode) and fixing (fix mode), and verifies
 idempotency (running fix twice produces the same result).
@@ -534,6 +535,180 @@ class TestLinkBlockSpacing:
         violations2, modified2 = lint_file(test_file, fix=True)
         assert len(violations2) == 0
         assert modified2 is False
+
+
+class TestSmartQuotes:
+    """Tests for smart-quotes rule."""
+
+    def test_detect_left_double_quote(self, tmp_path):
+        """Test detection of left double quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHello world\u201d\n')
+
+        violations, modified = lint_file(test_file, fix=False)
+        assert any('smart-quotes' in v for v in violations)
+        assert modified is False
+
+    def test_detect_right_double_quote(self, tmp_path):
+        """Test detection of right double quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHello world\u201d\n')
+
+        violations, modified = lint_file(test_file, fix=False)
+        assert any('smart-quotes' in v for v in violations)
+        assert modified is False
+
+    def test_detect_left_single_quote(self, tmp_path):
+        """Test detection of left single quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\n\n\u2018Hello world\u2019\n")
+
+        violations, modified = lint_file(test_file, fix=False)
+        assert any('smart-quotes' in v for v in violations)
+        assert modified is False
+
+    def test_detect_right_single_quote(self, tmp_path):
+        """Test detection of right single quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\n\n\u2018Hello world\u2019\n")
+
+        violations, modified = lint_file(test_file, fix=False)
+        assert any('smart-quotes' in v for v in violations)
+        assert modified is False
+
+    def test_detect_all_smart_quote_types(self, tmp_path):
+        """Test detection of all smart quote types in one line."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n')
+
+        violations, modified = lint_file(test_file, fix=False)
+        assert any('smart-quotes' in v and '4' in v for v in violations)
+        assert modified is False
+
+    def test_fix_left_double_quote(self, tmp_path):
+        """Test fixing left double quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHello\u201d\n')
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify fix
+        content = test_file.read_text()
+        assert '\u201c' not in content
+        assert '\u201d' not in content
+        assert '"Hello"' in content
+
+    def test_fix_right_double_quote(self, tmp_path):
+        """Test fixing right double quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHello\u201d\n')
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify fix
+        content = test_file.read_text()
+        assert '\u201c' not in content
+        assert '\u201d' not in content
+        assert '"Hello"' in content
+
+    def test_fix_left_single_quote(self, tmp_path):
+        """Test fixing left single quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\n\n\u2018Hello\u2019\n")
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify fix
+        content = test_file.read_text()
+        assert '\u2018' not in content
+        assert '\u2019' not in content
+        assert "'Hello'" in content
+
+    def test_fix_right_single_quote(self, tmp_path):
+        """Test fixing right single quotation mark."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\n\n\u2018Hello\u2019\n")
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify fix
+        content = test_file.read_text()
+        assert '\u2018' not in content
+        assert '\u2019' not in content
+        assert "'Hello'" in content
+
+    def test_fix_all_smart_quote_types(self, tmp_path):
+        """Test fixing all smart quote types in one line."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n')
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify fix
+        content = test_file.read_text()
+        assert '\u201c' not in content
+        assert '\u201d' not in content
+        assert '\u2018' not in content
+        assert '\u2019' not in content
+        assert '"He said, \'Yes\'"' in content
+
+    def test_mixed_smart_and_regular_quotes(self, tmp_path):
+        """Test that regular quotes are preserved."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cSmart\u201d and "regular" quotes\n')
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify fix - smart quotes replaced, regular quotes preserved
+        content = test_file.read_text()
+        assert '\u201c' not in content
+        assert '\u201d' not in content
+        assert '"Smart" and "regular" quotes' in content
+
+    def test_no_smart_quotes(self, tmp_path):
+        """Test that lines without smart quotes have no violations."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n"Hello" and \'world\'\n')
+
+        violations, modified = lint_file(test_file, fix=False)
+        # Should have no smart-quotes violations
+        assert not any('smart-quotes' in v for v in violations)
+
+    def test_idempotent_fix(self, tmp_path):
+        """Test that fixing twice produces same result."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(':: Start\n\n\u201cHello world\u201d\n')
+
+        lint_file(test_file, fix=True)
+        violations2, modified2 = lint_file(test_file, fix=True)
+        # Should have no violations after first fix
+        assert len(violations2) == 0
+        assert modified2 is False
+
+    def test_smart_quotes_in_multiple_lines(self, tmp_path):
+        """Test detection and fixing of smart quotes in multiple lines."""
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(
+            ':: Start\n\n'
+            '\u201cFirst line with smart quotes\u201d\n'
+            '\u201cSecond line with smart quotes\u201d\n'
+        )
+
+        violations, modified = lint_file(test_file, fix=True)
+        assert modified is True
+
+        # Verify both lines fixed
+        content = test_file.read_text()
+        assert '\u201c' not in content
+        assert '\u201d' not in content
+        assert '"First line with smart quotes"' in content
+        assert '"Second line with smart quotes"' in content
 
 
 class TestIntegration:
