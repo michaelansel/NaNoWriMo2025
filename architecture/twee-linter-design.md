@@ -11,7 +11,7 @@ A Python linter for Twee story files that enforces formatting standards with aut
 ```
 lint_twee.py
 ├── Constants & Configuration
-├── Rule Classes (6 rules)
+├── Rule Classes (8 rules)
 ├── Passage Parser
 ├── File Processor
 ├── Output Formatter
@@ -45,23 +45,27 @@ class TweeRule:
 - Fix mode to reuse detection logic
 - Clear reporting of what changed
 
-#### 2. Rule Implementations (6 classes)
+#### 2. Rule Implementations (8 rules)
 
-Each rule is a concrete class:
-- `PassageHeaderSpacingRule` - Rule 1: `::PassageName` → `:: PassageName`
-- `BlankLineAfterHeaderRule` - Rule 2: Blank line after headers (with special passage exemption)
-- `BlankLineBetweenPassagesRule` - Rule 3: Exactly one blank line before `::` headers
-- `TrailingWhitespaceRule` - Rule 4: Remove trailing spaces/tabs
-- `FinalNewlineRule` - Rule 5: Exactly one newline at EOF
-- `SingleBlankLinesRule` - Rule 6: Collapse multiple consecutive blank lines
+Each rule is implemented inline in the `lint_file()` function:
+- Rule 1: `passage-header-spacing` - `::PassageName` → `:: PassageName`
+- Rule 2: `blank-line-after-header` - Blank line after headers (with special passage exemption)
+- Rule 3: `blank-line-between-passages` - Exactly one blank line before `::` headers
+- Rule 4: `trailing-whitespace` - Remove trailing spaces/tabs
+- Rule 5: `final-newline` - Exactly one newline at EOF
+- Rule 6: `single-blank-lines` - Collapse multiple consecutive blank lines
+- Rule 7: `link-block-spacing` - Blank line before/after link blocks, no blanks between
+- Rule 8: `smart-quotes` - Replace Unicode smart quotes with ASCII equivalents
 
 **Ordering Matters**: Rules execute in sequence because some depend on others:
-1. Fix header spacing first (affects passage detection)
-2. Fix blank lines between passages (establishes passage boundaries)
-3. Fix blank lines after headers (operates within passages)
-4. Fix trailing whitespace (cleanup)
-5. Collapse multiple blank lines (cleanup)
-6. Fix final newline (last operation)
+1. Fix trailing whitespace (cleanup before content analysis)
+2. Fix smart quotes (character-level cleanup)
+3. Check link-block-spacing (needs clean lines for detection)
+4. Fix header spacing (affects passage detection)
+5. Fix blank lines between passages (establishes passage boundaries)
+6. Fix blank lines after headers (operates within passages)
+7. Collapse multiple blank lines (cleanup)
+8. Fix final newline (last operation)
 
 #### 3. Passage Parser
 
@@ -384,6 +388,43 @@ while i < len(lines) - 1:
         i += 1
 ```
 
+#### Rule 7: Link Block Spacing
+```python
+# Pattern: Block links (lines containing only [[...]]) need proper spacing
+# - Blank line BEFORE first block link if narrative precedes
+# - NO blank lines BETWEEN consecutive block links
+# - Blank line AFTER last block link if content follows
+
+def is_block_link(line: str) -> bool:
+    """Check if line contains only a link with optional whitespace."""
+    stripped = line.strip()
+    if not stripped:
+        return False
+    # Must start with [[ and end with ]], with exactly one of each
+    return (stripped.startswith('[[') and stripped.endswith(']]')
+            and stripped.count('[[') == 1 and stripped.count(']]') == 1
+            and len(stripped) > 4)  # Not empty [[]]
+
+# State tracking: in_link_block, last_was_block_link, last_non_blank_was_narrative
+# Inline links (text before/after [[...]]) are NOT affected by this rule
+```
+
+#### Rule 8: Smart Quotes
+```python
+# Pattern: Unicode smart quotes from word processors
+# Fix: Replace with ASCII equivalents
+
+SMART_QUOTES = {
+    '\u201c': '"',  # " Left double quotation mark
+    '\u201d': '"',  # " Right double quotation mark
+    '\u2018': "'",  # ' Left single quotation mark
+    '\u2019': "'",  # ' Right single quotation mark (also apostrophe)
+}
+
+for smart, ascii_equiv in SMART_QUOTES.items():
+    line_content = line_content.replace(smart, ascii_equiv)
+```
+
 ## Special Passage Handling
 
 ### Detection Strategy
@@ -673,13 +714,29 @@ python3 scripts/lint_twee.py src/ --rule trailing-whitespace
    - Single blank lines → No change
    - Blank lines within passages → Preserved
 
+7. **Link Block Spacing**:
+   - Block link after narrative without blank → Insert blank before
+   - Consecutive block links with blank between → Remove blank
+   - Block link followed by narrative without blank → Insert blank after
+   - Inline links (text + link on same line) → No change
+   - Links right after header → Defer to blank-line-after-header rule
+
+8. **Smart Quotes**:
+   - " and " → " (double quotes)
+   - ' and ' → ' (single quotes/apostrophes)
+   - Mixed smart and ASCII quotes → Only smart quotes replaced
+   - No smart quotes → No change
+
 ### Edge Cases
 
 1. **Empty file**: No changes (no passages, no violations)
 2. **Single passage**: No blank line before first passage
 3. **No content passages**: Header with tags only (rare but valid)
 4. **Very long lines**: No line length limit (Twee convention)
-5. **Non-ASCII characters**: Preserved (UTF-8 handling)
+5. **Non-ASCII characters**: Preserved except smart quotes (UTF-8 handling)
+6. **Block vs inline links**: `[[Link]]` alone is block; `Text [[Link]] more` is inline
+7. **Multiple link blocks**: Each block independently follows spacing rules
+8. **Smart quotes in links**: Replaced like any other text
 
 ## Integration Points
 

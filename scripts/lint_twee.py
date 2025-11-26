@@ -353,15 +353,17 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
 
         # Rule 6: single-blank-lines
         # Collapse multiple consecutive blank lines
-        if fix and line_content.strip() == '':
+        if line_content.strip() == '':
             # Check if previous line was also blank
             if fixed_lines and fixed_lines[-1].strip() == '':
-                # Skip this blank line (collapsing multiples)
+                # Found consecutive blank lines
                 violations.append(
                     f"{file_path}:{line_num}: [single-blank-lines] "
                     f"Multiple consecutive blank lines"
                 )
-                continue
+                if fix:
+                    # Skip this blank line (collapsing multiples)
+                    continue
 
         fixed_lines.append(line_content)
 
@@ -375,10 +377,10 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
             trailing_blanks += 1
             check_index -= 1
 
-        if trailing_blanks > 1:
+        if trailing_blanks > 0:
             violations.append(
                 f"{file_path}:{len(lines)}: [final-newline] "
-                f"File has {trailing_blanks} trailing blank lines, expected 0"
+                f"File has {trailing_blanks} trailing blank line(s), expected 0"
             )
 
         # Remove trailing blank lines if fixing
