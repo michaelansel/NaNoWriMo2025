@@ -12,6 +12,7 @@ Rules enforced:
 4. trailing-whitespace: No trailing whitespace on lines
 5. final-newline: File ends with exactly one newline
 6. single-blank-lines: No multiple consecutive blank lines
+7. link-block-spacing: Blank line before and after link blocks, no blanks between links
 
 Special passages exempt from blank-line-after-header:
 - By name: StoryData, StoryTitle, StoryStylesheet, StoryBanner, StoryMenu, StoryInit
@@ -106,6 +107,55 @@ def is_special_passage(passage_name: str, tags: List[str]) -> bool:
     return False
 
 
+def is_block_link(line: str) -> bool:
+    """
+    Check if a line contains only a block link (no other text).
+
+    A block link is a line that contains only [[...]] with optional whitespace.
+    Inline links (links with other text) are not block links.
+
+    Args:
+        line: The line to check (should be stripped of trailing whitespace)
+
+    Returns:
+        True if line is a block link, False otherwise
+
+    Examples:
+        >>> is_block_link("[[Continue]]")
+        True
+        >>> is_block_link("  [[Continue->Next]]  ")
+        True
+        >>> is_block_link("Text before [[link]]")
+        False
+        >>> is_block_link("[[link]] text after")
+        False
+        >>> is_block_link("[[link1]] [[link2]]")
+        False
+        >>> is_block_link("[]")
+        False
+        >>> is_block_link("")
+        False
+    """
+    stripped = line.strip()
+    if not stripped:
+        return False
+
+    # Must start with [[ and end with ]]
+    if not (stripped.startswith('[[') and stripped.endswith(']]')):
+        return False
+
+    # Must have content between the brackets (not just [[]])
+    if len(stripped) <= 4:  # [[]] is 4 characters
+        return False
+
+    # Count occurrences - should have exactly one [[ and one ]]
+    if stripped.count('[[') != 1 or stripped.count(']]') != 1:
+        return False
+
+    # The whole stripped line should be the link (no text before/after)
+    return True
+
+
 def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
     """
     Lint a single .twee file.
@@ -139,6 +189,9 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
     line_num = 0
     last_was_header = False
     last_passage_info = None  # (name, tags) of last passage header
+    last_was_block_link = False
+    in_link_block = False
+    last_non_blank_was_narrative = False  # Track if we just had narrative text
 
     for i, line in enumerate(lines):
         line_num = i + 1
@@ -154,6 +207,63 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
             )
             if fix:
                 line_content = line_content.rstrip()
+
+        # Rule 7: link-block-spacing
+        # Check if current line is a block link
+        current_is_block_link = is_block_link(line_content)
+        current_is_blank = line_content.strip() == ''
+
+        if current_is_block_link:
+            # Entering a link block
+            if not in_link_block:
+                # First block link in a sequence
+                # Need blank line before if narrative preceded (not right after header)
+                if last_non_blank_was_narrative and fixed_lines:
+                    # Check if there's a blank line before this
+                    if fixed_lines and fixed_lines[-1].strip() != '':
+                        violations.append(
+                            f"{file_path}:{line_num}: [link-block-spacing] "
+                            f"Missing blank line before link block"
+                        )
+                        if fix:
+                            fixed_lines.append('')
+                in_link_block = True
+            else:
+                # Consecutive block link - remove blank line if present
+                if fixed_lines and fixed_lines[-1].strip() == '':
+                    violations.append(
+                        f"{file_path}:{line_num}: [link-block-spacing] "
+                        f"Blank line between block links (should be removed)"
+                    )
+                    if fix:
+                        # Remove the blank line we just added
+                        fixed_lines.pop()
+
+            last_was_block_link = True
+            last_non_blank_was_narrative = False
+
+        elif not current_is_blank:
+            # Non-blank, non-block-link line
+            # If exiting a link block, need blank line before this
+            if in_link_block and not line_content.startswith('::'):
+                # Check if there's a blank line before this
+                if fixed_lines and fixed_lines[-1].strip() != '':
+                    violations.append(
+                        f"{file_path}:{line_num}: [link-block-spacing] "
+                        f"Missing blank line after link block"
+                    )
+                    if fix:
+                        fixed_lines.append('')
+
+            in_link_block = False
+            last_was_block_link = False
+
+            # Track if this is narrative (not a header or special line)
+            if not line_content.startswith('::'):
+                last_non_blank_was_narrative = True
+        else:
+            # Blank line
+            last_non_blank_was_narrative = False
 
         # Check if this is a passage header
         if line_content.startswith('::'):
@@ -199,6 +309,10 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
 
                 last_was_header = True
                 last_passage_info = (passage_name, tags)
+                # Reset link block state on passage header
+                in_link_block = False
+                last_was_block_link = False
+                last_non_blank_was_narrative = False
             else:
                 last_was_header = False
         else:
@@ -235,24 +349,27 @@ def lint_file(file_path: Path, fix: bool = False) -> Tuple[List[str], bool]:
     # Rule 5: final-newline
     # File should end with exactly one newline
     if fixed_lines:
-        # Remove trailing blank lines
+        # Count trailing blank lines
         trailing_blanks = 0
-        while fixed_lines and fixed_lines[-1].strip() == '':
+        check_index = len(fixed_lines) - 1
+        while check_index >= 0 and fixed_lines[check_index].strip() == '':
             trailing_blanks += 1
-            if fix:
-                fixed_lines.pop()
-            else:
-                break
+            check_index -= 1
 
-        if not fix and trailing_blanks > 1:
+        if trailing_blanks > 1:
             violations.append(
                 f"{file_path}:{len(lines)}: [final-newline] "
                 f"File has {trailing_blanks} trailing blank lines, expected 0"
             )
 
+        # Remove trailing blank lines if fixing
+        if fix:
+            while fixed_lines and fixed_lines[-1].strip() == '':
+                fixed_lines.pop()
+
         # Check if original file ended with newline
         original_ends_with_newline = lines[-1].endswith('\n') or lines[-1].endswith('\r\n')
-        if not original_ends_with_newline and not fix:
+        if not original_ends_with_newline:
             violations.append(
                 f"{file_path}:{len(lines)}: [final-newline] "
                 f"File does not end with newline"
