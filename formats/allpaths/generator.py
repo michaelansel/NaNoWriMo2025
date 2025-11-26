@@ -756,6 +756,77 @@ def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 
         print(f"[ERROR] Exception getting git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
         return None
 
+def analyze_file_changes(file_path: Path, repo_root: Path, old_content: Optional[str]) -> dict:
+    """Analyze what kind of changes a file has compared to git content.
+
+    This is the core comparison function that determines file change type.
+    It takes pre-fetched git content to avoid redundant git calls.
+
+    Args:
+        file_path: Absolute path to the .twee file
+        repo_root: Path to git repository root
+        old_content: Content from git (None if file is new)
+
+    Returns:
+        Dict with keys:
+        - 'is_new': True if file doesn't exist in git
+        - 'has_prose_changes': True if prose content changed
+        - 'has_any_changes': True if any content changed (prose, links, structure)
+        - 'reason': Human-readable explanation of the categorization
+        - 'error': Error message if file couldn't be read (None otherwise)
+    """
+    rel_path = file_path.relative_to(repo_root)
+    result = {
+        'is_new': False,
+        'has_prose_changes': False,
+        'has_any_changes': False,
+        'reason': '',
+        'error': None
+    }
+
+    # Check if file exists in git
+    if old_content is None:
+        result['is_new'] = True
+        result['has_prose_changes'] = True
+        result['has_any_changes'] = True
+        result['reason'] = f"File '{rel_path}' is NEW (not found in git)"
+        return result
+
+    # Get current version from filesystem
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            new_content = f.read()
+    except Exception as e:
+        result['has_prose_changes'] = True
+        result['has_any_changes'] = True
+        result['error'] = str(e)
+        result['reason'] = f"File '{rel_path}' could not be read: {e}"
+        return result
+
+    # Compare raw content first (fastest check)
+    if old_content == new_content:
+        result['reason'] = f"File '{rel_path}' is UNCHANGED (identical content)"
+        return result
+
+    # File has some changes - check if prose changed or just links/structure
+    result['has_any_changes'] = True
+
+    # Strip links and normalize whitespace for prose comparison
+    old_prose = normalize_prose_for_comparison(strip_links_from_text(old_content))
+    new_prose = normalize_prose_for_comparison(strip_links_from_text(new_content))
+
+    if old_prose != new_prose:
+        result['has_prose_changes'] = True
+        # Calculate how much prose changed for debugging
+        old_len = len(old_prose)
+        new_len = len(new_prose)
+        result['reason'] = f"File '{rel_path}' has PROSE CHANGES (old: {old_len} chars, new: {new_len} chars)"
+    else:
+        result['reason'] = f"File '{rel_path}' has LINK/STRUCTURE changes only (prose unchanged)"
+
+    return result
+
+
 def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
     """Check if a .twee file has prose changes vs just link/structure changes.
 
@@ -796,6 +867,7 @@ def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HE
     has_changes = old_prose != new_prose
     print(f"[DEBUG] Prose comparison result: {'CHANGED' if has_changes else 'UNCHANGED'}", file=sys.stderr)
     return has_changes
+
 
 def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
     """Check if a .twee file has ANY changes (including links/structure).
@@ -896,18 +968,19 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
         print(f"\n[INFO] Categorizing path {path_hash} ({len(files_in_path)} files)", file=sys.stderr)
 
-        # Check each file for changes
+        # Check each file for changes (single git call per file)
         has_prose_changes = False
         has_any_changes = False
         files_checked_for_path = 0
         git_success_for_path = 0
         git_fail_for_path = 0
+        file_reasons = []  # Collect reasons for detailed logging
 
         for file_path in files_in_path:
             files_checked_for_path += 1
             total_files_checked += 1
 
-            # Track whether git lookup succeeded by checking if we got content
+            # Single git call per file - fetch content once
             git_content = get_file_content_from_git(file_path, repo_root, base_ref)
             if git_content is not None:
                 git_success_for_path += 1
@@ -916,13 +989,25 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                 git_fail_for_path += 1
                 git_lookups_failed += 1
 
-            if file_has_prose_changes(file_path, repo_root, base_ref):
-                has_prose_changes = True
-                break  # Early exit - found new prose
+            # Analyze changes using pre-fetched git content (no redundant git calls)
+            analysis = analyze_file_changes(file_path, repo_root, git_content)
+            file_reasons.append(analysis['reason'])
+            print(f"[DEBUG] {analysis['reason']}", file=sys.stderr)
 
-            if file_has_any_changes(file_path, repo_root, base_ref):
+            if analysis['error']:
+                print(f"[ERROR] {analysis['error']}", file=sys.stderr)
+
+            if analysis['has_prose_changes']:
+                has_prose_changes = True
+                # Continue checking remaining files for complete logging
+
+            if analysis['has_any_changes']:
                 has_any_changes = True
-                # Don't break - still need to check other files for prose changes
+
+        # Log all file reasons for this path
+        print(f"[INFO] Files in path {path_hash}:", file=sys.stderr)
+        for reason in file_reasons:
+            print(f"[INFO]   - {reason}", file=sys.stderr)
 
         # Categorize based on what changed
         if has_prose_changes:
