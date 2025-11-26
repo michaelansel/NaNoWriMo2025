@@ -20,7 +20,6 @@
 	Special thanks to furkle's Twine 2 Harlowe CSS Tutorial
 	no longer up on the web but helped a lot with the basics.
 
-
 	COLORS
 
 	All color definitions are at the end of this file in the COLOR THEMES section.
@@ -93,7 +92,6 @@ tw-icon[alt]:hover {
 	transition: color 0.2s ease;
 }
 
-
 /*
 	EFFECTS
 
@@ -123,7 +121,6 @@ img.full-width {
 	margin-left: auto;
 	width: 100%;
 }
-
 
 /*
 	RESPONSIVE DESIGN
@@ -160,7 +157,6 @@ img.full-width {
 		bottom: initial;
 	}
 }
-
 
 /*
 	═══════════════════════════════════════════════════════════════════
@@ -250,5 +246,6 @@ img.full-width {
 }
 
 :: Footer [footer]
+
 (replace: "↶")[👈]
 (replace: "↷")[👉]
