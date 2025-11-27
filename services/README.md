@@ -511,6 +511,75 @@ All three passages are part of path `Start → A → B → C → End`
 
 **For complete documentation including use cases, examples, and design rationale, see the links above.**
 
+## Handling Multiple Commits
+
+During active development, you may push new commits while a validation is running. The service handles this gracefully with automatic cancellation:
+
+### What Happens When You Push a New Commit
+
+When a new commit triggers a workflow while validation is running:
+
+1. **GitHub completes the new workflow** for your latest commit
+2. **Service receives webhook** for the new workflow run
+3. **Service cancels old validation** - the running check for the previous commit is cancelled
+4. **Service starts new validation** - checking begins for the latest commit
+5. **Cancellation comment posted** - you'll see: "Validation cancelled - newer commit detected"
+
+### Why This Is a Feature
+
+This automatic cancellation is **intentional and beneficial**:
+
+- **Always validates latest code** - you don't waste time reviewing results for outdated commits
+- **No confusing parallel runs** - only one validation runs per PR at a time
+- **Rapid iteration friendly** - push fixes quickly without waiting for old checks to complete
+- **Resource efficient** - doesn't waste server time checking obsolete commits
+
+### Manual Commands Override Auto-Validation
+
+When you manually trigger validation with `/check-continuity`, the service:
+
+1. **Cancels any running auto-validation** from workflow triggers
+2. **Starts your manual validation** immediately
+3. **Ensures your request takes priority** over automatic checks
+
+This prevents parallel runs and ensures manual requests supersede automatic validation.
+
+### Edge Cases
+
+**Cancelled during validation:**
+- Most common case - new commit arrives while AI is checking paths
+- You'll see: "Validation cancelled - newer commit detected"
+- This is expected behavior during rapid development
+
+**Cancelled before validation starts:**
+- Rare case - new commit arrives during artifact download
+- Same cancellation message appears
+- Service proceeds with the latest commit only
+
+### Expected Behavior During Development
+
+```markdown
+# Push commit 1
+→ Workflow completes, validation starts...
+
+# Push commit 2 (while commit 1 is still being validated)
+→ Commit 1 validation: "Validation cancelled - newer commit detected"
+→ Commit 2 validation: Starting fresh for latest commit
+
+# Push commit 3 (while commit 2 is still being validated)
+→ Commit 2 validation: "Validation cancelled - newer commit detected"
+→ Commit 3 validation: Starting fresh for latest commit
+```
+
+**This is working as designed** - you always get results for your latest code.
+
+### Best Practices
+
+- **Let cancellations happen** - they're protecting you from reviewing stale results
+- **Wait for completion** if you want results - avoid pushing commits during validation
+- **Use manual commands** (`/check-continuity`) to override and retry specific validation modes
+- **Understand the pattern** - final commit before you stop pushing will complete fully
+
 ## Approving Validated Paths
 
 After reviewing AI feedback, you can mark paths as validated to skip them in future checks:
