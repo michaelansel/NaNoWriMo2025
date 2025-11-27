@@ -196,7 +196,7 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 - Time saved by selective validation: ~60% faster than full validation
 - Accurate change detection (zero false negatives)
 
-**Related Documents:** [features/path-validation-cache.md](features/path-validation-cache.md)
+**Related Documents:** [features/ai-continuity-checking.md](features/ai-continuity-checking.md)
 
 ---
 

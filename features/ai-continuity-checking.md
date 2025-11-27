@@ -114,162 +114,16 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 
 ### How Continuity Checking Determines What to Validate
 
-When you make changes to your story, the continuity checker analyzes each path to determine what needs validation. This analysis happens internally and helps the checker focus on paths that actually need review.
+The continuity checker automatically categorizes paths as **NEW**, **MODIFIED**, or **UNCHANGED** based on whether the path existed before and what content changed. This determines which paths need validation in each mode.
 
-**Critical Principle:** Categories are about **PATH EXISTENCE**, not file changes. The fundamental question is: "Did this route through the story exist before this PR?" NOT "Did file content change?"
+**Quick summary:**
+- **NEW:** Route didn't exist before + contains novel prose → Always validated
+- **MODIFIED:** Route existed but content changed, OR new route without novel prose → Validated in `modified` mode
+- **UNCHANGED:** Route existed with no changes → Only validated in `all` mode
 
-**Key Terms:**
-- **Path/Route:** A sequence of passages from Start to an ending. "Path" and "route" are used interchangeably - both refer to a specific journey a player can take through the story.
-- **Novel prose:** New story content (narrative text, dialogue, descriptions) that has never been validated before. This does NOT include: formatting changes (smart quotes, spacing), navigation changes (adding/removing links), or reorganization of existing prose (passage splits, content moves).
-- **Content change:** ANY modification to a passage file, including: prose edits, formatting, navigation (links), or structure. Much broader than "novel prose."
+**Don't worry about the technical details** - the checker figures out what needs validation automatically. Just choose the validation mode based on what you changed and how thorough you want the check to be.
 
-**The Two-Level Test:**
-
-The checker uses a two-level decision process:
-
-1. **PRIMARY: Path Existence Test** - Did this exact sequence of passages exist in the base branch?
-   - If YES → Path is either MODIFIED or UNCHANGED (never NEW)
-   - If NO → Path is either NEW or MODIFIED (depends on prose novelty)
-
-2. **SECONDARY: Content/Prose Test** - What changed?
-   - If path existed: Did any passage content change? → MODIFIED or UNCHANGED
-   - If path is new: Does it contain novel prose? → NEW or MODIFIED
-
-**Decision Table:**
-
-| Path existed before? | Contains novel prose? | Category | Reasoning |
-|---------------------|----------------------|----------|-----------|
-| YES | N/A (doesn't matter) | MODIFIED or UNCHANGED | Existing paths are never NEW, even if you added novel prose to them |
-| YES | N/A | UNCHANGED | Path existed, no content changed in any passage |
-| YES | N/A | MODIFIED | Path existed, at least one passage had content changes |
-| NO | YES | NEW | New route with new story content needs first validation |
-| NO | NO | MODIFIED | New route structure but prose was already validated (reorganization) |
-
-The checker categorizes paths into three internal states to decide what needs validation:
-
-#### NEW Paths (Internal Category)
-**What it means:** This path did NOT exist before this PR AND contains novel prose (new story content never validated before).
-
-**How to identify:**
-1. Path existence test: Did this sequence of passages exist in base branch? → NO
-2. Prose novelty test: Does it contain novel prose? → YES
-3. Result: NEW
-
-**What causes this:**
-- Created new passage with new story content, and a path goes through it
-- Added new link creating a path that didn't exist before, and that path includes novel prose
-- Players can take a journey they couldn't before, reading prose they've never seen
-
-**Example:** You create `KEB-251121.twee` with a new scene about discovering the cave. A path `Start → Forest → Cave → Victory` is NEW because:
-1. This sequence didn't exist before (PATH test: NO)
-2. The cave scene has novel prose (PROSE test: YES)
-3. Result: NEW - needs first-time validation
-
-**Why this matters:** NEW paths must be validated because they're routes with novel content that have never been reviewed.
-
----
-
-#### MODIFIED Paths (Internal Category)
-**What it means:** EITHER (Type A) this path existed before and content changed in at least one passage, OR (Type B) this path is new but contains no novel prose (reorganization).
-
-**How to identify - Type A (Existing path with changes):**
-1. Path existence test: Did this sequence exist in base branch? → YES
-2. Content change test: Did any passage in the path change? → YES
-3. Result: MODIFIED
-
-**How to identify - Type B (New path, no novel prose):**
-1. Path existence test: Did this sequence exist in base branch? → NO
-2. Prose novelty test: Does it contain novel prose? → NO
-3. Result: MODIFIED (reorganization case)
-
-**What causes this:**
-- **Type A:** Edited prose, formatting, or navigation in an existing path's passages
-- **Type B:** Reorganized existing prose (passage splits, content moves) creating new navigation sequences
-
-**Example 1 - Prose edits (Type A):**
-Path `Start → Continue on → Village → End` existed before. You fix a typo in Village passage.
-- PATH test: YES (existed before)
-- CONTENT test: YES (Village changed)
-- Result: MODIFIED
-
-**Example 2 - Adding novel prose to existing path (Type A):**
-Path `Start → Continue on → Village → End` existed before. You add a new paragraph with novel prose to Village.
-- PATH test: YES (existed before) ← **This takes priority**
-- Result: MODIFIED (path existed, so NEVER NEW even though prose is novel)
-
-**Example 3 - Linter reformats files (Type A):**
-Linter reformats 55 files (smart quotes, spacing). All paths through these files are MODIFIED.
-- PATH test: YES (paths existed before)
-- CONTENT test: YES (formatting changed)
-- PROSE test: NO (prose not novel, just reformatted)
-- Result: MODIFIED
-
-**Example 4 - Passage split (Type B - CRITICAL CASE):**
-
-**Before split:**
-- Passage: `LongPassage` contains "First part. Second part."
-- Path exists: `Start → LongPassage → End`
-
-**After split:**
-- `LongPassage` becomes "First part." with link `[[Continue→PartTwo]]`
-- New passage `PartTwo` contains "Second part."
-- Two paths now exist:
-  1. `Start → LongPassage → PartTwo → End` (new sequence)
-  2. `Start → LongPassage → End` (original sequence, but LongPassage changed)
-
-**Analysis:**
-- **New path** `Start → LongPassage → PartTwo → End`:
-  - PATH test: NO (this sequence didn't exist before)
-  - PROSE test: NO (prose from LongPassage, just reorganized)
-  - Result: MODIFIED (Type B - reorganization)
-- **Original path** `Start → LongPassage → End`:
-  - PATH test: YES (this sequence existed before)
-  - CONTENT test: YES (LongPassage changed - added link, removed prose)
-  - Result: MODIFIED (Type A - existing path with changes)
-
-**Why this matters:** MODIFIED paths may need re-validation because either the reading experience changed (Type A) or the navigation structure changed (Type B).
-
----
-
-#### UNCHANGED Paths (Internal Category)
-**What it means:** This path existed before this PR AND no passage in the path changed.
-
-**How to identify:**
-1. Path existence test: Did this sequence exist in base branch? → YES
-2. Content change test: Did any passage in the path change? → NO
-3. Result: UNCHANGED
-
-**What causes this:**
-- Made changes to other parts of the story
-- This path doesn't include any passages you touched
-- Path exists in both base and PR with identical content
-
-**Example:** You add a new passage in one story branch. Paths in completely different branches are UNCHANGED:
-- PATH test: YES (paths existed before)
-- CONTENT test: NO (no passages in these paths changed)
-- Result: UNCHANGED
-
-**Why this matters:** UNCHANGED paths don't need re-validation - already validated, nothing changed.
-
----
-
-### Understanding the Distinction: Paths vs Files
-
-**Common confusion:** "I changed 55 files, so I have 55 NEW paths, right?"
-
-**No.** The question isn't "Did files change?" It's "Did these paths exist before?"
-
-**Mental model:**
-- Think of your story as a map with paths from START to various endings
-- NEW = A path that wasn't on the map before AND contains novel prose
-- MODIFIED = Either (A) a path that was on the map before and the journey changed, OR (B) a new path structure with no novel prose
-- UNCHANGED = A path that was on the map before and the journey is identical
-
-**Quick reference:**
-- Linter reformats 55 files → All paths MODIFIED (existed before + content changed)
-- Split passage into two → New path sequence MODIFIED (new structure + no novel prose), original path MODIFIED (existed before + content changed)
-- Add novel prose to existing path → Path MODIFIED (existed before, so never NEW)
-- Create new passage with novel prose → Paths through it are NEW (didn't exist + novel prose)
+For detailed explanation of the categorization logic (two-level tests, decision tables, examples of passage splits, linter reformats, and compound changes), see [Understanding Path Categorization](../services/README.md#understanding-path-categorization-detailed) in the services documentation.
 
 ---
 
@@ -575,51 +429,7 @@ These paths won't be re-checked unless their content changes.
 
 **Status:** Working as intended - thread-based concurrency handles this
 
----
-
-### Edge Case 8: Unreachable Paths
-**Scenario:** A path becomes unreachable due to removed links, but still exists in the story structure
-
-**Example:** You remove the link `[[Go to secret cave]]` from the Forest passage. The path `Start → Forest → SecretCave → End` still exists in the graph (all passages and links are present) but players can't reach it anymore.
-
-**Current Behavior:**
-- Path is categorized as MODIFIED (the Forest passage changed - link removed)
-- Path is validated if in validation mode scope
-- AI may flag that the path is unreachable
-
-**Desired Behavior:**
-- Path is correctly categorized based on content changes
-- Writers can approve path if unreachability is intentional (dead branch)
-- Or fix by restoring link if unintentional
-
-**Status:** Working as intended - categorization is about content changes, not reachability
-
----
-
-### Edge Case 9: Compound Changes
-**Scenario:** A single PR makes multiple types of changes affecting the same path
-
-**Example:** In one PR, you:
-1. Fix typos in passage A (content change)
-2. Add novel prose to passage B (content change with novel prose)
-3. Add a new link in passage C (navigation change)
-All three passages are part of path `Start → A → B → C → End`
-
-**Question:** Is this path NEW or MODIFIED?
-
-**Answer:**
-- PATH test: Did `Start → A → B → C → End` exist before? → YES (sequence existed)
-- Result: MODIFIED (path existed, so never NEW, even though passage B has novel prose)
-- The novel prose in passage B doesn't make the path NEW because the path sequence already existed
-
-**Current Behavior:**
-- Path correctly categorized as MODIFIED
-- Validation checks the entire path including the novel prose in passage B
-- Single validation covers all changes
-
-**Status:** Working as intended - PATH EXISTENCE test takes priority
-
-See [architecture/ai-continuity-checking.md](../architecture/ai-continuity-checking.md) for technical design.
+See [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) for technical design. For additional edge cases related to path categorization (unreachable paths, compound changes), see [services/README.md](../services/README.md#edge-cases-categorization).
 
 ---
 
