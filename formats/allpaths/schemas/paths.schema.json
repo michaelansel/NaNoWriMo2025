@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AllPaths Paths Schema",
+  "description": "Schema for paths.json - enumerated story paths with content",
+  "type": "object",
+  "required": ["paths", "statistics"],
+  "properties": {
+    "paths": {
+      "type": "array",
+      "description": "Array of all enumerated paths through the story",
+      "items": {
+        "type": "object",
+        "required": ["id", "route", "content"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "8-character hex hash uniquely identifying this path (based on route and content)",
+            "pattern": "^[a-f0-9]{8}$"
+          },
+          "route": {
+            "type": "array",
+            "description": "Ordered list of passage names traversed in this path",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "content": {
+            "type": "object",
+            "description": "Map from passage name to passage text content",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "description": "Summary statistics about the paths",
+      "required": ["total_paths", "total_passages", "avg_path_length"],
+      "properties": {
+        "total_paths": {
+          "type": "integer",
+          "description": "Total number of paths enumerated",
+          "minimum": 0
+        },
+        "total_passages": {
+          "type": "integer",
+          "description": "Total number of unique passages in the story graph",
+          "minimum": 0
+        },
+        "avg_path_length": {
+          "type": "number",
+          "description": "Average number of passages per path",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

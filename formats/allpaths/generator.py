@@ -25,6 +25,11 @@ from modules.parser import (
     extract_links,
     build_graph,
 )
+from modules.path_generator import (
+    generate_all_paths_dfs,
+    calculate_path_hash,
+    format_passage_text,
+)
 from modules.output_generator import (
     format_date_for_display,
     generate_html_output,
@@ -36,121 +41,14 @@ from modules.output_generator import (
 # =============================================================================
 # PATH GENERATION
 # =============================================================================
-
-def generate_all_paths_dfs(graph: Dict[str, List[str]], start: str,
-                          current_path: List[str] = None,
-                          max_cycles: int = 1) -> List[List[str]]:
-    """
-    Generate all possible paths from start to end nodes using DFS.
-
-    Args:
-        graph: Adjacency list representation of story graph
-        start: Starting passage name
-        current_path: Current path being explored
-        max_cycles: Maximum number of times a passage can be visited
-
-    Returns:
-        List of paths, where each path is a list of passage names
-    """
-    if current_path is None:
-        current_path = []
-
-    # Add current node to path
-    current_path = current_path + [start]
-
-    # Check for excessive cycles
-    if current_path.count(start) > max_cycles:
-        # Found a cycle, terminate this path
-        return []
-
-    # Base case: end node (no outgoing links)
-    if start not in graph or not graph[start]:
-        return [current_path]
-
-    # Recursive case: explore all branches
-    all_paths = []
-    for target in graph[start]:
-        paths_from_target = generate_all_paths_dfs(graph, target, current_path, max_cycles)
-        all_paths.extend(paths_from_target)
-
-    return all_paths
-
-def format_passage_text(text: str, selected_target: str = None) -> str:
-    """
-    Format passage text for reading (convert links to plain text).
-
-    Args:
-        text: The passage text to format
-        selected_target: If provided, only show this link and mark others as [unselected] if multiple links exist
-
-    Returns:
-        Formatted text with links converted to visible text
-    """
-    # Replace [[display->target]] with "display"
-    # Replace [[target<-display]] with "display"
-    # Replace [[target]] with "target"
-
-    # Count total links to determine if we should use placeholders
-    link_count = len(re.findall(r'\[\[([^\]]+)\]\]', text))
-    use_placeholder = link_count > 1
-
-    def replace_link(match):
-        link = match.group(1)
-
-        # Extract display text and target
-        if '->' in link:
-            display = link.split('->')[0].strip()
-            target = link.split('->')[1].strip()
-        elif '<-' in link:
-            display = link.split('<-')[1].strip()
-            target = link.split('<-')[0].strip()
-        else:
-            display = link.strip()
-            target = link.strip()
-
-        # If we have a selected target, only show that one
-        if selected_target is not None:
-            if target == selected_target:
-                return display
-            else:
-                # Use placeholder if multiple links exist, otherwise remove completely
-                return "[unselected]" if use_placeholder else ""
-        else:
-            return display
-
-    return re.sub(r'\[\[([^\]]+)\]\]', replace_link, text)
+# Note: Path generation functions moved to modules/path_generator.py
+# - generate_all_paths_dfs: DFS traversal algorithm
+# - calculate_path_hash: Path ID generation
+# - format_passage_text: Text formatting utilities
 
 # =============================================================================
 # HASHING AND FINGERPRINTING
 # =============================================================================
-
-def calculate_path_hash(path: List[str], passages: Dict[str, Dict]) -> str:
-    """Calculate hash based on path route AND passage content.
-
-    This ensures the hash changes when:
-    - Passage names change (route structure)
-    - Passage content is edited (text changes)
-    - Path structure changes (added/removed passages)
-
-    Args:
-        path: List of passage names in order
-        passages: Dict of passage data including text content
-
-    Returns:
-        8-character hex hash
-    """
-    content_parts = []
-    for passage_name in path:
-        if passage_name in passages:
-            # Include both structure and content in hash
-            passage_text = passages[passage_name].get('text', '')
-            content_parts.append(f"{passage_name}:{passage_text}")
-        else:
-            # Passage doesn't exist (shouldn't happen, but be defensive)
-            content_parts.append(f"{passage_name}:MISSING")
-
-    combined = '\n'.join(content_parts)
-    return hashlib.md5(combined.encode()).hexdigest()[:8]
 
 def strip_links_from_text(text: str) -> str:
     """Remove all Twee link syntax from text, preserving only prose.
