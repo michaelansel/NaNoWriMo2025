@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Writers need quantitative insights into their writing output and patterns. This feature provides a metrics command-line tool that aggregates word counts, passage statistics, and writing distribution data from the Twee source files.
+Writers need quantitative insights into their writing output and patterns. This feature provides metrics in two formats: a command-line interface for quick checks during writing, and an HTML build format for persistent viewing and sharing.
 
 **Key Capabilities:**
 - Calculate total word counts across the entire story
@@ -17,7 +17,11 @@ Writers need quantitative insights into their writing output and patterns. This 
 - Filter metrics by file prefix (e.g., only KEB files, only mansel files, or all)
 - Identify longest passages and files
 
-This tool helps writers answer questions like "How much have I written?" and "What's my typical passage length?"
+**Dual Output Formats:**
+- **CLI**: Quick on-demand metrics for active writing sessions (`make metrics`)
+- **HTML**: Persistent metrics view generated on every build, published to GitHub Pages alongside other story formats (Harlowe, Paperthin, DotGraph, AllPaths)
+
+This tool helps writers answer questions like "How much have I written?" and "What's my typical passage length?" both during active writing (CLI) and when reviewing the project in a browser (HTML).
 
 **Timing Context:**
 - **Ideally available:** Throughout November for understanding writing output and patterns
@@ -117,6 +121,21 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
+### Need 5: View Metrics in Browser
+**Context:** Reviewing project in browser, sharing metrics with collaborators
+
+**User Goal:** See persistent metrics alongside other story outputs
+
+**Questions Writers Need Answered:**
+- What are the current metrics without running CLI commands?
+- Can I share metrics with collaborators via a URL?
+- Can I view metrics on any device with a browser?
+- Are metrics always up-to-date with the latest build?
+
+**Why This Matters:** HTML output makes metrics accessible without command-line access, enables sharing via GitHub Pages, and provides a persistent view that updates automatically with each build. This aligns with the other build formats (Harlowe, Paperthin, DotGraph, AllPaths) that provide different views of the story.
+
+---
+
 ## User Stories
 
 ### Story 1: Check Total Word Count
@@ -204,6 +223,23 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
+### Story 7: View Metrics in Browser
+**As a** writer reviewing the project online
+**I want** to view writing metrics in my browser
+**So that** I can see current statistics without using command-line tools
+
+**Acceptance Criteria:**
+- HTML file generated on every build (alongside Harlowe, Paperthin, DotGraph, AllPaths)
+- Accessible via GitHub Pages at a consistent URL
+- Shows all metric sections: word count summary, passage statistics, file statistics, distribution, top passages
+- Updates automatically with each build (reflects current story state)
+- No CLI access required to view metrics
+- Basic, readable HTML format (similar to Paperthin format simplicity)
+- Can be viewed on any device with a browser
+- Published alongside other build formats in the same GitHub Pages structure
+
+---
+
 ## Feature Behavior
 
 ### Command Interface
@@ -222,6 +258,38 @@ This is an **active-writing tool** that serves writers during different phases:
 3. **File Statistics** - Count, min/mean/median/max word counts per file
 4. **Distribution** - Passage and file counts by word count ranges
 5. **Top Passages** - Longest passages with names and counts
+
+---
+
+### HTML Output Format
+
+**Generated:** On every build via `make build` or `make deploy`
+
+**Published:** To GitHub Pages alongside other formats:
+- `/index.html` - Harlowe playable story
+- `/paperthin.html` - Linear proofing text
+- `/graph.svg` - Visual story structure
+- `/allpaths.html` - All possible paths
+- `/metrics.html` - Writing metrics (NEW)
+
+**Content Sections:**
+1. **Word Count Summary** - Total word count, files analyzed, passage count
+2. **Passage Statistics** - Count, min/mean/median/max word counts per passage
+3. **File Statistics** - Count, min/mean/median/max word counts per file
+4. **Distribution** - Passage and file counts by word count ranges (table or visual representation)
+5. **Top Passages** - Longest passages with names and counts
+
+**Filtering in HTML:**
+- HTML shows metrics for ALL story files (no filtering in HTML view)
+- Users needing filtered metrics use CLI with `--include` or `--exclude` flags
+- HTML provides comprehensive overview; CLI provides flexible analysis
+
+**Format Characteristics:**
+- Basic, readable HTML (similar to Paperthin's simplicity)
+- No complex interactivity required (static display)
+- Clean formatting for easy reading
+- Shows same information as CLI output
+- Updates automatically on every build
 
 ---
 
@@ -301,19 +369,28 @@ Top 5 Longest Passages:
 ### User Understanding
 - Writers can explain what each metric means and how to interpret it
 - Writers cite metrics when discussing writing output and patterns
-- Writers use filters correctly to analyze specific content
+- Writers use filters correctly to analyze specific content (CLI)
+- Writers know where to find metrics HTML on GitHub Pages
 
 ### Feature Usage
-- Writers run metrics regularly (weekly or more) during active writing
+- Writers run CLI metrics regularly (weekly or more) during active writing for quick checks
+- Writers view HTML metrics when reviewing project in browser
 - Metrics cited in team discussions about writing output
-- Filters used to compare author contributions
+- Filters used to compare author contributions (CLI)
 - Top passages list used to identify refactoring candidates
+- HTML metrics shared via URL with collaborators
+
+### Format Usage
+- **CLI**: Used for on-demand analysis during active writing sessions
+- **HTML**: Used for reviewing project state, sharing with collaborators, viewing on mobile devices
 
 ### Qualitative Indicators
 - Writers report feeling motivated by seeing quantitative output
 - Metrics help answer "how much have I written?" questions instantly
 - Team uses metrics to ensure balanced participation
 - Post-NaNoWriMo retrospectives reference these metrics
+- HTML format makes metrics accessible to non-technical collaborators
+- Metrics viewed alongside other formats (Harlowe, Paperthin, etc.) for comprehensive project review
 
 ---
 
@@ -323,10 +400,12 @@ Top 5 Longest Passages:
 **Scenario:** No story files exist yet
 
 **Behavior:**
-- Command reports 0 words, 0 passages, 0 files
+- CLI reports 0 words, 0 passages, 0 files
+- HTML shows 0 words, 0 passages, 0 files
 - No statistics shown (cannot compute min/max with no data)
 - Clear message: "No story files found"
-- Exits gracefully without errors
+- CLI exits gracefully without errors
+- HTML still generated (shows empty state, not missing file)
 
 ---
 
@@ -374,6 +453,19 @@ Top 5 Longest Passages:
 
 ---
 
+### Build Failure During HTML Generation
+**Scenario:** HTML generation fails during build process
+
+**Behavior:**
+- Build reports error clearly
+- Build continues (doesn't block other formats)
+- Missing metrics.html on GitHub Pages
+- CLI still works (independent of HTML generation)
+- Error logged for debugging
+- Graceful degradation: other formats still published
+
+---
+
 ## Risk Considerations
 
 ### Word Counting Accuracy
@@ -415,6 +507,20 @@ Top 5 Longest Passages:
 
 ---
 
+### Build Integration Complexity
+**Risk:** Adding HTML generation to build process may slow builds or introduce failures
+
+**Mitigation:**
+- Metrics generation should be fast (simple text processing, same as CLI)
+- HTML generation is simple template rendering
+- Build continues if metrics generation fails (graceful degradation)
+- Test build integration thoroughly
+- Monitor build times to ensure no significant impact
+
+**Monitoring:** Track build times, track metrics generation failures
+
+---
+
 ## Acceptance Criteria Summary
 
 ### Core Functionality
@@ -425,30 +531,48 @@ Top 5 Longest Passages:
 - [ ] File statistics computed: count, min, mean, median, max
 - [ ] Distribution shows passage and file counts by word count ranges
 
-### Filtering
+### CLI Output
+- [ ] Human-readable text format in CLI
+- [ ] Clear section headers and labels
+- [ ] Statistics properly aligned and formatted
+- [ ] Distribution easy to interpret
+- [ ] Top passages list shows passage names and word counts
+
+### HTML Output
+- [ ] HTML file generated on every build
+- [ ] Published to GitHub Pages as `/metrics.html`
+- [ ] Shows all metric sections (summary, statistics, distribution, top passages)
+- [ ] Updates automatically with each build
+- [ ] Basic, readable HTML format
+- [ ] No CLI access required to view
+- [ ] Accessible on any device with a browser
+- [ ] Shows metrics for all story files (no filtering in HTML)
+
+### Filtering (CLI Only)
 - [ ] `--include` flag filters files by prefix
 - [ ] `--exclude` flag filters files by prefix
 - [ ] Filters can be combined
 - [ ] Clear indication of active filters in output
 - [ ] Default behavior: include all story files
 
-### Output Quality
-- [ ] Human-readable text format
-- [ ] Clear section headers and labels
-- [ ] Statistics properly aligned and formatted
-- [ ] Distribution easy to interpret
-- [ ] Top passages list shows passage names and word counts
-
 ### Data Accuracy
 - [ ] Word counts match manual verification for sample passages
 - [ ] Statistics computed correctly (verified against known datasets)
-- [ ] Filters apply correctly
+- [ ] Filters apply correctly (CLI)
 - [ ] Edge cases handled gracefully (empty repo, single passage, etc.)
+- [ ] HTML shows same data as CLI (when no filters applied)
+
+### Build Integration
+- [ ] Integrated into `make build` and `make deploy`
+- [ ] HTML generated alongside Harlowe, Paperthin, DotGraph, AllPaths
+- [ ] Build fails gracefully if metrics generation fails
+- [ ] Clear build output showing metrics generation
 
 ### Documentation
 - [ ] Usage examples in README or documentation
 - [ ] Clear explanation of word counting rules
-- [ ] Filter behavior documented
+- [ ] Filter behavior documented (CLI)
+- [ ] HTML format documented
 - [ ] Integration with existing tooling (make/npm)
 
 ---
