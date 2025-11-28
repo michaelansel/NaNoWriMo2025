@@ -21,7 +21,7 @@ from lib.git_service import GitService
 class TweeStoryParser(HTMLParser):
     """Parse Tweego-compiled HTML to extract story data"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.story_data = {}
         self.passages = {}
@@ -29,7 +29,7 @@ class TweeStoryParser(HTMLParser):
         self.current_data = []
         self.in_passage = False
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs: List[Tuple[str, str]]) -> None:
         attrs_dict = dict(attrs)
 
         if tag == 'tw-storydata':
@@ -48,7 +48,7 @@ class TweeStoryParser(HTMLParser):
             }
             self.current_data = []
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         if tag == 'tw-passagedata' and self.in_passage:
             self.current_passage['text'] = ''.join(self.current_data).strip()
             self.passages[self.current_passage['name']] = self.current_passage
@@ -56,7 +56,7 @@ class TweeStoryParser(HTMLParser):
             self.current_passage = None
             self.current_data = []
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         if self.in_passage:
             self.current_data.append(data)
 
@@ -67,7 +67,19 @@ def parse_story_html(html_content: str) -> Tuple[Dict, Dict]:
     return parser.story_data, parser.passages
 
 def parse_link(link_text: str) -> str:
-    """Parse a Twee link and extract the target passage name"""
+    """Parse a Twee link and extract the target passage name.
+
+    Supports three Twee link formats:
+    - [[target]]
+    - [[display->target]]
+    - [[target<-display]]
+
+    Args:
+        link_text: The link text to parse (without surrounding [[ ]])
+
+    Returns:
+        The target passage name
+    """
     # [[target]]
     # [[display->target]]
     # [[target<-display]]
@@ -386,7 +398,14 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
     return '\n'.join(lines)
 
 def load_validation_cache(cache_file: Path) -> Dict:
-    """Load previously validated paths from cache"""
+    """Load previously validated paths from cache.
+
+    Args:
+        cache_file: Path to the validation cache JSON file
+
+    Returns:
+        Dict mapping path hash -> validation data, or empty dict if cache doesn't exist
+    """
     if not cache_file.exists():
         return {}
 
@@ -396,8 +415,13 @@ def load_validation_cache(cache_file: Path) -> Dict:
     except:
         return {}
 
-def save_validation_cache(cache_file: Path, cache: Dict):
-    """Save validated paths to cache"""
+def save_validation_cache(cache_file: Path, cache: Dict) -> None:
+    """Save validated paths to cache.
+
+    Args:
+        cache_file: Path to the validation cache JSON file
+        cache: Dict mapping path hash -> validation data
+    """
     with open(cache_file, 'w') as f:
         json.dump(cache, indent=2, fp=f)
 
@@ -1020,7 +1044,14 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
     return categories
 
 def format_date_for_display(date_str: str) -> str:
-    """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC)"""
+    """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC).
+
+    Args:
+        date_str: ISO format datetime string (e.g., "2025-01-15T10:30:00Z")
+
+    Returns:
+        Human-readable date string (e.g., "2025-01-15 10:30 UTC") or "Unknown"
+    """
     if not date_str:
         return "Unknown"
     try:
@@ -1042,7 +1073,18 @@ def format_date_for_display(date_str: str) -> str:
 
 def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[str]],
                         validation_cache: Dict = None, path_categories: Dict[str, str] = None) -> str:
-    """Generate HTML output with all paths using Jinja2 template"""
+    """Generate HTML output with all paths using Jinja2 template.
+
+    Args:
+        story_data: Dict containing story metadata (name, ifid, start)
+        passages: Dict mapping passage name -> passage data
+        all_paths: List of all paths, where each path is a list of passage names
+        validation_cache: Optional dict mapping path hash -> validation metadata
+        path_categories: Optional dict mapping path hash -> category ('new', 'modified', 'unchanged')
+
+    Returns:
+        Rendered HTML string containing all paths with metadata and statistics
+    """
     if validation_cache is None:
         validation_cache = {}
     if path_categories is None:
@@ -1107,7 +1149,26 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 
     return html
 
-def main():
+def main() -> None:
+    """Main entry point for AllPaths generator.
+
+    Parses Tweego-compiled HTML, generates all possible story paths,
+    categorizes them (new/modified/unchanged), and outputs HTML and text files.
+
+    Usage:
+        generator.py <input.html> [output_dir]
+
+    Args (via sys.argv):
+        input.html: Path to Tweego-compiled HTML file
+        output_dir: Optional directory for output files (default: current directory)
+
+    Outputs:
+        - allpaths.html: Interactive HTML viewer with all paths
+        - allpaths-clean/*.txt: Individual path files with clean prose
+        - allpaths-metadata/*.txt: Individual path files with metadata
+        - allpaths-passage-mapping.json: Mapping between passage names and IDs
+        - allpaths-validation-status.json: Cache of path validation data
+    """
     if len(sys.argv) < 2:
         print("Usage: generator.py <input.html> [output_dir]", file=sys.stderr)
         sys.exit(1)
