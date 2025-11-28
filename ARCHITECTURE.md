@@ -61,39 +61,99 @@ allpaths-validation-status.json        # Validation cache (repository root)
 
 ### 3. AllPaths Format Generator
 
-**Location**: `/formats/allpaths/generator.py`
+**Location**: `/formats/allpaths/generator.py`, `/formats/allpaths/modules/`
 
 **Purpose**: Generate all possible story paths for AI-based continuity validation
 
-**Architecture**:
-- **Graph Construction**: Parses Tweego output into directed graph
-- **Path Enumeration**: Depth-first search (DFS) to find all paths
-- **Deduplication**: MD5-based path hashing for stable IDs
-- **Multiple Outputs**: HTML browser, clean text, and metadata text
-- **Validation Tracking**: Persistent cache across builds
+**Architecture**: 5-Stage Modular Processing Pipeline
+
+The AllPaths generator implements a modular pipeline that transforms Tweego HTML output into multiple formats through five distinct processing stages. Each stage has well-defined inputs/outputs and can be tested independently.
+
+**Pipeline Stages**:
+
+1. **Stage 1: Parse & Extract** (`modules/parser.py`)
+   - Input: HTML from Tweego (paperthin format)
+   - Output: `story_graph.json` - Clean story structure
+   - Responsibility: Extract passages, links, and metadata from HTML
+
+2. **Stage 2: Generate Paths** (`modules/path_generator.py`)
+   - Input: `story_graph.json`
+   - Output: `paths.json` - All possible story paths
+   - Responsibility: DFS traversal to enumerate paths, generate stable IDs
+
+3. **Stage 3: Enrich with Git Data** (`modules/git_enricher.py`)
+   - Input: `paths.json` + git repository
+   - Output: `paths_enriched.json` - Paths with git metadata
+   - Responsibility: Add file associations, commit dates, passage-to-file mapping
+
+4. **Stage 4: Categorize Paths** (`modules/categorizer.py`)
+   - Input: `paths_enriched.json` + validation cache
+   - Output: `paths_categorized.json` - Classified paths
+   - Responsibility: Classify as new/modified/unchanged using git-based detection
+
+5. **Stage 5: Generate Outputs** (`modules/output_generator.py`)
+   - Input: `paths_categorized.json`
+   - Output: HTML browser, clean text, metadata text, updated cache
+   - Responsibility: Create all output formats with random ID substitution
+
+**Orchestrator**: `generator.py` coordinates all five stages and manages the pipeline flow.
 
 **Key Features**:
-- **Content Fingerprinting**: Detects content changes via hash comparison
+- **Modular Design**: Each stage is independently testable (32+ tests, >80% coverage per module)
+- **Intermediate Artifacts**: Four JSON artifacts with documented schemas for debugging
+- **Git-based Change Detection**: Uses git diff for accurate path categorization
 - **Path Categorization**: Classifies paths as new/modified/unchanged
 - **Random ID Substitution**: Replaces passage names with random hex IDs for AI
 - **Passage Mapping**: Maintains bidirectional ID-to-name mapping
+- **Debugging Support**: `--write-intermediate` flag writes all 4 intermediate artifacts
+
+**Module Structure**:
+```
+formats/allpaths/
+├── generator.py              # Main orchestrator
+├── modules/
+│   ├── parser.py             # Stage 1: HTML → story_graph.json
+│   ├── path_generator.py     # Stage 2: story_graph.json → paths.json
+│   ├── git_enricher.py       # Stage 3: Add git metadata
+│   ├── categorizer.py        # Stage 4: Classify paths
+│   └── output_generator.py   # Stage 5: Generate all outputs
+├── schemas/                  # JSON schemas for all 4 intermediate artifacts
+├── lib/git_service.py        # Git abstraction layer
+└── tests/                    # Comprehensive test suite
+```
+
+**Data Flow**:
+```
+Tweego HTML
+    ↓
+Stage 1: Parse → story_graph.json
+    ↓
+Stage 2: Generate Paths → paths.json
+    ↓
+Stage 3: Git Enrich → paths_enriched.json
+    ↓
+Stage 4: Categorize → paths_categorized.json
+    ↓
+Stage 5: Generate Outputs → HTML browser, text files, cache
+```
 
 **Algorithm**:
 ```
 Input: Story graph from Tweego
 Process:
-  1. Find start passage from StoryData
-  2. DFS traversal from start to all end nodes
-  3. Collect all unique paths
-  4. Generate stable path IDs (MD5 hash)
-  5. Compare with previous validation cache
-  6. Categorize paths (new/modified/unchanged)
-  7. Generate outputs in multiple formats
+  1. Parse HTML into structured graph (Stage 1)
+  2. DFS traversal from start to all end nodes (Stage 2)
+  3. Enrich paths with git metadata (Stage 3)
+  4. Use git diff to categorize paths (Stage 4)
+  5. Generate outputs in multiple formats (Stage 5)
 Output: HTML browser, text files, validation cache
 ```
 
 **Time Complexity**: O(V + E) where V = passages, E = links
 **Space Complexity**: O(V) for recursion stack
+**Performance**: <20 seconds for 30 paths (within target)
+
+See `architecture/008-allpaths-processing-pipeline.md` for complete architecture documentation and design rationale.
 
 ### 4. AI Continuity Validation
 

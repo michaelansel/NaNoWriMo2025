@@ -345,6 +345,80 @@ PM identifies strategic conflict
 
 **Key principle**: Subagents don't spawn other subagents. They report issues to Router, which spawns the appropriate persona.
 
+### Iterative Multi-Role Collaboration
+
+Large projects involve multiple passes through personas rather than single handoffs. This is the normal workflow, not an exception.
+
+**Forward Flow** (normal progression):
+```
+CEO validates strategic alignment
+  → PM defines requirements and acceptance criteria
+    → Architect designs technical approach, plans first phase
+      → Developer implements phase
+        → Return to Architect for next phase
+```
+
+**Backward Flow** (escalation and clarification):
+```
+Developer discovers design issue → Architect revises design
+Developer discovers requirements gap → PM clarifies requirements
+Architect discovers technical infeasibility → PM adjusts scope
+Architect discovers strategic conflict → CEO decides
+PM discovers priority conflict → CEO clarifies direction
+```
+
+**Escalation Triggers** (when to go back UP):
+
+| From | To | Trigger |
+|------|-----|---------|
+| Developer | Architect | Design doesn't work, design ambiguous, structural issue discovered |
+| Developer | PM | Requirements unclear, edge case not covered, user intent unclear |
+| Developer | CEO | Strategic conflict discovered (rare) |
+| Architect | PM | Requirements technically infeasible, scope ambiguity |
+| Architect | CEO | Architecture principles conflict with feature |
+| PM | CEO | Feature conflicts with priorities, strategic ambiguity |
+
+**Natural Return Points** (when control flows back UP):
+
+| Event | Returns To | Purpose |
+|-------|-----------|---------|
+| Phase complete | Architect | Plan next phase based on learnings |
+| Implementation complete | All roles | Finalize documentation, verify acceptance criteria |
+| Major milestone | PM + CEO | Verify still on track strategically |
+| Blocking issue discovered | Appropriate role | Unblock before continuing |
+
+**Incremental Planning**:
+
+Each planning role (CEO, PM, Architect) should plan incrementally rather than exhaustively upfront:
+- **Architect**: Plan one implementation phase at a time, not entire project
+- **PM**: Refine requirements as technical constraints emerge
+- **CEO**: Adjust priorities as project reveals new information
+
+This allows plans to adapt based on learnings from implementation. Developer discovers ground truth (what's actually used, what's actually complex) and feeds this back to planning roles.
+
+**Parallel Work**:
+
+Not everything is sequential. While waiting for escalation resolution:
+- Developer can work on unblocked parts
+- Architect can design independent components
+- PM can clarify other requirements
+
+**Documentation Scaffolding**:
+
+During large projects, planning roles create temporary artifacts (implementation plans, phase tracking, open questions). These are scaffolding—useful during construction, removed when done:
+
+```
+Architect creates scaffolding (detailed implementation plan)
+  → Developer uses scaffolding (executes steps, tracks progress)
+    → Architect removes scaffolding (cleans docs to final state)
+```
+
+After implementation completes:
+- Remove implementation plans and tracking (git history preserves this)
+- Update architecture docs to describe final state only
+- Remove "migration", "phases", "before/after" language
+- Ensure docs describe WHAT IS, not HOW WE GOT HERE
+
 ## Documentation Philosophy
 
 **Create durable artifacts**:
