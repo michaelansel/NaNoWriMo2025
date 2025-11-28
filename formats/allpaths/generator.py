@@ -905,18 +905,149 @@ def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD
     print(f"[DEBUG] Raw content comparison result: {'CHANGED' if has_changes else 'UNCHANGED'}", file=sys.stderr)
     return has_changes
 
+def parse_twee_content(twee_content: str) -> Dict[str, Dict]:
+    """
+    Parse twee file content and extract passages.
+
+    Args:
+        twee_content: Content of a twee file
+
+    Returns:
+        Dict mapping passage name -> {'text': passage_text}
+    """
+    passages = {}
+
+    # Split by passage headers (:: PassageName)
+    # Pattern matches :: followed by passage name, optionally with tags in brackets
+    pattern = r'^::\s*(.+?)(?:\s*\[.*?\])?\s*$'
+
+    # Find all passage starts
+    matches = list(re.finditer(pattern, twee_content, re.MULTILINE))
+
+    for i, match in enumerate(matches):
+        passage_name = match.group(1).strip()
+        start = match.end()
+
+        # Content goes until next passage or end of file
+        if i + 1 < len(matches):
+            end = matches[i + 1].start()
+        else:
+            end = len(twee_content)
+
+        passage_text = twee_content[start:end].strip()
+        passages[passage_name] = {'text': passage_text}
+
+    return passages
+
+def build_paths_from_base_branch(repo_root: Path, source_dir: Path, base_ref: str) -> Set[str]:
+    """
+    Build all paths from base branch and return their route hashes.
+
+    This implements the PRIMARY path existence test: Did this exact sequence
+    of passages exist in the base branch?
+
+    Args:
+        repo_root: Repository root path
+        source_dir: Source directory containing twee files (relative to repo_root)
+        base_ref: Git ref for base branch
+
+    Returns:
+        Set of route hashes (passage sequences) that existed in base branch
+    """
+    print(f"\n[INFO] Building paths from base branch '{base_ref}'...", file=sys.stderr)
+
+    # Get list of twee files from base branch
+    result = subprocess.run(
+        ['git', 'ls-tree', '-r', '--name-only', base_ref],
+        cwd=repo_root,
+        capture_output=True,
+        text=True,
+        timeout=10
+    )
+
+    if result.returncode != 0:
+        print(f"[WARN] Could not list files in base branch '{base_ref}': {result.stderr}", file=sys.stderr)
+        return set()
+
+    # Filter to twee files in source directory
+    all_files = result.stdout.strip().split('\n')
+    source_dir_str = str(source_dir.relative_to(repo_root))
+    twee_files = [f for f in all_files if f.startswith(source_dir_str) and f.endswith('.twee')]
+
+    print(f"[INFO] Found {len(twee_files)} twee files in base branch", file=sys.stderr)
+
+    # Parse all twee files to build passages
+    base_passages = {}
+
+    for twee_file_rel in twee_files:
+        # Get file content from base branch
+        result = subprocess.run(
+            ['git', 'show', f'{base_ref}:{twee_file_rel}'],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+
+        if result.returncode != 0:
+            print(f"[WARN] Could not read {twee_file_rel} from base branch", file=sys.stderr)
+            continue
+
+        # Parse twee content
+        file_passages = parse_twee_content(result.stdout)
+        base_passages.update(file_passages)
+
+    print(f"[INFO] Parsed {len(base_passages)} passages from base branch", file=sys.stderr)
+
+    # Build graph from base passages
+    base_graph = build_graph(base_passages)
+
+    # Find start passage
+    start_passage = 'Start'
+    if start_passage not in base_graph:
+        # Try to find any passage that might be a start
+        for name in base_passages.keys():
+            if 'start' in name.lower():
+                start_passage = name
+                break
+
+    if start_passage not in base_graph:
+        print(f"[WARN] Start passage not found in base branch, cannot build paths", file=sys.stderr)
+        return set()
+
+    print(f"[INFO] Building all paths from '{start_passage}'...", file=sys.stderr)
+
+    # Generate all paths from base branch
+    base_paths = generate_all_paths_dfs(base_graph, start_passage)
+
+    print(f"[INFO] Generated {len(base_paths)} paths from base branch", file=sys.stderr)
+
+    # Calculate route hashes for all base paths
+    base_route_hashes = set()
+    for path in base_paths:
+        route_hash = calculate_route_hash(path)
+        base_route_hashes.add(route_hash)
+
+    print(f"[INFO] Calculated {len(base_route_hashes)} unique route hashes from base branch", file=sys.stderr)
+
+    return base_route_hashes
+
 def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
                     validation_cache: Dict,
                     passage_to_file: Dict[str, Path] = None,
                     repo_root: Path = None,
                     base_ref: str = 'HEAD') -> Dict[str, str]:
     """
-    Categorize paths as New, Modified, or Unchanged using git-based change detection.
+    Categorize paths as New, Modified, or Unchanged using TWO-LEVEL test.
 
-    Uses git as the single source of truth for change detection:
-    - NEW: Path contains at least one file with genuinely new prose content
-    - MODIFIED: All files have same prose, but links/structure changed
-    - UNCHANGED: No files changed at all (prose, links, structure all same)
+    The Two-Level Test (from spec):
+    1. PRIMARY: Path Existence Test - Did this exact sequence of passages exist in the base branch?
+       - If YES → Path is either MODIFIED or UNCHANGED (never NEW)
+       - If NO → Path is either NEW or MODIFIED (depends on prose novelty)
+
+    2. SECONDARY: Content/Prose Test - What changed?
+       - If path existed: Did any passage content change? → MODIFIED or UNCHANGED
+       - If path is new: Does it contain novel prose? → NEW or MODIFIED
 
     Args:
         current_paths: List of current paths
@@ -931,14 +1062,17 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
     Algorithm:
         For each path:
-            1. Get .twee files containing passages in this path
-            2. For each file:
+            1. PRIMARY: Check if route hash (passage sequence) existed in base branch
+            2. SECONDARY: For each file in path:
                - Check if prose content changed (git diff with links stripped)
                - Check if any content changed (including links)
-            3. Categorize:
-               - If any file has new prose → NEW
-               - If any file has link-only changes → MODIFIED
-               - If no files changed → UNCHANGED
+            3. Categorize using two-level logic:
+               - If path existed in base:
+                 - Any file has content changes → MODIFIED
+                 - No changes → UNCHANGED
+               - If path is new (didn't exist in base):
+                 - Any file has new prose → NEW
+                 - Only link/structure changes → MODIFIED
                - If git unavailable → NEW (fallback)
     """
     print(f"\n[INFO] ===== Starting Path Categorization =====", file=sys.stderr)
@@ -949,6 +1083,23 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
     total_files_checked = 0
     git_lookups_succeeded = 0
     git_lookups_failed = 0
+
+    # PRIMARY TEST: Build paths from base branch to check path existence
+    base_route_hashes = set()
+    if passage_to_file and repo_root:
+        # Determine source directory from passage_to_file mapping
+        # Get any file path and work backward to find src directory
+        if passage_to_file:
+            sample_file = next(iter(passage_to_file.values()))
+            # Assume source dir is the parent of twee files (usually 'src')
+            source_dir = sample_file.parent
+            base_route_hashes = build_paths_from_base_branch(repo_root, source_dir, base_ref)
+        else:
+            print(f"[WARN] No passage_to_file mapping available, skipping PRIMARY test", file=sys.stderr)
+    else:
+        print(f"[WARN] No git data available, skipping PRIMARY test", file=sys.stderr)
+
+    print(f"[INFO] Base branch has {len(base_route_hashes)} unique path routes", file=sys.stderr)
 
     for path in current_paths:
         path_hash = calculate_path_hash(path, passages)
@@ -1009,16 +1160,31 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
         for reason in file_reasons:
             print(f"[INFO]   - {reason}", file=sys.stderr)
 
-        # Categorize based on what changed
-        if has_prose_changes:
-            categories[path_hash] = 'new'
-            print(f"[INFO] Path {path_hash}: NEW (has prose changes)", file=sys.stderr)
-        elif has_any_changes:
-            categories[path_hash] = 'modified'
-            print(f"[INFO] Path {path_hash}: MODIFIED (link/structure changes only)", file=sys.stderr)
+        # TWO-LEVEL CATEGORIZATION
+        # PRIMARY: Check if this path existed in base branch
+        route_hash = calculate_route_hash(path)
+        path_existed_in_base = route_hash in base_route_hashes
+
+        print(f"[INFO] Route hash: {route_hash}, existed in base: {path_existed_in_base}", file=sys.stderr)
+
+        # SECONDARY: Apply logic based on path existence
+        if path_existed_in_base:
+            # Path existed in base → can only be MODIFIED or UNCHANGED (never NEW)
+            if has_any_changes:
+                categories[path_hash] = 'modified'
+                print(f"[INFO] Path {path_hash}: MODIFIED (existed in base, has changes)", file=sys.stderr)
+            else:
+                categories[path_hash] = 'unchanged'
+                print(f"[INFO] Path {path_hash}: UNCHANGED (existed in base, no changes)", file=sys.stderr)
         else:
-            categories[path_hash] = 'unchanged'
-            print(f"[INFO] Path {path_hash}: UNCHANGED", file=sys.stderr)
+            # Path is new (didn't exist in base) → NEW or MODIFIED based on prose
+            if has_prose_changes:
+                categories[path_hash] = 'new'
+                print(f"[INFO] Path {path_hash}: NEW (new path with novel prose)", file=sys.stderr)
+            else:
+                # New path but no novel prose (e.g., passages moved/reorganized)
+                categories[path_hash] = 'modified'
+                print(f"[INFO] Path {path_hash}: MODIFIED (new path but no novel prose)", file=sys.stderr)
 
         print(f"[INFO] Git lookups for this path: {git_success_for_path} succeeded, {git_fail_for_path} failed", file=sys.stderr)
 
