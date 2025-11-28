@@ -114,51 +114,16 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 
 ### How Continuity Checking Determines What to Validate
 
-When you make changes to your story, the continuity checker analyzes each path to determine what needs validation. This analysis happens internally and helps the checker focus on paths that actually need review.
+The continuity checker automatically categorizes paths as **NEW**, **MODIFIED**, or **UNCHANGED** based on whether the path existed before and what content changed. This determines which paths need validation in each mode.
 
-The checker categorizes paths into three internal states to decide what needs validation:
+**Quick summary:**
+- **NEW:** Route didn't exist before + contains novel prose → Always validated
+- **MODIFIED:** Route existed but content changed, OR new route without novel prose → Validated in `modified` mode
+- **UNCHANGED:** Route existed with no changes → Only validated in `all` mode
 
-#### NEW Paths (Internal Category)
-**What it means internally:** The path contains genuinely new prose that's never existed before.
+**Don't worry about the technical details** - the checker figures out what needs validation automatically. Just choose the validation mode based on what you changed and how thorough you want the check to be.
 
-**What causes this:**
-- You created a new passage file with new story content
-- A path goes through that new passage for the first time
-- Players will read prose they've never seen before
-
-**Example:** You create `KEB-251121.twee` with a new scene. Any path that includes this passage is categorized as NEW internally.
-
-**Why this matters:** NEW paths always need validation because they contain content that hasn't been checked yet.
-
----
-
-#### MODIFIED Paths (Internal Category)
-**What it means internally:** The path already existed, but you changed the navigation (added/removed/changed links).
-
-**What causes this:**
-- You added a new choice to an existing passage (new `[[link]]`)
-- You removed a choice from an existing passage
-- You changed where a link points
-- The prose in the passages didn't change, just the navigation options
-
-**Example:** You edit an existing passage to add `[[Empty kitchen->Day 21 KEB]]`. All paths that go through this passage are categorized as MODIFIED internally - same prose, but now there's an additional choice available.
-
-**Why this matters:** MODIFIED paths may need re-validation if navigation changes affect flow or coherence.
-
-**Common scenario:** When you add a link to a passage near the story root (like the Start passage), this can create 10+ MODIFIED paths. But you only added one line - the link - so there's very little new prose to validate.
-
----
-
-#### UNCHANGED Paths (Internal Category)
-**What it means internally:** Nothing changed at all. Same prose, same links, same structure.
-
-**What causes this:**
-- You made changes to other parts of the story
-- This path doesn't include any passages you touched
-
-**Example:** You add a new passage for one story branch. Paths in completely different branches remain UNCHANGED internally.
-
-**Why this matters:** UNCHANGED paths don't need re-validation - you already validated them, nothing changed.
+For detailed explanation of the categorization logic (two-level tests, decision tables, examples of passage splits, linter reformats, and compound changes), see [Understanding Path Categorization](../services/README.md#understanding-path-categorization-detailed) in the services documentation.
 
 ---
 
@@ -171,36 +136,37 @@ Based on these internal categories, you can choose how thoroughly to validate:
 ---
 
 #### Mode 1: new-only (Default)
-**Validates:** Only NEW paths (genuinely new prose content)
+**Validates:** Only NEW paths (routes that didn't exist before with novel prose)
 **Skips:** MODIFIED and UNCHANGED paths
 **Speed:** Fastest (~2-5 paths, 2-5 minutes typical)
 
 **When to Use:**
 - Automatic PR builds (default)
-- Daily writing - get fast feedback on what you wrote today
-- Don't wait for link-only changes to be validated
+- Daily writing - get fast feedback on new routes you created today
+- You added new passages/routes and want to validate just those new journeys
 
 **Command:** `/check-continuity` or `/check-continuity new-only`
 
 **Why this is the default:**
-Your daily workflow adds 1 new passage. That creates 1 NEW path (what you care about) and potentially 10+ MODIFIED paths (same prose, just new link added). You want fast feedback on your new content, not to wait for re-validation of prose you didn't change.
+Your daily workflow adds 1 new passage with a new route. That creates 1 NEW path (a route that never existed before) and potentially 10+ MODIFIED paths (existing routes where you added a navigation option). You want fast feedback on your new routes, not to wait for re-validation of existing routes where you only tweaked navigation.
 
 ---
 
 #### Mode 2: modified
-**Validates:** NEW paths + MODIFIED paths (prose changes + navigation changes)
+**Validates:** NEW paths + MODIFIED paths (new routes + existing routes with revisions)
 **Skips:** UNCHANGED paths only
 **Speed:** Medium (~5-10 paths, 5-15 minutes typical)
 
 **When to Use:**
 - Before requesting PR review
-- Pre-merge validation - ensure all affected paths checked
+- Pre-merge validation - ensure all affected routes checked
 - After fixing issues in new paths
+- After formatting/linter changes (these create MODIFIED paths, not NEW)
 
 **Command:** `/check-continuity modified`
 
 **When to use this:**
-Eventually you want those MODIFIED paths checked (even though prose is the same, navigation changes could affect flow). Run this before merging, but not necessarily on every commit during development.
+Eventually you want those MODIFIED paths checked. Even though the routes existed before, the content changed (could be prose edits, navigation tweaks, or even just formatting). Run this before merging to ensure the revised reading experience is validated.
 
 ---
 
@@ -267,9 +233,9 @@ Eventually you want those MODIFIED paths checked (even though prose is the same,
 **Mode:** new-only _(use `/check-continuity modified` for broader checking)_
 
 **Paths to validate:**
-- 2 new paths
-- 3 modified paths (skipped)
-- 25 unchanged paths (skipped)
+- 2 new paths (routes that didn't exist before)
+- 3 modified paths (existing routes with revisions - skipped in new-only mode)
+- 25 unchanged paths (existing routes with no changes - skipped)
 
 Progress updates will appear below as each path completes...
 ```
@@ -463,7 +429,7 @@ These paths won't be re-checked unless their content changes.
 
 **Status:** Working as intended - thread-based concurrency handles this
 
-See [architecture/ai-continuity-checking.md](../architecture/ai-continuity-checking.md) for technical design.
+See [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) for technical design. For additional edge cases related to path categorization (unreachable paths, compound changes), see [services/README.md](../services/README.md#edge-cases-categorization).
 
 ---
 
