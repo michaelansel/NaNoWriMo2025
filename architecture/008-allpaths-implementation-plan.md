@@ -548,7 +548,7 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 ## Phase 3 Completion Checklist
 
 - [x] Step 3.1: Path generator module extracted with paths.json schema
-- [ ] Step 3.2: Git enricher module extracted with paths_enriched.json schema
+- [x] Step 3.2: Git enricher module extracted with paths_enriched.json schema
 - [ ] Step 3.3: Categorizer module extracted with paths_categorized.json schema
 - [ ] Step 3.4: Generator orchestrates full 5-stage pipeline
 - [ ] Step 3.5: All intermediate artifacts written with --write-intermediate flag
