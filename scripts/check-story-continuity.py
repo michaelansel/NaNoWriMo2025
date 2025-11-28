@@ -34,7 +34,8 @@ VALID_MODES = [MODE_NEW_ONLY, MODE_MODIFIED, MODE_ALL]
 DEFAULT_MODE = MODE_NEW_ONLY
 
 # Continuity checking prompt template
-CONTINUITY_PROMPT = """
+CONTINUITY_PROMPT = """Reasoning: high
+
 === SECTION 1: ROLE & CONTEXT ===
 
 You are a story continuity checker for branching interactive fiction.
@@ -66,30 +67,43 @@ NON-ISSUES (what you should NOT flag):
 4. Dramatic irony: Character doesn't know something the reader knows is FINE
 5. Choice consequences: Character has skills/knowledge because they made earlier choices is EXPECTED
 
-=== SECTION 3: ANALYSIS FRAMEWORK ===
+=== SECTION 3: MANDATORY ANALYSIS STRUCTURE ===
 
-Follow this chain of thought:
+You MUST output your analysis in this EXACT structure before the final JSON.
+Each section header is REQUIRED - do not skip any section.
 
-STEP 1 - SUMMARIZE PATH:
-- What is this path's story arc?
-- Who are the main characters?
-- What are the key events in sequence?
+```
+## PATH SUMMARY
+[2-3 sentences: What happens in this path? Who are the main characters?]
 
-STEP 2 - IDENTIFY POTENTIAL ISSUES:
-- List anything that might be inconsistent
-- Note character names, traits, relationships
-- Track plot events and their consequences
-- Mark timeline/causality questions
+## CHARACTER CHECK
+Characters found: [list all character names mentioned]
+Name consistency: [PASS/FAIL - are names spelled consistently?]
+Trait consistency: [PASS/FAIL - do traits remain stable or change naturally?]
+Evidence: [If FAIL, quote the contradicting passages. If PASS, write "No issues found"]
 
-STEP 3 - EVALUATE EACH POTENTIAL ISSUE:
-- Is there a REAL contradiction with specific quotes?
-- Or is it: intentional mystery? character growth? ambiguity? choice consequence?
-- Can I provide exact quotes with passage markers demonstrating the problem?
+## PLOT CHECK
+Key events: [list major plot events in order]
+Logic consistency: [PASS/FAIL - do events follow logically?]
+Consequence tracking: [PASS/FAIL - are action consequences respected?]
+Evidence: [If FAIL, quote the contradicting passages. If PASS, write "No issues found"]
 
-STEP 4 - FINAL JUDGMENT:
-- Only report issues with clear evidence
-- If uncertain, DO NOT flag it
-- When in doubt, assume the author intended it
+## TIMELINE CHECK
+Event sequence: [PASS/FAIL - is chronological order maintained?]
+Causality: [PASS/FAIL - do causes precede effects?]
+Evidence: [If FAIL, quote the contradicting passages. If PASS, write "No issues found"]
+
+## SETTING CHECK
+Locations mentioned: [list locations]
+World rules: [PASS/FAIL - are established facts consistent?]
+Evidence: [If FAIL, quote the contradicting passages. If PASS, write "No issues found"]
+
+## FINAL ASSESSMENT
+Issues found: [count of real issues, not false positives]
+Overall severity: [none/minor/major/critical]
+```
+
+AFTER completing all sections above, output the JSON result.
 
 === SECTION 4: WHAT TO CHECK ===
 
@@ -212,11 +226,23 @@ If no issues found, return:
 
 === SECTION 11: EXECUTION INSTRUCTIONS ===
 
-Now analyze the story path above:
-1. Follow the analysis framework (summarize → identify → evaluate → judge)
-2. Provide specific evidence with quotes for every issue
-3. Apply false positive guards - when uncertain, do not flag
-4. Output valid JSON in the specified format
+Now analyze the story path above. You MUST follow this exact output order:
+
+1. Output the MANDATORY ANALYSIS STRUCTURE (Section 3) with all required headers:
+   - ## PATH SUMMARY
+   - ## CHARACTER CHECK (with PASS/FAIL for each sub-item)
+   - ## PLOT CHECK (with PASS/FAIL for each sub-item)
+   - ## TIMELINE CHECK (with PASS/FAIL for each sub-item)
+   - ## SETTING CHECK (with PASS/FAIL for each sub-item)
+   - ## FINAL ASSESSMENT
+
+2. For any FAIL result, you MUST provide evidence with exact quotes and passage markers
+
+3. Apply false positive guards - when uncertain, mark as PASS
+
+4. AFTER the analysis structure, output the final JSON result
+
+BEGIN YOUR ANALYSIS NOW:
 """
 
 
