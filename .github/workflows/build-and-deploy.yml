@@ -36,7 +36,7 @@ jobs:
         run: |
           chmod +x scripts/generate-resources.sh
 
-      - name: Commit updated resources file
+      - name: Auto-fix and commit formatting changes
         if: github.event_name == 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
@@ -46,13 +46,16 @@ jobs:
           git fetch origin ${{ github.head_ref }}
           git checkout ${{ github.head_ref }}
 
-          # Now generate the resources file on the PR branch
+          # Run the passage formatting linter with auto-fix
+          python3 scripts/lint_twee.py src/ --fix || true
+
+          # Generate the resources file on the PR branch
           ./scripts/generate-resources.sh
 
           # Commit and push if there are changes
-          git add "Resource-Passage Names"
+          git add src/*.twee "Resource-Passage Names"
           if ! git diff --staged --quiet; then
-            git commit -m "Auto-update Resource-Passage Names"
+            git commit -m "Auto-fix passage formatting and update resources"
             git push origin ${{ github.head_ref }}
           fi
 

@@ -50,7 +50,7 @@ KEB-251107.twee
   :: Turn back
   [[Abandon the quest->Day 16 KEB]]
   [[Someone joins Javlyn]]
-  ::Someone joins Javlyn
+  :: Someone joins Javlyn
   [[Mushroom cave]]
   [[Relti pond->Day 13 KEB]]
   :: Mushroom cave
@@ -71,6 +71,9 @@ KEB-251111.twee
 
 KEB-251112.twee
   :: Day 12 KEB
+  [[Magic worked as intended]]
+  [[Magic was slightly off->Day 25 KEB]]
+  :: Magic worked as intended
 
 KEB-251113.twee
   :: Day 13 KEB
@@ -111,6 +114,12 @@ KEB-251123.twee
 KEB-251124.twee
   :: Day 24 KEB
 
+KEB-251125.twee
+  :: Day 25 KEB
+
+KEB-251126.twee
+  :: Day 26 KEB
+
 Start.twee
   :: Start
   [[A rumor]]
@@ -150,6 +159,9 @@ StoryTitle.twee
 
 mansel-20251101.twee
   :: mansel-20251101
+  [[Successfully escape]]
+  [[Chased->Day 26 KEB]]
+  :: Successfully escape
   [[Re-enter the cave]]
   [[Hesitate->Day 3 KEB]]
   :: Re-enter the cave
@@ -163,7 +175,7 @@ mansel-20251112.twee
   :: mansel-20251112
   [[Collect snacks]]
   [[Empty kitchen->Day 21 KEB]]
-  ::Collect snacks
+  :: Collect snacks
 
 mansel-20251114.twee
   :: mansel-20251114

@@ -74,12 +74,12 @@ The project has evolved to use a hierarchical agent workflow (CEO→PM→Archite
 
 **In services/README.md:**
 - Remove detailed validation mode documentation (keep only brief summary)
-- Reference features/path-validation-cache.md and architecture/002-validation-cache.md
+- Reference features/ai-continuity-checking.md and architecture/002-validation-cache.md
 - **Rationale**: Single source of truth, avoid duplication
 
 ### 4. Consolidate Validation Documentation
 
-**features/path-validation-cache.md (PM-level):**
+**features/ai-continuity-checking.md (PM-level):**
 - User stories, success metrics, acceptance criteria
 - What the feature does and why it exists
 - Keep as-is (authoritative product spec)
@@ -179,4 +179,4 @@ The project has evolved to use a hierarchical agent workflow (CEO→PM→Archite
 - [CLAUDE.md](/home/user/NaNoWriMo2025/CLAUDE.md) - Hierarchical agent workflow
 - [ARCHITECTURE.md](/home/user/NaNoWriMo2025/ARCHITECTURE.md) - System architecture
 - [STANDARDS.md](/home/user/NaNoWriMo2025/STANDARDS.md) - Documentation standards
-- [features/path-validation-cache.md](/home/user/NaNoWriMo2025/features/path-validation-cache.md) - Path validation cache PRD
+- [features/ai-continuity-checking.md](/home/user/NaNoWriMo2025/features/ai-continuity-checking.md) - AI continuity checking PRD
