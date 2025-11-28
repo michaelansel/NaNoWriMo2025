@@ -19,23 +19,31 @@ from datetime import datetime
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 from generator import (
-    calculate_path_hash,
     calculate_route_hash,
     calculate_path_similarity,
     categorize_paths,
+    generate_passage_id_mapping,
+    load_validation_cache,
+    strip_links_from_text,
+)
+from modules.parser import (
+    parse_story_html,
+    build_graph,
+    extract_links,
+    parse_link,
+)
+from modules.path_generator import (
+    calculate_path_hash,
+    generate_all_paths_dfs,
+    format_passage_text,
+)
+from modules.git_enricher import (
     build_passage_to_file_mapping,
     get_file_commit_date,
     get_path_commit_date,
-    parse_story_html,
-    build_graph,
-    generate_all_paths_dfs,
-    extract_links,
-    parse_link,
-    format_passage_text,
-    generate_passage_id_mapping,
-    load_validation_cache,
+)
+from modules.output_generator import (
     save_validation_cache,
-    strip_links_from_text,
 )
 
 # Test counters

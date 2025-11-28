@@ -30,6 +30,11 @@ from modules.path_generator import (
     calculate_path_hash,
     format_passage_text,
 )
+from modules.git_enricher import (
+    build_passage_to_file_mapping,
+    get_path_commit_date,
+    get_path_creation_date,
+)
 from modules.output_generator import (
     format_date_for_display,
     generate_html_output,
@@ -245,132 +250,16 @@ def load_validation_cache(cache_file: Path) -> Dict:
 # =============================================================================
 # FILE AND PASSAGE MAPPING
 # =============================================================================
-
-def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
-    """
-    Build a mapping from passage names to their source .twee files.
-
-    Args:
-        source_dir: Directory containing .twee source files
-
-    Returns:
-        Dict mapping passage name -> file path
-    """
-    mapping = {}
-
-    # Find all .twee files
-    for twee_file in source_dir.glob('**/*.twee'):
-        try:
-            with open(twee_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-
-            # Find all passage declarations (:: PassageName or ::PassageName)
-            # Allow optional space after :: to handle both formats
-            passages_in_file = re.findall(r'^::\s*(.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
-
-            for passage_name in passages_in_file:
-                mapping[passage_name.strip()] = twee_file
-        except Exception as e:
-            # Skip files that can't be read
-            print(f"Warning: Could not read {twee_file}: {e}", file=sys.stderr)
-            continue
-
-    return mapping
+# Note: build_passage_to_file_mapping moved to modules/git_enricher.py
 
 # =============================================================================
 # GIT INTEGRATION
 # =============================================================================
-
-def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
-    """
-    Get the most recent commit date for a file using git log.
-
-    Args:
-        file_path: Path to the file
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of most recent commit, or None if unavailable
-    """
-    git_service = GitService(repo_root)
-    return git_service.get_file_commit_date(file_path)
-
-def get_file_creation_date(file_path: Path, repo_root: Path) -> Optional[str]:
-    """
-    Get the earliest commit date for a file (when it was first added).
-
-    Args:
-        file_path: Path to the file
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of earliest commit, or None if unavailable
-    """
-    git_service = GitService(repo_root)
-    return git_service.get_file_creation_date(file_path)
-
-def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
-                        repo_root: Path) -> Optional[str]:
-    """
-    Get the most recent commit date among all passages in a path.
-
-    Args:
-        path: List of passage names in the path
-        passage_to_file: Mapping from passage names to file paths
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of most recent commit, or None if unavailable
-    """
-    commit_dates = []
-
-    for passage_name in path:
-        if passage_name not in passage_to_file:
-            continue
-
-        file_path = passage_to_file[passage_name]
-        commit_date = get_file_commit_date(file_path, repo_root)
-
-        if commit_date:
-            commit_dates.append(commit_date)
-
-    # Return the most recent date
-    if commit_dates:
-        return max(commit_dates)
-    else:
-        return None
-
-def get_path_creation_date(path: List[str], passage_to_file: Dict[str, Path],
-                          repo_root: Path) -> Optional[str]:
-    """
-    Get the date when a path became fully available (complete).
-    This finds the most recent creation date among all passages in the path.
-
-    Args:
-        path: List of passage names in the path
-        passage_to_file: Mapping from passage names to file paths
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of when path became complete, or None if unavailable
-    """
-    creation_dates = []
-
-    for passage_name in path:
-        if passage_name not in passage_to_file:
-            continue
-
-        file_path = passage_to_file[passage_name]
-        creation_date = get_file_creation_date(file_path, repo_root)
-
-        if creation_date:
-            creation_dates.append(creation_date)
-
-    # Return the most recent creation date - when the path became complete
-    if creation_dates:
-        return max(creation_dates)
-    else:
-        return None
+# Note: Git enrichment functions moved to modules/git_enricher.py:
+# - get_file_commit_date
+# - get_file_creation_date
+# - get_path_commit_date
+# - get_path_creation_date
 
 def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
     """
