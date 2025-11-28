@@ -21,9 +21,11 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 **Expected deprecated functions**:
 - `calculate_raw_content_fingerprint`
 - `calculate_content_fingerprint`
-- `calculate_route_hash`
 - `calculate_passage_prose_fingerprint`
 - `build_passage_fingerprints`
+
+**NOT deprecated** (actively used in production):
+- `calculate_route_hash` - used in categorization logic (lines 1028, 1165)
 
 **Success criteria**:
 - All tests pass

@@ -339,12 +339,12 @@ def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) ->
 def calculate_route_hash(path: List[str]) -> str:
     """Calculate hash based ONLY on passage names (route structure), not content.
 
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
     This identifies the path structure independent of content changes.
     Two paths with the same sequence of passages will have the same route_hash
     even if the content in those passages has been edited.
+
+    Used in categorization logic to determine if a path existed in the base branch
+    by comparing route hashes.
 
     Args:
         path: List of passage names in order
