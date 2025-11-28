@@ -65,7 +65,7 @@ allpaths-validation-status.json        # Validation cache (repository root)
 
 **Purpose**: Generate all possible story paths for AI-based continuity validation
 
-**Architecture**:
+**Current Architecture** (Monolithic):
 - **Graph Construction**: Parses Tweego output into directed graph
 - **Path Enumeration**: Depth-first search (DFS) to find all paths
 - **Deduplication**: MD5-based path hashing for stable IDs
@@ -73,7 +73,7 @@ allpaths-validation-status.json        # Validation cache (repository root)
 - **Validation Tracking**: Persistent cache across builds
 
 **Key Features**:
-- **Content Fingerprinting**: Detects content changes via hash comparison
+- **Git-based Change Detection**: Uses git diff for categorization (simplified from fingerprint-based)
 - **Path Categorization**: Classifies paths as new/modified/unchanged
 - **Random ID Substitution**: Replaces passage names with random hex IDs for AI
 - **Passage Mapping**: Maintains bidirectional ID-to-name mapping
@@ -86,14 +86,31 @@ Process:
   2. DFS traversal from start to all end nodes
   3. Collect all unique paths
   4. Generate stable path IDs (MD5 hash)
-  5. Compare with previous validation cache
-  6. Categorize paths (new/modified/unchanged)
-  7. Generate outputs in multiple formats
+  5. Use git diff to categorize paths (new/modified/unchanged)
+  6. Generate outputs in multiple formats
 Output: HTML browser, text files, validation cache
 ```
 
 **Time Complexity**: O(V + E) where V = passages, E = links
 **Space Complexity**: O(V) for recursion stack
+
+**Planned Architecture** (Processing Pipeline):
+
+The generator is being refactored into a 5-stage processing pipeline with well-defined intermediate artifacts (see ADR-008 for full details):
+
+1. **Stage 1: Parse & Extract** - HTML → story_graph.json
+2. **Stage 2: Generate Paths** - story_graph.json → paths.json
+3. **Stage 3: Enrich with Git Data** - paths.json → paths_enriched.json
+4. **Stage 4: Categorize Paths** - paths_enriched.json → paths_categorized.json
+5. **Stage 5: Generate Outputs** - paths_categorized.json → all output formats
+
+**Migration Path**:
+- **Phase 1**: Incremental cleanup (remove deprecated code, improve structure)
+- **Phase 2**: 3-stage pipeline (parser, core processing, output generation)
+- **Phase 3**: Full 5-stage pipeline with all intermediate artifacts
+- **Phase 4**: Optimization and extensibility enhancements
+
+See `architecture/008-allpaths-processing-pipeline.md` for complete redesign documentation.
 
 ### 4. AI Continuity Validation
 
