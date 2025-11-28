@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-Writers need quantitative insights into their writing progress, patterns, and achievement of NaNoWriMo goals (50,000 words). This feature provides a metrics command-line tool that aggregates word counts, passage statistics, and writing distribution data from the Twee source files.
+Writers need quantitative insights into their writing output and patterns. This feature provides a metrics command-line tool that aggregates word counts, passage statistics, and writing distribution data from the Twee source files.
 
 **Key Capabilities:**
 - Calculate total word counts across the entire story
@@ -16,13 +16,11 @@ Writers need quantitative insights into their writing progress, patterns, and ac
 - Show word count distributions (bucketed ranges)
 - Filter metrics by file prefix (e.g., only KEB files, only mansel files, or all)
 - Identify longest passages and files
-- Track progress toward NaNoWriMo 50,000-word goal
 
-This tool helps writers answer questions like "How much have I written?", "What's my typical passage length?", and "Am I on track for my goal?"
+This tool helps writers answer questions like "How much have I written?" and "What's my typical passage length?"
 
 **Timing Context:**
-- **Ideally available:** Throughout November for real-time motivation and pacing decisions
-- **Critically needed:** End of November for final verification of 50,000-word goal achievement
+- **Ideally available:** Throughout November for understanding writing output and patterns
 - **Foundation for:** December retrospective analysis of writing patterns and evolution
 
 ---
@@ -32,16 +30,14 @@ This tool helps writers answer questions like "How much have I written?", "What'
 This is an **active-writing tool** that serves writers during different phases:
 
 ### During Active Writing (November 2025)
-**Primary Use:** Real-time progress tracking and motivation
-- Check daily progress toward 50,000-word goal
-- Adjust writing pace based on current word count
-- Stay motivated by seeing quantitative progress
+**Primary Use:** Understanding writing output and patterns
+- Check total word count and writing volume
+- Stay motivated by seeing quantitative output
 - Understand typical passage lengths while writing
-- Make pacing decisions (speed up/maintain current rate)
+- Analyze writing patterns in real-time
 
-### After Goal Achievement (Late November/Early December)
-**Primary Use:** Verification and contribution analysis
-- Verify NaNoWriMo 50,000-word goal achievement
+### After Active Writing (Late November/Early December)
+**Primary Use:** Final metrics and contribution analysis
 - Analyze individual author contributions
 - Identify longest passages for potential refactoring
 - Understand final story structure and distribution
@@ -61,18 +57,17 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ## User Needs
 
-### Need 1: Track Progress Toward Word Count Goals
+### Need 1: Understand Total Writing Output
 **Context:** Active writing during NaNoWriMo
 
-**User Goal:** Know if I'm on track to reach 50,000 words by November 30
+**User Goal:** Know how much content I've created
 
 **Questions Writers Need Answered:**
 - How many total words have I written?
-- How close am I to the 50,000-word NaNoWriMo goal?
-- What percentage of my goal have I completed?
-- How many words do I need to write per day to finish on time?
+- How much content exists in the story?
+- What is the current size of the project?
 
-**Why This Matters:** NaNoWriMo is a goal-driven writing challenge. Writers need clear, quantitative feedback on progress to stay motivated and adjust their writing pace.
+**Why This Matters:** Writers need clear, quantitative feedback on their output to stay motivated and understand the scope of their work.
 
 ---
 
@@ -124,18 +119,17 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ## User Stories
 
-### Story 1: Check Total Progress
-**As a** writer working toward the NaNoWriMo goal
-**I want** to see my total word count and percentage toward 50,000 words
-**So that** I know if I'm on track and how much more I need to write
+### Story 1: Check Total Word Count
+**As a** writer working on the story
+**I want** to see my total word count
+**So that** I understand how much content I've created
 
 **Acceptance Criteria:**
 - Command displays total word count across all story files
-- Percentage toward 50,000-word goal is shown
 - Word count excludes special files (StoryData, StoryTitle, StoryStyles)
 - Word count excludes Harlowe syntax (macros, link markup, HTML tags)
 - Word count includes only actual prose content
-- Progress indicator is clear and motivating
+- Output is clear and easy to read
 
 ---
 
@@ -223,7 +217,7 @@ This is an **active-writing tool** that serves writers during different phases:
 - `--help` - Display usage information
 
 **Output Sections:**
-1. **Progress Summary** - Total word count, NaNoWriMo goal progress
+1. **Word Count Summary** - Total word count, files analyzed, passage count
 2. **Passage Statistics** - Count, min/mean/median/max word counts per passage
 3. **File Statistics** - Count, min/mean/median/max word counts per file
 4. **Distribution** - Passage and file counts by word count ranges
@@ -262,7 +256,6 @@ This is an **active-writing tool** that serves writers during different phases:
 **Human-readable text format:**
 - Clear section headers
 - Aligned columns for statistics tables
-- Progress indicators (e.g., "22,589 / 50,000 words (45.2%)")
 - Distribution shown as ASCII bar charts or tables
 - Top passages listed with clear formatting
 
@@ -271,8 +264,8 @@ This is an **active-writing tool** that serves writers during different phases:
 Writing Metrics & Statistics
 ============================
 
-Progress Summary:
-  Total Words: 22,589 / 50,000 (45.2%)
+Word Count Summary:
+  Total Words: 22,589
   Files Analyzed: 31 story files
   Passages: 54 total
 
@@ -307,22 +300,17 @@ Top 5 Longest Passages:
 
 ### User Understanding
 - Writers can explain what each metric means and how to interpret it
-- Writers cite metrics when discussing progress and goals
+- Writers cite metrics when discussing writing output and patterns
 - Writers use filters correctly to analyze specific content
 
 ### Feature Usage
 - Writers run metrics regularly (weekly or more) during active writing
-- Metrics cited in team discussions about progress
+- Metrics cited in team discussions about writing output
 - Filters used to compare author contributions
 - Top passages list used to identify refactoring candidates
 
-### Goal Achievement
-- Writers accurately track progress toward 50,000-word NaNoWriMo goal
-- Metrics inform writing pace adjustments
-- Distribution data helps identify structural patterns
-
 ### Qualitative Indicators
-- Writers report feeling motivated by seeing progress numbers
+- Writers report feeling motivated by seeing quantitative output
 - Metrics help answer "how much have I written?" questions instantly
 - Team uses metrics to ensure balanced participation
 - Post-NaNoWriMo retrospectives reference these metrics
@@ -436,7 +424,6 @@ Top 5 Longest Passages:
 - [ ] Passage statistics computed: count, min, mean, median, max
 - [ ] File statistics computed: count, min, mean, median, max
 - [ ] Distribution shows passage and file counts by word count ranges
-- [ ] Progress toward 50,000-word goal displayed
 
 ### Filtering
 - [ ] `--include` flag filters files by prefix
@@ -468,6 +455,6 @@ Top 5 Longest Passages:
 
 ## Related Documents
 
-- [VISION.md](../VISION.md) - Project vision and success criteria (50,000+ words goal)
+- [VISION.md](../VISION.md) - Project vision and success criteria
 - [ROADMAP.md](../ROADMAP.md) - Post-NaNoWriMo retrospective tools (planned)
 - [PRINCIPLES.md](../PRINCIPLES.md) - Core principles including "Fast Feedback Loops"

@@ -259,12 +259,12 @@ Features on the roadmap, prioritized by value to current phase.
 **Status:** 📋 Planned
 **Target:** November 2025 (Immediate)
 **Priority:** HIGH
-**User Impact:** Track word count progress, verify NaNoWriMo goal achievement, understand writing patterns
+**User Impact:** Understand writing output, patterns, and contribution distribution
 
-**Problem:** Writers need to track progress toward the 50,000-word NaNoWriMo goal, understand their writing patterns, and verify goal achievement. This is an active-writing tool that provides real-time motivation and final verification.
+**Problem:** Writers need to understand their writing output and patterns. This is an active-writing tool that provides quantitative insights into what has been written.
 
 **Proposed Solution:**
-- Total word count calculation with progress toward 50,000-word goal
+- Total word count calculation
 - Per-passage and per-file statistics (min/mean/median/max)
 - Word count distribution analysis
 - Filter by author (file prefix)
@@ -272,7 +272,7 @@ Features on the roadmap, prioritized by value to current phase.
 
 **Relationship to AllPaths:** Complementary tracking approaches:
 - **AllPaths Progress Tracking:** Path-focused (how many story paths created/modified)
-- **Writing Metrics:** Word-focused (how many words written, passage lengths)
+- **Writing Metrics:** Word-focused (total words written, passage lengths, distributions)
 
 **Related Documents:** [features/writing-metrics.md](features/writing-metrics.md)
 
