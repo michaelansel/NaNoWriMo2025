@@ -151,3 +151,176 @@ Summary of Phase 1 accomplishments:
 - Organized code into 12 logical sections
 
 **Next step**: Phase 2 - 3-Stage Pipeline (when ready to proceed)
+
+---
+
+## Phase 2: 3-Stage Pipeline
+
+Extract parser and output generator into separate modules, proving the pipeline architecture with minimal stages.
+
+Execute these steps in order. Each step should pass all tests before proceeding.
+
+### Step 2.1: Create Modules Directory Structure
+
+**Goal**: Establish directory structure for pipeline modules and schemas.
+
+**Files**:
+- `formats/allpaths/modules/__init__.py` (create)
+- `formats/allpaths/schemas/` (create directory)
+- `formats/allpaths/schemas/story_graph.schema.json` (create)
+
+**Actions**:
+1. Create `modules/` directory under `formats/allpaths/`
+2. Create `__init__.py` in modules directory
+3. Create `schemas/` directory under `formats/allpaths/`
+4. Create `story_graph.schema.json` based on ADR-008 specification:
+   - Required fields: `passages`, `start_passage`, `metadata`
+   - Passages object with content and links
+   - Metadata with story_title, ifid, format, format_version
+5. Add JSON schema validation utilities if needed
+
+**Success criteria**:
+- Directory structure matches ADR-008 proposal
+- Schema file validates against JSON Schema specification
+- Modules can be imported from `formats.allpaths.modules`
+
+---
+
+### Step 2.2: Extract Parser Module (Stage 1)
+
+**Goal**: Move HTML parsing and graph construction into dedicated parser module that outputs story_graph.json.
+
+**Files**:
+- `formats/allpaths/modules/parser.py` (create)
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/tests/test_parser.py` (create)
+
+**Actions**:
+1. Create `modules/parser.py` with Stage 1 interface
+2. Move HTML parsing logic from generator.py:
+   - Extract graph construction from HTML
+   - Extract passage content and link detection
+   - Extract metadata extraction (title, IFID, format info)
+3. Implement `parse_story(html_path: Path, output_path: Path) -> Dict` function
+4. Output story_graph.json matching schema from Step 2.1
+5. Create comprehensive tests for parser:
+   - Test with sample Tweego HTML
+   - Test passage extraction
+   - Test link detection
+   - Test metadata extraction
+   - Test invalid HTML handling
+6. Update generator.py to import and use parser module
+7. Ensure backward compatibility (same outputs as before)
+
+**Success criteria**:
+- Parser module can be tested independently
+- story_graph.json validates against schema
+- Parser tests achieve >80% code coverage
+- All existing generator tests still pass
+- Output files identical to pre-refactor version
+
+---
+
+### Step 2.3: Extract Output Generator Module (Stage 5)
+
+**Goal**: Move all output generation (HTML browser, text files) into dedicated module.
+
+**Files**:
+- `formats/allpaths/modules/output_generator.py` (create)
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/tests/test_output_generator.py` (create)
+
+**Actions**:
+1. Create `modules/output_generator.py` with Stage 5 interface
+2. Move output generation logic from generator.py:
+   - HTML browser generation (using Jinja2 templates)
+   - Clean text file generation
+   - Metadata text file generation
+   - Validation cache updates
+3. Implement `generate_outputs(paths_categorized: Dict, output_dir: Path, **options) -> Dict` function
+4. Input should accept categorized paths data structure (preparing for future Stage 4)
+5. Create tests for output generator:
+   - Test HTML generation with sample paths
+   - Test clean text generation
+   - Test metadata text generation
+   - Test cache updates
+   - Test edge cases (empty paths, single path)
+6. Update generator.py to import and use output_generator module
+7. Ensure all output files remain in same locations
+
+**Success criteria**:
+- Output generator module can be tested independently
+- All output formats (HTML, clean text, metadata) generated correctly
+- Output generator tests achieve >80% code coverage
+- All existing generator tests still pass
+- Output files byte-for-byte identical or functionally equivalent
+
+---
+
+### Step 2.4: Update Generator to Orchestrate 3 Stages
+
+**Goal**: Refactor main generator.py to orchestrate parser → core processing → output generation.
+
+**Files**:
+- `formats/allpaths/generator.py` (modify)
+
+**Actions**:
+1. Restructure main `generate()` function to orchestrate stages:
+   - Stage 1: Call parser module → story_graph data
+   - Stages 2-4: Current core processing (path gen, git, categorization)
+   - Stage 5: Call output_generator module → all outputs
+2. Pass data between stages using in-memory structures (JSON serialization optional)
+3. Add clear logging for each stage transition
+4. Maintain existing CLI interface and arguments
+5. Keep error handling and reporting
+6. Update internal documentation/comments to reflect 3-stage flow
+
+**Success criteria**:
+- Generator.py acts as orchestrator, not monolithic processor
+- Clear separation between stages visible in code structure
+- All CLI arguments still work as before
+- All tests pass
+- Build script (`scripts/build-allpaths.sh`) works without changes
+
+---
+
+### Step 2.5: Add Intermediate Artifact Generation Flag
+
+**Goal**: Support optional writing of intermediate artifacts for debugging.
+
+**Files**:
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/modules/parser.py` (modify)
+- `dist/allpaths-intermediate/` (create, gitignore)
+
+**Actions**:
+1. Add `--write-intermediate` CLI flag to generator.py
+2. Create `dist/allpaths-intermediate/` directory (add to .gitignore)
+3. When flag enabled, write intermediate artifacts:
+   - `story_graph.json` from Stage 1
+   - (Future: paths.json, paths_enriched.json, paths_categorized.json)
+4. Update parser module to optionally write story_graph.json
+5. Add logging to show where intermediate artifacts are written
+6. Update README or docs to explain intermediate artifact debugging workflow
+7. Ensure flag is optional (default: disabled for production builds)
+
+**Success criteria**:
+- `--write-intermediate` flag writes story_graph.json to dist/allpaths-intermediate/
+- story_graph.json validates against schema
+- Intermediate artifacts gitignored (not checked into repo)
+- Production builds unaffected (no performance impact when disabled)
+- Documentation explains how to use intermediate artifacts for debugging
+
+---
+
+## Phase 2 Completion Checklist
+
+- [ ] Step 2.1: Directory structure and schema created
+- [ ] Step 2.2: Parser module extracted
+- [ ] Step 2.3: Output generator module extracted
+- [ ] Step 2.4: Generator orchestrates 3 stages
+- [ ] Step 2.5: Intermediate artifact generation flag added
+
+After Phase 2, the AllPaths generator should have a clear 3-stage architecture (parse → process → output) with the parser and output generation fully modularized. This proves the pipeline concept and sets the foundation for Phase 3's full 5-stage pipeline.
+
+---
