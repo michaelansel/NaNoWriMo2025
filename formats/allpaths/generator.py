@@ -1005,8 +1005,10 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 def main() -> None:
     """Main entry point for AllPaths generator.
 
-    Parses Tweego-compiled HTML, generates all possible story paths,
-    categorizes them (new/modified/unchanged), and outputs HTML and text files.
+    Implements a 3-stage pipeline:
+    - Stage 1: Parse HTML into story graph
+    - Stages 2-4: Core processing (path generation, git enrichment, categorization)
+    - Stage 5: Output generation (HTML, text files, cache)
 
     Usage:
         generator.py <input.html> [output_dir]
@@ -1022,6 +1024,9 @@ def main() -> None:
         - allpaths-passage-mapping.json: Mapping between passage names and IDs
         - allpaths-validation-status.json: Cache of path validation data
     """
+    # =========================================================================
+    # SETUP AND ARGUMENT PARSING
+    # =========================================================================
     if len(sys.argv) < 2:
         print("Usage: generator.py <input.html> [output_dir]", file=sys.stderr)
         sys.exit(1)
@@ -1033,11 +1038,20 @@ def main() -> None:
     with open(input_file, 'r', encoding='utf-8') as f:
         html_content = f.read()
 
-    # Parse story
-    story_data, passages = parse_story_html(html_content)
+    # =========================================================================
+    # STAGE 1: PARSE
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 1: PARSE - Extracting story structure from HTML", file=sys.stderr)
+    print("="*80, file=sys.stderr)
 
-    # Build graph
+    # Parse story structure from HTML
+    story_data, passages = parse_story_html(html_content)
+    print(f"Extracted {len(passages)} passages from story '{story_data['name']}'", file=sys.stderr)
+
+    # Build graph representation
     graph = build_graph(passages)
+    print(f"Built story graph with {len(graph)} nodes", file=sys.stderr)
 
     # Find start passage
     start_passage = None
@@ -1049,8 +1063,28 @@ def main() -> None:
     if not start_passage:
         start_passage = 'Start'
 
-    # Generate all paths
+    print(f"Start passage: {start_passage}", file=sys.stderr)
+
+    # =========================================================================
+    # STAGE 2: PATH GENERATION
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 2: PATH GENERATION - Computing all possible story paths", file=sys.stderr)
+    print("="*80, file=sys.stderr)
+
+    # Generate all paths using depth-first search
     all_paths = generate_all_paths_dfs(graph, start_passage)
+    print(f"Generated {len(all_paths)} total paths", file=sys.stderr)
+    if all_paths:
+        path_lengths = [len(p) for p in all_paths]
+        print(f"Path length range: {min(path_lengths)}-{max(path_lengths)} passages", file=sys.stderr)
+
+    # =========================================================================
+    # STAGE 3: GIT ENRICHMENT
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 3: GIT ENRICHMENT - Adding version control metadata", file=sys.stderr)
+    print("="*80, file=sys.stderr)
 
     # Build passage-to-file mapping for git commit date tracking
     repo_root = output_dir.parent  # Assume output_dir is dist/ and repo root is parent
@@ -1076,6 +1110,7 @@ def main() -> None:
     # Load validation cache (stored at repository root, not in dist/)
     cache_file = output_dir.parent / 'allpaths-validation-status.json'
     validation_cache = load_validation_cache(cache_file)
+    print(f"Loaded validation cache with {len(validation_cache)} entries", file=sys.stderr)
 
     # Determine git base ref for comparison
     # In PR context (GitHub Actions), compare against base branch
@@ -1096,15 +1131,28 @@ def main() -> None:
         print(f"[ERROR] All paths will be marked as 'new' instead of properly categorized.", file=sys.stderr)
         # Continue execution but warn user that results will be incorrect
 
-    # Categorize paths (New/Modified/Unchanged)
+    # =========================================================================
+    # STAGE 4: PATH CATEGORIZATION
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 4: PATH CATEGORIZATION - Classifying paths (new/modified/unchanged)", file=sys.stderr)
+    print("="*80, file=sys.stderr)
+
+    # Categorize paths using two-level test (path existence + content changes)
     path_categories = categorize_paths(all_paths, passages, validation_cache,
                                       passage_to_file, repo_root, base_ref)
-    print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
-          f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
-          f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
 
-    # Update validation cache with current paths BEFORE generating HTML
-    # This ensures HTML has access to fresh dates
+    new_count = sum(1 for c in path_categories.values() if c == 'new')
+    modified_count = sum(1 for c in path_categories.values() if c == 'modified')
+    unchanged_count = sum(1 for c in path_categories.values() if c == 'unchanged')
+
+    print(f"\nCategorization summary:", file=sys.stderr)
+    print(f"  NEW: {new_count} paths", file=sys.stderr)
+    print(f"  MODIFIED: {modified_count} paths", file=sys.stderr)
+    print(f"  UNCHANGED: {unchanged_count} paths", file=sys.stderr)
+
+    # Update validation cache with current paths BEFORE generating outputs
+    # This ensures outputs have access to fresh dates and categories
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
         commit_date = get_path_commit_date(path, passage_to_file, repo_root)
@@ -1132,7 +1180,16 @@ def main() -> None:
             # Always update category - it's computed fresh from git on each build
             validation_cache[path_hash]['category'] = category
 
-    # Generate all outputs using the output_generator module (Stage 5)
+    print(f"Updated validation cache with {len(validation_cache)} total entries", file=sys.stderr)
+
+    # =========================================================================
+    # STAGE 5: OUTPUT GENERATION
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 5: OUTPUT GENERATION - Creating HTML viewer and text files", file=sys.stderr)
+    print("="*80, file=sys.stderr)
+
+    # Generate all outputs using the output_generator module
     result = generate_outputs(
         story_data=story_data,
         passages=passages,
@@ -1149,20 +1206,25 @@ def main() -> None:
     text_dir = Path(result['text_dir'])
     continuity_dir = Path(result['metadata_dir'])
 
-    print(f"Generated {html_file}", file=sys.stderr)
-    print(f"Generated {len(all_paths)} text files in {text_dir} (clean prose)", file=sys.stderr)
-    print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
+    print(f"\nGenerated outputs:", file=sys.stderr)
+    print(f"  HTML viewer: {html_file}", file=sys.stderr)
+    print(f"  Text files (clean): {text_dir}/ ({len(all_paths)} files)", file=sys.stderr)
+    print(f"  Text files (metadata): {continuity_dir}/ ({len(all_paths)} files)", file=sys.stderr)
+    print(f"  Passage mapping: {mapping_file}", file=sys.stderr)
+    print(f"  Validation cache: {cache_file}", file=sys.stderr)
 
-    # Print summary
-    print(f"\n=== AllPaths Generation Complete ===", file=sys.stderr)
+    # =========================================================================
+    # PIPELINE COMPLETE
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("=== ALLPATHS GENERATION COMPLETE ===", file=sys.stderr)
+    print("="*80, file=sys.stderr)
     print(f"Story: {story_data['name']}", file=sys.stderr)
     print(f"Total paths: {len(all_paths)}", file=sys.stderr)
-    print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
+    if all_paths:
+        print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
     print(f"HTML output: {html_file}", file=sys.stderr)
-    print(f"Text files (public): {text_dir}/", file=sys.stderr)
-    print(f"Text files (continuity): {continuity_dir}/", file=sys.stderr)
-    print(f"Passage mapping: {mapping_file}", file=sys.stderr)
-    print(f"Validation cache: {cache_file}", file=sys.stderr)
+    print("="*80 + "\n", file=sys.stderr)
 
 if __name__ == '__main__':
     main()
