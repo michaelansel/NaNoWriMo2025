@@ -2,13 +2,11 @@
 
 ## Status
 
-**Accepted and Implemented** (2025-11-28)
-
-All 3 phases of the migration are complete. The AllPaths generator now operates as a modular 5-stage processing pipeline with full test coverage and debugging support.
+**Accepted and Implemented**
 
 ## Context
 
-The original AllPaths generator (`formats/allpaths/generator.py`, 1810 lines) had grown into a monolithic file that handled multiple responsibilities:
+The AllPaths generator was initially implemented as a monolithic file that handled multiple responsibilities:
 - HTML parsing and graph construction
 - Path enumeration (DFS traversal)
 - Git integration for change detection
@@ -191,47 +189,6 @@ formats/allpaths/
 └── README.md
 ```
 
-### Migration Path
-
-**Phase 1: Incremental Refactoring**
-- Goal: Reduce technical debt without breaking changes
-- Actions:
-  - Remove deprecated fingerprint code
-  - Extract helper functions into logical groups
-  - Add docstrings and type hints
-  - Clean up HTML generation code
-- Output: Smaller, cleaner generator.py
-- Risk: Low (no architectural changes)
-
-**Phase 2: 3-Stage Pipeline**
-- Goal: Prove pipeline architecture with minimal stages
-- Actions:
-  - Extract Stage 1 (parser) into separate module
-  - Extract Stage 5 (output generation) into separate module
-  - Keep Stages 2-4 in main generator temporarily
-  - Create first intermediate artifacts (story_graph.json, final outputs)
-- Output: 3 modules, 2 intermediate artifacts
-- Risk: Medium (new architecture, backward compatible)
-
-**Phase 3: 5-Stage Pipeline**
-- Goal: Full pipeline with all intermediate artifacts
-- Actions:
-  - Extract Stage 2 (path generation) into module
-  - Extract Stage 3 (git enrichment) into module
-  - Extract Stage 4 (categorization) into module
-  - Create all intermediate artifacts with schemas
-  - Add comprehensive tests for each module
-- Output: 5 modules, 4 intermediate artifacts, full test suite
-- Risk: Low (incremental from Phase 2)
-
-**Phase 4: Optimization**
-- Goal: Performance and extensibility improvements
-- Optional enhancements:
-  - Incremental path generation (only regenerate changed paths)
-  - Parallel processing of independent stages
-  - Plugin system for custom validators
-  - Alternative output formats
-
 ## Consequences
 
 ### Positive
@@ -393,73 +350,6 @@ Intermediate artifacts are:
 - **Total**: < 20 seconds (no worse than current)
 
 With intermediate artifacts I/O: +1-2 seconds acceptable overhead.
-
-## Implementation Status
-
-**COMPLETE** (2025-11-28)
-
-All three phases of the migration have been successfully completed:
-
-### Phase 1: Incremental Refactoring ✓
-
-**Completed**:
-- Removed 4 deprecated fingerprint functions (~1,600 lines including tests)
-- Extracted HTML to Jinja2 templates (~508 lines moved)
-- Created GitService abstraction with 7 tests
-- Added comprehensive type hints and docstrings
-- Organized code into 12 logical sections
-
-### Phase 2: 3-Stage Pipeline ✓
-
-**Completed**:
-- Created `modules/` and `schemas/` directory structure
-- Extracted parser (Stage 1) with story_graph.json schema
-- Extracted output generator (Stage 5) with comprehensive tests
-- Updated generator.py to orchestrate 3 stages
-- Implemented `--write-intermediate` flag for debugging
-
-### Phase 3: 5-Stage Pipeline ✓
-
-**Completed**:
-- Extracted path generator (Stage 2) with paths.json schema
-- Extracted git enricher (Stage 3) with paths_enriched.json schema
-- Extracted categorizer (Stage 4) with paths_categorized.json schema (505 lines)
-- Reduced generator.py from 1047 to 637 lines (53% reduction)
-- Extended `--write-intermediate` to write all 4 intermediate artifacts
-- 32 comprehensive tests passing across all modules
-- All modules achieved >80% test coverage
-- Performance within targets (<20 seconds for 30 paths)
-
-### Final State
-
-**Module Structure**:
-```
-formats/allpaths/
-├── generator.py (637 lines)      # Orchestrator
-├── modules/                      # 5 stage modules
-├── schemas/                      # 4 JSON schemas
-├── lib/git_service.py           # Git abstraction
-└── tests/                       # 32 tests
-```
-
-**Benefits Realized**:
-- Each stage independently testable and debuggable
-- Intermediate artifacts enable stage-by-stage inspection
-- Clear separation of concerns with explicit data flow
-- Maintained backward compatibility (CLI unchanged)
-- Improved maintainability and extensibility
-
-## Success Criteria
-
-All success criteria have been met:
-
-1. ✅ **Each stage can be tested independently** - 5 modules with >80% test coverage each
-2. ✅ **Intermediate artifacts enable debugging** - 4 artifacts with `--write-intermediate` flag
-3. ✅ **Performance within 20% of current system** - <20 seconds for 30 paths, within target
-4. ✅ **Code more maintainable** - generator.py reduced 53%, clear module responsibilities
-5. ✅ **Easy to add new output formats or processing steps** - Modular architecture enables extensions
-6. ✅ **Migration completed without breaking existing functionality** - All 32 tests passing, CLI unchanged
-7. ✅ **Developer documentation clear and complete** - ADR, implementation summary, and module docs complete
 
 ## Future Considerations
 

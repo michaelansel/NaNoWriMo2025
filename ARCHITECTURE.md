@@ -96,7 +96,7 @@ The AllPaths generator implements a modular pipeline that transforms Tweego HTML
    - Output: HTML browser, clean text, metadata text, updated cache
    - Responsibility: Create all output formats with random ID substitution
 
-**Orchestrator**: `generator.py` (687 lines) coordinates all five stages and manages the pipeline flow.
+**Orchestrator**: `generator.py` coordinates all five stages and manages the pipeline flow.
 
 **Key Features**:
 - **Modular Design**: Each stage is independently testable (32+ tests, >80% coverage per module)
@@ -110,7 +110,7 @@ The AllPaths generator implements a modular pipeline that transforms Tweego HTML
 **Module Structure**:
 ```
 formats/allpaths/
-├── generator.py              # Main orchestrator (687 lines)
+├── generator.py              # Main orchestrator
 ├── modules/
 │   ├── parser.py             # Stage 1: HTML → story_graph.json
 │   ├── path_generator.py     # Stage 2: story_graph.json → paths.json
@@ -119,7 +119,7 @@ formats/allpaths/
 │   └── output_generator.py   # Stage 5: Generate all outputs
 ├── schemas/                  # JSON schemas for all 4 intermediate artifacts
 ├── lib/git_service.py        # Git abstraction layer
-└── tests/                    # 32 comprehensive tests
+└── tests/                    # Comprehensive test suite
 ```
 
 **Data Flow**:
