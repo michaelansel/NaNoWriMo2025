@@ -14,6 +14,7 @@ from pathlib import Path
 from datetime import datetime
 from html.parser import HTMLParser
 from typing import Dict, List, Tuple, Set, Optional
+from jinja2 import Environment, FileSystemLoader
 
 class TweeStoryParser(HTMLParser):
     """Parse Tweego-compiled HTML to extract story data"""
@@ -1100,9 +1101,30 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
     return categories
 
+def format_date_for_display(date_str: str) -> str:
+    """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC)"""
+    if not date_str:
+        return "Unknown"
+    try:
+        from datetime import datetime as dt
+        # Parse date with timezone info
+        date_dt = dt.fromisoformat(date_str.replace('Z', '+00:00'))
+        # Convert to UTC if it has timezone info
+        if date_dt.tzinfo is not None:
+            # Convert to UTC
+            import datetime
+            utc_dt = date_dt.astimezone(datetime.timezone.utc)
+            return utc_dt.strftime('%Y-%m-%d %H:%M UTC')
+        else:
+            # Assume it's already UTC if no timezone
+            return date_dt.strftime('%Y-%m-%d %H:%M UTC')
+    except:
+        # Fallback to just showing the date part
+        return date_str[:10] if len(date_str) >= 10 else date_str
+
 def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[str]],
                         validation_cache: Dict = None, path_categories: Dict[str, str] = None) -> str:
-    """Generate HTML output with all paths"""
+    """Generate HTML output with all paths using Jinja2 template"""
     if validation_cache is None:
         validation_cache = {}
     if path_categories is None:
@@ -1110,7 +1132,6 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
 
     # Calculate statistics
     path_lengths = [len(p) for p in all_paths]
-    total_passages = sum(path_lengths)
 
     # Prepare paths with metadata (no sorting by category - ADR-007 single interface)
     paths_with_metadata = []
@@ -1119,581 +1140,52 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         created_date = validation_cache.get(path_hash, {}).get('created_date', '')
         commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
         is_validated = validation_cache.get(path_hash, {}).get('validated', False)
-        paths_with_metadata.append((path, path_hash, created_date, commit_date, is_validated))
 
-    # Sort by creation date (newest first)
-    # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
-    paths_with_metadata.sort(key=lambda x: x[2] if x[2] else '0', reverse=True)
-
-    # Count validation status
-    validated_count = sum(1 for _, _, _, _, is_validated in paths_with_metadata if is_validated)
-    new_count = len(paths_with_metadata) - validated_count
-
-    html = f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Paths - {story_data['name']}</title>
-    <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
-        }}
-
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-
-        .header h1 {{
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }}
-
-        .header .subtitle {{
-            opacity: 0.9;
-            font-size: 1rem;
-        }}
-
-        .stats {{
-            background: white;
-            margin: 2rem auto;
-            max-width: 1200px;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-
-        .stats h2 {{
-            margin-bottom: 1rem;
-            color: #667eea;
-        }}
-
-        .stats-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }}
-
-        .stat-item {{
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid #667eea;
-        }}
-
-        .stat-label {{
-            font-size: 0.875rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }}
-
-        .stat-value {{
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-            margin-top: 0.25rem;
-        }}
-
-        .filter-section {{
-            background: white;
-            margin: 2rem auto;
-            max-width: 1200px;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-
-        .filter-buttons {{
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }}
-
-        .filter-btn {{
-            padding: 0.5rem 1rem;
-            border: 2px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }}
-
-        .filter-btn:hover {{
-            background: #667eea;
-            color: white;
-        }}
-
-        .filter-btn.active {{
-            background: #667eea;
-            color: white;
-        }}
-
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }}
-
-        .path {{
-            background: white;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: box-shadow 0.3s;
-        }}
-
-        .path:hover {{
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }}
-
-        .path-header {{
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e9ecef;
-        }}
-
-        .path-title {{
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }}
-
-        .path-meta {{
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            font-size: 0.875rem;
-            color: #666;
-        }}
-
-        .path-meta-item {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }}
-
-        .badge {{
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }}
-
-        .badge-validated {{
-            background: #28a745;
-            color: white;
-        }}
-
-        .badge-new {{
-            background: #6c757d;
-            color: white;
-        }}
-
-        .route {{
-            background: #e9ecef;
-            padding: 1rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-            overflow-x: auto;
-            white-space: nowrap;
-        }}
-
-        .path-content {{
-            padding: 2rem;
-        }}
-
-        .passage {{
-            margin-bottom: 2rem;
-        }}
-
-        .passage-title {{
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #667eea;
-        }}
-
-        .passage-text {{
-            color: #555;
-            white-space: pre-wrap;
-            line-height: 1.8;
-        }}
-
-        .toggle-btn {{
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            margin-top: 1rem;
-            transition: background 0.3s;
-        }}
-
-        .toggle-btn:hover {{
-            background: #5568d3;
-        }}
-
-        .path-content.collapsed {{
-            display: none;
-        }}
-
-        .footer {{
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-            font-size: 0.875rem;
-        }}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>All Story Paths - {story_data['name']}</h1>
-        <div class="subtitle">Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-    </div>
-
-    <div class="stats">
-        <h2>Statistics</h2>
-        <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-label">Total Paths</div>
-                <div class="stat-value" id="total-paths">{len(all_paths)}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Displayed Paths</div>
-                <div class="stat-value" id="displayed-paths">{len(all_paths)}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #28a745;">
-                <div class="stat-label">Validated Paths</div>
-                <div class="stat-value">{validated_count}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #6c757d;">
-                <div class="stat-label">New Paths</div>
-                <div class="stat-value">{new_count}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Shortest Path</div>
-                <div class="stat-value">{min(path_lengths)} passages</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Longest Path</div>
-                <div class="stat-value">{max(path_lengths)} passages</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Average Length</div>
-                <div class="stat-value">{sum(path_lengths) / len(all_paths):.1f} passages</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="filter-section">
-        <h3>Filter Paths</h3>
-        <div style="margin-bottom: 1rem;">
-            <strong>Time-Based Filters:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" data-filter-type="created-day" onclick="toggleFilter(this, 'created-day')">Created Last Day</button>
-                <button class="filter-btn" data-filter-type="created-week" onclick="toggleFilter(this, 'created-week')">Created Last Week</button>
-                <button class="filter-btn" data-filter-type="modified-day" onclick="toggleFilter(this, 'modified-day')">Modified Last Day</button>
-                <button class="filter-btn" data-filter-type="modified-week" onclick="toggleFilter(this, 'modified-week')">Modified Last Week</button>
-            </div>
-        </div>
-        <div style="margin-bottom: 1rem;">
-            <strong>Validation Status:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" data-filter-type="validated" onclick="toggleFilter(this, 'validated')">Validated ({validated_count})</button>
-                <button class="filter-btn" data-filter-type="new" onclick="toggleFilter(this, 'new')">New ({new_count})</button>
-            </div>
-        </div>
-        <div>
-            <strong>Actions:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" onclick="clearAllFilters()">Clear All Filters</button>
-                <button class="filter-btn" onclick="toggleAllPaths()">Expand All</button>
-                <button class="filter-btn" onclick="collapseAllPaths()">Collapse All</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="container">
-'''
-
-    # Generate each path (using sorted paths with metadata)
-    for i, (path, path_hash, created_date, commit_date, is_validated) in enumerate(paths_with_metadata, 1):
         # Format dates for display
-        def format_date_for_display(date_str):
-            """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC)"""
-            if not date_str:
-                return "Unknown"
-            try:
-                from datetime import datetime as dt
-                # Parse date with timezone info
-                date_dt = dt.fromisoformat(date_str.replace('Z', '+00:00'))
-                # Convert to UTC if it has timezone info
-                if date_dt.tzinfo is not None:
-                    # Convert to UTC
-                    import datetime
-                    utc_dt = date_dt.astimezone(datetime.timezone.utc)
-                    return utc_dt.strftime('%Y-%m-%d %H:%M UTC')
-                else:
-                    # Assume it's already UTC if no timezone
-                    return date_dt.strftime('%Y-%m-%d %H:%M UTC')
-            except:
-                # Fallback to just showing the date part
-                return date_str[:10] if len(date_str) >= 10 else date_str
-
         created_display = format_date_for_display(created_date)
         modified_display = format_date_for_display(commit_date)
 
-        # Validation status badge
-        validation_badge = 'badge-validated' if is_validated else 'badge-new'
-        validation_text = 'Validated' if is_validated else 'New'
+        paths_with_metadata.append({
+            'path': path,
+            'path_hash': path_hash,
+            'created_date': created_date,
+            'commit_date': commit_date,
+            'is_validated': is_validated,
+            'created_display': created_display,
+            'modified_display': modified_display,
+        })
 
-        html += f'''
-        <div class="path" data-created-date="{created_date}" data-commit-date="{commit_date}" data-validated="{str(is_validated).lower()}">
-            <div class="path-header">
-                <div class="path-title">Path {i} of {len(all_paths)}</div>
-                <div class="path-meta">
-                    <div class="path-meta-item">
-                        <span class="badge {validation_badge}">{validation_text}</span>
-                    </div>
-                    <div class="path-meta-item">
-                        📏 Length: {len(path)} passages
-                    </div>
-                    <div class="path-meta-item">
-                        🔑 ID: {path_hash}
-                    </div>
-                    <div class="path-meta-item">
-                        📅 Created: {created_display}
-                    </div>
-                    <div class="path-meta-item">
-                        🔄 Modified: {modified_display}
-                    </div>
-                    <div class="path-meta-item">
-                        📄 <a href="allpaths-clean/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
-                    </div>
-                </div>
-                <div style="margin-top: 1rem;">
-                    <div class="route">{' → '.join(path)}</div>
-                </div>
-                <button class="toggle-btn" onclick="togglePath(this)">Show Content</button>
-            </div>
-            <div class="path-content collapsed" id="path-{i}">
-'''
+    # Sort by creation date (newest first)
+    # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
+    paths_with_metadata.sort(key=lambda x: x['created_date'] if x['created_date'] else '0', reverse=True)
 
-        # Add each passage in the path
-        for j, passage_name in enumerate(path):
-            if passage_name not in passages:
-                html += f'''
-                <div class="passage">
-                    <div class="passage-title">[{passage_name}]</div>
-                    <div class="passage-text">[Passage not found]</div>
-                </div>
-'''
-                continue
+    # Count validation status
+    validated_count = sum(1 for p in paths_with_metadata if p['is_validated'])
+    new_count = len(paths_with_metadata) - validated_count
 
-            passage = passages[passage_name]
+    # Set up Jinja2 environment
+    template_dir = Path(__file__).parent / 'templates'
+    env = Environment(loader=FileSystemLoader(str(template_dir)))
 
-            # Determine the next passage to filter links
-            next_passage = path[j + 1] if j + 1 < len(path) else None
-            formatted_text = format_passage_text(passage['text'], next_passage)
+    # Register format_passage_text as a global function for the template
+    env.globals['format_passage_text'] = format_passage_text
 
-            html += f'''
-                <div class="passage">
-                    <div class="passage-title" style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">[Passage: {passage_name}]</div>
-                    <div class="passage-text">{formatted_text}</div>
-                </div>
-'''
+    # Load template
+    template = env.get_template('allpaths.html.jinja2')
 
-        html += '''
-            </div>
-        </div>
-'''
-
-    html += '''
-    </div>
-
-    <div class="footer">
-        Generated by AllPaths Story Format | For AI-based continuity checking
-    </div>
-
-    <script>
-        // Track active filters (AND logic)
-        let activeFilters = {
-            'created-day': false,
-            'created-week': false,
-            'modified-day': false,
-            'modified-week': false,
-            'validated': false,
-            'new': false
-        };
-
-        function togglePath(button) {
-            const content = button.closest('.path').querySelector('.path-content');
-            const isCollapsed = content.classList.contains('collapsed');
-
-            if (isCollapsed) {
-                content.classList.remove('collapsed');
-                button.textContent = 'Hide Content';
-            } else {
-                content.classList.add('collapsed');
-                button.textContent = 'Show Content';
-            }
-        }
-
-        function toggleFilter(button, filterType) {
-            // Toggle the filter state
-            activeFilters[filterType] = !activeFilters[filterType];
-
-            // Update button appearance
-            if (activeFilters[filterType]) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
-            }
-
-            // Apply filters
-            applyFilters();
-        }
-
-        function clearAllFilters() {
-            // Reset all filters
-            Object.keys(activeFilters).forEach(key => {
-                activeFilters[key] = false;
-            });
-
-            // Reset all button states
-            document.querySelectorAll('.filter-btn[data-filter-type]').forEach(btn => {
-                btn.classList.remove('active');
-            });
-
-            // Apply filters (will show all paths)
-            applyFilters();
-        }
-
-        function applyFilters() {
-            const paths = document.querySelectorAll('.path');
-            const now = new Date();
-            const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-            const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-
-            let displayedCount = 0;
-
-            paths.forEach(path => {
-                let shouldDisplay = true;
-
-                // Get path data
-                const createdDate = path.dataset.createdDate;
-                const commitDate = path.dataset.commitDate;
-                const isValidated = path.dataset.validated === 'true';
-
-                // Apply time-based filters (if any active)
-                if (activeFilters['created-day'] || activeFilters['created-week'] ||
-                    activeFilters['modified-day'] || activeFilters['modified-week']) {
-
-                    let matchesTimeFilter = false;
-
-                    // Created filters
-                    if (activeFilters['created-day']) {
-                        if (createdDate && new Date(createdDate) >= oneDayAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
-                    if (activeFilters['created-week']) {
-                        if (createdDate && new Date(createdDate) >= oneWeekAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
-
-                    // Modified filters
-                    if (activeFilters['modified-day']) {
-                        if (commitDate && new Date(commitDate) >= oneDayAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
-                    if (activeFilters['modified-week']) {
-                        if (commitDate && new Date(commitDate) >= oneWeekAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
-
-                    // If we have time filters active but this path doesn't match any, hide it
-                    if (!matchesTimeFilter) {
-                        shouldDisplay = false;
-                    }
-                }
-
-                // Apply validation status filters (if any active)
-                if (activeFilters['validated'] || activeFilters['new']) {
-                    let matchesStatusFilter = false;
-
-                    if (activeFilters['validated'] && isValidated) {
-                        matchesStatusFilter = true;
-                    }
-                    if (activeFilters['new'] && !isValidated) {
-                        matchesStatusFilter = true;
-                    }
-
-                    // If we have status filters active but this path doesn't match, hide it
-                    if (!matchesStatusFilter) {
-                        shouldDisplay = false;
-                    }
-                }
-
-                // Apply visibility
-                if (shouldDisplay) {
-                    path.style.display = 'block';
-                    displayedCount++;
-                } else {
-                    path.style.display = 'none';
-                }
-            });
-
-            // Update displayed count
-            document.getElementById('displayed-paths').textContent = displayedCount;
-        }
-
-        function toggleAllPaths() {
-            const contents = document.querySelectorAll('.path-content');
-            const buttons = document.querySelectorAll('.toggle-btn');
-
-            contents.forEach(content => content.classList.remove('collapsed'));
-            buttons.forEach(btn => btn.textContent = 'Hide Content');
-        }
-
-        function collapseAllPaths() {
-            const contents = document.querySelectorAll('.path-content');
-            const buttons = document.querySelectorAll('.toggle-btn');
-
-            contents.forEach(content => content.classList.add('collapsed'));
-            buttons.forEach(btn => btn.textContent = 'Show Content');
-        }
-    </script>
-</body>
-</html>
-'''
+    # Render template with context
+    html = template.render(
+        story_name=story_data['name'],
+        generated_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        total_paths=len(all_paths),
+        validated_count=validated_count,
+        new_count=new_count,
+        shortest_path=min(path_lengths),
+        longest_path=max(path_lengths),
+        average_length=f"{sum(path_lengths) / len(all_paths):.1f}",
+        paths_with_metadata=paths_with_metadata,
+        passages=passages,
+    )
 
     return html
 
