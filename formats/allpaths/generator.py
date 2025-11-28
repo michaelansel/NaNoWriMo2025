@@ -17,122 +17,18 @@ from typing import Dict, List, Tuple, Set, Optional
 from jinja2 import Environment, FileSystemLoader
 
 from lib.git_service import GitService
-
-
-# =============================================================================
-# HTML PARSING
-# =============================================================================
-
-class TweeStoryParser(HTMLParser):
-    """Parse Tweego-compiled HTML to extract story data"""
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.story_data = {}
-        self.passages = {}
-        self.current_passage = None
-        self.current_data = []
-        self.in_passage = False
-
-    def handle_starttag(self, tag: str, attrs: List[Tuple[str, str]]) -> None:
-        attrs_dict = dict(attrs)
-
-        if tag == 'tw-storydata':
-            self.story_data = {
-                'name': attrs_dict.get('name', 'Untitled'),
-                'ifid': attrs_dict.get('ifid', ''),
-                'start': attrs_dict.get('startnode', '1'),
-            }
-        elif tag == 'tw-passagedata':
-            self.in_passage = True
-            self.current_passage = {
-                'pid': attrs_dict.get('pid', ''),
-                'name': attrs_dict.get('name', ''),
-                'tags': attrs_dict.get('tags', '').split() if attrs_dict.get('tags') else [],
-                'text': '',
-            }
-            self.current_data = []
-
-    def handle_endtag(self, tag: str) -> None:
-        if tag == 'tw-passagedata' and self.in_passage:
-            self.current_passage['text'] = ''.join(self.current_data).strip()
-            self.passages[self.current_passage['name']] = self.current_passage
-            self.in_passage = False
-            self.current_passage = None
-            self.current_data = []
-
-    def handle_data(self, data: str) -> None:
-        if self.in_passage:
-            self.current_data.append(data)
-
-def parse_story_html(html_content: str) -> Tuple[Dict, Dict]:
-    """Parse Tweego-compiled HTML and extract story data and passages"""
-    parser = TweeStoryParser()
-    parser.feed(html_content)
-    return parser.story_data, parser.passages
-
-def parse_link(link_text: str) -> str:
-    """Parse a Twee link and extract the target passage name.
-
-    Supports three Twee link formats:
-    - [[target]]
-    - [[display->target]]
-    - [[target<-display]]
-
-    Args:
-        link_text: The link text to parse (without surrounding [[ ]])
-
-    Returns:
-        The target passage name
-    """
-    # [[target]]
-    # [[display->target]]
-    # [[target<-display]]
-    if '->' in link_text:
-        return link_text.split('->')[1].strip()
-    elif '<-' in link_text:
-        return link_text.split('<-')[0].strip()
-    else:
-        return link_text.strip()
-
-def extract_links(passage_text: str) -> List[str]:
-    """Extract all link targets from passage text"""
-    links = re.findall(r'\[\[([^\]]+)\]\]', passage_text)
-    targets = [parse_link(link) for link in links]
-
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_targets = []
-    for t in targets:
-        if t not in seen:
-            seen.add(t)
-            unique_targets.append(t)
-
-    return unique_targets
-
-# =============================================================================
-# GRAPH CONSTRUCTION
-# =============================================================================
-
-
-def build_graph(passages: Dict) -> Dict[str, List[str]]:
-    """Build a directed graph from passages"""
-    graph = {}
-
-    for name, passage in passages.items():
-        # Skip special passages
-        if name in ['StoryTitle', 'StoryData']:
-            continue
-
-        links = extract_links(passage['text'])
-        graph[name] = links
+from modules.parser import (
+    TweeStoryParser,
+    parse_story_html,
+    parse_link,
+    extract_links,
+    build_graph,
+)
 
 
 # =============================================================================
 # PATH GENERATION
 # =============================================================================
-
-    return graph
 
 def generate_all_paths_dfs(graph: Dict[str, List[str]], start: str,
                           current_path: List[str] = None,
