@@ -76,7 +76,9 @@ metrics_lock = threading.Lock()
 
 # Webhook deduplication (GitHub can send webhooks multiple times)
 processed_comment_ids = {}  # {comment_id: timestamp} - track processed comments
+processed_workflow_runs = {}  # {workflow_run_id: timestamp} - track processed workflow runs
 COMMENT_DEDUP_TTL = 300  # 5 minutes
+WORKFLOW_DEDUP_TTL = 600  # 10 minutes (workflows can take longer)
 
 # GitHub App authentication - token cache
 _token_cache = {
@@ -628,10 +630,10 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                 app.logger.error("[Background] Failed to download artifact")
                 return
 
-            # Check for cancellation
+            # Check for cancellation (early - before validation starts)
             if cancel_event.is_set():
-                app.logger.info(f"[Background] Job cancelled for PR #{pr_number}, stopping")
-                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
+                app.logger.info(f"[Background] Job cancelled early for PR #{pr_number} (before validation started)")
+                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled before checking began - newer commit or manual request detected.\n\n_This is expected during rapid development. The latest commit will be validated instead._\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
 
             # Validate structure
@@ -825,8 +827,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
             # Check if job was cancelled during validation
             if cancel_event.is_set():
-                app.logger.info(f"[Background] Job was cancelled during validation")
-                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
+                app.logger.info(f"[Background] Job was cancelled during validation (after some paths completed)")
+                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled after checking some paths - newer commit or manual request detected.\n\n_This is expected during rapid development. The latest commit will be validated instead._\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
 
             # Translate passage IDs in final results
@@ -951,6 +953,23 @@ def handle_workflow_webhook(payload):
 
     # Get PR number
     workflow_id = workflow_run.get('id')
+
+    # Deduplication: Check if we've already processed this workflow run
+    with metrics_lock:
+        now = time.time()
+        # Clean up old entries
+        expired_ids = [wid for wid, ts in processed_workflow_runs.items() if now - ts > WORKFLOW_DEDUP_TTL]
+        for wid in expired_ids:
+            del processed_workflow_runs[wid]
+
+        # Check if already processed
+        if workflow_id in processed_workflow_runs:
+            app.logger.info(f"Ignoring duplicate webhook for workflow run {workflow_id}")
+            return jsonify({"message": "Duplicate webhook, already processed"}), 200
+
+        # Mark as processed
+        processed_workflow_runs[workflow_id] = now
+
     pr_number = get_pr_number_from_workflow(workflow_id)
 
     if not pr_number:
@@ -1165,12 +1184,13 @@ def handle_check_continuity_command(payload):
         post_pr_comment(pr_number, "⚠️ Error fetching workflow information")
         return jsonify({"message": "API error"}), 500
 
-    # Cancel any existing checks for this PR
+    # Cancel any existing checks for this PR (manual command supersedes auto-validation)
+    # This prevents parallel runs and ensures the user's manual request takes priority
     with metrics_lock:
         if pr_number in pr_active_jobs:
             existing_workflow_id = pr_active_jobs[pr_number]
             if existing_workflow_id in active_jobs:
-                app.logger.info(f"Cancelling existing job {existing_workflow_id} for PR #{pr_number}")
+                app.logger.info(f"Manual command: cancelling existing auto-validation (workflow {existing_workflow_id}) for PR #{pr_number}")
                 active_jobs[existing_workflow_id]['cancel_event'].set()
 
     # Spawn background thread for processing using the existing process_webhook_async
