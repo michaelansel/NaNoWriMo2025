@@ -2,6 +2,32 @@
 
 This service receives GitHub webhooks when PR workflows complete, downloads story path artifacts, runs AI-based continuity checking using Ollama, and posts results back to the PR.
 
+## Table of Contents
+
+**Getting Started:**
+- [Quick Reference](#quick-reference) - Common commands and troubleshooting
+- [Setup](#setup) - Installation and configuration
+- [GitHub Configuration](#github-configuration) - Webhook setup
+
+**Operations:**
+- [Monitoring](#monitoring) - Service status and logs
+- [Troubleshooting](#troubleshooting) - Common issues and solutions
+- [Configuration](#configuration) - Environment variables
+
+**Features:**
+- [Validation Modes](#validation-modes) - new-only, modified, all
+- [Handling Multiple Commits](#handling-multiple-commits) - Auto-cancellation behavior
+- [Approving Validated Paths](#approving-validated-paths) - Path approval workflow
+
+**Technical:**
+- [Architecture](#architecture) - System design
+- [Components](#components) - Service components
+- [Security](#security) - Security model
+- [Testing](#testing) - Test procedures
+- [Development](#development) - Development workflow
+- [Performance](#performance) - Performance characteristics
+- [Maintenance](#maintenance) - Maintenance tasks
+
 ## Architecture
 
 ```
@@ -24,6 +50,45 @@ Webhook Service (this host)
 - **Webhook signature verification**: HMAC-SHA256 signatures prevent spoofing
 - **Artifact validation**: File structure and sizes are validated before processing
 - **Text-only processing**: Story text goes to Ollama prompt only (never executed)
+
+## Quick Reference
+
+### Common Operations
+
+```bash
+# Service control
+systemctl --user start continuity-webhook       # Start the service
+systemctl --user stop continuity-webhook        # Stop the service
+systemctl --user restart continuity-webhook     # Restart the service
+systemctl --user status continuity-webhook      # Check service status
+systemctl --user enable continuity-webhook      # Enable auto-start on boot
+
+# View logs
+journalctl --user -u continuity-webhook -f      # Follow logs in real-time
+journalctl --user -u continuity-webhook -n 100  # View last 100 log lines
+
+# Health and status checks
+curl http://localhost:5000/health               # Health check endpoint
+curl http://localhost:5000/status               # Service metrics and active jobs
+```
+
+### Troubleshooting Quick Commands
+
+```bash
+# Service won't start
+systemctl --user status continuity-webhook      # Check service status
+journalctl --user -u continuity-webhook -n 50   # Check recent logs
+cat ~/.config/continuity-webhook/env            # Verify environment file
+
+# Test Ollama
+curl http://localhost:11434/api/tags            # Check if Ollama is running
+ollama list                                     # List available models
+
+# Test webhook service
+curl http://localhost:5000/health               # Verify service is responding
+```
+
+**For detailed setup, configuration, and troubleshooting, see the sections below.**
 
 ## Components
 
