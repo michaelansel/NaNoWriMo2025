@@ -10,6 +10,7 @@ import sys
 import json
 import hashlib
 import subprocess
+import argparse
 from pathlib import Path
 from datetime import datetime
 from html.parser import HTMLParser
@@ -1011,11 +1012,12 @@ def main() -> None:
     - Stage 5: Output generation (HTML, text files, cache)
 
     Usage:
-        generator.py <input.html> [output_dir]
+        generator.py <input.html> [output_dir] [--write-intermediate]
 
-    Args (via sys.argv):
+    Args:
         input.html: Path to Tweego-compiled HTML file
         output_dir: Optional directory for output files (default: current directory)
+        --write-intermediate: Optional flag to write intermediate artifacts for debugging
 
     Outputs:
         - allpaths.html: Interactive HTML viewer with all paths
@@ -1023,16 +1025,25 @@ def main() -> None:
         - allpaths-metadata/*.txt: Individual path files with metadata
         - allpaths-passage-mapping.json: Mapping between passage names and IDs
         - allpaths-validation-status.json: Cache of path validation data
+        - dist/allpaths-intermediate/story_graph.json: Intermediate artifact (if --write-intermediate)
     """
     # =========================================================================
     # SETUP AND ARGUMENT PARSING
     # =========================================================================
-    if len(sys.argv) < 2:
-        print("Usage: generator.py <input.html> [output_dir]", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description='AllPaths Story Format Generator - Generate all possible story paths for AI continuity checking'
+    )
+    parser.add_argument('input_file', type=Path, help='Path to Tweego-compiled HTML file')
+    parser.add_argument('output_dir', type=Path, nargs='?', default=Path('.'),
+                       help='Directory for output files (default: current directory)')
+    parser.add_argument('--write-intermediate', action='store_true', default=False,
+                       help='Write intermediate artifacts to dist/allpaths-intermediate/ for debugging')
 
-    input_file = Path(sys.argv[1])
-    output_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else Path('.')
+    args = parser.parse_args()
+
+    input_file = args.input_file
+    output_dir = args.output_dir
+    write_intermediate = args.write_intermediate
 
     # Read input HTML
     with open(input_file, 'r', encoding='utf-8') as f:
@@ -1064,6 +1075,35 @@ def main() -> None:
         start_passage = 'Start'
 
     print(f"Start passage: {start_passage}", file=sys.stderr)
+
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        story_graph = {
+            'passages': {
+                name: {
+                    'text': passage['text'],
+                    'pid': passage['pid'],
+                    'links': graph.get(name, [])
+                }
+                for name, passage in passages.items()
+            },
+            'start_passage': start_passage,
+            'metadata': {
+                'story_title': story_data['name'],
+                'ifid': story_data.get('ifid', ''),
+                'format': story_data.get('format', 'Twine'),
+                'format_version': story_data.get('format-version', '')
+            }
+        }
+
+        story_graph_file = intermediate_dir / 'story_graph.json'
+        with open(story_graph_file, 'w', encoding='utf-8') as f:
+            json.dump(story_graph, f, indent=2)
+
+        print(f"[DEBUG] Wrote intermediate artifact: {story_graph_file}", file=sys.stderr)
 
     # =========================================================================
     # STAGE 2: PATH GENERATION
