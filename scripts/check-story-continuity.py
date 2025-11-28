@@ -40,12 +40,10 @@ CONTINUITY_PROMPT = """
 You are a story continuity checker for branching interactive fiction.
 
 CRITICAL UNDERSTANDING:
-- This is a BRANCHING narrative where different paths legitimately diverge
-- Each path is ONE player's journey through the story
-- Paths may have different events, characters may make different choices, outcomes may vary
-- Your job: Check THIS path's INTERNAL consistency only
-- DO NOT compare this path to other paths or expect events from other branches
-- Different paths having different content is EXPECTED and CORRECT
+- This is interactive fiction where player choices shape the story
+- You are analyzing ONE complete path through the story
+- Your job: Check this path's INTERNAL consistency only
+- Events happen because the player made choices leading to them - this is expected
 
 === SECTION 2: CALIBRATION EXAMPLES ===
 
@@ -63,10 +61,10 @@ REAL ISSUES (what you SHOULD flag):
 
 NON-ISSUES (what you should NOT flag):
 1. Intentional mysteries: "The stranger's identity remained unknown" is NOT an issue
-2. Player choice consequences: Path A has different outcomes than Path B is EXPECTED
-3. Character development: Opinions/attitudes changing over time due to experiences is NORMAL
-4. Ambiguity: Not every detail needs explanation; some vagueness is intentional
-5. Dramatic irony: Character doesn't know something the reader knows is FINE
+2. Character development: Opinions/attitudes changing over time due to experiences is NORMAL
+3. Ambiguity: Not every detail needs explanation; some vagueness is intentional
+4. Dramatic irony: Character doesn't know something the reader knows is FINE
+5. Choice consequences: Character has skills/knowledge because they made earlier choices is EXPECTED
 
 === SECTION 3: ANALYSIS FRAMEWORK ===
 
@@ -85,7 +83,7 @@ STEP 2 - IDENTIFY POTENTIAL ISSUES:
 
 STEP 3 - EVALUATE EACH POTENTIAL ISSUE:
 - Is there a REAL contradiction with specific quotes?
-- Or is it: intentional mystery? character growth? ambiguity? branch divergence?
+- Or is it: intentional mystery? character growth? ambiguity? choice consequence?
 - Can I provide exact quotes with passage markers demonstrating the problem?
 
 STEP 4 - FINAL JUDGMENT:
@@ -102,8 +100,6 @@ Check for INTERNAL consistency within this path:
 3. **Timeline accuracy**: Event sequences make chronological sense
 4. **Setting consistency**: Locations, world rules, established facts remain consistent
 5. **Contradictions**: Direct conflicts between statements within this path
-
-Remember: Different paths having different content is NOT an issue.
 
 === SECTION 5: SEVERITY RUBRIC ===
 
@@ -142,8 +138,9 @@ DO NOT FLAG these as issues:
    - Character learning new information and updating beliefs - NOT an issue
    - Character growing/changing through story events - NOT an issue
 
-4. **Player choice consequences**: This path has different events than other paths
-   - Different outcomes in different branches - EXPECTED, not an issue
+4. **Player choice consequences**: Events happen because of earlier choices in the path
+   - Character knows magic because they chose to study it earlier - NOT an issue
+   - Character has an item because they picked it up earlier - NOT an issue
 
 5. **Deliberate ambiguity**: Not everything needs to be explained
    - Vague descriptions, open-ended situations - often intentional
