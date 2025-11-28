@@ -19,11 +19,13 @@ from datetime import datetime
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 from generator import (
-    calculate_route_hash,
     calculate_path_similarity,
-    categorize_paths,
     generate_passage_id_mapping,
     load_validation_cache,
+)
+from modules.categorizer import (
+    calculate_route_hash,
+    categorize_paths,
     strip_links_from_text,
 )
 from modules.parser import (

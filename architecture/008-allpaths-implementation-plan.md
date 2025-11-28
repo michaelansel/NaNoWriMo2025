@@ -550,8 +550,19 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 - [x] Step 3.1: Path generator module extracted with paths.json schema
 - [x] Step 3.2: Git enricher module extracted with paths_enriched.json schema
 - [x] Step 3.3: Categorizer module extracted with paths_categorized.json schema
-- [ ] Step 3.4: Generator orchestrates full 5-stage pipeline
+- [x] Step 3.4: Generator orchestrates full 5-stage pipeline
 - [ ] Step 3.5: All intermediate artifacts written with --write-intermediate flag
+
+**Step 3.4 Complete** (2025-11-28):
+- Moved full two-level categorization logic to modules/categorizer.py (505 lines)
+- Categorizer now includes: strip_links_from_text, normalize_prose_for_comparison,
+  get_file_content_from_git, analyze_file_changes, parse_twee_content,
+  build_paths_from_base_branch, categorize_paths
+- Reduced generator.py from 1047 lines to 485 lines (53% reduction)
+- Extracted helper functions: update_validation_cache_with_paths, write_intermediate_story_graph
+- Generator.py now acts as a clear orchestrator with explicit 5-stage pipeline
+- All 29 tests passing
+- Maintained backward compatibility (CLI interface unchanged)
 
 After Phase 3, the AllPaths generator will have a complete 5-stage modular pipeline with all intermediate artifacts defined and testable. Each stage (parse, generate paths, enrich with git, categorize, output) will be independently testable and debuggable. The `--write-intermediate` flag will enable full visibility into the pipeline for debugging and validation.
 
