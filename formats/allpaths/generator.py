@@ -16,6 +16,8 @@ from html.parser import HTMLParser
 from typing import Dict, List, Tuple, Set, Optional
 from jinja2 import Environment, FileSystemLoader
 
+from lib.git_service import GitService
+
 class TweeStoryParser(HTMLParser):
     """Parse Tweego-compiled HTML to extract story data"""
 
@@ -440,32 +442,9 @@ def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
 
     Returns:
         ISO format datetime string of most recent commit, or None if unavailable
-
-    Implementation notes:
-    - Uses -m flag to include merge commits (important for PR-based workflows)
-    - Returns author date (%aI) not committer date for consistency
-    - 5-second timeout prevents hangs on large repos
     """
-    try:
-        # Get the most recent commit date for this file
-        # -m: Include merge commits (without this, merge commits are skipped)
-        # -1: Only get the most recent commit
-        # --format=%aI: ISO 8601 author date format
-        result = subprocess.run(
-            ['git', 'log', '-m', '-1', '--format=%aI', '--', str(file_path)],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-        else:
-            return None
-    except Exception as e:
-        print(f"Warning: Could not get commit date for {file_path}: {e}", file=sys.stderr)
-        return None
+    git_service = GitService(repo_root)
+    return git_service.get_file_commit_date(file_path)
 
 def get_file_creation_date(file_path: Path, repo_root: Path) -> Optional[str]:
     """
@@ -478,24 +457,8 @@ def get_file_creation_date(file_path: Path, repo_root: Path) -> Optional[str]:
     Returns:
         ISO format datetime string of earliest commit, or None if unavailable
     """
-    try:
-        # Get all commit dates in reverse chronological order, with -m to include merge commits
-        result = subprocess.run(
-            ['git', 'log', '-m', '--format=%aI', '--reverse', '--', str(file_path)],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0 and result.stdout.strip():
-            dates = result.stdout.strip().split('\n')
-            return dates[0] if dates else None
-        else:
-            return None
-    except Exception as e:
-        print(f"Warning: Could not get creation date for {file_path}: {e}", file=sys.stderr)
-        return None
+    git_service = GitService(repo_root)
+    return git_service.get_file_creation_date(file_path)
 
 def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
                         repo_root: Path) -> Optional[str]:
@@ -592,30 +555,8 @@ def verify_base_ref_accessible(repo_root: Path, base_ref: str) -> bool:
     Returns:
         True if base_ref is accessible, False otherwise
     """
-    try:
-        print(f"[INFO] Verifying git base ref: {base_ref}", file=sys.stderr)
-        result = subprocess.run(
-            ['git', 'rev-parse', '--verify', base_ref],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0:
-            commit_sha = result.stdout.strip()
-            print(f"[INFO] Base ref '{base_ref}' is accessible (commit: {commit_sha})", file=sys.stderr)
-            return True
-        else:
-            print(f"[ERROR] Base ref '{base_ref}' is NOT accessible!", file=sys.stderr)
-            print(f"[ERROR] Git command failed with return code: {result.returncode}", file=sys.stderr)
-            if result.stderr:
-                print(f"[ERROR] Git stderr: {result.stderr.strip()}", file=sys.stderr)
-            print(f"[ERROR] This will cause all paths to be incorrectly categorized as 'new'", file=sys.stderr)
-            return False
-    except Exception as e:
-        print(f"[ERROR] Exception verifying base ref '{base_ref}': {e}", file=sys.stderr)
-        return False
+    git_service = GitService(repo_root)
+    return git_service.verify_ref_accessible(base_ref)
 
 def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> Optional[str]:
     """Get file content from git at a specific ref.
@@ -628,31 +569,8 @@ def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 
     Returns:
         File content from the specified ref, or None if file doesn't exist in git
     """
-    try:
-        rel_path = file_path.relative_to(repo_root)
-        cmd = ['git', 'show', f'{base_ref}:{rel_path}']
-        print(f"[DEBUG] Running git command: {' '.join(cmd)}", file=sys.stderr)
-
-        result = subprocess.run(
-            cmd,
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0:
-            print(f"[DEBUG] Successfully retrieved git content for {rel_path} at {base_ref}", file=sys.stderr)
-            return result.stdout
-        else:
-            print(f"[ERROR] Git command failed for {rel_path} at {base_ref}", file=sys.stderr)
-            print(f"[ERROR] Return code: {result.returncode}", file=sys.stderr)
-            if result.stderr:
-                print(f"[ERROR] Stderr: {result.stderr.strip()}", file=sys.stderr)
-            return None
-    except Exception as e:
-        print(f"[ERROR] Exception getting git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
-        return None
+    git_service = GitService(repo_root)
+    return git_service.get_file_content_at_ref(file_path, base_ref)
 
 def analyze_file_changes(file_path: Path, repo_root: Path, old_content: Optional[str]) -> dict:
     """Analyze what kind of changes a file has compared to git content.
