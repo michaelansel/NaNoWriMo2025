@@ -318,7 +318,7 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 - [x] Step 2.1: Directory structure and schema created
 - [x] Step 2.2: Parser module extracted
 - [x] Step 2.3: Output generator module extracted
-- [ ] Step 2.4: Generator orchestrates 3 stages
+- [x] Step 2.4: Generator orchestrates 3 stages
 - [ ] Step 2.5: Intermediate artifact generation flag added
 
 After Phase 2, the AllPaths generator should have a clear 3-stage architecture (parse → process → output) with the parser and output generation fully modularized. This proves the pipeline concept and sets the foundation for Phase 3's full 5-stage pipeline.
