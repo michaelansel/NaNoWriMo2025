@@ -255,21 +255,46 @@ Refinements to the three-mode validation system (new-only, modified, all) based 
 
 Features on the roadmap, prioritized by value to current phase.
 
+### Writing Metrics & Statistics
+**Status:** 📋 Planned
+**Target:** November 2025 (Immediate)
+**Priority:** HIGH
+**User Impact:** Track word count progress, verify NaNoWriMo goal achievement, understand writing patterns
+
+**Problem:** Writers need to track progress toward the 50,000-word NaNoWriMo goal, understand their writing patterns, and verify goal achievement. This is an active-writing tool that provides real-time motivation and final verification.
+
+**Proposed Solution:**
+- Total word count calculation with progress toward 50,000-word goal
+- Per-passage and per-file statistics (min/mean/median/max)
+- Word count distribution analysis
+- Filter by author (file prefix)
+- Identify longest passages
+
+**Relationship to AllPaths:** Complementary tracking approaches:
+- **AllPaths Progress Tracking:** Path-focused (how many story paths created/modified)
+- **Writing Metrics:** Word-focused (how many words written, passage lengths)
+
+**Related Documents:** [features/writing-metrics.md](features/writing-metrics.md)
+
+---
+
 ### Post-NaNoWriMo Retrospective Tools
 **Status:** 📋 Planned
 **Target:** December 2025
 **Priority:** Medium
-**User Impact:** Learn from writing patterns and progress
+**User Impact:** Analyze trends, patterns, and evolution over time
 
-**Problem:** After completing NaNoWriMo, the team wants to analyze writing patterns, contribution frequency, and path completion timeline to learn what worked well.
+**Problem:** After completing NaNoWriMo, the team wants to analyze writing patterns over time, contribution trends, and story evolution timeline to learn what worked well.
 
 **Proposed Solution:**
-- Analytics dashboard showing daily writing progress
-- Path completion timeline visualization
-- Author contribution patterns
-- Story structure evolution over time
+- Timeline visualization of story evolution over weeks/months
+- Daily and weekly writing velocity trends
+- Pattern analysis showing when authors are most productive
+- Story structure evolution (how branching complexity changed over time)
 
-**Why Deferred:** Not needed during active writing; valuable for retrospective learning after completion.
+**Clarification:** This refers to advanced retrospective analytics (trends, timelines, pattern analysis), NOT basic word counts or progress tracking. Basic metrics are provided by Writing Metrics & Statistics feature during active writing.
+
+**Why Deferred:** Advanced trend analysis not needed during active writing; valuable for retrospective learning after completion.
 
 ---
 

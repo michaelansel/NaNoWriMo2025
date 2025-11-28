@@ -1,8 +1,8 @@
 # Feature PRD: Writing Metrics & Statistics
 
-**Status:** Proposed
+**Status:** Planned
 **Owner:** Product Manager
-**Priority:** Medium (Post-NaNoWriMo Retrospective Tool)
+**Priority:** HIGH
 
 ---
 
@@ -19,6 +19,43 @@ Writers need quantitative insights into their writing progress, patterns, and ac
 - Track progress toward NaNoWriMo 50,000-word goal
 
 This tool helps writers answer questions like "How much have I written?", "What's my typical passage length?", and "Am I on track for my goal?"
+
+**Timing Context:**
+- **Ideally available:** Throughout November for real-time motivation and pacing decisions
+- **Critically needed:** End of November for final verification of 50,000-word goal achievement
+- **Foundation for:** December retrospective analysis of writing patterns and evolution
+
+---
+
+## Phase Applicability
+
+This is an **active-writing tool** that serves writers during different phases:
+
+### During Active Writing (November 2025)
+**Primary Use:** Real-time progress tracking and motivation
+- Check daily progress toward 50,000-word goal
+- Adjust writing pace based on current word count
+- Stay motivated by seeing quantitative progress
+- Understand typical passage lengths while writing
+- Make pacing decisions (speed up/maintain current rate)
+
+### After Goal Achievement (Late November/Early December)
+**Primary Use:** Verification and contribution analysis
+- Verify NaNoWriMo 50,000-word goal achievement
+- Analyze individual author contributions
+- Identify longest passages for potential refactoring
+- Understand final story structure and distribution
+
+### Foundation for Retrospectives (December 2025+)
+**Secondary Use:** Input data for advanced analytics
+- Provides baseline metrics for trend analysis
+- Word count data feeds into timeline visualizations
+- Passage statistics inform pattern analysis
+- File distribution data supports evolution tracking
+
+**Relationship to Other Features:**
+- **Complementary to AllPaths Progress Tracking:** AllPaths focuses on path-level tracking (how many paths created/modified), while Writing Metrics focuses on word-level tracking (how many words written, passage lengths)
+- **Different from Post-NaNoWriMo Retrospective Tools:** This provides basic metrics during active writing; retrospective tools will add advanced trend analysis, timelines, and pattern evolution over time
 
 ---
 
