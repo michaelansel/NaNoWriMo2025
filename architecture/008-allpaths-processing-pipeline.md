@@ -191,17 +191,17 @@ formats/allpaths/
 
 ### Migration Path
 
-**Phase 1: Incremental Refactoring** (Short-term, 1-2 weeks)
+**Phase 1: Incremental Refactoring**
 - Goal: Reduce technical debt without breaking changes
 - Actions:
   - Remove deprecated fingerprint code
   - Extract helper functions into logical groups
   - Add docstrings and type hints
   - Clean up HTML generation code
-- Output: Smaller, cleaner generator.py (~1200 lines)
+- Output: Smaller, cleaner generator.py
 - Risk: Low (no architectural changes)
 
-**Phase 2: 3-Stage Pipeline** (Medium-term, 2-4 weeks)
+**Phase 2: 3-Stage Pipeline**
 - Goal: Prove pipeline architecture with minimal stages
 - Actions:
   - Extract Stage 1 (parser) into separate module
@@ -211,7 +211,7 @@ formats/allpaths/
 - Output: 3 modules, 2 intermediate artifacts
 - Risk: Medium (new architecture, backward compatible)
 
-**Phase 3: 5-Stage Pipeline** (Long-term, 1-2 months)
+**Phase 3: 5-Stage Pipeline**
 - Goal: Full pipeline with all intermediate artifacts
 - Actions:
   - Extract Stage 2 (path generation) into module
@@ -222,7 +222,7 @@ formats/allpaths/
 - Output: 5 modules, 4 intermediate artifacts, full test suite
 - Risk: Low (incremental from Phase 2)
 
-**Phase 4: Optimization** (Future)
+**Phase 4: Optimization**
 - Goal: Performance and extensibility improvements
 - Optional enhancements:
   - Incremental path generation (only regenerate changed paths)
@@ -396,8 +396,6 @@ With intermediate artifacts I/O: +1-2 seconds acceptable overhead.
 
 ### Phase 1: Incremental Refactoring
 
-**Timeline**: 1-2 weeks
-
 **Tasks**:
 1. Remove deprecated fingerprint code (~130 lines)
 2. Extract HTML generation into functions
@@ -408,13 +406,11 @@ With intermediate artifacts I/O: +1-2 seconds acceptable overhead.
 
 **Success Criteria**:
 - All existing tests pass
-- generator.py reduced from 1810 to ~1200 lines
+- generator.py size reduced
 - No functional changes to outputs
 - Code coverage maintained
 
 ### Phase 2: 3-Stage Pipeline
-
-**Timeline**: 2-4 weeks
 
 **Tasks**:
 1. Create `modules/` directory structure
@@ -437,8 +433,6 @@ With intermediate artifacts I/O: +1-2 seconds acceptable overhead.
 - Build time within 10% of current performance
 
 ### Phase 3: 5-Stage Pipeline
-
-**Timeline**: 1-2 months (can be incremental)
 
 **Tasks**:
 1. Extract path generator (Stage 2) into `modules/path_generator.py`
