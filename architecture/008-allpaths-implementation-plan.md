@@ -551,7 +551,7 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 - [x] Step 3.2: Git enricher module extracted with paths_enriched.json schema
 - [x] Step 3.3: Categorizer module extracted with paths_categorized.json schema
 - [x] Step 3.4: Generator orchestrates full 5-stage pipeline
-- [ ] Step 3.5: All intermediate artifacts written with --write-intermediate flag
+- [x] Step 3.5: All intermediate artifacts written with --write-intermediate flag
 
 **Step 3.4 Complete** (2025-11-28):
 - Moved full two-level categorization logic to modules/categorizer.py (505 lines)
@@ -564,6 +564,20 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 - All 29 tests passing
 - Maintained backward compatibility (CLI interface unchanged)
 
-After Phase 3, the AllPaths generator will have a complete 5-stage modular pipeline with all intermediate artifacts defined and testable. Each stage (parse, generate paths, enrich with git, categorize, output) will be independently testable and debuggable. The `--write-intermediate` flag will enable full visibility into the pipeline for debugging and validation.
+**Step 3.5 Complete** (2025-11-28):
+- Extended --write-intermediate flag to write all 4 intermediate artifacts:
+  - Stage 1: story_graph.json (already implemented)
+  - Stage 2: paths.json (newly added)
+  - Stage 3: paths_enriched.json (newly added)
+  - Stage 4: paths_categorized.json (newly added)
+- All artifacts written to dist/allpaths-intermediate/ with JSON indent=2
+- Each artifact validates against its corresponding schema structure
+- Updated test_intermediate_flag.py to verify all 4 artifacts
+- All 29 comprehensive tests passing + 3 intermediate flag tests passing
+- Documentation updated to describe complete debugging workflow
+- Generator.py increased from 485 to 637 lines (due to inline artifact writing)
+
+**Phase 3 COMPLETE** (2025-11-28):
+The AllPaths generator now has a complete 5-stage modular pipeline with all intermediate artifacts defined and testable. Each stage (parse, generate paths, enrich with git, categorize, output) is independently testable and debuggable. The `--write-intermediate` flag enables full visibility into the pipeline for debugging and validation.
 
 ---

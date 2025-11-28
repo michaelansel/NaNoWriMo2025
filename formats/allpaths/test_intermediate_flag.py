@@ -83,52 +83,87 @@ def test_with_flag():
 
         # Check that intermediate directory was created
         intermediate_dir = output_dir / 'allpaths-intermediate'
-        story_graph_file = intermediate_dir / 'story_graph.json'
 
         if not intermediate_dir.exists():
             print("✗ FAILED: Intermediate directory should exist with flag")
             print(f"STDERR: {result.stderr}")
             return False
 
-        if not story_graph_file.exists():
-            print("✗ FAILED: story_graph.json should exist")
-            print(f"Files in intermediate dir: {list(intermediate_dir.iterdir())}")
-            return False
+        # Define all 4 expected intermediate artifacts
+        expected_artifacts = {
+            'story_graph.json': {
+                'description': 'Stage 1: Story structure from HTML',
+                'required_fields': ['passages', 'start_passage', 'metadata']
+            },
+            'paths.json': {
+                'description': 'Stage 2: All enumerated paths',
+                'required_fields': ['paths', 'statistics']
+            },
+            'paths_enriched.json': {
+                'description': 'Stage 3: Paths with git metadata',
+                'required_fields': ['paths', 'statistics']
+            },
+            'paths_categorized.json': {
+                'description': 'Stage 4: Paths with categorization',
+                'required_fields': ['paths', 'statistics']
+            }
+        }
 
-        # Validate the story_graph.json content
-        try:
+        # Check that all 4 artifacts exist
+        all_passed = True
+        for filename, spec in expected_artifacts.items():
+            artifact_file = intermediate_dir / filename
+
+            if not artifact_file.exists():
+                print(f"✗ FAILED: {filename} should exist")
+                print(f"  Description: {spec['description']}")
+                print(f"  Files in intermediate dir: {list(intermediate_dir.iterdir())}")
+                all_passed = False
+                continue
+
+            # Validate JSON structure
+            try:
+                with open(artifact_file, 'r') as f:
+                    data = json.load(f)
+
+                # Check required fields
+                for field in spec['required_fields']:
+                    if field not in data:
+                        print(f"✗ FAILED: {filename} missing required field: {field}")
+                        all_passed = False
+                        break
+                else:
+                    print(f"✓ {filename} created with correct structure")
+                    print(f"  Description: {spec['description']}")
+
+            except json.JSONDecodeError as e:
+                print(f"✗ FAILED: {filename} is not valid JSON: {e}")
+                all_passed = False
+            except Exception as e:
+                print(f"✗ FAILED: Error reading {filename}: {e}")
+                all_passed = False
+
+        # Additional validation for story_graph.json content
+        if all_passed:
+            story_graph_file = intermediate_dir / 'story_graph.json'
             with open(story_graph_file, 'r') as f:
                 story_graph = json.load(f)
-
-            # Check required fields
-            required_fields = ['passages', 'start_passage', 'metadata']
-            for field in required_fields:
-                if field not in story_graph:
-                    print(f"✗ FAILED: story_graph.json missing required field: {field}")
-                    return False
 
             # Check passages
             if len(story_graph['passages']) != 3:
                 print(f"✗ FAILED: Expected 3 passages, got {len(story_graph['passages'])}")
-                return False
+                all_passed = False
 
             # Check metadata
             metadata = story_graph['metadata']
             if metadata['story_title'] != 'Test Story':
                 print(f"✗ FAILED: Expected story title 'Test Story', got '{metadata['story_title']}'")
-                return False
+                all_passed = False
 
-            print("✓ PASSED: story_graph.json created with correct structure")
-            print(f"  - Passages: {len(story_graph['passages'])}")
-            print(f"  - Start passage: {story_graph['start_passage']}")
-            print(f"  - Story title: {metadata['story_title']}")
+        if all_passed:
+            print("\n✓ PASSED: All 4 intermediate artifacts created with correct structure")
             return True
-
-        except json.JSONDecodeError as e:
-            print(f"✗ FAILED: story_graph.json is not valid JSON: {e}")
-            return False
-        except Exception as e:
-            print(f"✗ FAILED: Unexpected error: {e}")
+        else:
             return False
 
 def test_help_flag():

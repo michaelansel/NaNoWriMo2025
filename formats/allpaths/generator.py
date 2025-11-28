@@ -272,9 +272,11 @@ def write_intermediate_story_graph(output_dir: Path, passages: Dict, graph: Dict
 def main() -> None:
     """Main entry point for AllPaths generator.
 
-    Implements a 3-stage pipeline:
+    Implements a 5-stage pipeline:
     - Stage 1: Parse HTML into story graph
-    - Stages 2-4: Core processing (path generation, git enrichment, categorization)
+    - Stage 2: Generate all possible paths
+    - Stage 3: Enrich paths with git metadata
+    - Stage 4: Categorize paths (new/modified/unchanged)
     - Stage 5: Output generation (HTML, text files, cache)
 
     Usage:
@@ -291,7 +293,12 @@ def main() -> None:
         - allpaths-metadata/*.txt: Individual path files with metadata
         - allpaths-passage-mapping.json: Mapping between passage names and IDs
         - allpaths-validation-status.json: Cache of path validation data
-        - dist/allpaths-intermediate/story_graph.json: Intermediate artifact (if --write-intermediate)
+
+        When --write-intermediate is enabled:
+        - dist/allpaths-intermediate/story_graph.json: Stage 1 output (story structure)
+        - dist/allpaths-intermediate/paths.json: Stage 2 output (enumerated paths)
+        - dist/allpaths-intermediate/paths_enriched.json: Stage 3 output (paths with git metadata)
+        - dist/allpaths-intermediate/paths_categorized.json: Stage 4 output (categorized paths)
     """
     # =========================================================================
     # SETUP AND ARGUMENT PARSING
@@ -360,6 +367,49 @@ def main() -> None:
         path_lengths = [len(p) for p in all_paths]
         print(f"Path length range: {min(path_lengths)}-{max(path_lengths)} passages", file=sys.stderr)
 
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build paths data structure matching paths.json schema
+        paths_list = []
+        for path in all_paths:
+            path_id = calculate_path_hash(path, passages)
+            content = {}
+            for passage_name in path:
+                if passage_name in passages:
+                    content[passage_name] = passages[passage_name].get('text', '')
+                else:
+                    content[passage_name] = '[Passage not found]'
+
+            path_obj = {
+                'id': path_id,
+                'route': path,
+                'content': content
+            }
+            paths_list.append(path_obj)
+
+        # Calculate statistics
+        total_paths = len(all_paths)
+        total_passages = len(passages)
+        avg_path_length = sum(len(p) for p in all_paths) / total_paths if total_paths > 0 else 0.0
+
+        paths_data = {
+            'paths': paths_list,
+            'statistics': {
+                'total_paths': total_paths,
+                'total_passages': total_passages,
+                'avg_path_length': avg_path_length
+            }
+        }
+
+        paths_file = intermediate_dir / 'paths.json'
+        with open(paths_file, 'w', encoding='utf-8') as f:
+            json.dump(paths_data, f, indent=2)
+
+        print(f"[DEBUG] Wrote intermediate artifact: {paths_file}", file=sys.stderr)
+
     # =========================================================================
     # STAGE 3: GIT ENRICHMENT
     # =========================================================================
@@ -412,6 +462,78 @@ def main() -> None:
         print(f"[ERROR] All paths will be marked as 'new' instead of properly categorized.", file=sys.stderr)
         # Continue execution but warn user that results will be incorrect
 
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build paths_enriched data structure matching paths_enriched.json schema
+        enriched_paths = []
+        for path in all_paths:
+            path_id = calculate_path_hash(path, passages)
+
+            # Build content mapping
+            content = {}
+            for passage_name in path:
+                if passage_name in passages:
+                    content[passage_name] = passages[passage_name].get('text', '')
+                else:
+                    content[passage_name] = '[Passage not found]'
+
+            # Collect git metadata
+            files_in_path = []
+            seen_files = set()
+            passage_to_file_for_path = {}
+
+            for passage_name in path:
+                if passage_name in passage_to_file:
+                    file_path = passage_to_file[passage_name]
+                    # Convert to relative path for JSON output
+                    relative_path = str(file_path.relative_to(repo_root))
+                    passage_to_file_for_path[passage_name] = relative_path
+
+                    # Track unique files
+                    if relative_path not in seen_files:
+                        files_in_path.append(relative_path)
+                        seen_files.add(relative_path)
+
+            # Get commit and creation dates for the path
+            commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+            creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+
+            enriched_path = {
+                'id': path_id,
+                'route': path,
+                'content': content,
+                'git_metadata': {
+                    'files': files_in_path,
+                    'commit_date': commit_date,
+                    'created_date': creation_date,
+                    'passage_to_file': passage_to_file_for_path
+                }
+            }
+            enriched_paths.append(enriched_path)
+
+        # Build final structure
+        total_paths = len(all_paths)
+        total_passages = len(passages)
+        avg_path_length = sum(len(p) for p in all_paths) / total_paths if total_paths > 0 else 0.0
+
+        paths_enriched_data = {
+            'paths': enriched_paths,
+            'statistics': {
+                'total_paths': total_paths,
+                'total_passages': total_passages,
+                'avg_path_length': avg_path_length
+            }
+        }
+
+        paths_enriched_file = intermediate_dir / 'paths_enriched.json'
+        with open(paths_enriched_file, 'w', encoding='utf-8') as f:
+            json.dump(paths_enriched_data, f, indent=2)
+
+        print(f"[DEBUG] Wrote intermediate artifact: {paths_enriched_file}", file=sys.stderr)
+
     # =========================================================================
     # STAGE 4: PATH CATEGORIZATION
     # =========================================================================
@@ -436,6 +558,86 @@ def main() -> None:
     update_validation_cache_with_paths(validation_cache, all_paths, passages,
                                       path_categories, passage_to_file, repo_root)
     print(f"Updated validation cache with {len(validation_cache)} total entries", file=sys.stderr)
+
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build paths_categorized data structure matching paths_categorized.json schema
+        categorized_paths = []
+        for path in all_paths:
+            path_id = calculate_path_hash(path, passages)
+
+            # Build content mapping
+            content = {}
+            for passage_name in path:
+                if passage_name in passages:
+                    content[passage_name] = passages[passage_name].get('text', '')
+                else:
+                    content[passage_name] = '[Passage not found]'
+
+            # Collect git metadata (same as Stage 3)
+            files_in_path = []
+            seen_files = set()
+            passage_to_file_for_path = {}
+
+            for passage_name in path:
+                if passage_name in passage_to_file:
+                    file_path = passage_to_file[passage_name]
+                    relative_path = str(file_path.relative_to(repo_root))
+                    passage_to_file_for_path[passage_name] = relative_path
+
+                    if relative_path not in seen_files:
+                        files_in_path.append(relative_path)
+                        seen_files.add(relative_path)
+
+            commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+            creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+
+            # Get categorization data
+            category = path_categories.get(path_id, 'new')
+            validated = validation_cache.get(path_id, {}).get('validated', False)
+            first_seen = validation_cache.get(path_id, {}).get('first_seen', datetime.now().isoformat())
+
+            categorized_path = {
+                'id': path_id,
+                'route': path,
+                'content': content,
+                'git_metadata': {
+                    'files': files_in_path,
+                    'commit_date': commit_date,
+                    'created_date': creation_date,
+                    'passage_to_file': passage_to_file_for_path
+                },
+                'category': category,
+                'validated': validated,
+                'first_seen': first_seen
+            }
+            categorized_paths.append(categorized_path)
+
+        # Build final structure with statistics
+        total_paths = len(all_paths)
+        total_passages = len(passages)
+        avg_path_length = sum(len(p) for p in all_paths) / total_paths if total_paths > 0 else 0.0
+
+        paths_categorized_data = {
+            'paths': categorized_paths,
+            'statistics': {
+                'total_paths': total_paths,
+                'total_passages': total_passages,
+                'avg_path_length': avg_path_length,
+                'new': new_count,
+                'modified': modified_count,
+                'unchanged': unchanged_count
+            }
+        }
+
+        paths_categorized_file = intermediate_dir / 'paths_categorized.json'
+        with open(paths_categorized_file, 'w', encoding='utf-8') as f:
+            json.dump(paths_categorized_data, f, indent=2)
+
+        print(f"[DEBUG] Wrote intermediate artifact: {paths_categorized_file}", file=sys.stderr)
 
     # =========================================================================
     # STAGE 5: OUTPUT GENERATION
