@@ -24,6 +24,12 @@ from modules.parser import (
     extract_links,
     build_graph,
 )
+from modules.output_generator import (
+    format_date_for_display,
+    generate_html_output,
+    save_validation_cache,
+    generate_outputs,
+)
 
 
 # =============================================================================
@@ -335,20 +341,11 @@ def load_validation_cache(cache_file: Path) -> Dict:
     except:
         return {}
 
-def save_validation_cache(cache_file: Path, cache: Dict) -> None:
-    """Save validated paths to cache.
-
-    Args:
+# Note: save_validation_cache moved to modules/output_generator.py
 
 # =============================================================================
 # FILE AND PASSAGE MAPPING
 # =============================================================================
-
-        cache_file: Path to the validation cache JSON file
-        cache: Dict mapping path hash -> validation data
-    """
-    with open(cache_file, 'w') as f:
-        json.dump(cache, indent=2, fp=f)
 
 def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
     """
@@ -992,116 +989,18 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
 
     return categories
 
-def format_date_for_display(date_str: str) -> str:
-    """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC).
-
-    Args:
-        date_str: ISO format datetime string (e.g., "2025-01-15T10:30:00Z")
-
-    Returns:
-        Human-readable date string (e.g., "2025-01-15 10:30 UTC") or "Unknown"
-    """
-    if not date_str:
-        return "Unknown"
-    try:
-        from datetime import datetime as dt
-        # Parse date with timezone info
-        date_dt = dt.fromisoformat(date_str.replace('Z', '+00:00'))
-        # Convert to UTC if it has timezone info
-        if date_dt.tzinfo is not None:
-            # Convert to UTC
-            import datetime
-            utc_dt = date_dt.astimezone(datetime.timezone.utc)
-            return utc_dt.strftime('%Y-%m-%d %H:%M UTC')
-        else:
-            # Assume it's already UTC if no timezone
-            return date_dt.strftime('%Y-%m-%d %H:%M UTC')
-    except:
-        # Fallback to just showing the date part
-        return date_str[:10] if len(date_str) >= 10 else date_str
-
-def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[str]],
-                        validation_cache: Dict = None, path_categories: Dict[str, str] = None) -> str:
-    """Generate HTML output with all paths using Jinja2 template.
-
-    Args:
-        story_data: Dict containing story metadata (name, ifid, start)
-        passages: Dict mapping passage name -> passage data
-        all_paths: List of all paths, where each path is a list of passage names
-        validation_cache: Optional dict mapping path hash -> validation metadata
-        path_categories: Optional dict mapping path hash -> category ('new', 'modified', 'unchanged')
-
-    Returns:
-        Rendered HTML string containing all paths with metadata and statistics
-    """
-    if validation_cache is None:
-        validation_cache = {}
-    if path_categories is None:
-        path_categories = {}
-
-    # Calculate statistics
-    path_lengths = [len(p) for p in all_paths]
-
-    # Prepare paths with metadata (no sorting by category - ADR-007 single interface)
-    paths_with_metadata = []
-    for path in all_paths:
-        path_hash = calculate_path_hash(path, passages)
-        created_date = validation_cache.get(path_hash, {}).get('created_date', '')
-        commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
-        is_validated = validation_cache.get(path_hash, {}).get('validated', False)
-
-        # Format dates for display
-        created_display = format_date_for_display(created_date)
-        modified_display = format_date_for_display(commit_date)
-
-        paths_with_metadata.append({
-            'path': path,
-            'path_hash': path_hash,
-            'created_date': created_date,
-            'commit_date': commit_date,
-            'is_validated': is_validated,
-            'created_display': created_display,
-            'modified_display': modified_display,
-        })
-
-    # Sort by creation date (newest first)
-    # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
-    paths_with_metadata.sort(key=lambda x: x['created_date'] if x['created_date'] else '0', reverse=True)
-
-    # Count validation status
-    validated_count = sum(1 for p in paths_with_metadata if p['is_validated'])
-    new_count = len(paths_with_metadata) - validated_count
-
-    # Set up Jinja2 environment
-    template_dir = Path(__file__).parent / 'templates'
-    env = Environment(loader=FileSystemLoader(str(template_dir)))
-
-    # Register format_passage_text as a global function for the template
-    env.globals['format_passage_text'] = format_passage_text
-
-    # Load template
-    template = env.get_template('allpaths.html.jinja2')
-
-    # Render template with context
-    html = template.render(
-        story_name=story_data['name'],
-        generated_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+# =============================================================================
+# OUTPUT GENERATION
+# =============================================================================
+# Note: Output generation functions moved to modules/output_generator.py
+# - format_date_for_display
+# - generate_html_output
+# - save_validation_cache
+# - generate_outputs
 
 # =============================================================================
 # MAIN ENTRY POINT
 # =============================================================================
-
-        total_paths=len(all_paths),
-        validated_count=validated_count,
-        new_count=new_count,
-        shortest_path=min(path_lengths),
-        longest_path=max(path_lengths),
-        average_length=f"{sum(path_lengths) / len(all_paths):.1f}",
-        paths_with_metadata=paths_with_metadata,
-        passages=passages,
-    )
-
-    return html
 
 def main() -> None:
     """Main entry point for AllPaths generator.
@@ -1233,54 +1132,26 @@ def main() -> None:
             # Always update category - it's computed fresh from git on each build
             validation_cache[path_hash]['category'] = category
 
-    # Generate HTML output (uses original passage names for human readability)
-    html_output = generate_html_output(story_data, passages, all_paths, validation_cache, path_categories)
+    # Generate all outputs using the output_generator module (Stage 5)
+    result = generate_outputs(
+        story_data=story_data,
+        passages=passages,
+        all_paths=all_paths,
+        output_dir=output_dir,
+        validation_cache=validation_cache,
+        path_categories=path_categories,
+        passage_id_mapping=passage_id_mapping,
+        cache_file=cache_file
+    )
 
-    # Write HTML file
-    html_file = output_dir / 'allpaths.html'
-    with open(html_file, 'w', encoding='utf-8') as f:
-        f.write(html_output)
+    # Extract file paths from result for summary
+    html_file = Path(result['html_file'])
+    text_dir = Path(result['text_dir'])
+    continuity_dir = Path(result['metadata_dir'])
 
     print(f"Generated {html_file}", file=sys.stderr)
-
-    # Generate individual text files for public deployment (clean prose, no metadata)
-    text_dir = output_dir / 'allpaths-clean'
-    text_dir.mkdir(exist_ok=True)
-
-    for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path, passages)
-        # Set include_metadata=False for clean prose output
-        text_content = generate_path_text(path, passages, i, len(all_paths),
-                                         include_metadata=False,
-                                         passage_id_mapping=passage_id_mapping)
-
-        # Use content-based hash only (no sequential index)
-        text_file = text_dir / f'path-{path_hash}.txt'
-        with open(text_file, 'w', encoding='utf-8') as f:
-            f.write(text_content)
-
     print(f"Generated {len(all_paths)} text files in {text_dir} (clean prose)", file=sys.stderr)
-
-    # Generate text files for AI continuity checking (with metadata and passage markers)
-    continuity_dir = output_dir / 'allpaths-metadata'
-    continuity_dir.mkdir(exist_ok=True)
-
-    for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path, passages)
-        # Set include_metadata=True for continuity checking with passage markers
-        text_content = generate_path_text(path, passages, i, len(all_paths),
-                                         include_metadata=True,
-                                         passage_id_mapping=passage_id_mapping)
-
-        # Use content-based hash only (no sequential index)
-        text_file = continuity_dir / f'path-{path_hash}.txt'
-        with open(text_file, 'w', encoding='utf-8') as f:
-            f.write(text_content)
-
     print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
-
-    # Save validation cache (already updated with dates before HTML generation)
-    save_validation_cache(cache_file, validation_cache)
 
     # Print summary
     print(f"\n=== AllPaths Generation Complete ===", file=sys.stderr)
