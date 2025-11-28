@@ -41,6 +41,9 @@ from modules.output_generator import (
     save_validation_cache,
     generate_outputs,
 )
+from modules.categorizer import (
+    calculate_route_hash,
+)
 
 
 # =============================================================================
@@ -112,24 +115,7 @@ def normalize_prose_for_comparison(text: str) -> str:
     return normalized.strip()
 
 
-def calculate_route_hash(path: List[str]) -> str:
-    """Calculate hash based ONLY on passage names (route structure), not content.
-
-    This identifies the path structure independent of content changes.
-    Two paths with the same sequence of passages will have the same route_hash
-    even if the content in those passages has been edited.
-
-    Used in categorization logic to determine if a path existed in the base branch
-    by comparing route hashes.
-
-    Args:
-        path: List of passage names in order
-
-    Returns:
-        8-character hex hash based on route structure only
-    """
-    route_string = ' → '.join(path)
-    return hashlib.md5(route_string.encode()).hexdigest()[:8]
+# Note: calculate_route_hash moved to modules/categorizer.py (Step 3.3)
 
 
 
@@ -590,6 +576,10 @@ def build_paths_from_base_branch(repo_root: Path, source_dir: Path, base_ref: st
 # =============================================================================
 # PATH CATEGORIZATION
 # =============================================================================
+# NOTE: The categorize_paths function below implements complex two-level
+# categorization with git integration. A simplified version exists in
+# modules/categorizer.py (Step 3.3). Full migration to the pipeline
+# architecture will occur in Step 3.4.
 
     # Calculate route hashes for all base paths
     base_route_hashes = set()
