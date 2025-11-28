@@ -76,7 +76,9 @@ metrics_lock = threading.Lock()
 
 # Webhook deduplication (GitHub can send webhooks multiple times)
 processed_comment_ids = {}  # {comment_id: timestamp} - track processed comments
+processed_workflow_runs = {}  # {workflow_run_id: timestamp} - track processed workflow runs
 COMMENT_DEDUP_TTL = 300  # 5 minutes
+WORKFLOW_DEDUP_TTL = 600  # 10 minutes (workflows can take longer)
 
 # GitHub App authentication - token cache
 _token_cache = {
@@ -951,6 +953,23 @@ def handle_workflow_webhook(payload):
 
     # Get PR number
     workflow_id = workflow_run.get('id')
+
+    # Deduplication: Check if we've already processed this workflow run
+    with metrics_lock:
+        now = time.time()
+        # Clean up old entries
+        expired_ids = [wid for wid, ts in processed_workflow_runs.items() if now - ts > WORKFLOW_DEDUP_TTL]
+        for wid in expired_ids:
+            del processed_workflow_runs[wid]
+
+        # Check if already processed
+        if workflow_id in processed_workflow_runs:
+            app.logger.info(f"Ignoring duplicate webhook for workflow run {workflow_id}")
+            return jsonify({"message": "Duplicate webhook, already processed"}), 200
+
+        # Mark as processed
+        processed_workflow_runs[workflow_id] = now
+
     pr_number = get_pr_number_from_workflow(workflow_id)
 
     if not pr_number:
