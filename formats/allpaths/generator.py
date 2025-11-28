@@ -250,31 +250,6 @@ def strip_links_from_text(text: str) -> str:
 
     return text.strip()  # Remove leading/trailing whitespace
 
-def calculate_raw_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
-    """Calculate fingerprint based on raw passage content INCLUDING links.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This detects ANY content change (prose OR links).
-
-    Args:
-        path: List of passage names in order
-        passages: Dict of passage data including text content
-
-    Returns:
-        8-character hex hash based on full content (with links)
-    """
-    content_parts = []
-    for passage_name in path:
-        if passage_name in passages:
-            passage_text = passages[passage_name].get('text', '')
-            content_parts.append(passage_text)
-        else:
-            content_parts.append("MISSING")
-
-    combined = '\n'.join(content_parts)
-    return hashlib.md5(combined.encode()).hexdigest()[:8]
 
 def normalize_prose_for_comparison(text: str) -> str:
     """Aggressively normalize prose for split-resistant comparison.
@@ -296,45 +271,6 @@ def normalize_prose_for_comparison(text: str) -> str:
     normalized = re.sub(r'\s+', ' ', text)
     return normalized.strip()
 
-def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
-    """Calculate fingerprint based ONLY on prose content, not names or links.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This fingerprint:
-    - Strips link syntax ([[...]]) to focus on prose changes
-    - Ignores passage names
-    - Ignores route structure
-    - Normalizes whitespace aggressively to detect splits/reorganizations
-
-    This means:
-    - Adding/removing/changing links → No fingerprint change
-    - Adding/editing prose → Fingerprint changes
-    - Restructuring/splitting passages → No fingerprint change (if prose is same)
-
-    Args:
-        path: List of passage names in order
-        passages: Dict of passage data including text content
-
-    Returns:
-        8-character hex hash based on prose content only
-    """
-    content_parts = []
-    for passage_name in path:
-        if passage_name in passages:
-            # Strip links to get prose-only content
-            passage_text = passages[passage_name].get('text', '')
-            prose_only = strip_links_from_text(passage_text)
-            content_parts.append(prose_only)
-        else:
-            # Passage doesn't exist (shouldn't happen, but be defensive)
-            content_parts.append("MISSING")
-
-    # Join all prose and normalize aggressively to handle splits
-    combined = ' '.join(content_parts)
-    normalized = normalize_prose_for_comparison(combined)
-    return hashlib.md5(normalized.encode()).hexdigest()[:8]
 
 def calculate_route_hash(path: List[str]) -> str:
     """Calculate hash based ONLY on passage names (route structure), not content.
@@ -355,46 +291,7 @@ def calculate_route_hash(path: List[str]) -> str:
     route_string = ' → '.join(path)
     return hashlib.md5(route_string.encode()).hexdigest()[:8]
 
-def calculate_passage_prose_fingerprint(passage_text: str) -> str:
-    """Calculate fingerprint for a single passage's prose content (no links).
 
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This allows detecting when prose content is reused/split across passages.
-    For example, if passage A is split into A1 and A2, we can detect that
-    the prose in A1 and A2 existed before in A.
-
-    Args:
-        passage_text: The text content of a single passage
-
-    Returns:
-        8-character hex hash based on prose-only content
-    """
-    prose_only = strip_links_from_text(passage_text)
-    return hashlib.md5(prose_only.encode()).hexdigest()[:8]
-
-def build_passage_fingerprints(path: List[str], passages: Dict[str, Dict]) -> Dict[str, str]:
-    """Build a mapping of passage names to their prose fingerprints for a path.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    Args:
-        path: List of passage names in the path
-        passages: Dict of all passages
-
-    Returns:
-        Dict mapping passage name -> prose fingerprint
-    """
-    fingerprints = {}
-    for passage_name in path:
-        if passage_name in passages:
-            passage_text = passages[passage_name].get('text', '')
-            fingerprints[passage_name] = calculate_passage_prose_fingerprint(passage_text)
-        else:
-            fingerprints[passage_name] = 'MISSING'
-    return fingerprints
 
 def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
     """
