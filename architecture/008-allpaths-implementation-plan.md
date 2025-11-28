@@ -326,3 +326,233 @@ Execute these steps in order. Each step should pass all tests before proceeding.
 After Phase 2, the AllPaths generator has a clear 3-stage architecture (parse → process → output) with the parser and output generation fully modularized. The `--write-intermediate` flag enables debugging by writing intermediate artifacts. This proves the pipeline concept and sets the foundation for Phase 3's full 5-stage pipeline.
 
 ---
+
+## Phase 3: Full 5-Stage Pipeline
+
+Extract the remaining core processing logic (path generation, git enrichment, categorization) into separate modules, completing the full pipeline architecture with all intermediate artifacts.
+
+Execute these steps in order. Each step should pass all tests before proceeding.
+
+### Step 3.1: Create paths.json Schema and Extract Path Generator Module (Stage 2)
+
+**Goal**: Move path enumeration logic into dedicated module that outputs paths.json.
+
+**Files**:
+- `formats/allpaths/schemas/paths.schema.json` (create)
+- `formats/allpaths/modules/path_generator.py` (create)
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/tests/test_path_generator.py` (create)
+
+**Actions**:
+1. Create `schemas/paths.schema.json` based on ADR-008 specification:
+   - Required fields: `paths` (array), `statistics` (object)
+   - Each path object with: `id`, `route` (array), `content` (object mapping passage names to text)
+   - Statistics with: `total_paths`, `total_passages`, `avg_path_length`
+2. Create `modules/path_generator.py` with Stage 2 interface
+3. Move path enumeration logic from generator.py:
+   - DFS traversal algorithm (`_dfs` function and related code)
+   - Path ID generation (using existing hash function)
+   - Route and content extraction for each path
+   - Statistics calculation
+4. Implement `generate_paths(story_graph: Dict, output_path: Path) -> Dict` function
+5. Output paths.json matching schema from step 1
+6. Create comprehensive tests for path generator:
+   - Test with simple linear story (1 path)
+   - Test with branching story (multiple paths)
+   - Test with cycles/loops detection
+   - Test path ID generation consistency
+   - Test statistics calculation accuracy
+   - Test empty story handling
+7. Update generator.py to import and use path_generator module
+8. Ensure backward compatibility (same paths generated as before)
+
+**Success criteria**:
+- paths.json validates against schema
+- Path generator module can be tested independently
+- Path generator tests achieve >80% code coverage
+- All existing generator tests still pass
+- Path IDs and routes identical to pre-refactor version
+- DFS algorithm produces same traversal order
+
+---
+
+### Step 3.2: Create paths_enriched.json Schema and Extract Git Enricher Module (Stage 3)
+
+**Goal**: Move git integration logic into dedicated module that adds git metadata to paths.
+
+**Files**:
+- `formats/allpaths/schemas/paths_enriched.schema.json` (create)
+- `formats/allpaths/modules/git_enricher.py` (create)
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/tests/test_git_enricher.py` (create)
+
+**Actions**:
+1. Create `schemas/paths_enriched.schema.json` based on ADR-008 specification:
+   - Extends paths.json schema
+   - Adds `git_metadata` object to each path with:
+     - `files` (array of file paths)
+     - `commit_date` (ISO timestamp)
+     - `created_date` (ISO timestamp)
+     - `passage_to_file` (object mapping passage names to file paths)
+2. Create `modules/git_enricher.py` with Stage 3 interface
+3. Move git integration logic from generator.py:
+   - Passage-to-file mapping logic
+   - File list extraction per path
+   - Commit date calculation (most recent across files)
+   - Creation date calculation (earliest across files)
+   - Integration with GitService (from Phase 1)
+4. Implement `enrich_with_git(paths_data: Dict, tweego_dir: Path, output_path: Path) -> Dict` function
+5. Output paths_enriched.json matching schema from step 1
+6. Create comprehensive tests for git enricher:
+   - Test with mock GitService
+   - Test passage-to-file mapping
+   - Test date calculation (commit and creation)
+   - Test multiple files per path
+   - Test single file per path
+   - Test error handling for missing files
+   - Test paths with no git metadata
+7. Update generator.py to import and use git_enricher module
+8. Ensure backward compatibility (same git metadata as before)
+
+**Success criteria**:
+- paths_enriched.json validates against schema
+- Git enricher module can be tested independently
+- Git enricher tests achieve >80% code coverage
+- All existing generator tests still pass
+- Git metadata (dates, files) identical to pre-refactor version
+- GitService integration working correctly
+
+---
+
+### Step 3.3: Create paths_categorized.json Schema and Extract Categorizer Module (Stage 4)
+
+**Goal**: Move path categorization logic into dedicated module that classifies paths as new/modified/unchanged.
+
+**Files**:
+- `formats/allpaths/schemas/paths_categorized.schema.json` (create)
+- `formats/allpaths/modules/categorizer.py` (create)
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/tests/test_categorizer.py` (create)
+
+**Actions**:
+1. Create `schemas/paths_categorized.schema.json` based on ADR-008 specification:
+   - Extends paths_enriched.json schema
+   - Adds to each path:
+     - `category` (enum: "new", "modified", "unchanged")
+     - `validated` (boolean)
+     - `first_seen` (ISO timestamp)
+   - Adds `statistics` object with counts: `new`, `modified`, `unchanged`
+2. Create `modules/categorizer.py` with Stage 4 interface
+3. Move categorization logic from generator.py:
+   - Route hash calculation (reuse existing `calculate_route_hash` function)
+   - Validation cache lookup and comparison
+   - Category determination (new/modified/unchanged)
+   - Validated flag setting
+   - First seen date tracking
+   - Category statistics aggregation
+4. Implement `categorize_paths(paths_enriched: Dict, cache_path: Path, output_path: Path) -> Dict` function
+5. Output paths_categorized.json matching schema from step 1
+6. Create comprehensive tests for categorizer:
+   - Test new path detection (not in cache)
+   - Test modified path detection (in cache, different hash)
+   - Test unchanged path detection (in cache, same hash)
+   - Test validated flag logic
+   - Test first_seen date assignment
+   - Test statistics calculation
+   - Test empty cache handling
+   - Test cache loading and validation
+7. Update generator.py to import and use categorizer module
+8. Ensure backward compatibility (same categorization as before)
+
+**Success criteria**:
+- paths_categorized.json validates against schema
+- Categorizer module can be tested independently
+- Categorizer tests achieve >80% code coverage
+- All existing generator tests still pass
+- Path categorization (new/modified/unchanged) identical to pre-refactor version
+- Validation cache integration working correctly
+- Category statistics accurate
+
+---
+
+### Step 3.4: Update Generator to Orchestrate Full 5-Stage Pipeline
+
+**Goal**: Refactor main generator.py to be a minimal orchestrator calling all 5 stage modules in sequence.
+
+**Files**:
+- `formats/allpaths/generator.py` (modify)
+
+**Actions**:
+1. Restructure main `generate()` function to orchestrate all 5 stages:
+   - Stage 1: Call parser module → story_graph data
+   - Stage 2: Call path_generator module → paths data
+   - Stage 3: Call git_enricher module → paths_enriched data
+   - Stage 4: Call categorizer module → paths_categorized data
+   - Stage 5: Call output_generator module → all outputs
+2. Pass data between stages using in-memory dictionaries (defer JSON I/O to Step 3.5)
+3. Add clear logging for each stage transition with timing information
+4. Maintain existing CLI interface and all arguments
+5. Keep error handling and reporting
+6. Update internal documentation/comments to reflect full 5-stage flow
+7. Verify generator.py is now primarily orchestration code (minimal processing logic)
+8. Ensure each stage module encapsulates its processing logic
+9. Remove any remaining processing code that should be in modules
+
+**Success criteria**:
+- generator.py acts as pure orchestrator (<400 lines after refactor)
+- Clear separation between all 5 stages visible in code structure
+- Data flow explicit and documented
+- All CLI arguments still work as before
+- All tests pass
+- Build script (`scripts/build-allpaths.sh`) works without changes
+- No regression in functionality or outputs
+
+---
+
+### Step 3.5: Extend --write-intermediate to Write All Intermediate Artifacts
+
+**Goal**: Support writing all 4 intermediate artifacts for complete pipeline debugging.
+
+**Files**:
+- `formats/allpaths/generator.py` (modify)
+- `formats/allpaths/modules/path_generator.py` (modify)
+- `formats/allpaths/modules/git_enricher.py` (modify)
+- `formats/allpaths/modules/categorizer.py` (modify)
+- `dist/allpaths-intermediate/` (directory, already gitignored)
+
+**Actions**:
+1. Update generator.py to pass `--write-intermediate` flag to all stage modules
+2. Update path_generator module to optionally write paths.json
+3. Update git_enricher module to optionally write paths_enriched.json
+4. Update categorizer module to optionally write paths_categorized.json
+5. Ensure all intermediate artifacts written to `dist/allpaths-intermediate/`:
+   - `story_graph.json` (from Stage 1, already implemented in Phase 2)
+   - `paths.json` (from Stage 2)
+   - `paths_enriched.json` (from Stage 3)
+   - `paths_categorized.json` (from Stage 4)
+6. Add logging to show where each intermediate artifact is written
+7. Validate each artifact against its schema after writing (optional validation mode)
+8. Update documentation to explain complete intermediate artifact debugging workflow
+9. Ensure flag remains optional (default: disabled for production builds)
+
+**Success criteria**:
+- `--write-intermediate` flag writes all 4 intermediate artifacts
+- Each artifact validates against its corresponding schema
+- Intermediate artifacts enable stage-by-stage debugging
+- Production builds unaffected (no performance impact when disabled)
+- Documentation explains how to use artifacts for debugging
+- Clear separation: which artifacts come from which stages
+
+---
+
+## Phase 3 Completion Checklist
+
+- [ ] Step 3.1: Path generator module extracted with paths.json schema
+- [ ] Step 3.2: Git enricher module extracted with paths_enriched.json schema
+- [ ] Step 3.3: Categorizer module extracted with paths_categorized.json schema
+- [ ] Step 3.4: Generator orchestrates full 5-stage pipeline
+- [ ] Step 3.5: All intermediate artifacts written with --write-intermediate flag
+
+After Phase 3, the AllPaths generator will have a complete 5-stage modular pipeline with all intermediate artifacts defined and testable. Each stage (parse, generate paths, enrich with git, categorize, output) will be independently testable and debuggable. The `--write-intermediate` flag will enable full visibility into the pipeline for debugging and validation.
+
+---
