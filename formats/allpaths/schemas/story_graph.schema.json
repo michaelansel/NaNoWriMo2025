@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanowrimo2025.local/schemas/story_graph.schema.json",
+  "title": "AllPaths Story Graph",
+  "description": "Intermediate artifact from Stage 1 (Parse & Extract): Clean story structure extracted from Tweego HTML",
+  "type": "object",
+  "required": [
+    "passages",
+    "start_passage",
+    "metadata"
+  ],
+  "properties": {
+    "passages": {
+      "type": "object",
+      "description": "Map of passage names to passage objects",
+      "patternProperties": {
+        "^.*$": {
+          "type": "object",
+          "required": [
+            "content",
+            "links"
+          ],
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "The text content of the passage"
+            },
+            "links": {
+              "type": "array",
+              "description": "Array of passage names that this passage links to",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "minProperties": 1
+    },
+    "start_passage": {
+      "type": "string",
+      "description": "The name of the starting passage for the story"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Story metadata extracted from the HTML",
+      "required": [
+        "story_title",
+        "ifid",
+        "format",
+        "format_version"
+      ],
+      "properties": {
+        "story_title": {
+          "type": "string",
+          "description": "The title of the story"
+        },
+        "ifid": {
+          "type": "string",
+          "description": "Interactive Fiction ID (UUID)",
+          "pattern": "^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$"
+        },
+        "format": {
+          "type": "string",
+          "description": "The Twine story format (e.g., Harlowe, SugarCube, Snowman)"
+        },
+        "format_version": {
+          "type": "string",
+          "description": "Version of the story format"
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
