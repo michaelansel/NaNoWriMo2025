@@ -18,6 +18,11 @@ from jinja2 import Environment, FileSystemLoader
 
 from lib.git_service import GitService
 
+
+# =============================================================================
+# HTML PARSING
+# =============================================================================
+
 class TweeStoryParser(HTMLParser):
     """Parse Tweego-compiled HTML to extract story data"""
 
@@ -105,6 +110,11 @@ def extract_links(passage_text: str) -> List[str]:
 
     return unique_targets
 
+# =============================================================================
+# GRAPH CONSTRUCTION
+# =============================================================================
+
+
 def build_graph(passages: Dict) -> Dict[str, List[str]]:
     """Build a directed graph from passages"""
     graph = {}
@@ -116,6 +126,11 @@ def build_graph(passages: Dict) -> Dict[str, List[str]]:
 
         links = extract_links(passage['text'])
         graph[name] = links
+
+
+# =============================================================================
+# PATH GENERATION
+# =============================================================================
 
     return graph
 
@@ -201,6 +216,10 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
             return display
 
     return re.sub(r'\[\[([^\]]+)\]\]', replace_link, text)
+
+# =============================================================================
+# HASHING AND FINGERPRINTING
+# =============================================================================
 
 def calculate_path_hash(path: List[str], passages: Dict[str, Dict]) -> str:
     """Calculate hash based on path route AND passage content.
@@ -392,6 +411,11 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
 
         # Add formatted passage text with only the selected link visible
         formatted_text = format_passage_text(passage['text'], next_passage)
+
+# =============================================================================
+# VALIDATION CACHE
+# =============================================================================
+
         lines.append(formatted_text)
         lines.append("")
 
@@ -419,6 +443,11 @@ def save_validation_cache(cache_file: Path, cache: Dict) -> None:
     """Save validated paths to cache.
 
     Args:
+
+# =============================================================================
+# FILE AND PASSAGE MAPPING
+# =============================================================================
+
         cache_file: Path to the validation cache JSON file
         cache: Dict mapping path hash -> validation data
     """
@@ -455,6 +484,10 @@ def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
             continue
 
     return mapping
+
+# =============================================================================
+# GIT INTEGRATION
+# =============================================================================
 
 def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
     """
@@ -737,6 +770,11 @@ def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD
         with open(file_path, 'r', encoding='utf-8') as f:
             new_content = f.read()
     except Exception as e:
+
+# =============================================================================
+# TWEE PARSING
+# =============================================================================
+
         print(f"[ERROR] Could not read file {file_path}: {e}", file=sys.stderr)
         return True  # Can't read, assume changed
 
@@ -770,6 +808,11 @@ def parse_twee_content(twee_content: str) -> Dict[str, Dict]:
 
         # Content goes until next passage or end of file
         if i + 1 < len(matches):
+
+# =============================================================================
+# BASE BRANCH PATH ANALYSIS
+# =============================================================================
+
             end = matches[i + 1].start()
         else:
             end = len(twee_content)
@@ -861,6 +904,11 @@ def build_paths_from_base_branch(repo_root: Path, source_dir: Path, base_ref: st
     base_paths = generate_all_paths_dfs(base_graph, start_passage)
 
     print(f"[INFO] Generated {len(base_paths)} paths from base branch", file=sys.stderr)
+
+
+# =============================================================================
+# PATH CATEGORIZATION
+# =============================================================================
 
     # Calculate route hashes for all base paths
     base_route_hashes = set()
@@ -1033,6 +1081,11 @@ def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
     modified_count = sum(1 for c in categories.values() if c == 'modified')
     unchanged_count = sum(1 for c in categories.values() if c == 'unchanged')
 
+# =============================================================================
+# OUTPUT GENERATION
+# =============================================================================
+
+
     print(f"\n[INFO] ===== Categorization Complete =====", file=sys.stderr)
     print(f"[INFO] Total files checked: {total_files_checked}", file=sys.stderr)
     print(f"[INFO] Git lookups: {git_lookups_succeeded} succeeded, {git_lookups_failed} failed", file=sys.stderr)
@@ -1137,6 +1190,11 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     html = template.render(
         story_name=story_data['name'],
         generated_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+
+# =============================================================================
+# MAIN ENTRY POINT
+# =============================================================================
+
         total_paths=len(all_paths),
         validated_count=validated_count,
         new_count=new_count,
