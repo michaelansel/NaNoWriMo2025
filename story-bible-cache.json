@@ -7593,6 +7593,450 @@
           "category": "constant"
         }
       ]
+    },
+    "path-fe30fad9": {
+      "content_hash": "39d497993772bf799236cee6e124d25e",
+      "extracted_at": "2025-11-30T12:12:05.355574",
+      "facts": [
+        {
+          "fact": "The village is located near a cliffside that leads to a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight"
+            },
+            {
+              "passage": "923cc360d018",
+              "quote": "The cave's entrance was just around the corner"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The area experiences heavy rain, with three days of continuous rain.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Characters can use focus to perform healing and other magical effects.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a9e0a03c91",
+              "quote": "Kian asked ... 'Mending, healing, recovery - anything to stop the damn bleeding' ... 'I am capable of it.'"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who wears a leather vest and has a borrowed sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection"
+            },
+            {
+              "passage": "590400dece2b",
+              "quote": "with a borrowed sword"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Danita is a female traveler, older, wearing well cared leather armor and cloaks.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Danita ... well cared but worn leather armor and thick cloaks they wore"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Danita ... well cared but worn leather armor and thick cloaks they wore"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Terence is a large soldier with wide shoulders and a grizzled face.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Terence ... large, and looked the part of a soldier with wide shoulders and a grizzled face"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Terence ... large, and looked the part of a soldier with wide shoulders and a grizzled face"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Kian is a male traveler, similar to Danita, with a crossbow.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Kian ... had a crossbow slung over his should"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Kian ... had a crossbow slung over his should"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster in the mushroom cave is a tall creature with a long snout and horns.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "1e2cf5431c2f",
+              "quote": "Terence was engaged with a terrifyingly tall creature with a long snout and horns on its head"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If the player does nothing, the group will fight the monster and the monster will be killed by Danita.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "1e2cf5431c2f",
+              "quote": "Danita gave a battle cry and struck the killing blow"
+            },
+            {
+              "passage": "56a9e0a03c91",
+              "quote": "Danita gave a battle cry and struck the killing blow"
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player chooses to help, they can heal Terence.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "56a9e0a03c91",
+              "quote": "Kian asked ... 'Mending, healing, recovery - anything to stop the damn bleeding' ... 'I am capable of it.'"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to stay, they can help the group in the cave.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "56a9e0a03c91",
+              "quote": "Javlyn stumbled back, almost turning to run before stopping herself"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "Rumors of a monster in the mushroom cave existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The travelers were delayed by rain before arriving at the cave.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Meant to head out three days ago but with the rain we were delayed"
+            }
+          ],
+          "category": "constant"
+        }
+      ]
+    },
+    "path-c45079ab": {
+      "content_hash": "162cca7081348ab2b356d7245facfee1",
+      "extracted_at": "2025-11-30T12:15:27.347029",
+      "facts": [
+        {
+          "fact": "The setting includes a small village with a road out of town, a butcher, a tavern, an inn, and a bed with a laundry pile.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "a6122a65eaa6",
+              "quote": "the laundry pile was moving"
+            },
+            {
+              "passage": "60844ae759ad",
+              "quote": "the creature hiding just under the edge of the bed"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a female resident of the village who has a mother who admonishes her about laundry.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "Javlyn, you really shouldn't leave your laundry around"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The blue creature named Sikshusiks can talk and has sharp teeth.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "Me Sikshusiks"
+            },
+            {
+              "passage": "ac90be98137d",
+              "quote": "dozens of sharp, pointy teeth"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The blue creature is described as a spearmint.",
+          "type": "world_rule",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "A spearmint. A spearmint sikshusiks!"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The blue creature can fight monsters and can eat them.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "the blue creature ... swarmed the monster ... with one last bite the monster fell"
+            },
+            {
+              "passage": "ac90be98137d",
+              "quote": "the blue creature ... began to eat the monster"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster is a large creature that can be killed by the blue creature.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "the monster fell to the ground, dead"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The travelers Danita, Kian, and Terence are adventurers with swords and a crossbow.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "two older males and one female ... two had swords out and one a crossbow"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The blue creature is friendly to Javlyn and will stay with her if she invites it.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "She asked if it wanted to come with her or stay here? ... 'Me go with you!'"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to feed the blue creature, it will stay with Javlyn.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "She rolled over an apple ... the creature opened its mouth and took a big bite"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player does nothing, the blue creature remains in the laundry pile.",
+          "type": "zero_action_state",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "the creature hiding just under the edge of the bed"
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player does nothing, the monster continues to roam and may threaten the village.",
+          "type": "zero_action_state",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "there was a monster charging towards town"
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player chooses to help the blue creature fight the monster, the monster will be killed.",
+          "type": "variable",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "the blue creature ... swarmed the monster ... with one last bite the monster fell"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses not to help, the monster may kill the travelers.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "the monster reared back ... the blue creature ... with one last bite the monster fell"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The world has a magic system where creatures can talk and have unusual abilities.",
+          "type": "world_rule",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "It had talked"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The blue creature's name is Sikshusiks.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "Me Sikshusiks"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Before the story, the travelers had cleared a cave with monsters.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "We cleared out a cave that had several of the monsters"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Before the story, the blue creature had escaped from somewhere.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "Me scape"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Before the story, the monster had been charging towards town.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "there was a monster charging towards town"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Before the story, the blue creature had eaten the monster.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "the blue creature ... began to eat the monster"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Before the story, the travelers had come to the town after the monster.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "someone had been chasing the monster before"
+            }
+          ],
+          "category": "constant"
+        }
+      ]
     }
   },
   "categorized_facts": {
@@ -9418,6 +9862,66 @@
             }
           ],
           "category": "constant"
+        },
+        {
+          "passage_id": "path-fe30fad9",
+          "fact": "The village is located near a cliffside that leads to a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight"
+            },
+            {
+              "passage": "923cc360d018",
+              "quote": "The cave's entrance was just around the corner"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-fe30fad9",
+          "fact": "The area experiences heavy rain, with three days of continuous rain.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-fe30fad9",
+          "fact": "The monster in the mushroom cave is a tall creature with a long snout and horns.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "1e2cf5431c2f",
+              "quote": "Terence was engaged with a terrifyingly tall creature with a long snout and horns on its head"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-c45079ab",
+          "fact": "The setting includes a small village with a road out of town, a butcher, a tavern, an inn, and a bed with a laundry pile.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "a6122a65eaa6",
+              "quote": "the laundry pile was moving"
+            },
+            {
+              "passage": "60844ae759ad",
+              "quote": "the creature hiding just under the edge of the bed"
+            }
+          ],
+          "category": "constant"
         }
       ],
       "timeline": [
@@ -10006,6 +10510,97 @@
             }
           ],
           "category": "constant"
+        },
+        {
+          "passage_id": "path-fe30fad9",
+          "fact": "Rumors of a monster in the mushroom cave existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-fe30fad9",
+          "fact": "The travelers were delayed by rain before arriving at the cave.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Meant to head out three days ago but with the rain we were delayed"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-c45079ab",
+          "fact": "Before the story, the travelers had cleared a cave with monsters.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "We cleared out a cave that had several of the monsters"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-c45079ab",
+          "fact": "Before the story, the blue creature had escaped from somewhere.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "Me scape"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-c45079ab",
+          "fact": "Before the story, the monster had been charging towards town.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "there was a monster charging towards town"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-c45079ab",
+          "fact": "Before the story, the blue creature had eaten the monster.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "the blue creature ... began to eat the monster"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-c45079ab",
+          "fact": "Before the story, the travelers had come to the town after the monster.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "ac90be98137d",
+              "quote": "someone had been chasing the monster before"
+            }
+          ],
+          "category": "constant"
         }
       ]
     },
@@ -10515,11 +11110,11 @@
     }
   },
   "meta": {
-    "last_extracted": "2025-11-30T12:05:49.814336",
-    "total_passages_extracted": 55,
-    "total_facts": 267
+    "last_extracted": "2025-11-30T12:20:27.885174",
+    "total_passages_extracted": 57,
+    "total_facts": 278
   },
   "summarized_facts": null,
   "summarization_status": "failed",
-  "summarization_time_seconds": 300.1071445941925
+  "summarization_time_seconds": 300.08059096336365
 }
