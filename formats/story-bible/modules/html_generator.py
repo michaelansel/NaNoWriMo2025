@@ -62,12 +62,130 @@ def format_date_for_display(iso_timestamp: str) -> str:
         return iso_timestamp
 
 
+def normalize_evidence(evidence):
+    """
+    Normalize evidence to array of objects format.
+
+    The cache may have evidence as:
+    - A string: "Some quote text"
+    - An array of strings: ["quote1", "quote2"]
+    - An array of objects: [{"passage": "Start", "quote": "..."}]
+
+    This function normalizes to array of objects format for the template.
+
+    Args:
+        evidence: Evidence in any format
+
+    Returns:
+        List of dicts with 'passage' and 'quote' keys
+    """
+    if evidence is None:
+        return []
+
+    if isinstance(evidence, str):
+        # Single string - convert to single-item array
+        return [{'passage': 'Source', 'quote': evidence}]
+
+    if isinstance(evidence, list):
+        result = []
+        for item in evidence:
+            if isinstance(item, str):
+                # String in array - convert to object
+                result.append({'passage': 'Source', 'quote': item})
+            elif isinstance(item, dict):
+                # Already an object - ensure it has required keys
+                result.append({
+                    'passage': item.get('passage', 'Source'),
+                    'quote': item.get('quote', str(item))
+                })
+            else:
+                # Unknown type - convert to string
+                result.append({'passage': 'Source', 'quote': str(item)})
+        return result
+
+    # Unknown type - convert to string
+    return [{'passage': 'Source', 'quote': str(evidence)}]
+
+
+def normalize_facts(facts_list):
+    """
+    Normalize a list of facts, ensuring evidence is in correct format.
+
+    Args:
+        facts_list: List of fact dictionaries
+
+    Returns:
+        List of facts with normalized evidence
+    """
+    if not facts_list:
+        return []
+
+    result = []
+    for fact in facts_list:
+        normalized_fact = dict(fact)  # Copy
+        normalized_fact['evidence'] = normalize_evidence(fact.get('evidence'))
+        result.append(normalized_fact)
+    return result
+
+
+def normalize_constants(constants):
+    """Normalize all fact lists in constants dict."""
+    if not constants:
+        return {}
+
+    return {
+        'world_rules': normalize_facts(constants.get('world_rules', [])),
+        'setting': normalize_facts(constants.get('setting', [])),
+        'timeline': normalize_facts(constants.get('timeline', []))
+    }
+
+
+def normalize_variables(variables):
+    """Normalize all fact lists in variables dict."""
+    if not variables:
+        return {}
+
+    return {
+        'events': normalize_facts(variables.get('events', [])),
+        'outcomes': normalize_facts(variables.get('outcomes', []))
+    }
+
+
+def normalize_characters(characters):
+    """Normalize all fact lists in characters dict."""
+    if not characters:
+        return {}
+
+    result = {}
+    for char_name, char_data in characters.items():
+        result[char_name] = {
+            'identity': normalize_facts(char_data.get('identity', [])),
+            'zero_action_state': normalize_facts(char_data.get('zero_action_state', [])),
+            'variables': normalize_facts(char_data.get('variables', []))
+        }
+    return result
+
+
+def normalize_conflicts(conflicts):
+    """Normalize conflicts list."""
+    if not conflicts:
+        return []
+
+    result = []
+    for conflict in conflicts:
+        normalized = dict(conflict)
+        if 'facts' in conflict:
+            normalized['facts'] = normalize_facts(conflict['facts'])
+        result.append(normalized)
+    return result
+
+
 def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     """
     Generate HTML Story Bible output.
 
     Args:
-        categorized_facts: Output from Stage 3 (categorizer)
+        categorized_facts: Output from Stage 3 (categorizer) or cache
         output_path: Path to write story-bible.html
 
     Raises:
@@ -95,15 +213,22 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     except Exception as e:
         raise FileNotFoundError(f"Template not found: {e}")
 
+    # Normalize data to ensure evidence is in correct format
+    # (cache may have evidence as strings, template expects objects)
+    constants = normalize_constants(categorized_facts.get('constants', {}))
+    characters = normalize_characters(categorized_facts.get('characters', {}))
+    variables = normalize_variables(categorized_facts.get('variables', {}))
+    conflicts = normalize_conflicts(categorized_facts.get('conflicts', []))
+
     # Prepare template data
     template_data = {
         'story_title': 'NaNoWriMo2025',  # Could be extracted from story data
         'generated_at': format_date_for_display(generated_at),
         'commit_hash': commit_hash,
-        'constants': categorized_facts.get('constants', {}),
-        'characters': categorized_facts.get('characters', {}),
-        'variables': categorized_facts.get('variables', {}),
-        'conflicts': categorized_facts.get('conflicts', []),
+        'constants': constants,
+        'characters': characters,
+        'variables': variables,
+        'conflicts': conflicts,
         'metadata': categorized_facts.get('metadata', {})
     }
 
