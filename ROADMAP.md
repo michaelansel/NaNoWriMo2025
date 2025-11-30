@@ -200,6 +200,33 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 
 ---
 
+### 8. Story Bible Generation
+**Status:** ✅ Released
+**Launched:** November 2025
+**User Impact:** AI-extracted world constants and character information for consistency
+
+Automated extraction of world-building facts from story passages using AI, with deduplication and conflict detection.
+
+**Key Capabilities:**
+- AI extracts constants (always true), variables (player-dependent), and character states
+- Two-level cache: per-passage extractions + summarized/deduplicated view
+- Evidence preservation: every fact cites source passages with quotes
+- Conflict detection: contradictions flagged for author review
+- Cache-first build: HTML renders from cache, no Ollama dependency in CI
+- Webhook-triggered extraction via `/extract-story-bible` command
+
+**Key Innovation:** Conservative AI deduplication merges identical facts while preserving complete evidence trails. Graceful fallback to per-passage view if summarization fails.
+
+**Success Metrics:**
+- Extraction success rate: 100% of passages processed
+- Deduplication effectiveness: ~96% reduction (937 → 38 facts)
+- Evidence preservation: 100% of source citations maintained
+- Build independence: HTML generates without Ollama
+
+**Related Documents:** [features/story-bible.md](features/story-bible.md), [architecture/010-story-bible-design.md](architecture/010-story-bible-design.md)
+
+---
+
 ## Active Development
 
 Features currently being built or refined based on usage.

@@ -256,13 +256,22 @@ def categorize_all_facts(passage_extractions: Dict, summarized_facts: Optional[D
     variables = {'events': [], 'outcomes': []}
     characters = {}
 
+    # Map singular type names to plural keys (AI returns singular)
+    type_to_key = {
+        'world_rule': 'world_rules',
+        'setting': 'setting',
+        'timeline': 'timeline'
+    }
+
     for fact in all_facts:
         fact_type = fact.get('type', 'unknown')
         category = fact.get('category', 'unknown')
 
         if category == 'constant':
-            if fact_type in constants:
-                constants[fact_type].append(fact)
+            # Map type to key, handling both singular and plural forms
+            key = type_to_key.get(fact_type, fact_type)
+            if key in constants:
+                constants[key].append(fact)
         elif category == 'variable':
             if fact_type in ['event', 'outcome']:
                 variables['events' if fact_type == 'event' else 'outcomes'].append(fact)
