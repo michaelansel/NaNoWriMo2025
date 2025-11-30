@@ -2,7 +2,8 @@
 
 ## Status
 
-**Proposed** - Awaiting implementation (Phase 1: Informational Tool)
+**Phase 1**: Proposed - Local extraction via build pipeline
+**Phase 2**: Designed - Webhook service integration for CI extraction
 
 ## Context
 
@@ -1097,6 +1098,806 @@ fi
 
 ---
 
+## Phase 2: Webhook Service Integration
+
+### Context
+
+**Problem**: Phase 1 design assumes Ollama is available locally during build. However, in CI (GitHub Actions), Ollama is not available. The existing continuity webhook service solves this by:
+1. CI builds artifacts and uploads them
+2. GitHub sends webhook to service running on host with Ollama
+3. Service downloads artifacts, runs AI extraction via Ollama, posts results to PR
+
+**Solution**: Integrate Story Bible extraction into the webhook service using the same pattern.
+
+### Architecture Overview
+
+```
+GitHub Actions (CI)
+  ↓ Build story artifacts
+  ↓ Upload to workflow artifacts
+  ↓ Workflow completes
+  ↓ GitHub sends workflow_run webhook
+  ↓
+Webhook Service (services/continuity-webhook.py)
+  ↓ Receives webhook
+  ↓ Downloads artifacts
+  ↓ [NEW] Check for /extract-story-bible command
+  ↓ Run Story Bible extraction via Ollama
+  ↓ Commit story-bible-cache.json to PR branch
+  ↓ Post results to PR
+```
+
+### Design Decisions
+
+#### 1. Trigger Mechanism
+
+**Decision**: Manual command-based trigger (initially), automatic optional (future)
+
+**Command**: `/extract-story-bible` (or shorter: `/story-bible`)
+
+**Rationale**:
+- Story Bible is a **world-level artifact**, not PR-specific
+- Unlike continuity checking (validates each PR), Story Bible extracts canonical facts
+- Manual trigger gives authors control over when to regenerate
+- Avoids expensive extraction on every PR commit
+- Can add automatic trigger later if useful
+
+**Automatic Trigger (Future)**:
+- Optional: Run on merges to main branch
+- Updates Story Bible as story evolves
+- Not needed for MVP
+
+#### 2. Integration Points
+
+**Reuse existing webhook service components**:
+
+```python
+# In continuity-webhook.py
+
+# Existing endpoints:
+@app.route('/webhook', methods=['POST')
+  ↓ handle_comment_webhook()  # For commands
+  ↓ handle_workflow_webhook()  # For workflow completion
+
+# NEW handler:
+def handle_extract_story_bible_command(payload):
+    """Handle /extract-story-bible command from PR comments."""
+    # Similar to handle_check_continuity_command
+    # Triggers story bible extraction in background
+```
+
+**New command handler** (alongside `/check-continuity` and `/approve-path`):
+- `/extract-story-bible` - Trigger full extraction
+- `/extract-story-bible incremental` - Only extract from new/changed passages (default)
+- `/extract-story-bible full` - Force full re-extraction ignoring cache
+
+#### 3. Extraction Workflow
+
+```
+[User posts PR comment: /extract-story-bible]
+  ↓
+[Webhook service receives issue_comment event]
+  ↓
+[Validate user is collaborator]
+  ↓
+[Download latest PR artifacts]
+  ↓
+[Load story-bible-cache.json from PR branch (if exists)]
+  ↓
+[Load allpaths-metadata/*.txt from artifacts]
+  ↓
+[Identify passages to extract (new/changed based on cache)]
+  ↓
+[For each passage: Call Ollama API to extract facts]
+  ↓ (parallel processing, progress updates)
+[Post progress comments: "Extracting facts from passage 5/30..."]
+  ↓
+[Categorize facts (constants vs variables)]
+  ↓
+[Generate story-bible.json (machine-readable)]
+  ↓
+[Commit story-bible-cache.json + story-bible.json to PR branch]
+  ↓
+[Post final comment with link to story-bible.json artifact]
+```
+
+#### 4. Caching and Incremental Extraction
+
+**Cache Structure**: `story-bible-cache.json` (stored in repo root, like `allpaths-validation-status.json`)
+
+```json
+{
+  "meta": {
+    "last_extracted": "2025-12-01T10:00:00Z",
+    "total_passages_extracted": 50,
+    "total_facts": 127
+  },
+  "passage_extractions": {
+    "passage_id_1": {
+      "content_hash": "abc123def456",
+      "extracted_at": "2025-12-01T10:00:00Z",
+      "facts": [
+        {
+          "fact": "The city is on the coast",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": "...coastal breeze..."
+        }
+      ]
+    }
+  },
+  "categorized_facts": {
+    "constants": { /* ... */ },
+    "variables": { /* ... */ },
+    "characters": { /* ... */ }
+  }
+}
+```
+
+**Incremental Logic** (similar to validation cache):
+
+```python
+def get_passages_to_extract(cache, allpaths_metadata_dir, mode='incremental'):
+    """Identify which passages need fact extraction."""
+
+    passages_to_process = []
+
+    for passage_file in allpaths_metadata_dir.glob("*.txt"):
+        passage_id = get_passage_id_from_file(passage_file)
+        passage_content = passage_file.read_text()
+        content_hash = hashlib.md5(passage_content.encode()).hexdigest()
+
+        cached_extraction = cache.get('passage_extractions', {}).get(passage_id)
+
+        if mode == 'full':
+            # Force re-extraction
+            passages_to_process.append((passage_id, passage_file))
+        elif mode == 'incremental':
+            # Only extract if new or changed
+            if not cached_extraction or cached_extraction['content_hash'] != content_hash:
+                passages_to_process.append((passage_id, passage_file))
+
+    return passages_to_process
+```
+
+**Cache Benefits**:
+- Avoid re-extracting unchanged passages
+- Preserve previous extractions
+- Incremental updates as story evolves
+- Fast regeneration on subsequent runs
+
+#### 5. Storage and Persistence
+
+**What gets stored**:
+
+1. **story-bible-cache.json** (repo root)
+   - Committed to PR branch
+   - Contains extraction cache + categorized facts
+   - Used for incremental extraction
+   - Merged with main branch when PR merges
+
+2. **story-bible.json** (dist/ directory - optional)
+   - Generated from cache
+   - Human-readable final output
+   - Published to GitHub Pages (if desired)
+   - Can be regenerated from cache anytime
+
+**Commit Workflow** (similar to path approval):
+
+```python
+def commit_story_bible_to_branch(pr_number, branch_name, cache_data):
+    """Commit updated Story Bible cache to PR branch."""
+
+    # Serialize cache
+    cache_content = json.dumps(cache_data, indent=2)
+
+    # Commit to branch
+    commit_message = f"""Update Story Bible extraction
+
+Extracted facts from {len(cache_data['passage_extractions'])} passages
+Total facts: {count_total_facts(cache_data)}
+
+Command: /extract-story-bible
+Requested by: @{username}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+    commit_file_to_branch(
+        branch_name,
+        'story-bible-cache.json',
+        cache_content,
+        commit_message
+    )
+```
+
+#### 6. Integration with Existing Continuity Checking
+
+**Separation of Concerns**:
+
+| Feature | Purpose | Scope | Trigger | Cache |
+|---------|---------|-------|---------|-------|
+| **Continuity Checking** | Validate path consistency | Per-path analysis | Automatic on PR + `/check-continuity` | `allpaths-validation-status.json` |
+| **Story Bible** | Extract world facts | Cross-path world-building | `/extract-story-bible` command | `story-bible-cache.json` |
+
+**No conflict**:
+- Continuity checking uses `check-story-continuity.py` script
+- Story Bible uses new extraction logic (similar pattern, different prompts)
+- Both can run on same PR independently
+- Different cache files, different purposes
+
+**Shared Infrastructure**:
+- Both use Ollama API for AI extraction
+- Both use artifact download mechanism
+- Both post progress updates to PR
+- Both commit results to PR branch
+
+#### 7. New Webhook Endpoints and Commands
+
+**New Command Handler**:
+
+```python
+# In continuity-webhook.py
+
+def handle_comment_webhook(payload):
+    """Handle issue_comment webhooks for commands."""
+    # Existing:
+    if re.search(r'/check-continuity\b', comment_body):
+        return handle_check_continuity_command(payload)
+    elif re.search(r'/approve-path\b', comment_body):
+        return handle_approve_path_command(payload)
+    # NEW:
+    elif re.search(r'/extract-story-bible\b', comment_body):
+        return handle_extract_story_bible_command(payload)
+    else:
+        return jsonify({"message": "No recognized command"}), 200
+
+
+def handle_extract_story_bible_command(payload):
+    """Handle /extract-story-bible command from PR comments."""
+    comment_body = payload['comment']['body']
+    pr_number = payload['issue']['number']
+    username = payload['comment']['user']['login']
+    comment_id = payload['comment']['id']
+
+    # Deduplication check (reuse existing pattern)
+    with metrics_lock:
+        if comment_id in processed_comment_ids:
+            return jsonify({"message": "Duplicate webhook"}), 200
+        processed_comment_ids[comment_id] = time.time()
+
+    # Parse mode from command
+    mode = parse_story_bible_command_mode(comment_body)  # 'incremental' or 'full'
+
+    # Get PR info and artifacts
+    pr_info = get_pr_info(pr_number)
+    artifacts_url = get_latest_artifacts_url(pr_number)
+
+    if not artifacts_url:
+        post_pr_comment(pr_number, "⚠️ No workflow artifacts found. Please ensure CI has completed successfully.")
+        return jsonify({"message": "No artifacts"}), 404
+
+    # Spawn background thread for processing
+    workflow_id = f"story-bible-{pr_number}-{int(time.time())}"
+
+    thread = threading.Thread(
+        target=process_story_bible_extraction_async,
+        args=(workflow_id, pr_number, artifacts_url, username, mode),
+        daemon=True
+    )
+    thread.start()
+
+    return jsonify({"message": "Extraction started", "mode": mode}), 202
+
+
+def parse_story_bible_command_mode(comment_body: str) -> str:
+    """Parse extraction mode from command.
+
+    Formats:
+        /extract-story-bible           -> 'incremental' (default)
+        /extract-story-bible full      -> 'full'
+    """
+    match = re.search(r'/extract-story-bible(?:\s+(full|incremental))?', comment_body, re.IGNORECASE)
+
+    if match and match.group(1):
+        return match.group(1).lower()
+
+    return 'incremental'  # Default
+```
+
+**Background Processing Function**:
+
+```python
+def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, username, mode):
+    """Process Story Bible extraction in background thread."""
+
+    try:
+        # Post initial comment
+        post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Starting
+
+**Mode:** `{mode}` _({'full re-extraction' if mode == 'full' else 'incremental extraction of new/changed passages'})_
+**Requested by:** @{username}
+
+Downloading artifacts and preparing extraction...
+
+_This may take several minutes. Progress updates will be posted as extraction proceeds._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+        # Download artifacts
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            # Download and extract
+            if not download_artifact_for_pr(artifacts_url, tmpdir_path):
+                post_pr_comment(pr_number, "⚠️ Failed to download artifacts")
+                return
+
+            # Load cache from PR branch (if exists)
+            cache = load_story_bible_cache_from_branch(pr_number)
+
+            # Load allpaths metadata
+            metadata_dir = tmpdir_path / "dist" / "allpaths-metadata"
+
+            # Identify passages to extract
+            passages_to_extract = get_passages_to_extract(cache, metadata_dir, mode)
+
+            if not passages_to_extract:
+                post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
+
+**Mode:** `{mode}`
+
+No passages need extraction. Story Bible is up to date.
+
+_Use `/extract-story-bible full` to force full re-extraction._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                return
+
+            # Post list of passages
+            total_passages = len(passages_to_extract)
+            post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Processing
+
+**Mode:** `{mode}`
+
+Found **{total_passages}** passage(s) to extract.
+
+_Progress updates will be posted as each passage completes._
+""")
+
+            # Extract facts from each passage
+            for idx, (passage_id, passage_file) in enumerate(passages_to_extract, 1):
+                # Progress callback (similar to continuity checking)
+                passage_name = get_passage_name(passage_id)
+                passage_content = passage_file.read_text()
+
+                # Call Ollama API
+                extracted_facts = extract_facts_from_passage(passage_content, passage_id)
+
+                # Update cache
+                cache['passage_extractions'][passage_id] = {
+                    'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
+                    'extracted_at': datetime.now().isoformat(),
+                    'facts': extracted_facts
+                }
+
+                # Post progress
+                fact_count = len(extracted_facts)
+                post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
+
+**Passage:** `{passage_name}` (ID: `{passage_id}`)
+**Facts extracted:** {fact_count}
+
+<details>
+<summary>Preview facts</summary>
+
+{format_facts_preview(extracted_facts[:5])}  <!-- Show first 5 facts -->
+
+</details>
+""")
+
+            # Categorize facts (cross-reference across all passages)
+            categorized_facts = categorize_all_facts(cache['passage_extractions'])
+            cache['categorized_facts'] = categorized_facts
+
+            # Update metadata
+            cache['meta'] = {
+                'last_extracted': datetime.now().isoformat(),
+                'total_passages_extracted': len(cache['passage_extractions']),
+                'total_facts': count_total_facts(categorized_facts)
+            }
+
+            # Commit cache to PR branch
+            pr_info = get_pr_info(pr_number)
+            branch_name = pr_info['head']['ref']
+
+            commit_story_bible_to_branch(pr_number, branch_name, cache)
+
+            # Generate final output
+            story_bible_json = generate_story_bible_json(categorized_facts)
+
+            # Optionally commit story-bible.json as well (or just keep in cache)
+            # For now, include summary in comment
+
+            # Post final summary
+            post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
+
+**Mode:** `{mode}`
+**Passages extracted:** {total_passages}
+**Total facts:** {cache['meta']['total_facts']}
+
+**Summary:**
+- **Constants:** {count_facts(categorized_facts['constants'])} world facts
+- **Characters:** {len(categorized_facts['characters'])} characters
+- **Variables:** {count_facts(categorized_facts['variables'])} player-determined facts
+
+**Story Bible updated:**
+- `story-bible-cache.json` committed to branch `{branch_name}`
+- Facts cached for incremental updates
+
+**Next steps:**
+- Review extracted facts in `story-bible-cache.json`
+- Use `/extract-story-bible` again to update as story evolves
+- Facts will be preserved and incrementally updated
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+    except Exception as e:
+        app.logger.error(f"[Story Bible] Error: {e}", exc_info=True)
+        post_pr_comment(pr_number, "⚠️ Error during extraction. Please contact repository maintainers.")
+```
+
+#### 8. AI Extraction Implementation
+
+**New Module**: Create `services/lib/story_bible_extractor.py`
+
+```python
+#!/usr/bin/env python3
+"""
+Story Bible fact extraction using Ollama.
+
+Extracts world constants, variables, and character information from passages.
+"""
+
+import requests
+import json
+from typing import Dict, List
+
+OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_TIMEOUT = 120  # 2 minutes per passage
+
+EXTRACTION_PROMPT = """Reasoning: high
+
+=== SECTION 1: ROLE & CONTEXT ===
+
+You are extracting FACTS about an interactive fiction story world.
+
+Your task: Extract CONSTANTS (always true) and VARIABLES (depend on player choices).
+
+CRITICAL UNDERSTANDING:
+- Focus on WORLD FACTS, not plot events
+- Constants: True in all story paths regardless of player action
+- Variables: Change based on player choices
+- Zero Action State: What happens if player does nothing
+
+=== SECTION 2: WHAT TO EXTRACT ===
+
+Extract these fact types:
+
+1. **World Rules**: Magic systems, technology level, physical laws
+2. **Setting**: Geography, landmarks, historical events before story
+3. **Character Identities**: Names, backgrounds, core traits (not fates)
+4. **Timeline**: Events before story starts, chronological constants
+
+For each character, identify:
+- Identity (constants): Who they are, background
+- Zero Action State: Default trajectory if player doesn't intervene
+- Variables: Outcomes that depend on player choices
+
+=== SECTION 3: OUTPUT FORMAT ===
+
+Respond with ONLY valid JSON (no markdown, no code blocks):
+
+{
+  "facts": [
+    {
+      "fact": "The city is on the coast",
+      "type": "setting|world_rule|character_identity|timeline",
+      "confidence": "high|medium|low",
+      "evidence": "Quote from passage demonstrating this fact",
+      "category": "constant|variable|zero_action_state"
+    }
+  ]
+}
+
+=== SECTION 4: PASSAGE TEXT ===
+
+{passage_text}
+
+BEGIN EXTRACTION (JSON only):
+"""
+
+
+def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]:
+    """
+    Extract facts from a single passage using Ollama.
+
+    Args:
+        passage_text: The passage content
+        passage_id: Unique identifier for passage
+
+    Returns:
+        List of extracted facts
+    """
+
+    # Format prompt
+    prompt = EXTRACTION_PROMPT.format(passage_text=passage_text)
+
+    # Call Ollama API
+    try:
+        response = requests.post(
+            OLLAMA_API_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.3,  # Lower temperature for more consistent extraction
+                    "num_predict": 2000  # Max tokens for response
+                }
+            },
+            timeout=OLLAMA_TIMEOUT
+        )
+
+        response.raise_for_status()
+        result = response.json()
+
+        # Parse response
+        raw_response = result.get('response', '')
+
+        # Extract JSON from response (may have preamble text)
+        facts_data = parse_json_from_response(raw_response)
+
+        if not facts_data or 'facts' not in facts_data:
+            return []
+
+        return facts_data['facts']
+
+    except requests.Timeout:
+        raise Exception(f"Ollama API timeout for passage {passage_id}")
+    except requests.RequestException as e:
+        raise Exception(f"Ollama API error: {e}")
+    except json.JSONDecodeError as e:
+        raise Exception(f"Failed to parse Ollama response as JSON: {e}")
+
+
+def parse_json_from_response(text: str) -> Dict:
+    """
+    Extract JSON object from AI response that may contain extra text.
+
+    Looks for {  } pattern and attempts to parse.
+    """
+
+    # Try parsing entire response first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Find JSON object boundaries
+    start = text.find('{')
+    end = text.rfind('}')
+
+    if start == -1 or end == -1:
+        raise json.JSONDecodeError("No JSON object found in response", text, 0)
+
+    json_text = text[start:end+1]
+
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError as e:
+        raise json.JSONDecodeError(f"Invalid JSON in response: {e}", text, 0)
+
+
+def categorize_all_facts(passage_extractions: Dict) -> Dict:
+    """
+    Cross-reference facts across all passages to categorize as constants/variables.
+
+    Args:
+        passage_extractions: Dict of passage_id -> extraction data
+
+    Returns:
+        Categorized facts structure
+    """
+
+    # Collect all facts
+    all_facts = []
+    for passage_id, extraction in passage_extractions.items():
+        for fact in extraction.get('facts', []):
+            all_facts.append({
+                'passage_id': passage_id,
+                **fact
+            })
+
+    # Group by fact type
+    constants = {'world_rules': [], 'setting': [], 'timeline': []}
+    variables = {'events': [], 'outcomes': []}
+    characters = {}
+
+    for fact in all_facts:
+        fact_type = fact.get('type', 'unknown')
+        category = fact.get('category', 'unknown')
+
+        if category == 'constant':
+            if fact_type in constants:
+                constants[fact_type].append(fact)
+        elif category == 'variable':
+            if fact_type in ['event', 'outcome']:
+                variables['events' if fact_type == 'event' else 'outcomes'].append(fact)
+        elif category == 'character_identity' or fact_type == 'character_identity':
+            # Extract character name from fact (simple heuristic)
+            character_name = extract_character_name(fact['fact'])
+            if character_name not in characters:
+                characters[character_name] = {
+                    'identity': [],
+                    'zero_action_state': [],
+                    'variables': []
+                }
+
+            if category == 'zero_action_state':
+                characters[character_name]['zero_action_state'].append(fact)
+            elif category == 'variable':
+                characters[character_name]['variables'].append(fact)
+            else:
+                characters[character_name]['identity'].append(fact)
+
+    return {
+        'constants': constants,
+        'variables': variables,
+        'characters': characters
+    }
+
+
+def extract_character_name(fact_text: str) -> str:
+    """
+    Simple heuristic to extract character name from fact text.
+
+    Examples:
+        "Javlyn is a student" -> "Javlyn"
+        "The character Sarah studies magic" -> "Sarah"
+    """
+
+    # Look for capitalized words at start (simple approach)
+    words = fact_text.split()
+    for word in words:
+        if word[0].isupper() and word.isalpha() and word not in ['The', 'A', 'An', 'This', 'That']:
+            return word
+
+    return "Unknown"
+```
+
+### Performance Considerations
+
+**Extraction Time**:
+- Ollama API: ~20-60 seconds per passage (model-dependent)
+- Parallel processing: Process 3 passages concurrently (ThreadPoolExecutor)
+- Typical story (50 passages): 10-20 minutes for full extraction
+- Incremental mode: Only process changed passages (much faster)
+
+**Optimization Strategies**:
+1. **Incremental caching**: Only extract new/changed passages
+2. **Parallel processing**: Process multiple passages concurrently (max 3 workers)
+3. **Progress updates**: Keep user informed during long extractions
+4. **Timeout handling**: Skip problematic passages, continue with rest
+
+**Example Timeline**:
+```
+Full extraction (50 passages):
+- Download artifacts: 10s
+- Extract 50 passages (parallel): 12 minutes
+- Categorize facts: 5s
+- Commit to branch: 5s
+- Total: ~13 minutes
+
+Incremental extraction (5 changed passages):
+- Download artifacts: 10s
+- Extract 5 passages: 2 minutes
+- Categorize facts: 5s
+- Commit to branch: 5s
+- Total: ~2.5 minutes
+```
+
+### Security Considerations
+
+**Reuse Existing Security Model**:
+- Webhook signature verification (HMAC-SHA256)
+- User authorization check (collaborators only)
+- Artifact validation (size limits, structure validation)
+- Text-only processing (no code execution)
+- Sanitize AI output before posting to PR
+
+**New Security Concerns**:
+- **Large cache files**: Limit cache size (e.g., max 10MB)
+- **Cache corruption**: Validate JSON structure before committing
+- **Malicious facts**: Sanitize extracted facts before committing
+- **DoS via extraction**: Rate limit commands per PR (e.g., max 1 extraction per 10 minutes)
+
+### Testing Strategy
+
+**Unit Tests**:
+- `test_story_bible_extractor.py` - Test fact extraction logic
+- `test_categorizer.py` - Test fact categorization
+- Mock Ollama API responses for consistent testing
+
+**Integration Tests**:
+- Test full extraction workflow with real Ollama
+- Test incremental extraction with cache
+- Test error handling (Ollama down, timeout, invalid JSON)
+
+**End-to-End Tests**:
+- Create test PR with sample story
+- Post `/extract-story-bible` command
+- Verify cache committed to branch
+- Verify facts correctly extracted
+
+### Monitoring and Observability
+
+**Metrics to Track**:
+- Extraction duration per passage
+- Cache hit rate (how many passages skipped)
+- Extraction failures (timeouts, API errors)
+- Fact count trends over time
+
+**Logging**:
+- Log each passage extraction (passage_id, duration, fact_count)
+- Log cache operations (load, save, invalidation)
+- Log API errors with context
+
+**Status Endpoint Enhancement**:
+```python
+# Add to /status endpoint
+{
+  "active_jobs": [...],
+  "story_bible_stats": {
+    "total_extractions": 127,
+    "avg_extraction_time": 45.2,
+    "cache_hit_rate": 0.85,
+    "last_extraction": "2025-12-01T10:00:00Z"
+  }
+}
+```
+
+### Future Enhancements (Beyond Phase 2)
+
+**Automatic Extraction**:
+- Trigger on merge to main branch
+- Automatically update Story Bible as story evolves
+
+**Validation Features**:
+- Validate new content against established constants
+- Flag contradictions in PR comments
+- Suggest corrections
+
+**Advanced Caching**:
+- Differential caching (track changes, not just full replacement)
+- Version history of facts (see how world-building evolved)
+
+**Better Categorization**:
+- Machine learning for duplicate detection
+- Automatic conflict resolution suggestions
+- Character relationship graphs
+
+---
+
 ## Open Questions
 
 ### For Implementation
@@ -1157,6 +1958,74 @@ fi
    - [ ] Authors reference Story Bible when writing
    - [ ] New collaborators use for onboarding
    - [ ] HTML navigable and readable
+
+---
+
+---
+
+## Phase Comparison and Recommendations
+
+### Phase 1 vs Phase 2
+
+| Aspect | Phase 1 (Local) | Phase 2 (CI via Webhook) |
+|--------|----------------|--------------------------|
+| **Environment** | Developer's local machine | CI + webhook service |
+| **Ollama Access** | Local Ollama installation | Webhook service host |
+| **Trigger** | `npm run build:story-bible` | `/extract-story-bible` command |
+| **Use Case** | Local development, testing | CI integration, team collaboration |
+| **Storage** | `dist/story-bible.html`, `dist/story-bible.json` | `story-bible-cache.json` in repo |
+| **Frequency** | Every build | On-demand (manual command) |
+| **Caching** | Local cache file | Committed cache in repo |
+| **Incremental** | Based on local cache | Based on committed cache |
+
+### Recommended Implementation Path
+
+**Immediate (Phase 2 First)**:
+Given that Ollama isn't available in GitHub Actions and the webhook service already exists, **implement Phase 2 first**:
+
+1. Add `/extract-story-bible` command to webhook service
+2. Implement fact extraction via Ollama in webhook context
+3. Commit `story-bible-cache.json` to PR branches
+4. Allow incremental updates as story evolves
+
+**Later (Phase 1 Optional)**:
+Phase 1 (local extraction) can be added later if authors want to:
+- Test extraction locally before pushing
+- Generate HTML/JSON outputs for local review
+- Debug extraction issues without PR overhead
+
+**Why Phase 2 First**:
+- Solves immediate problem (no Ollama in CI)
+- Leverages existing infrastructure (webhook service, artifact download, PR commenting)
+- Provides team collaboration (cache committed to repo, not just local)
+- Incremental caching works across team members
+- Matches existing patterns (continuity checking workflow)
+
+### Migration Path (If Phase 1 Already Implemented)
+
+If Phase 1 is already implemented locally:
+
+1. **Reuse extraction logic**: Move `formats/story-bible/modules/ai_extractor.py` to `services/lib/story_bible_extractor.py`
+2. **Reuse prompts**: Use same AI prompts for consistency
+3. **Cache compatibility**: Ensure local cache format matches webhook cache format
+4. **Dual support**: Keep both Phase 1 (local) and Phase 2 (CI) working together
+
+### Design Principles Applied
+
+**Phase 2 design follows existing patterns**:
+- ✓ Reuses webhook service infrastructure (like continuity checking)
+- ✓ Uses command-based trigger (like `/check-continuity`, `/approve-path`)
+- ✓ Commits results to PR branch (like path approval)
+- ✓ Posts progress updates to PR (like continuity checking)
+- ✓ Incremental caching (like validation cache)
+- ✓ Background processing with metrics (like continuity checking)
+- ✓ Security model (webhook signatures, authorization, sanitization)
+
+**Separation of concerns maintained**:
+- Continuity checking: Validates individual paths for internal consistency
+- Story Bible extraction: Extracts cross-path world-building facts
+- Different prompts, different caches, different purposes
+- Both can run on same PR without conflict
 
 ---
 
