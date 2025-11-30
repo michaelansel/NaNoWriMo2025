@@ -76,10 +76,14 @@ jobs:
           mv dotgraph-temp/dotgraph-2 storyformats/
           rm -rf dotgraph-temp dotgraph.zip
 
-      - name: Build Harlowe version (main)
+      - name: Build Harlowe version (playable story)
         run: |
           mkdir -p dist
-          tweego src -o dist/index.html -f harlowe-3
+          tweego src -o dist/play.html -f harlowe-3
+
+      - name: Copy landing page
+        run: |
+          cp landing/index.html dist/index.html
 
       - name: Build Paperthin version (proofread)
         run: |
@@ -130,7 +134,7 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const indexSize = fs.statSync('dist/index.html').size;
+            const playSize = fs.statSync('dist/play.html').size;
             const proofreadSize = fs.statSync('dist/proofread.html').size;
             const graphSize = fs.statSync('dist/graph.html').size;
             const allpathsSize = fs.statSync('dist/allpaths.html').size;
@@ -149,7 +153,7 @@ jobs:
             Your story has been built successfully!
 
             **📊 Build Stats:**
-            - Harlowe version: ${(indexSize / 1024).toFixed(2)} KB
+            - Playable story: ${(playSize / 1024).toFixed(2)} KB
             - Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
             - DotGraph version: ${(graphSize / 1024).toFixed(2)} KB
             - AllPaths version: ${(allpathsSize / 1024).toFixed(2)} KB (${pathCount} paths)
@@ -158,18 +162,10 @@ jobs:
             **🎮 Preview Your Changes:**
             1. Download the \`story-preview\` artifact from the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
             2. Extract the zip file
-            3. Open \`index.html\` to play the story
-            4. Open \`proofread.html\` for linear proofreading
-            5. Open \`graph.html\` to visualize the story structure
-            6. Open \`allpaths.html\` to browse all ${pathCount} story paths
-            7. Open \`metrics.html\` to view writing statistics
+            3. Open \`index.html\` (landing page) to access all output formats
 
             **💡 Tip:** Once merged to main, this will be live at:
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/proofread.html
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/graph.html
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/allpaths.html
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/metrics.html`
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/ (landing page with links to all formats)`
             });
 
       - name: Save build artifacts for deployment
