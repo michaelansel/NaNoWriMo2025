@@ -1421,7 +1421,8 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
     from story_bible_extractor import (
         extract_facts_from_passage,
         categorize_all_facts,
-        get_passages_to_extract
+        get_passages_to_extract,
+        run_summarization
     )
 
     try:
@@ -1537,9 +1538,36 @@ Continuing with remaining passages...
 """)
                     continue
 
+            # Stage 2.5: Run AI summarization/deduplication
+            app.logger.info(f"[Story Bible] Running AI summarization on {len(cache['passage_extractions'])} passages")
+            summarized_facts = None
+            summarization_status = "skipped"
+            summarization_time = 0.0
+
+            try:
+                summarized_facts, summarization_status, summarization_time = run_summarization(
+                    cache.get('passage_extractions', {})
+                )
+                app.logger.info(f"[Story Bible] Summarization {summarization_status} in {summarization_time:.2f}s")
+
+                # Store summarization results in cache
+                cache['summarized_facts'] = summarized_facts
+                cache['summarization_status'] = summarization_status
+                cache['summarization_time_seconds'] = summarization_time
+
+            except Exception as e:
+                # Graceful degradation: log error but continue with categorization
+                app.logger.warning(f"[Story Bible] Summarization failed: {e}, continuing with basic categorization")
+                cache['summarization_status'] = 'failed'
+                cache['summarization_error'] = str(e)
+
             # Categorize facts (cross-reference across all passages)
+            # Pass summarized_facts if available, otherwise falls back to per-passage extractions
             app.logger.info(f"[Story Bible] Categorizing facts across {len(cache['passage_extractions'])} passages")
-            categorized_facts = categorize_all_facts(cache.get('passage_extractions', {}))
+            categorized_facts = categorize_all_facts(
+                cache.get('passage_extractions', {}),
+                summarized_facts=summarized_facts
+            )
             cache['categorized_facts'] = categorized_facts
 
             # Update metadata
@@ -1575,11 +1603,20 @@ Continuing with remaining passages...
                 len(categorized_facts.get('variables', {}).get('outcomes', []))
             )
 
+            # Format summarization status for display
+            if summarization_status == 'success':
+                summarization_display = f"✅ Success ({summarization_time:.1f}s) - facts deduplicated"
+            elif summarization_status == 'failed':
+                summarization_display = "⚠️ Failed - using per-passage view"
+            else:
+                summarization_display = "⏭️ Skipped"
+
             post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
 
 **Mode:** `{mode}`
 **Passages extracted:** {total_passages}
 **Total facts:** {total_facts}
+**Summarization:** {summarization_display}
 
 **Summary:**
 - **Constants:** {constant_count} world facts
