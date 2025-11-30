@@ -8155,29 +8155,51 @@
           "category": "variable"
         }
       ]
+    },
+    "path-59b73b3c": {
+      "content_hash": "6dce93b81d3d467df2a97f7641c4164c",
+      "extracted_at": "2025-11-30T15:47:14.542046",
+      "facts": [
+        {
+          "fact": "The village is located near a cliffside that contains a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "As they rounded the corner, the cave entrance came into view."
+            }
+          ],
+          "category": "constant"
+        }
+      ]
     }
   },
   "categorized_facts": {
     "constants": {
       "world_rules": [
         {
-          "fact": "The world is medieval‑level, with swords, crossbows, lanterns, shields, and wooden practice weapons.",
+          "fact": "The world is medieval‑level: swords, crossbows, lanterns, shields, and simple wooden practice weapons are common.",
           "evidence": [
             {
               "passage": "path-b76ef736",
               "quote": "Lantern in her left hand, sword in her right"
             },
             {
-              "passage": "path-4976bb5f",
-              "quote": "Nivek's old sword"
-            },
-            {
-              "passage": "path-5b0ba41f",
+              "passage": "path-5c35c82f",
               "quote": "Kian had a crossbow slung over his shoulder"
             },
             {
-              "passage": "path-5b0ba41f",
-              "quote": "Danita had a heavy shield"
+              "passage": "path-5c35c82f",
+              "quote": "Terence pulled out a lantern and easily lit it"
             }
           ],
           "confidence": "high",
@@ -8188,92 +8210,73 @@
           ]
         },
         {
-          "fact": "Magic exists as protective workings that can be performed by focusing on an item or a person; light magic can be created by focusing on the sun; ice workings can be applied to weapons and have a trigger on impact; luck magic can be performed by focusing on noticing and reacting.",
+          "fact": "Magic exists in the form of \"workings\" that can be performed by villagers; light and protection are common types, and ice workings can be applied to weapons or shields.",
           "evidence": [
             {
-              "passage": "path-76119710",
+              "passage": "path-5c35c82f",
               "quote": "Javlyn nodded, she was good at workings"
             },
             {
               "passage": "path-5c35c82f",
-              "quote": "Ice workings, Terence said ignoring Danita, 'are typically applied to items, like my sword or Danita's shield, and have a trigger on them.'"
+              "quote": "Terence weaved a bit of protection over his and Danita's eyes"
             },
             {
-              "passage": "path-0d807122",
-              "quote": "She closed her eyes and focused intently on the sun."
-            },
-            {
-              "passage": "path-0d807122",
-              "quote": "Luck was first noticing and second having the time to react."
+              "passage": "path-5c35c82f",
+              "quote": "Ice workings are difficult for beginners and can backfire"
             }
           ],
           "confidence": "high",
           "merged_from": [
             "Magic exists in this world and can be used for protection.",
-            "Light magic can be performed by focusing on the sun to create a bright light that can illuminate a cave.",
-            "Working with light requires focus and can produce a light brighter than a lantern.",
-            "Ice workings are difficult for beginners and can backfire, potentially harming the user or affecting the area instead of a specific target.",
-            "Luck magic exists and can be performed by focusing on noticing and reacting."
+            "Magic exists and can be used for light through workings.",
+            "Working with light requires focus and can produce a light brighter than a lantern."
           ]
         },
         {
-          "fact": "Lanterns can be lit, extinguished, and relit; they provide light in caves and can be knocked over.",
+          "fact": "Lanterns can be lit, extinguished, and relit; they provide light in dark caves.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "Lanterns can be lit with oil."
+              "passage": "path-5c35c82f",
+              "quote": "Lantern in her left hand, sword in her right"
             },
             {
-              "passage": "path-a2ee6099",
-              "quote": "The lantern toppled to the ground, the fire sputtered as the oil spilled, until it died."
-            },
-            {
-              "passage": "path-a2ee6099",
-              "quote": "She found the lantern, righted it, then lit it."
+              "passage": "path-5c35c82f",
+              "quote": "Lantern can be lit and extinguished"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The lantern can be lit and extinguished.",
-            "The lantern can be found again after being thrown."
+            "Lanterns can be used to light caves.",
+            "The lantern can be lit and used for light."
           ]
         },
         {
-          "fact": "Monsters can inhabit caves, be large, have a long snout, two curved horns, wide shoulders, and be nearly twice the height of Javlyn; they can fit through small spaces and can be killed with swords or bolts.",
+          "fact": "Monsters can inhabit caves, are often large, horned, and can be killed with swords or bolts.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "The creature had a long snout with two curved horns."
+              "passage": "path-5c35c82f",
+              "quote": "The creature had a long snout with two curved horns"
             },
             {
-              "passage": "path-6585777b",
-              "quote": "It was nearly twice her height."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "The monster can be killed by bolts and swords."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "The monster fit through the cave's entrance."
+              "passage": "path-5c35c82f",
+              "quote": "The monster can be killed by bolts and swords"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster has a long snout, two curved horns, wide shoulders, and is about twice Javlyn's height.",
-            "The monster can be killed by bolts and swords.",
-            "The monster can fit through small spaces."
+            "Monsters can appear in caves and can be killed with weapons.",
+            "The monster can be killed by bolts and swords."
           ]
         },
         {
-          "fact": "The environment is rainy, muddy, overcast, with three days of rain; the ground sticks to boots and makes movement difficult.",
+          "fact": "The environment is rainy, overcast, and muddy, making movement difficult.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+              "passage": "path-5c35c82f",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain"
             },
             {
-              "passage": "path-6585777b",
+              "passage": "path-5c35c82f",
               "quote": "The ground stuck to her boots"
             }
           ],
@@ -8282,33 +8285,6 @@
             "The environment is rainy, muddy, and overcast.",
             "The ground is muddy, making movement difficult."
           ]
-        },
-        {
-          "fact": "The cave is a mushroom cave located on a cliffside; it has a narrow entrance that brushes shoulders, a tunnel that turns into a larger chamber, a bone pile with mushrooms, and a tunnel that can lead out.",
-          "evidence": [
-            {
-              "passage": "path-6585777b",
-              "quote": "The cave entrance was just around the corner."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "The tunnel turned and deposited Javlyn into a larger chamber."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "Near the bone pile was mushrooms."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "She eventually found the tunnel out."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The cave is a mushroom cave located near a cliffside.",
-            "The cave entrance is narrow and leads to a larger chamber.",
-            "The cave contains a bone pile and mushrooms."
-          ]
         }
       ],
       "setting": [
@@ -8316,43 +8292,54 @@
           "fact": "The village is located near a cliffside that contains a mushroom cave.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "The cliffside the cave was a part of came into sight."
+              "passage": "path-5c35c82f",
+              "quote": "The cliffside the cave was a part of came into sight"
             },
             {
-              "passage": "path-6585777b",
-              "quote": "The cave's entrance was just around the corner."
+              "passage": "path-5c35c82f",
+              "quote": "The cave's entrance was just around the corner"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The village is located near a cliffside that contains a mushroom cave."
+            "The village is located near a cliffside that leads to a mushroom cave.",
+            "The cave entrance is just around the corner."
           ]
         },
         {
-          "fact": "The village holds an open training session that villagers attend weekly.",
+          "fact": "The cave entrance is narrow, with walls brushing the explorer's shoulders, and leads to a larger chamber.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week."
+              "passage": "path-5c35c82f",
+              "quote": "The entry way was narrow and the walls brushed her shoulders on either side"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "The tunnel turned and deposited Javlyn into a larger chamber"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The village holds an open training session that villagers attend weekly."
+            "The cave entrance is narrow and leads to a larger chamber.",
+            "The cave has a narrow entrance that brushes the explorer's shoulders."
           ]
         },
         {
-          "fact": "The path from the village leads to the cave and continues to the next village.",
+          "fact": "The environment inside the cave is dark, damp, and full of shadows; mushrooms grow in creases and a bone pile is present.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "This path did continue on past the mushroom cave, but it was a long days travel to the next village."
+              "passage": "path-5c35c82f",
+              "quote": "dark and damp and full of terrifying shadows"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "Near the bone pile was mushrooms"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The path leads to the next village."
+            "The cave has a dark, damp, and full of shadows.",
+            "The cave contains a bone pile and mushrooms."
           ]
         }
       ],
@@ -8361,39 +8348,28 @@
           "fact": "Before the story, a rumor about a monster moving into the mushroom cave had been floating around the village.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor."
+              "passage": "path-5c35c82f",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "Rumors about a monster in the mushroom cave had been circulating before the story."
+            "Rumors about a monster in the mushroom cave had been circulating before the story.",
+            "The monster rumor existed before the story."
           ]
         },
         {
-          "fact": "The monster is present in the cave at the start of the story.",
+          "fact": "The village had been experiencing heavy rain for three consecutive days before the events.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "Inside the cave, Javlyn found [unselected], one creature"
+              "passage": "path-5c35c82f",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster is present in the cave at the start of the story."
-          ]
-        },
-        {
-          "fact": "If the player does nothing, the monster remains in the cave and may continue to roam.",
-          "evidence": [
-            {
-              "passage": "path-6585777b",
-              "quote": "Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player does nothing, the monster remains in the cave and villagers are safe."
+            "The village experiences heavy rain.",
+            "It rains for three consecutive days."
           ]
         }
       ]
@@ -8402,44 +8378,18 @@
       "Javlyn": {
         "identity": [
           {
-            "fact": "Javlyn is a villager who wears a leather vest, thick jacket, and muddy boots; she carries a borrowed sword and a lantern.",
+            "fact": "Javlyn is a villager who wears a leather vest, a thick jacket for protection, and carries a borrowed sword and a lantern.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+                "passage": "path-5c35c82f",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection"
               },
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Lantern in her left hand, sword in her right"
-              },
-              {
-                "passage": "path-6585777b",
-                "quote": "she wore a thick jacket over the leather vest she had donned for protection."
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Javlyn is a villager who wears a leather vest, thick jacket, and muddy boots, and carries a borrowed sword.",
-              "Javlyn is a villager who carries a borrowed sword and a lantern."
-            ]
-          },
-          {
-            "fact": "Javlyn is skilled at protective workings and can perform light magic.",
-            "evidence": [
-              {
-                "passage": "path-76119710",
-                "quote": "Javlyn nodded, she was good at workings"
-              },
-              {
-                "passage": "path-0d807122",
-                "quote": "She closed her eyes and focused intently on the sun."
-              }
-            ],
-            "confidence": "high",
-            "merged_from": [
-              "Javlyn can perform protection magic (workings).",
-              "Light magic can be performed by focusing on the sun."
-            ]
+            "confidence": "high"
           }
         ],
         "zero_action_state": [
@@ -8447,14 +8397,11 @@
             "fact": "If the player does nothing, Javlyn will exit the cave after the encounter and return to the village.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "She left, fitting through the entrance tunnel and coming out to rain."
+                "passage": "path-5c35c82f",
+                "quote": "She left, fitting through the entrance tunnel and coming out to rain"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "If the player does nothing, Javlyn will exit the cave after the fight."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
@@ -8462,40 +8409,35 @@
             "fact": "If the player chooses to attack the monster, Javlyn will fight and kill it.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Attack the monster"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to attack the monster, Javlyn will fight and kill it."
-            ]
+            "confidence": "medium"
           },
           {
             "fact": "If the player chooses to ignore the lantern, Javlyn may lose light and be vulnerable.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Ignore the lantern"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to ignore the lantern, Javlyn may lose light."
-            ]
+            "confidence": "medium"
           },
           {
-            "fact": "If the player chooses to join the travelers, Javlyn will accompany them into the cave and fight the monster with them.",
+            "fact": "If the player chooses to join the travelers, Javlyn will accompany them into the cave and may use protection magic.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Join them"
+              },
+              {
+                "passage": "path-5c35c82f",
+                "quote": "Defense magic"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Javlyn will accompany them to the cave."
-            ]
+            "confidence": "medium"
           }
         ]
       },
@@ -8505,137 +8447,105 @@
             "fact": "Nivek is a villager who owns an old sword that Javlyn uses.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Nivek's old sword"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Nivek is a villager who owns a sword."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to retrieve Nivek's sword, Javlyn will have it.",
+            "fact": "If the player chooses to retrieve the sword, Javlyn will have Nivek's sword.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "She retrieved Nivek's sword."
+                "passage": "path-5c35c82f",
+                "quote": "She retrieved Nivek's sword"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to retrieve the sword, she will have it."
-            ]
+            "confidence": "high"
           }
         ]
       },
       "Danita": {
         "identity": [
           {
-            "fact": "Danita is a female traveler, older, wearing well‑cared leather armor and a heavy shield.",
+            "fact": "Danita is a female traveler with a heavy shield and is older than Javlyn.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Danita had a heavy shield"
-              },
-              {
-                "passage": "path-6585777b",
-                "quote": "Danita was older"
+                "passage": "path-5c35c82f",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Danita is a female traveler with a heavy shield."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to join the travelers, Danita will fight the monster with Javlyn.",
+            "fact": "If the player chooses to join the travelers, Danita will fight the monster.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Join them"
+                "passage": "path-5c35c82f",
+                "quote": "Danita fought the monster"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Danita will fight the monster."
-            ]
+            "confidence": "medium"
           }
         ]
       },
       "Kian": {
         "identity": [
           {
-            "fact": "Kian is a male traveler, older, twin to Danita, and carries a crossbow.",
+            "fact": "Kian is a male traveler with a crossbow and is older than Javlyn.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Kian had a crossbow slung over his shoulder"
-              },
-              {
-                "passage": "path-6585777b",
-                "quote": "Kian was older"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Kian is a male traveler with a crossbow."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to join the travelers, Kian will fire his crossbow at the monster.",
+            "fact": "If the player chooses to join the travelers, Kian will fire his first bolt.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Join them"
+                "passage": "path-5c35c82f",
+                "quote": "Kian was firing his first bolt"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Kian will fire his crossbow."
-            ]
+            "confidence": "medium"
           }
         ]
       },
       "Terence": {
         "identity": [
           {
-            "fact": "Terence is a male traveler, soldier‑like, with a sword and can weave protective magic.",
+            "fact": "Terence is a male traveler with a sword and a lantern, and can weave protective magic.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Terence had a sword"
+                "passage": "path-5c35c82f",
+                "quote": "Terence pulled out a lantern and easily lit it"
               },
               {
-                "passage": "path-6585777b",
-                "quote": "Terence weaved a bit of protection over his and Danita's eyes."
+                "passage": "path-5c35c82f",
+                "quote": "Terence weaved a bit of protection over his and Danita's eyes"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Terence is a male traveler with a sword."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to join the travelers, Terence will fight the monster and weave protection.",
+            "fact": "If the player chooses to join the travelers, Terence will fight the monster.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Join them"
+                "passage": "path-5c35c82f",
+                "quote": "Terence fought the monster"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Terence will fight the monster."
-            ]
+            "confidence": "medium"
           }
         ]
       }
@@ -8643,57 +8553,85 @@
     "variables": {
       "events": [
         {
-          "fact": "If the player chooses to fight the monster, the monster dies.",
+          "fact": "If the player chooses to attack the monster, the monster dies.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "The creature was dead."
+              "passage": "path-5c35c82f",
+              "quote": "Attack the monster"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "The creature was dead"
             }
           ],
-          "confidence": "high",
-          "merged_from": [
-            "If the player chooses to attack the monster, the monster dies."
-          ]
+          "confidence": "high"
         },
         {
           "fact": "If the player chooses to find the lantern, she can see and navigate the cave.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "She found the lantern, righted it, then lit it."
+              "passage": "path-5c35c82f",
+              "quote": "Find the lantern"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "She found the lantern, righted it, then lit it"
             }
           ],
-          "confidence": "high",
-          "merged_from": [
-            "If the player chooses to find the lantern, she can see and navigate the cave."
-          ]
+          "confidence": "high"
+        },
+        {
+          "fact": "If the player chooses to check the cavern walls, she may discover a small opening.",
+          "evidence": [
+            {
+              "passage": "path-5c35c82f",
+              "quote": "Check the cavern walls"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "There was one opening that went floor to ceiling"
+            }
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "outcomes": [
+        {
+          "fact": "Whether the monster is defeated depends on player choices to attack or use magic.",
+          "evidence": [
+            {
+              "passage": "path-5c35c82f",
+              "quote": "Whether the monster is defeated depends on player choices."
+            }
+          ],
+          "confidence": "high"
         }
       ]
     },
     "conflicts": [
       {
         "type": "contradictory_constants",
-        "description": "The monster’s presence in the cave is described as both present at the start and sometimes empty depending on player choice.",
+        "description": "Some passages describe the monster as friendly and non‑aggressive, while others depict it as aggressive and lethal.",
         "facts": [
           {
-            "fact": "The monster is present in the cave at the start of the story.",
+            "fact": "The creature is friendly and non‑aggressive.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Inside the cave, Javlyn found [unselected], one creature"
+                "passage": "path-5c35c82f",
+                "quote": "The creature was non‑aggressive."
               }
             ],
-            "confidence": "high"
+            "confidence": "medium"
           },
           {
-            "fact": "The cave is empty when the player chooses to investigate without fighting.",
+            "fact": "The creature lunge forward and attacks villagers.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "The cave was empty."
+                "passage": "path-5c35c82f",
+                "quote": "The creature lunge forward"
               }
             ],
-            "confidence": "high"
+            "confidence": "medium"
           }
         ],
         "severity": "major"
@@ -16797,35 +16735,56 @@
             "category": "variable"
           }
         ]
+      },
+      "path-59b73b3c": {
+        "passage_name": "Unknown",
+        "facts": [
+          {
+            "fact": "The village is located near a cliffside that contains a mushroom cave.",
+            "type": "setting",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+              },
+              {
+                "passage": "7e35fe311599",
+                "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "As they rounded the corner, the cave entrance came into view."
+              }
+            ],
+            "category": "constant"
+          }
+        ]
       }
     }
   },
   "meta": {
-    "last_extracted": "2025-11-30T15:43:07.143332",
-    "total_passages_extracted": 58,
+    "last_extracted": "2025-11-30T15:49:31.915437",
+    "total_passages_extracted": 59,
     "total_facts": 14
   },
   "summarized_facts": {
     "constants": {
       "world_rules": [
         {
-          "fact": "The world is medieval‑level, with swords, crossbows, lanterns, shields, and wooden practice weapons.",
+          "fact": "The world is medieval‑level: swords, crossbows, lanterns, shields, and simple wooden practice weapons are common.",
           "evidence": [
             {
               "passage": "path-b76ef736",
               "quote": "Lantern in her left hand, sword in her right"
             },
             {
-              "passage": "path-4976bb5f",
-              "quote": "Nivek's old sword"
-            },
-            {
-              "passage": "path-5b0ba41f",
+              "passage": "path-5c35c82f",
               "quote": "Kian had a crossbow slung over his shoulder"
             },
             {
-              "passage": "path-5b0ba41f",
-              "quote": "Danita had a heavy shield"
+              "passage": "path-5c35c82f",
+              "quote": "Terence pulled out a lantern and easily lit it"
             }
           ],
           "confidence": "high",
@@ -16836,92 +16795,73 @@
           ]
         },
         {
-          "fact": "Magic exists as protective workings that can be performed by focusing on an item or a person; light magic can be created by focusing on the sun; ice workings can be applied to weapons and have a trigger on impact; luck magic can be performed by focusing on noticing and reacting.",
+          "fact": "Magic exists in the form of \"workings\" that can be performed by villagers; light and protection are common types, and ice workings can be applied to weapons or shields.",
           "evidence": [
             {
-              "passage": "path-76119710",
+              "passage": "path-5c35c82f",
               "quote": "Javlyn nodded, she was good at workings"
             },
             {
               "passage": "path-5c35c82f",
-              "quote": "Ice workings, Terence said ignoring Danita, 'are typically applied to items, like my sword or Danita's shield, and have a trigger on them.'"
+              "quote": "Terence weaved a bit of protection over his and Danita's eyes"
             },
             {
-              "passage": "path-0d807122",
-              "quote": "She closed her eyes and focused intently on the sun."
-            },
-            {
-              "passage": "path-0d807122",
-              "quote": "Luck was first noticing and second having the time to react."
+              "passage": "path-5c35c82f",
+              "quote": "Ice workings are difficult for beginners and can backfire"
             }
           ],
           "confidence": "high",
           "merged_from": [
             "Magic exists in this world and can be used for protection.",
-            "Light magic can be performed by focusing on the sun to create a bright light that can illuminate a cave.",
-            "Working with light requires focus and can produce a light brighter than a lantern.",
-            "Ice workings are difficult for beginners and can backfire, potentially harming the user or affecting the area instead of a specific target.",
-            "Luck magic exists and can be performed by focusing on noticing and reacting."
+            "Magic exists and can be used for light through workings.",
+            "Working with light requires focus and can produce a light brighter than a lantern."
           ]
         },
         {
-          "fact": "Lanterns can be lit, extinguished, and relit; they provide light in caves and can be knocked over.",
+          "fact": "Lanterns can be lit, extinguished, and relit; they provide light in dark caves.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "Lanterns can be lit with oil."
+              "passage": "path-5c35c82f",
+              "quote": "Lantern in her left hand, sword in her right"
             },
             {
-              "passage": "path-a2ee6099",
-              "quote": "The lantern toppled to the ground, the fire sputtered as the oil spilled, until it died."
-            },
-            {
-              "passage": "path-a2ee6099",
-              "quote": "She found the lantern, righted it, then lit it."
+              "passage": "path-5c35c82f",
+              "quote": "Lantern can be lit and extinguished"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The lantern can be lit and extinguished.",
-            "The lantern can be found again after being thrown."
+            "Lanterns can be used to light caves.",
+            "The lantern can be lit and used for light."
           ]
         },
         {
-          "fact": "Monsters can inhabit caves, be large, have a long snout, two curved horns, wide shoulders, and be nearly twice the height of Javlyn; they can fit through small spaces and can be killed with swords or bolts.",
+          "fact": "Monsters can inhabit caves, are often large, horned, and can be killed with swords or bolts.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "The creature had a long snout with two curved horns."
+              "passage": "path-5c35c82f",
+              "quote": "The creature had a long snout with two curved horns"
             },
             {
-              "passage": "path-6585777b",
-              "quote": "It was nearly twice her height."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "The monster can be killed by bolts and swords."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "The monster fit through the cave's entrance."
+              "passage": "path-5c35c82f",
+              "quote": "The monster can be killed by bolts and swords"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster has a long snout, two curved horns, wide shoulders, and is about twice Javlyn's height.",
-            "The monster can be killed by bolts and swords.",
-            "The monster can fit through small spaces."
+            "Monsters can appear in caves and can be killed with weapons.",
+            "The monster can be killed by bolts and swords."
           ]
         },
         {
-          "fact": "The environment is rainy, muddy, overcast, with three days of rain; the ground sticks to boots and makes movement difficult.",
+          "fact": "The environment is rainy, overcast, and muddy, making movement difficult.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+              "passage": "path-5c35c82f",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain"
             },
             {
-              "passage": "path-6585777b",
+              "passage": "path-5c35c82f",
               "quote": "The ground stuck to her boots"
             }
           ],
@@ -16930,33 +16870,6 @@
             "The environment is rainy, muddy, and overcast.",
             "The ground is muddy, making movement difficult."
           ]
-        },
-        {
-          "fact": "The cave is a mushroom cave located on a cliffside; it has a narrow entrance that brushes shoulders, a tunnel that turns into a larger chamber, a bone pile with mushrooms, and a tunnel that can lead out.",
-          "evidence": [
-            {
-              "passage": "path-6585777b",
-              "quote": "The cave entrance was just around the corner."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "The tunnel turned and deposited Javlyn into a larger chamber."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "Near the bone pile was mushrooms."
-            },
-            {
-              "passage": "path-6585777b",
-              "quote": "She eventually found the tunnel out."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The cave is a mushroom cave located near a cliffside.",
-            "The cave entrance is narrow and leads to a larger chamber.",
-            "The cave contains a bone pile and mushrooms."
-          ]
         }
       ],
       "setting": [
@@ -16964,43 +16877,54 @@
           "fact": "The village is located near a cliffside that contains a mushroom cave.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "The cliffside the cave was a part of came into sight."
+              "passage": "path-5c35c82f",
+              "quote": "The cliffside the cave was a part of came into sight"
             },
             {
-              "passage": "path-6585777b",
-              "quote": "The cave's entrance was just around the corner."
+              "passage": "path-5c35c82f",
+              "quote": "The cave's entrance was just around the corner"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The village is located near a cliffside that contains a mushroom cave."
+            "The village is located near a cliffside that leads to a mushroom cave.",
+            "The cave entrance is just around the corner."
           ]
         },
         {
-          "fact": "The village holds an open training session that villagers attend weekly.",
+          "fact": "The cave entrance is narrow, with walls brushing the explorer's shoulders, and leads to a larger chamber.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week."
+              "passage": "path-5c35c82f",
+              "quote": "The entry way was narrow and the walls brushed her shoulders on either side"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "The tunnel turned and deposited Javlyn into a larger chamber"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The village holds an open training session that villagers attend weekly."
+            "The cave entrance is narrow and leads to a larger chamber.",
+            "The cave has a narrow entrance that brushes the explorer's shoulders."
           ]
         },
         {
-          "fact": "The path from the village leads to the cave and continues to the next village.",
+          "fact": "The environment inside the cave is dark, damp, and full of shadows; mushrooms grow in creases and a bone pile is present.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "This path did continue on past the mushroom cave, but it was a long days travel to the next village."
+              "passage": "path-5c35c82f",
+              "quote": "dark and damp and full of terrifying shadows"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "Near the bone pile was mushrooms"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The path leads to the next village."
+            "The cave has a dark, damp, and full of shadows.",
+            "The cave contains a bone pile and mushrooms."
           ]
         }
       ],
@@ -17009,39 +16933,28 @@
           "fact": "Before the story, a rumor about a monster moving into the mushroom cave had been floating around the village.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor."
+              "passage": "path-5c35c82f",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "Rumors about a monster in the mushroom cave had been circulating before the story."
+            "Rumors about a monster in the mushroom cave had been circulating before the story.",
+            "The monster rumor existed before the story."
           ]
         },
         {
-          "fact": "The monster is present in the cave at the start of the story.",
+          "fact": "The village had been experiencing heavy rain for three consecutive days before the events.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "Inside the cave, Javlyn found [unselected], one creature"
+              "passage": "path-5c35c82f",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain"
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster is present in the cave at the start of the story."
-          ]
-        },
-        {
-          "fact": "If the player does nothing, the monster remains in the cave and may continue to roam.",
-          "evidence": [
-            {
-              "passage": "path-6585777b",
-              "quote": "Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player does nothing, the monster remains in the cave and villagers are safe."
+            "The village experiences heavy rain.",
+            "It rains for three consecutive days."
           ]
         }
       ]
@@ -17050,44 +16963,18 @@
       "Javlyn": {
         "identity": [
           {
-            "fact": "Javlyn is a villager who wears a leather vest, thick jacket, and muddy boots; she carries a borrowed sword and a lantern.",
+            "fact": "Javlyn is a villager who wears a leather vest, a thick jacket for protection, and carries a borrowed sword and a lantern.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+                "passage": "path-5c35c82f",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection"
               },
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Lantern in her left hand, sword in her right"
-              },
-              {
-                "passage": "path-6585777b",
-                "quote": "she wore a thick jacket over the leather vest she had donned for protection."
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Javlyn is a villager who wears a leather vest, thick jacket, and muddy boots, and carries a borrowed sword.",
-              "Javlyn is a villager who carries a borrowed sword and a lantern."
-            ]
-          },
-          {
-            "fact": "Javlyn is skilled at protective workings and can perform light magic.",
-            "evidence": [
-              {
-                "passage": "path-76119710",
-                "quote": "Javlyn nodded, she was good at workings"
-              },
-              {
-                "passage": "path-0d807122",
-                "quote": "She closed her eyes and focused intently on the sun."
-              }
-            ],
-            "confidence": "high",
-            "merged_from": [
-              "Javlyn can perform protection magic (workings).",
-              "Light magic can be performed by focusing on the sun."
-            ]
+            "confidence": "high"
           }
         ],
         "zero_action_state": [
@@ -17095,14 +16982,11 @@
             "fact": "If the player does nothing, Javlyn will exit the cave after the encounter and return to the village.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "She left, fitting through the entrance tunnel and coming out to rain."
+                "passage": "path-5c35c82f",
+                "quote": "She left, fitting through the entrance tunnel and coming out to rain"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "If the player does nothing, Javlyn will exit the cave after the fight."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
@@ -17110,40 +16994,35 @@
             "fact": "If the player chooses to attack the monster, Javlyn will fight and kill it.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Attack the monster"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to attack the monster, Javlyn will fight and kill it."
-            ]
+            "confidence": "medium"
           },
           {
             "fact": "If the player chooses to ignore the lantern, Javlyn may lose light and be vulnerable.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Ignore the lantern"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to ignore the lantern, Javlyn may lose light."
-            ]
+            "confidence": "medium"
           },
           {
-            "fact": "If the player chooses to join the travelers, Javlyn will accompany them into the cave and fight the monster with them.",
+            "fact": "If the player chooses to join the travelers, Javlyn will accompany them into the cave and may use protection magic.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Join them"
+              },
+              {
+                "passage": "path-5c35c82f",
+                "quote": "Defense magic"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Javlyn will accompany them to the cave."
-            ]
+            "confidence": "medium"
           }
         ]
       },
@@ -17153,137 +17032,105 @@
             "fact": "Nivek is a villager who owns an old sword that Javlyn uses.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Nivek's old sword"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Nivek is a villager who owns a sword."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to retrieve Nivek's sword, Javlyn will have it.",
+            "fact": "If the player chooses to retrieve the sword, Javlyn will have Nivek's sword.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "She retrieved Nivek's sword."
+                "passage": "path-5c35c82f",
+                "quote": "She retrieved Nivek's sword"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to retrieve the sword, she will have it."
-            ]
+            "confidence": "high"
           }
         ]
       },
       "Danita": {
         "identity": [
           {
-            "fact": "Danita is a female traveler, older, wearing well‑cared leather armor and a heavy shield.",
+            "fact": "Danita is a female traveler with a heavy shield and is older than Javlyn.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Danita had a heavy shield"
-              },
-              {
-                "passage": "path-6585777b",
-                "quote": "Danita was older"
+                "passage": "path-5c35c82f",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Danita is a female traveler with a heavy shield."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to join the travelers, Danita will fight the monster with Javlyn.",
+            "fact": "If the player chooses to join the travelers, Danita will fight the monster.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Join them"
+                "passage": "path-5c35c82f",
+                "quote": "Danita fought the monster"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Danita will fight the monster."
-            ]
+            "confidence": "medium"
           }
         ]
       },
       "Kian": {
         "identity": [
           {
-            "fact": "Kian is a male traveler, older, twin to Danita, and carries a crossbow.",
+            "fact": "Kian is a male traveler with a crossbow and is older than Javlyn.",
             "evidence": [
               {
-                "passage": "path-6585777b",
+                "passage": "path-5c35c82f",
                 "quote": "Kian had a crossbow slung over his shoulder"
-              },
-              {
-                "passage": "path-6585777b",
-                "quote": "Kian was older"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Kian is a male traveler with a crossbow."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to join the travelers, Kian will fire his crossbow at the monster.",
+            "fact": "If the player chooses to join the travelers, Kian will fire his first bolt.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Join them"
+                "passage": "path-5c35c82f",
+                "quote": "Kian was firing his first bolt"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Kian will fire his crossbow."
-            ]
+            "confidence": "medium"
           }
         ]
       },
       "Terence": {
         "identity": [
           {
-            "fact": "Terence is a male traveler, soldier‑like, with a sword and can weave protective magic.",
+            "fact": "Terence is a male traveler with a sword and a lantern, and can weave protective magic.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Terence had a sword"
+                "passage": "path-5c35c82f",
+                "quote": "Terence pulled out a lantern and easily lit it"
               },
               {
-                "passage": "path-6585777b",
-                "quote": "Terence weaved a bit of protection over his and Danita's eyes."
+                "passage": "path-5c35c82f",
+                "quote": "Terence weaved a bit of protection over his and Danita's eyes"
               }
             ],
-            "confidence": "high",
-            "merged_from": [
-              "Terence is a male traveler with a sword."
-            ]
+            "confidence": "high"
           }
         ],
         "variables": [
           {
-            "fact": "If the player chooses to join the travelers, Terence will fight the monster and weave protection.",
+            "fact": "If the player chooses to join the travelers, Terence will fight the monster.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Join them"
+                "passage": "path-5c35c82f",
+                "quote": "Terence fought the monster"
               }
             ],
-            "confidence": "medium",
-            "merged_from": [
-              "If the player chooses to join the travelers, Terence will fight the monster."
-            ]
+            "confidence": "medium"
           }
         ]
       }
@@ -17291,57 +17138,85 @@
     "variables": {
       "events": [
         {
-          "fact": "If the player chooses to fight the monster, the monster dies.",
+          "fact": "If the player chooses to attack the monster, the monster dies.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "The creature was dead."
+              "passage": "path-5c35c82f",
+              "quote": "Attack the monster"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "The creature was dead"
             }
           ],
-          "confidence": "high",
-          "merged_from": [
-            "If the player chooses to attack the monster, the monster dies."
-          ]
+          "confidence": "high"
         },
         {
           "fact": "If the player chooses to find the lantern, she can see and navigate the cave.",
           "evidence": [
             {
-              "passage": "path-6585777b",
-              "quote": "She found the lantern, righted it, then lit it."
+              "passage": "path-5c35c82f",
+              "quote": "Find the lantern"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "She found the lantern, righted it, then lit it"
             }
           ],
-          "confidence": "high",
-          "merged_from": [
-            "If the player chooses to find the lantern, she can see and navigate the cave."
-          ]
+          "confidence": "high"
+        },
+        {
+          "fact": "If the player chooses to check the cavern walls, she may discover a small opening.",
+          "evidence": [
+            {
+              "passage": "path-5c35c82f",
+              "quote": "Check the cavern walls"
+            },
+            {
+              "passage": "path-5c35c82f",
+              "quote": "There was one opening that went floor to ceiling"
+            }
+          ],
+          "confidence": "medium"
+        }
+      ],
+      "outcomes": [
+        {
+          "fact": "Whether the monster is defeated depends on player choices to attack or use magic.",
+          "evidence": [
+            {
+              "passage": "path-5c35c82f",
+              "quote": "Whether the monster is defeated depends on player choices."
+            }
+          ],
+          "confidence": "high"
         }
       ]
     },
     "conflicts": [
       {
         "type": "contradictory_constants",
-        "description": "The monster’s presence in the cave is described as both present at the start and sometimes empty depending on player choice.",
+        "description": "Some passages describe the monster as friendly and non‑aggressive, while others depict it as aggressive and lethal.",
         "facts": [
           {
-            "fact": "The monster is present in the cave at the start of the story.",
+            "fact": "The creature is friendly and non‑aggressive.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "Inside the cave, Javlyn found [unselected], one creature"
+                "passage": "path-5c35c82f",
+                "quote": "The creature was non‑aggressive."
               }
             ],
-            "confidence": "high"
+            "confidence": "medium"
           },
           {
-            "fact": "The cave is empty when the player chooses to investigate without fighting.",
+            "fact": "The creature lunge forward and attacks villagers.",
             "evidence": [
               {
-                "passage": "path-6585777b",
-                "quote": "The cave was empty."
+                "passage": "path-5c35c82f",
+                "quote": "The creature lunge forward"
               }
             ],
-            "confidence": "high"
+            "confidence": "medium"
           }
         ],
         "severity": "major"
@@ -17349,5 +17224,5 @@
     ]
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 156.16991066932678
+  "summarization_time_seconds": 136.8480200767517
 }
