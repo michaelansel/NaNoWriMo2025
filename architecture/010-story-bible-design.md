@@ -2,8 +2,83 @@
 
 ## Status
 
-**Phase 1**: Proposed - Local extraction via build pipeline
-**Phase 2**: Designed - Webhook service integration for CI extraction
+**Phase 1**: Implemented - Cache-first build (reads committed cache)
+**Phase 2**: Implemented - Webhook service integration for extraction
+**Updated**: 2025-11-30 - Bug fixes for cache behavior and failed extractions
+
+## Bug Fixes and Design Clarifications (2025-11-30)
+
+This document has been updated to fix two critical bugs and clarify the correct workflow separation between build and webhook:
+
+### Bug Fix 1: Failed Extractions Must NOT Be Cached
+
+**Problem**: When Ollama fails to extract facts from a passage (timeout, error), the passage was being marked in the cache as if it succeeded. This caused incremental mode to skip failed passages on subsequent runs.
+
+**Correct Behavior**:
+- Only successful extractions are added to `story-bible-cache.json`
+- Failed passages are logged with error details but NOT cached
+- Next incremental run automatically retries failed passages (they're not in cache)
+- See: Stage 2 (AI Extractor) and Phase 2 (Webhook) sections
+
+### Bug Fix 2: Build Must Read Cache First (Not Extract)
+
+**Problem**: The CI build was trying to call Ollama to extract facts, failing (no Ollama in CI), and generating empty placeholder HTML. But the cache was already committed to the repo by the webhook service.
+
+**Correct Behavior**:
+- Build checks for `story-bible-cache.json` in repository FIRST
+- If cache exists → Render HTML/JSON from cache (skip to Stage 4-5, no Ollama needed)
+- If cache missing → Generate placeholder (no Ollama attempted)
+- Build NEVER calls Ollama (extraction is webhook-only)
+- See: Build Integration and Stage 2 sections
+
+### Workflow Separation: Build vs Webhook
+
+**Critical distinction between two workflows:**
+
+```
+WORKFLOW 1: Webhook Extraction (Populates Cache)
+----------------------------------------------------
+/extract-story-bible webhook triggered
+  ↓
+Webhook service loads AllPaths format
+  ↓
+For each passage:
+  - Extract facts using Ollama
+  - If successful → Add to cache
+  - If failed (timeout/error) → Log error, do NOT cache
+  ↓
+Commit story-bible-cache.json to repository
+  ↓
+Report: "Extracted X of Y passages, Z failures"
+
+
+WORKFLOW 2: Build (Renders from Cache)
+----------------------------------------------------
+make build / make deploy triggered
+  ↓
+Check if story-bible-cache.json exists in repo
+  ↓
+If cache exists:
+  - Read cache contents
+  - Skip to Stage 4: Render story-bible.html from cache
+  - Skip to Stage 5: Render story-bible.json from cache
+  - NO Ollama calls (fast, reliable)
+  ↓
+If cache missing:
+  - Generate placeholder HTML/JSON
+  - Placeholder message: "Use /extract-story-bible to populate"
+  - NO Ollama calls (no Ollama in CI)
+  ↓
+Publish to GitHub Pages
+```
+
+**Key Points**:
+- **Build NEVER calls Ollama** (only reads cache or generates placeholder)
+- **Webhook ONLY calls Ollama** (not build)
+- **Cache is source of truth** for build rendering
+- **Failed extractions NOT cached** (automatic retry on next webhook run)
+
+---
 
 ## Context
 
@@ -52,38 +127,57 @@ We will implement Story Bible as a **5-stage pipeline** following the AllPaths p
 │  1. npm run build:main       (Harlowe HTML)                     │
 │  2. npm run build:allpaths   (AllPaths format)                  │
 │  3. npm run build:metrics    (Writing metrics)                  │
-│  4. npm run build:story-bible (Story Bible) ← NEW               │
+│  4. npm run build:story-bible (Story Bible) ← CACHE-FIRST       │
 │                                                                  │
 │  Note: Each step continues even if previous step fails          │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 
-Story Bible Pipeline (5 Stages):
+Story Bible Build Flow (Cache-First):
+
+┌─────────────────────────────────────────────────────────────────┐
+│ Check: Does story-bible-cache.json exist in repo?               │
+│                                                                  │
+│ YES → Read cache, skip to Stage 4-5 (render HTML/JSON)         │
+│       Fast, reliable, no Ollama needed                          │
+│                                                                  │
+│ NO → Generate placeholder HTML/JSON                             │
+│      Message: "Use /extract-story-bible to populate"            │
+│      No Ollama attempted (not available in CI)                  │
+└─────────────────────────────────────────────────────────────────┘
+
+Story Bible Cache Population (Webhook-Only):
 
 Stage 1: Load AllPaths Data
-   Input: dist/allpaths-metadata/*.txt, allpaths-validation-status.json
+   Input: dist/allpaths-metadata/*.txt (from artifacts)
    Output: loaded_paths.json (intermediate)
    Responsibility: Load all story paths and metadata
 
-Stage 2: Extract Facts with AI
+Stage 2: Extract Facts with AI (WEBHOOK ONLY)
    Input: loaded_paths.json
-   Output: extracted_facts.json (intermediate)
+   Output: extracted_facts (in-memory)
    Responsibility: Call Ollama to extract constants/variables
+   CRITICAL: Only cache successful extractions, skip failures
 
 Stage 3: Categorize and Organize
-   Input: extracted_facts.json
-   Output: categorized_facts.json (intermediate)
+   Input: extracted_facts
+   Output: categorized_facts (in-memory)
    Responsibility: Organize facts by type, merge duplicates
 
-Stage 4: Generate HTML Output
-   Input: categorized_facts.json
+Stage 4: Generate HTML Output (BUILD + WEBHOOK)
+   Input: story-bible-cache.json OR categorized_facts
    Output: dist/story-bible.html
    Responsibility: Render human-readable HTML using Jinja2
 
-Stage 5: Generate JSON Output
-   Input: categorized_facts.json
+Stage 5: Generate JSON Output (BUILD + WEBHOOK)
+   Input: story-bible-cache.json OR categorized_facts
    Output: dist/story-bible.json
    Responsibility: Export machine-readable structured data
+
+Stage 6: Commit Cache (WEBHOOK ONLY)
+   Input: categorized_facts
+   Output: story-bible-cache.json (committed to repo)
+   Responsibility: Persist cache for builds to consume
 ```
 
 ### Component Architecture
@@ -122,40 +216,86 @@ scripts/
 
 ### Data Flow
 
+**BUILD WORKFLOW (Cache-First)**:
 ```
-AllPaths Output (dist/allpaths-metadata/*.txt)
+Build starts (make build / make deploy)
+    ↓
+Check: Does story-bible-cache.json exist in repo root?
+    ↓
+    ├─ YES: Cache exists
+    │   ↓
+    │   Read story-bible-cache.json
+    │   ↓
+    │   Extract categorized_facts from cache
+    │   ↓
+    │   Skip to Stage 4: HTML Generator
+    │   ├─ Load Jinja2 template
+    │   ├─ Render facts with evidence
+    │   ├─ Generate navigation structure
+    │   └─ Output: dist/story-bible.html
+    │   ↓
+    │   Skip to Stage 5: JSON Generator
+    │   ├─ Validate against schema
+    │   ├─ Add metadata (timestamp, commit hash)
+    │   └─ Output: dist/story-bible.json
+    │
+    └─ NO: Cache missing
+        ↓
+        Generate placeholder HTML/JSON
+        ├─ Placeholder message in HTML
+        ├─ Empty/minimal structure in JSON
+        ├─ Instructions: "Use /extract-story-bible to populate"
+        └─ NO Ollama calls (not available in CI)
+```
+
+**WEBHOOK WORKFLOW (Cache Population)**:
+```
+/extract-story-bible command triggered
     ↓
 [Stage 1: Loader]
-    ├─ Load all path text files
-    ├─ Load validation cache for metadata
+    ├─ Download artifacts from GitHub
+    ├─ Load dist/allpaths-metadata/*.txt
+    ├─ Load existing cache from PR branch (if exists)
     ├─ Deduplicate passages across paths
-    └─ Output: loaded_paths.json
+    └─ Output: loaded_paths (in-memory)
     ↓
-[Stage 2: AI Extractor]
-    ├─ Prompt engineering: "Extract constants vs variables"
-    ├─ Call Ollama API for each unique passage
-    ├─ Parse JSON responses
-    ├─ Cache extraction results (incremental processing)
-    └─ Output: extracted_facts.json
+[Stage 2: AI Extractor] ← WEBHOOK ONLY
+    ├─ Identify passages to extract (incremental)
+    ├─ For each passage:
+    │   ├─ Call Ollama API to extract constants/variables
+    │   ├─ If successful → Add facts to extraction results
+    │   ├─ If failed (timeout/error) → Log error, do NOT cache
+    │   └─ Continue to next passage
+    ├─ Parse JSON responses from successful extractions
+    ├─ CRITICAL: Only successful extractions included
+    └─ Output: extracted_facts (in-memory)
     ↓
 [Stage 3: Categorizer]
-    ├─ Cross-reference facts across all paths
-    ├─ Identify constants (appear in all paths)
+    ├─ Cross-reference facts across all passages
+    ├─ Identify constants (appear in multiple paths)
     ├─ Identify variables (differ by path)
     ├─ Determine zero action state
     ├─ Merge duplicate facts
-    └─ Output: categorized_facts.json
+    └─ Output: categorized_facts (in-memory)
     ↓
 [Stage 4: HTML Generator]
     ├─ Load Jinja2 template
     ├─ Render facts with evidence
     ├─ Generate navigation structure
-    └─ Output: dist/story-bible.html
+    └─ Output: dist/story-bible.html (temporary)
     ↓
 [Stage 5: JSON Generator]
     ├─ Validate against schema
     ├─ Add metadata (timestamp, commit hash)
-    └─ Output: dist/story-bible.json
+    └─ Output: dist/story-bible.json (temporary)
+    ↓
+[Stage 6: Commit Cache] ← WEBHOOK ONLY
+    ├─ Build cache structure with:
+    │   ├─ passage_extractions (successful only)
+    │   ├─ categorized_facts
+    │   └─ metadata (timestamps, statistics)
+    ├─ Commit story-bible-cache.json to PR branch
+    └─ Post results comment to PR
 ```
 
 ## Technical Design Details
@@ -211,11 +351,15 @@ AllPaths Output (dist/allpaths-metadata/*.txt)
 
 ### Stage 2: AI Extractor (modules/ai_extractor.py)
 
-**Purpose**: Use AI to extract facts from passages
+**CRITICAL**: This stage is WEBHOOK-ONLY. Build NEVER calls this stage.
 
-**Input**: `loaded_paths.json`
+**Purpose**: Use AI to extract facts from passages (Ollama required)
 
-**Output**: `extracted_facts.json`
+**Input**: `loaded_paths.json` (or loaded_paths in-memory)
+
+**Output**: `extracted_facts.json` (or extracted_facts in-memory)
+
+**Build Behavior**: Build SKIPS this stage entirely. If cache exists, build reads cache and jumps to Stage 4. If cache missing, build generates placeholder.
 ```json
 {
   "extractions": [
@@ -295,22 +439,37 @@ BEGIN EXTRACTION:
 ```
 
 **Caching Strategy**:
-- Cache key: MD5 hash of passage content
-- Cache location: `story-bible-extraction-cache.json` (repo root)
+- Cache key: Passage ID (from AllPaths format)
+- Cache location: `story-bible-cache.json` (repo root, committed by webhook)
 - Cache structure:
   ```json
   {
-    "content_hash": {
-      "extracted_facts": [...],
-      "extracted_at": "timestamp"
+    "meta": {
+      "last_extracted": "2025-12-01T10:00:00Z",
+      "total_passages_extracted": 50,
+      "total_facts": 127
+    },
+    "passage_extractions": {
+      "passage_id_1": {
+        "content_hash": "abc123def456",
+        "extracted_at": "2025-12-01T10:00:00Z",
+        "facts": [...]
+      }
+    },
+    "categorized_facts": {
+      "constants": {...},
+      "variables": {...},
+      "characters": {...}
     }
   }
   ```
-- On each run:
+- On each webhook run (incremental mode):
   1. Check if passage content hash exists in cache
-  2. If yes and fresh → use cached extraction
-  3. If no or stale → call AI, update cache
-  4. Save cache after all extractions complete
+  2. If yes and hash matches → skip extraction (use cached)
+  3. If no or hash differs → call AI, update cache
+  4. **CRITICAL**: If AI extraction fails → Log error, do NOT add to cache
+  5. Save cache after all extractions complete (successful only)
+- Failed passages automatically retried on next run (not in cache)
 
 **Performance Optimization**:
 - Process passages in parallel (ThreadPoolExecutor, max 3 workers)
@@ -318,11 +477,18 @@ BEGIN EXTRACTION:
 - Timeout per passage: 60 seconds
 - Total timeout: 5 minutes (fail gracefully if exceeded)
 
-**Error Handling**:
-- Ollama API timeout → log error, mark passage as failed, continue
-- Invalid JSON response → log error, skip passage, continue
-- Ollama service down → fail entire stage with clear error message
-- Too many failures (>50% passages) → fail entire stage
+**Error Handling (Webhook Only)**:
+- Ollama API timeout → Log error with passage ID, do NOT cache, continue to next passage
+- Invalid JSON response → Log error with passage ID, do NOT cache, continue to next passage
+- Ollama service down → Fail entire extraction with clear error message
+- Per-passage errors → Log all failures, report statistics ("Extracted X of Y passages, Z failures")
+- **CRITICAL**: Failed passages are NOT added to cache, will be retried on next incremental run
+- Partial success is acceptable → Commit cache with successful extractions only
+
+**Error Handling (Build Only)**:
+- Cache missing → Generate placeholder HTML/JSON (no error)
+- Cache exists but invalid → Generate placeholder HTML/JSON (log warning)
+- NEVER attempt to call Ollama (not available in CI)
 
 ---
 
@@ -782,7 +948,8 @@ def generate_json_output(categorized_facts: Dict, output_path: Path):
 ```bash
 #!/bin/bash
 # Build Story Bible output
-# Generates human and machine-readable story bible from AllPaths format
+# Cache-first approach: Reads committed cache, renders HTML/JSON
+# NO Ollama extraction (extraction is webhook-only)
 
 set -e  # Exit on error, but allow build to continue
 
@@ -790,22 +957,31 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$PROJECT_DIR/dist"
 FORMAT_DIR="$PROJECT_DIR/formats/story-bible"
+CACHE_FILE="$PROJECT_DIR/story-bible-cache.json"
 
-echo "=== Building Story Bible ==="
+echo "=== Building Story Bible (Cache-First) ==="
 
-# Check prerequisites
+# Check prerequisites (AllPaths needed for placeholder generation if cache missing)
 if [ ! -d "$DIST_DIR/allpaths-metadata" ]; then
     echo "Error: AllPaths output not found. Run 'npm run build:allpaths' first."
     exit 1
 fi
 
-# Generate Story Bible
-echo "Generating Story Bible..."
+# Generate Story Bible (cache-first)
+echo "Checking for Story Bible cache..."
 
 if command -v python3 &> /dev/null; then
-    # Run generator with error handling
-    if python3 "$FORMAT_DIR/generator.py" "$DIST_DIR"; then
+    # Run generator with cache file argument
+    if python3 "$FORMAT_DIR/generator.py" "$DIST_DIR" --cache "$CACHE_FILE"; then
         echo "✓ Story Bible generated successfully"
+
+        if [ -f "$CACHE_FILE" ]; then
+            echo "  - Source: story-bible-cache.json (committed)"
+        else
+            echo "  - Source: placeholder (no cache found)"
+            echo "  - Use /extract-story-bible webhook to populate cache"
+        fi
+
         echo "  - HTML: $DIST_DIR/story-bible.html"
         echo "  - JSON: $DIST_DIR/story-bible.json"
     else
@@ -838,138 +1014,202 @@ Note: `|| true` ensures build continues even if Story Bible fails
 
 ### Main Orchestrator
 
-**`formats/story-bible/generator.py`** (similar to allpaths/generator.py):
+**`formats/story-bible/generator.py`** (Cache-first approach):
 
 ```python
 #!/usr/bin/env python3
 """
 Story Bible Generator
 
-Generates human and machine-readable story bible from AllPaths format.
+Cache-first approach:
+- If story-bible-cache.json exists → Render HTML/JSON from cache
+- If cache missing → Generate placeholder HTML/JSON
+- NEVER calls Ollama (extraction is webhook-only)
 """
 
 import sys
+import argparse
 from pathlib import Path
+from datetime import datetime
+
+# Add modules to path
+sys.path.insert(0, str(Path(__file__).parent / 'modules'))
+sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+
 from modules.loader import load_allpaths_data
-from modules.ai_extractor import extract_facts_with_ai
-from modules.categorizer import categorize_facts
 from modules.html_generator import generate_html_output
 from modules.json_generator import generate_json_output
 
 
+def load_cache(cache_file: Path) -> dict:
+    """Load Story Bible cache from file."""
+    import json
+
+    if not cache_file.exists():
+        return None
+
+    try:
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"⚠️  Warning: Failed to load cache: {e}", file=sys.stderr)
+        return None
+
+
+def generate_placeholder_data(loaded_data: dict) -> dict:
+    """
+    Generate placeholder data structure when cache is unavailable.
+
+    Args:
+        loaded_data: Output from Stage 1 (loader) with passages and paths
+
+    Returns:
+        Dict with placeholder categorized structure
+    """
+    return {
+        'constants': {},
+        'variables': {},
+        'characters': {},
+        'conflicts': [],
+        'metadata': {
+            'generation_mode': 'placeholder',
+            'reason': 'Story Bible cache not found (use /extract-story-bible webhook)',
+            'passages_loaded': len(loaded_data.get('passages', {})),
+            'paths_loaded': len(loaded_data.get('paths', [])),
+            'message': (
+                'Story Bible requires extraction via webhook service. '
+                'Use /extract-story-bible command in PR to populate cache.'
+            )
+        }
+    }
+
+
 def main():
     """Main entry point for Story Bible generator."""
-
     # Parse arguments
-    if len(sys.argv) < 2:
-        print("Usage: generator.py <dist_dir>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description='Story Bible Generator - Cache-first rendering'
+    )
+    parser.add_argument('dist_dir', type=Path, help='Path to dist/ directory')
+    parser.add_argument('--cache', type=Path, help='Path to cache file (default: story-bible-cache.json)')
 
-    dist_dir = Path(sys.argv[1])
+    args = parser.parse_args()
+
+    dist_dir = args.dist_dir
+    cache_file = args.cache
+
+    # Default cache location: repo root
+    if cache_file is None:
+        cache_file = dist_dir.parent / 'story-bible-cache.json'
 
     try:
         # ===================================================================
-        # STAGE 1: LOAD
+        # CHECK CACHE FIRST
         # ===================================================================
-        print("\n" + "="*80)
-        print("STAGE 1: LOAD - Loading AllPaths data")
-        print("="*80)
+        print("\n" + "="*80, file=sys.stderr)
+        print("CACHE CHECK - Looking for story-bible-cache.json", file=sys.stderr)
+        print("="*80, file=sys.stderr)
 
-        loaded_data = load_allpaths_data(dist_dir)
-        print(f"Loaded {len(loaded_data['passages'])} unique passages")
-        print(f"Across {len(loaded_data['paths'])} total paths")
+        cache = load_cache(cache_file)
 
-        # ===================================================================
-        # STAGE 2: EXTRACT
-        # ===================================================================
-        print("\n" + "="*80)
-        print("STAGE 2: EXTRACT - Extracting facts with AI")
-        print("="*80)
+        if cache and 'categorized_facts' in cache:
+            # Cache exists - use it!
+            print(f"✓ Cache found: {cache_file}", file=sys.stderr)
+            categorized = cache['categorized_facts']
+            cache_meta = cache.get('meta', {})
+            print(f"  Last extracted: {cache_meta.get('last_extracted', 'unknown')}", file=sys.stderr)
+            print(f"  Total passages: {cache_meta.get('total_passages_extracted', 0)}", file=sys.stderr)
+            print(f"  Total facts: {cache_meta.get('total_facts', 0)}", file=sys.stderr)
+            print("  Skipping to rendering stages (no Ollama needed)", file=sys.stderr)
 
-        extracted_facts = extract_facts_with_ai(loaded_data)
-        print(f"Extracted facts from {len(extracted_facts['extractions'])} passages")
+        else:
+            # No cache - generate placeholder
+            print(f"ℹ️  Cache not found: {cache_file}", file=sys.stderr)
+            print("  Generating placeholder Story Bible", file=sys.stderr)
+            print("  Use /extract-story-bible webhook to populate cache", file=sys.stderr)
 
-        # ===================================================================
-        # STAGE 3: CATEGORIZE
-        # ===================================================================
-        print("\n" + "="*80)
-        print("STAGE 3: CATEGORIZE - Organizing facts")
-        print("="*80)
-
-        categorized = categorize_facts(extracted_facts, loaded_data)
-        print(f"Categorized into:")
-        print(f"  Constants: {count_facts(categorized['constants'])}")
-        print(f"  Variables: {count_facts(categorized['variables'])}")
-        print(f"  Characters: {len(categorized['characters'])}")
+            # Load AllPaths data for placeholder metadata
+            loaded_data = load_allpaths_data(dist_dir)
+            categorized = generate_placeholder_data(loaded_data)
 
         # ===================================================================
         # STAGE 4: GENERATE HTML
         # ===================================================================
-        print("\n" + "="*80)
-        print("STAGE 4: GENERATE HTML - Creating story-bible.html")
-        print("="*80)
+        print("\n" + "="*80, file=sys.stderr)
+        print("STAGE 4: GENERATE HTML - Creating story-bible.html", file=sys.stderr)
+        print("="*80, file=sys.stderr)
 
         html_output = dist_dir / 'story-bible.html'
         generate_html_output(categorized, html_output)
-        print(f"Generated: {html_output}")
+        print(f"Generated: {html_output}", file=sys.stderr)
 
         # ===================================================================
         # STAGE 5: GENERATE JSON
         # ===================================================================
-        print("\n" + "="*80)
-        print("STAGE 5: GENERATE JSON - Creating story-bible.json")
-        print("="*80)
+        print("\n" + "="*80, file=sys.stderr)
+        print("STAGE 5: GENERATE JSON - Creating story-bible.json", file=sys.stderr)
+        print("="*80, file=sys.stderr)
 
         json_output = dist_dir / 'story-bible.json'
         generate_json_output(categorized, json_output)
-        print(f"Generated: {json_output}")
+        print(f"Generated: {json_output}", file=sys.stderr)
 
         # ===================================================================
         # COMPLETE
         # ===================================================================
-        print("\n" + "="*80)
-        print("=== STORY BIBLE GENERATION COMPLETE ===")
-        print("="*80)
-        print(f"HTML: {html_output}")
-        print(f"JSON: {json_output}")
-        print("="*80 + "\n")
+        print("\n" + "="*80, file=sys.stderr)
+        print("=== STORY BIBLE GENERATION COMPLETE ===", file=sys.stderr)
+        print("="*80, file=sys.stderr)
+        print(f"HTML: {html_output}", file=sys.stderr)
+        print(f"JSON: {json_output}", file=sys.stderr)
+        if cache:
+            print(f"Source: Cache ({cache_file})", file=sys.stderr)
+        else:
+            print(f"Source: Placeholder (cache not found)", file=sys.stderr)
+        print("="*80 + "\n", file=sys.stderr)
+
+        return 0
+
+    except FileNotFoundError as e:
+        print(f"\n❌ Error: {e}", file=sys.stderr)
+        print(f"\nMake sure you've run 'npm run build:allpaths' first.", file=sys.stderr)
+        return 1
 
     except Exception as e:
-        print(f"\n❌ Error generating Story Bible: {e}", file=sys.stderr)
+        print(f"\n❌ Unexpected error: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        sys.exit(1)
-
-
-def count_facts(fact_dict):
-    """Count total facts across all categories."""
-    total = 0
-    for category_facts in fact_dict.values():
-        if isinstance(category_facts, list):
-            total += len(category_facts)
-    return total
+        return 1
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
 ```
 
 ---
 
 ### Error Handling and Graceful Degradation
 
-**Build-Level Error Handling**:
-1. **Missing AllPaths output**: Fail with clear error message
-2. **Ollama service down**: Fail with clear error message
-3. **AI extraction timeout**: Log warning, continue with partial results
-4. **Individual passage failures**: Log warnings, continue with remaining passages
-5. **Template rendering errors**: Fail generation but don't block build
+**Build-Level Error Handling** (Cache-First):
+1. **Cache missing**: Generate placeholder HTML/JSON (not an error)
+2. **Cache exists but invalid**: Generate placeholder, log warning
+3. **Missing AllPaths output**: Generate minimal placeholder
+4. **Template rendering errors**: Generate fallback HTML/JSON
+5. **Never attempts Ollama**: Build NEVER calls Ollama API
+
+**Webhook-Level Error Handling** (Extraction):
+1. **Ollama service down**: Fail entire extraction with clear error
+2. **Per-passage timeout**: Log error, do NOT cache, continue to next passage
+3. **Invalid JSON response**: Log error, do NOT cache, continue to next passage
+4. **Partial success acceptable**: Commit cache with successful extractions only
+5. **Failed passages NOT cached**: Will be retried on next incremental run
 
 **Graceful Degradation Strategy**:
 ```python
 # In build-story-bible.sh
-if python3 "$FORMAT_DIR/generator.py" "$DIST_DIR"; then
+if python3 "$FORMAT_DIR/generator.py" "$DIST_DIR" --cache "$CACHE_FILE"; then
     echo "✓ Story Bible generated successfully"
+    # Works whether cache exists or not (placeholder if missing)
 else
     echo "⚠️  Story Bible generation failed (non-blocking)"
     # Don't fail the build - allow deployment without Story Bible
@@ -979,8 +1219,9 @@ fi
 
 **Error Messages**:
 - Clear indication of what failed
-- Suggestions for resolution
-- Context about impact (e.g., "Story Bible won't be deployed, but other formats are fine")
+- Suggestions for resolution (e.g., "Use /extract-story-bible webhook")
+- Context about impact (e.g., "Placeholder generated, full Story Bible requires extraction")
+- Build always succeeds (Story Bible is post-build artifact)
 
 ---
 
@@ -1472,24 +1713,31 @@ _Progress updates will be posted as each passage completes._
 """)
 
             # Extract facts from each passage
+            successful_extractions = 0
+            failed_extractions = 0
+            failed_passage_ids = []
+
             for idx, (passage_id, passage_file) in enumerate(passages_to_extract, 1):
                 # Progress callback (similar to continuity checking)
                 passage_name = get_passage_name(passage_id)
                 passage_content = passage_file.read_text()
 
-                # Call Ollama API
-                extracted_facts = extract_facts_from_passage(passage_content, passage_id)
+                try:
+                    # Call Ollama API
+                    extracted_facts = extract_facts_from_passage(passage_content, passage_id)
 
-                # Update cache
-                cache['passage_extractions'][passage_id] = {
-                    'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
-                    'extracted_at': datetime.now().isoformat(),
-                    'facts': extracted_facts
-                }
+                    # CRITICAL: Only cache successful extractions
+                    cache['passage_extractions'][passage_id] = {
+                        'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
+                        'extracted_at': datetime.now().isoformat(),
+                        'facts': extracted_facts
+                    }
 
-                # Post progress
-                fact_count = len(extracted_facts)
-                post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
+                    successful_extractions += 1
+
+                    # Post progress
+                    fact_count = len(extracted_facts)
+                    post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
 
 **Passage:** `{passage_name}` (ID: `{passage_id}`)
 **Facts extracted:** {fact_count}
@@ -1500,6 +1748,23 @@ _Progress updates will be posted as each passage completes._
 {format_facts_preview(extracted_facts[:5])}  <!-- Show first 5 facts -->
 
 </details>
+""")
+
+                except Exception as e:
+                    # CRITICAL: Failed extraction NOT cached
+                    failed_extractions += 1
+                    failed_passage_ids.append(passage_id)
+
+                    # Log error
+                    app.logger.error(f"[Story Bible] Failed to extract from passage {passage_id}: {e}")
+
+                    # Post failure notice
+                    post_pr_comment(pr_number, f"""### ⚠️ Passage {idx}/{total_passages} Failed
+
+**Passage:** `{passage_name}` (ID: `{passage_id}`)
+**Error:** {str(e)[:200]}
+
+This passage was NOT cached and will be retried on next incremental run.
 """)
 
             # Categorize facts (cross-reference across all passages)
@@ -1526,12 +1791,23 @@ _Progress updates will be posted as each passage completes._
             # For now, include summary in comment
 
             # Post final summary
+            if failed_extractions > 0:
+                failure_summary = f"""
+**⚠️ Extraction Issues:**
+- **Failed passages:** {failed_extractions} (NOT cached, will retry on next run)
+- **Failed IDs:** {', '.join(failed_passage_ids[:10])}{'...' if len(failed_passage_ids) > 10 else ''}
+"""
+            else:
+                failure_summary = ""
+
             post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
 
 **Mode:** `{mode}`
-**Passages extracted:** {total_passages}
+**Passages processed:** {total_passages}
+**Successful:** {successful_extractions}
+**Failed:** {failed_extractions}
 **Total facts:** {cache['meta']['total_facts']}
-
+{failure_summary}
 **Summary:**
 - **Constants:** {count_facts(categorized_facts['constants'])} world facts
 - **Characters:** {len(categorized_facts['characters'])} characters
@@ -1539,11 +1815,12 @@ _Progress updates will be posted as each passage completes._
 
 **Story Bible updated:**
 - `story-bible-cache.json` committed to branch `{branch_name}`
-- Facts cached for incremental updates
+- Only successful extractions cached
+- Failed passages will be retried on next incremental run
 
 **Next steps:**
 - Review extracted facts in `story-bible-cache.json`
-- Use `/extract-story-bible` again to update as story evolves
+- Use `/extract-story-bible` again to retry failed passages and update as story evolves
 - Facts will be preserved and incrementally updated
 
 ---
@@ -1637,6 +1914,10 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
 
     Returns:
         List of extracted facts
+
+    Raises:
+        Exception: If extraction fails (timeout, API error, parse error)
+        CRITICAL: Caller must catch exceptions and NOT cache failed passages
     """
 
     # Format prompt
@@ -1668,15 +1949,19 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
         facts_data = parse_json_from_response(raw_response)
 
         if not facts_data or 'facts' not in facts_data:
+            # Empty response is not an error, just return empty list
             return []
 
         return facts_data['facts']
 
     except requests.Timeout:
+        # CRITICAL: Raise exception, caller must NOT cache this passage
         raise Exception(f"Ollama API timeout for passage {passage_id}")
     except requests.RequestException as e:
+        # CRITICAL: Raise exception, caller must NOT cache this passage
         raise Exception(f"Ollama API error: {e}")
     except json.JSONDecodeError as e:
+        # CRITICAL: Raise exception, caller must NOT cache this passage
         raise Exception(f"Failed to parse Ollama response as JSON: {e}")
 
 
@@ -2026,6 +2311,83 @@ If Phase 1 is already implemented locally:
 - Story Bible extraction: Extracts cross-path world-building facts
 - Different prompts, different caches, different purposes
 - Both can run on same PR without conflict
+
+---
+
+## Implementation Summary: Phase 1 & Phase 2
+
+### Key Design Decisions
+
+**1. Workflow Separation (Critical)**
+
+The most important design decision is the **strict separation** between build and webhook workflows:
+
+| Aspect | Build Workflow | Webhook Workflow |
+|--------|---------------|------------------|
+| **Trigger** | `make build`, `make deploy` | `/extract-story-bible` command |
+| **Environment** | GitHub Actions CI (no Ollama) | Host with Ollama service |
+| **Operation** | Read cache, render HTML/JSON | Extract facts, populate cache |
+| **Ollama calls** | NEVER | ONLY |
+| **Cache handling** | Read-only | Read-write |
+| **Failure mode** | Generate placeholder | Partial success OK |
+
+**2. Cache-First Build Approach**
+
+Build ALWAYS checks for `story-bible-cache.json` first:
+- **Cache exists** → Skip extraction, jump to Stage 4-5 (render HTML/JSON)
+- **Cache missing** → Generate placeholder, DO NOT attempt Ollama
+
+This ensures builds work in CI without Ollama and leverage webhook-populated cache.
+
+**3. Failed Extraction Handling**
+
+When webhook extraction fails for a passage (timeout, error):
+- **Do NOT add to cache** - Critical for incremental retry
+- **Log error** - Track failures for debugging
+- **Continue processing** - Don't fail entire extraction
+- **Report statistics** - "Extracted X of Y, Z failures"
+- **Automatic retry** - Failed passages not in cache, so next incremental run retries them
+
+This prevents failed passages from being marked as "done" and ensures they're retried.
+
+### Implementation Checklist
+
+**Phase 1 (Build - Cache-First)**:
+- [x] `generator.py` checks for cache before any processing
+- [x] If cache exists → Load and render (skip Stages 1-3)
+- [x] If cache missing → Generate placeholder
+- [x] Build NEVER calls Ollama API
+- [x] `build-story-bible.sh` passes `--cache` argument
+- [x] Placeholder HTML/JSON with instructions
+
+**Phase 2 (Webhook - Extraction)**:
+- [x] `/extract-story-bible` command handler
+- [x] Download artifacts from GitHub Actions
+- [x] Incremental extraction (only new/changed passages)
+- [x] Per-passage try/catch for extraction failures
+- [x] **CRITICAL**: Only cache successful extractions
+- [x] Log failed passages with details
+- [x] Report success/failure statistics in PR comment
+- [x] Commit cache to PR branch (successful only)
+
+**Bug Fixes Applied**:
+1. ✅ **Failed extractions NOT cached** - Prevents incremental mode from skipping failures
+2. ✅ **Build reads cache first** - Works in CI without Ollama, leverages webhook cache
+
+### Testing Scenarios
+
+**Build Testing**:
+1. **Cache exists**: Build should read cache, render HTML/JSON, succeed
+2. **Cache missing**: Build should generate placeholder, succeed
+3. **Cache invalid**: Build should handle gracefully, generate placeholder
+4. **No Ollama available**: Build should succeed (never attempts Ollama)
+
+**Webhook Testing**:
+1. **All passages succeed**: All added to cache, categorized, committed
+2. **Some passages fail**: Successful cached, failures logged, partial commit
+3. **Ollama down**: Entire extraction fails with clear error
+4. **Incremental mode**: Only process new/changed passages, retry previous failures
+5. **Failed passage retry**: Failed passage (not in cache) extracted on next run
 
 ---
 
