@@ -224,6 +224,9 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     metadata = categorized_facts.get('metadata', {})
     view_type = metadata.get('view_type', 'unknown')
 
+    # Normalize per-passage facts if present
+    per_passage = categorized_facts.get('per_passage', {})
+
     # Prepare template data
     template_data = {
         'story_title': 'NaNoWriMo2025',  # Could be extracted from story data
@@ -233,6 +236,7 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
         'characters': characters,
         'variables': variables,
         'conflicts': conflicts,
+        'per_passage': per_passage,
         'metadata': metadata,
         'view_type': view_type  # Pass view_type separately for easy access in template
     }

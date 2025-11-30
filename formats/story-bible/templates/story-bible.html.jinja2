@@ -277,6 +277,9 @@
                 {% if conflicts %}
                 <li><a href="#conflicts">⚠️ Conflicts ({{ conflicts|length }})</a></li>
                 {% endif %}
+                {% if per_passage %}
+                <li><a href="#per-passage">📄 Per-Passage Facts ({{ per_passage|length }} passages)</a></li>
+                {% endif %}
             </ul>
         </nav>
 
@@ -490,6 +493,46 @@
                     </div>
                     {% endfor %}
                 </div>
+            </div>
+            {% endfor %}
+        </section>
+        {% endif %}
+
+        {% if per_passage %}
+        <section id="per-passage" class="section">
+            <h2>📄 Per-Passage Facts</h2>
+            <p>Complete fact extractions organized by source passage. This preserves all original facts before summarization/deduplication.</p>
+
+            {% for passage_id, passage_data in per_passage.items()|sort %}
+            <div class="character">
+                <h3>{{ passage_data.passage_name or passage_id }}</h3>
+                {% if passage_data.facts %}
+                {% for fact in passage_data.facts %}
+                <div class="fact {% if fact.category == 'constant' %}constant{% elif fact.category == 'variable' %}variable{% endif %}">
+                    <strong>{{ fact.fact }}</strong>
+                    {% if fact.type %}
+                    <span class="badge">{{ fact.type }}</span>
+                    {% endif %}
+                    {% if fact.confidence %}
+                    <span class="badge {{ fact.confidence }}">{{ fact.confidence }}</span>
+                    {% endif %}
+                    {% if fact.evidence %}
+                    <div class="evidence">
+                        {% for ev in fact.evidence[:2] %}
+                        <div class="evidence-item">
+                            {% if ev.passage %}
+                            <em>{{ ev.passage }}:</em>
+                            {% endif %}
+                            <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="empty-state">No facts extracted from this passage.</div>
+                {% endif %}
             </div>
             {% endfor %}
         </section>

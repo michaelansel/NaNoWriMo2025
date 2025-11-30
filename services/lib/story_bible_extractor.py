@@ -225,10 +225,19 @@ def categorize_all_facts(passage_extractions: Dict, summarized_facts: Optional[D
             }
         }
     """
-    # If we have summarized facts, they're already categorized!
+    # If we have summarized facts, use them but preserve per-passage breakdown
     if summarized_facts:
-        logging.info("Using summarized facts (already categorized)")
-        return summarized_facts
+        logging.info("Using summarized facts with per-passage preservation")
+        # Start with summarized facts structure
+        result = dict(summarized_facts)
+        # Add per-passage breakdown for reference (preserves all original facts)
+        result['per_passage'] = {}
+        for passage_id, extraction in passage_extractions.items():
+            result['per_passage'][passage_id] = {
+                'passage_name': extraction.get('passage_name', 'Unknown'),
+                'facts': extraction.get('facts', [])
+            }
+        return result
 
     # Otherwise, fall back to basic categorization from per-passage extractions
     logging.info("Using per-passage extractions (no summarization)")
