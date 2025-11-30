@@ -27,7 +27,7 @@ from typing import Dict, List, Tuple, Optional
 # Ollama configuration
 OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-OLLAMA_TIMEOUT = 120  # 2 minutes for summarization
+OLLAMA_TIMEOUT = 300  # 5 minutes for summarization (large fact sets need more time)
 
 # AI prompt for summarization/deduplication
 SUMMARIZATION_PROMPT = """Reasoning: high
@@ -285,7 +285,7 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
         return (summarized, "success")
 
     except requests.Timeout:
-        logging.error("Summarization timeout (exceeded 120 seconds)")
+        logging.error("Summarization timeout (exceeded 300 seconds)")
         return (None, "failed")
 
     except requests.RequestException as e:
