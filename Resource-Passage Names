@@ -68,6 +68,8 @@ KEB-251110.twee
   [[A shuffling noise->Day 27 KEB]]
   [[Silence]]
   :: Silence
+  Taking one last look around, Javlyn [[left the cavern]] or [[investigated further->Day 29 KEB]].
+  :: left the cavern
 
 KEB-251111.twee
   :: Day 11 KEB
@@ -125,6 +127,9 @@ KEB-251127.twee
 
 KEB-251128.twee
   :: Day 28 KEB
+
+KEB-251129.twee
+  :: Day 29 KEB
 
 Start.twee
   :: Start
