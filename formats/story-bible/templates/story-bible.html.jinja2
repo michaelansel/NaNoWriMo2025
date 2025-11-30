@@ -211,6 +211,24 @@
             background: #F44336;
             color: white;
         }
+
+        .placeholder-notice {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            color: #856404;
+        }
+
+        .placeholder-notice h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+
+        .placeholder-notice p {
+            margin: 0.5rem 0;
+        }
     </style>
 </head>
 <body>
@@ -220,10 +238,19 @@
     </div>
 
     <div class="container">
+        {% if metadata and metadata.generation_mode == 'placeholder' %}
+        <div class="placeholder-notice">
+            <h3>⚠️ Placeholder Story Bible</h3>
+            <p><strong>{{ metadata.message }}</strong></p>
+            <p>Loaded {{ metadata.passages_loaded }} passages from {{ metadata.paths_loaded }} paths, but AI extraction was not available.</p>
+            <p><em>Reason:</em> {{ metadata.reason }}</p>
+        </div>
+        {% endif %}
+
         <div class="meta-info">
             <p><strong>Last Updated:</strong> {{ generated_at }}</p>
             <p><strong>Source Commit:</strong> {{ commit_hash }}</p>
-            {% if metadata %}
+            {% if metadata and metadata.generation_mode != 'placeholder' %}
             <p><strong>Statistics:</strong>
                 {{ metadata.total_constants or 0 }} constants,
                 {{ metadata.total_variables or 0 }} variables,

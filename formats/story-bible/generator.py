@@ -37,6 +37,35 @@ def count_facts(fact_dict):
     return total
 
 
+def generate_placeholder_data(loaded_data):
+    """
+    Generate placeholder data structure when AI extraction is unavailable.
+
+    Args:
+        loaded_data: Output from Stage 1 (loader) with passages and paths
+
+    Returns:
+        Dict with placeholder categorized structure
+    """
+    return {
+        'constants': {},
+        'variables': {},
+        'characters': {},
+        'conflicts': [],
+        'metadata': {
+            'generation_mode': 'placeholder',
+            'reason': 'AI extraction unavailable (Ollama service not running)',
+            'passages_loaded': len(loaded_data.get('passages', {})),
+            'paths_loaded': len(loaded_data.get('paths', [])),
+            'message': (
+                'Story Bible requires AI extraction via Ollama. '
+                'To generate full Story Bible, run locally with Ollama service running, '
+                'or use the continuity webhook service.'
+            )
+        }
+    }
+
+
 def main():
     """Main entry point for Story Bible generator."""
     # Parse arguments
@@ -74,22 +103,31 @@ def main():
         print("STAGE 2: EXTRACT - Extracting facts with AI", file=sys.stderr)
         print("="*80, file=sys.stderr)
 
-        extracted_facts = extract_facts_with_ai(loaded_data, cache_file=cache_file)
-        print(f"Extracted facts from {len(extracted_facts['extractions'])} passages", file=sys.stderr)
+        try:
+            extracted_facts = extract_facts_with_ai(loaded_data, cache_file=cache_file)
+            print(f"Extracted facts from {len(extracted_facts['extractions'])} passages", file=sys.stderr)
 
-        # ===================================================================
-        # STAGE 3: CATEGORIZE
-        # ===================================================================
-        print("\n" + "="*80, file=sys.stderr)
-        print("STAGE 3: CATEGORIZE - Organizing facts", file=sys.stderr)
-        print("="*80, file=sys.stderr)
+            # ===================================================================
+            # STAGE 3: CATEGORIZE
+            # ===================================================================
+            print("\n" + "="*80, file=sys.stderr)
+            print("STAGE 3: CATEGORIZE - Organizing facts", file=sys.stderr)
+            print("="*80, file=sys.stderr)
 
-        categorized = categorize_facts(extracted_facts, loaded_data)
-        print(f"Categorized into:", file=sys.stderr)
-        print(f"  Constants: {count_facts(categorized['constants'])}", file=sys.stderr)
-        print(f"  Variables: {count_facts(categorized['variables'])}", file=sys.stderr)
-        print(f"  Characters: {len(categorized['characters'])}", file=sys.stderr)
-        print(f"  Conflicts: {len(categorized.get('conflicts', []))}", file=sys.stderr)
+            categorized = categorize_facts(extracted_facts, loaded_data)
+            print(f"Categorized into:", file=sys.stderr)
+            print(f"  Constants: {count_facts(categorized['constants'])}", file=sys.stderr)
+            print(f"  Variables: {count_facts(categorized['variables'])}", file=sys.stderr)
+            print(f"  Characters: {len(categorized['characters'])}", file=sys.stderr)
+            print(f"  Conflicts: {len(categorized.get('conflicts', []))}", file=sys.stderr)
+
+        except RuntimeError as e:
+            # Handle Ollama unavailability gracefully
+            print(f"\n⚠️  {e}", file=sys.stderr)
+            print("Generating placeholder Story Bible...", file=sys.stderr)
+
+            categorized = generate_placeholder_data(loaded_data)
+            print(f"Generated placeholder with metadata about {len(loaded_data.get('passages', {}))} passages", file=sys.stderr)
 
         # ===================================================================
         # STAGE 4: GENERATE HTML
