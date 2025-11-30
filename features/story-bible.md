@@ -27,11 +27,12 @@ Writers need a canonical source of truth about their story world that distinguis
 - NOT blocking CI - purely informational/additive
 - Post-build artifact (generated after successful build)
 
-**Phase 2 (Future - CI Validation):**
-- Validate new content against established story bible
-- Flag potential contradictions of constants
+**Phase 2 (Future - Integration with Continuity Checking):**
+- Integrate Story Bible validation into existing AI Continuity Checking
+- When continuity checking runs, also validate against Story Bible
+- Flag contradictions of constants in same PR comment
 - Still informational, not blocking
-- Suggest corrections when new content contradicts canon
+- Combined report: path consistency + world consistency
 
 **Strategic Alignment:**
 This feature complements AI Continuity Checking:
@@ -380,37 +381,124 @@ Focus on world reconstruction, not story summarization.
 
 ---
 
-### Phase 2: CI Validation (Future)
+### Phase 2: Integration with Continuity Checking (Future)
 
-**Not in immediate scope, but designed to support:**
+**Approach: Integrate Story Bible validation into existing continuity checking workflow**
+
+Instead of a separate validation service, Story Bible validation will be integrated directly into the existing AI Continuity Checking feature. When continuity checking runs on a PR, it will:
+
+1. **Load Story Bible cache** (if exists)
+2. **Validate paths for internal consistency** (existing behavior)
+3. **Validate paths against Story Bible constants** (new behavior)
+4. **Post combined results** in single PR comment
+
+**Benefits of Integration:**
+- Single workflow for writers (no separate command needed)
+- Combined report shows both path consistency AND world consistency
+- Automatic - runs whenever continuity checking runs
+- Reuses existing infrastructure (webhook service, PR commenting, artifact handling)
+
+---
 
 **Validation Against Story Bible:**
-- When new content is added (PR), validate against established constants
-- Flag potential contradictions (e.g., new passage says city is inland, but constant says coastal)
-- Suggest corrections or ask for clarification
+- When continuity checking runs, load `story-bible-cache.json` from PR branch
+- For each path being validated, check new content against established constants
+- Flag contradictions with evidence from both sources
+- Gracefully skip if Story Bible cache doesn't exist
 
-**Validation Output:**
-- Posted to PR comments (like AI Continuity Checking)
-- Severity levels: minor, major, critical
-- Lists contradictions with evidence
-- Still informational, not blocking
+**What Gets Validated:**
+- **World constants**: Setting, world rules, timeline facts
+- **Character identities**: Names, backgrounds, core traits
+- **Established patterns**: Recurring themes or motifs
 
-**Example Validation Result:**
+**What Does NOT Get Validated:**
+- Plot events (those are variables, not constants)
+- Player choices and outcomes (those are path-specific)
+- Character fates (those vary by path)
+
+---
+
+**Validation Output Format:**
+
+Integrated into continuity checking PR comment with two sections:
 
 ```markdown
-## Story Bible Validation
+## 🔍 Continuity Check Complete
 
-⚠️ Potential contradiction detected:
+**Mode:** new-only
+**Validated:** 2 paths
+**Story Bible:** ✅ Loaded (50 constants, 15 characters)
 
-**New passage:** "The city sprawled across the desert plains"
-**Established constant:** "The city is on the coast" (established in passage_id_3)
+---
 
-**Severity:** major
-**Type:** setting_contradiction
+### 📊 Results Summary
 
-This may be intentional (e.g., describing a different city), but please verify.
-To update the Story Bible constant, use `/update-canon [fact] [evidence]`
+**Path Consistency:**
+- 🟢 1 path with no issues
+- 🟡 1 path with minor issues
+
+**Story Bible Validation:**
+- 🟢 1 path consistent with canon
+- 🔴 1 path with contradictions
+
+---
+
+### Path Continuity Issues
+
+[Existing continuity checking output]
+
+---
+
+### Story Bible Violations
+
+#### Path: `b4c9d213` (Start → Mountain → City)
+**Result:** 🔴 critical
+
+<details>
+<summary>Contradictions Found (1)</summary>
+
+**Issue 1: Setting Contradiction**
+- **Type:** setting_constant
+- **Severity:** critical
+- **Established Constant:** "The city is on the coast" (from passage Start, Academy Introduction)
+- **New Content:** "The city sprawled across the desert plains"
+- **Location:** Passage x9y8z7w6
+
+**Evidence:**
+- **Established (Story Bible):** "...the salty coastal breeze filled the air..." (passage Start)
+- **New Content:** "The city sprawled across the desert plains..." (passage x9y8z7w6)
+
+**Explanation:** This passage describes the city as being in a desert, contradicting the established constant that the city is coastal.
+
+**Possible Actions:**
+- Fix the new passage to match established canon
+- Clarify that this refers to a different city
+- Use `/update-canon` if this constant needs to change (future feature)
+
+</details>
 ```
+
+**When Story Bible Cache Missing:**
+
+```markdown
+**Story Bible Validation:**
+- ⚠️ Skipped - Story Bible cache not found
+- Use `/extract-story-bible` to enable world consistency validation
+```
+
+**Severity Levels:**
+- **critical**: Contradicts core world constant or character identity
+- **major**: Contradicts timeline constant or setting detail
+- **minor**: Ambiguous whether contradiction or intentional variation
+
+---
+
+**Integration Benefits:**
+- Writers get comprehensive feedback in one place
+- No separate validation command needed
+- Automatic validation whenever continuity checking runs
+- Same approval workflow (existing `/approve-path` command)
+- Still informational, not blocking merges
 
 ---
 
