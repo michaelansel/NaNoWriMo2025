@@ -225,7 +225,13 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     view_type = metadata.get('view_type', 'unknown')
 
     # Normalize per-passage facts if present
-    per_passage = categorized_facts.get('per_passage', {})
+    per_passage_raw = categorized_facts.get('per_passage', {})
+    per_passage = {}
+    for passage_id, passage_data in per_passage_raw.items():
+        per_passage[passage_id] = {
+            'passage_name': passage_data.get('passage_name', 'Unknown'),
+            'facts': normalize_facts(passage_data.get('facts', []))
+        }
 
     # Prepare template data
     template_data = {
