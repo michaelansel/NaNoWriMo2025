@@ -273,6 +273,9 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
         # Parse response
         raw_response = result.get('response', '')
 
+        # DEBUG: Log response details
+        logging.warning(f"[DEBUG] Summarization: done_reason={result.get('done_reason')}, response len={len(raw_response)}, thinking len={len(result.get('thinking', ''))}")
+
         # Extract JSON from response
         summarized = parse_json_from_response(raw_response)
 
