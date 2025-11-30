@@ -96,7 +96,7 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
                 "stream": False,
                 "options": {
                     "temperature": 0.3,  # Lower temperature for more consistent extraction
-                    "num_predict": 2000  # Max tokens for response
+                    "num_predict": 8000  # Max tokens for response (includes thinking tokens)
                 }
             },
             timeout=OLLAMA_TIMEOUT
