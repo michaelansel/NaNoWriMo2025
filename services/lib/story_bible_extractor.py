@@ -112,7 +112,7 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
         facts_data = parse_json_from_response(raw_response)
 
         if not facts_data or 'facts' not in facts_data:
-            return []
+            raise Exception(f"Invalid AI response for passage {passage_id}: missing 'facts' field")
 
         return facts_data['facts']
 

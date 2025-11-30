@@ -4,16 +4,15 @@ Story Bible Generator
 
 Generates human and machine-readable story bible from AllPaths format.
 
-This is the main orchestrator that runs the 5-stage pipeline:
-1. Load AllPaths data
-2. Extract facts with AI
-3. Categorize facts
-4. Generate HTML output
-5. Generate JSON output
+Cache-first approach:
+- If story-bible-cache.json exists → Render HTML/JSON from cache
+- If cache missing → Generate placeholder HTML/JSON
+- NEVER calls Ollama (extraction is webhook-only)
 """
 
 import sys
 import argparse
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -22,8 +21,6 @@ sys.path.insert(0, str(Path(__file__).parent / 'modules'))
 sys.path.insert(0, str(Path(__file__).parent / 'lib'))
 
 from modules.loader import load_allpaths_data
-from modules.ai_extractor import extract_facts_with_ai
-from modules.categorizer import categorize_facts
 from modules.html_generator import generate_html_output
 from modules.json_generator import generate_json_output
 
@@ -37,9 +34,30 @@ def count_facts(fact_dict):
     return total
 
 
+def load_cache(cache_file: Path) -> dict:
+    """
+    Load Story Bible cache from file.
+
+    Args:
+        cache_file: Path to story-bible-cache.json
+
+    Returns:
+        Cache dict or None if not found/invalid
+    """
+    if not cache_file.exists():
+        return None
+
+    try:
+        with open(cache_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError) as e:
+        print(f"⚠️  Warning: Failed to load cache: {e}", file=sys.stderr)
+        return None
+
+
 def generate_placeholder_data(loaded_data):
     """
-    Generate placeholder data structure when AI extraction is unavailable.
+    Generate placeholder data structure when cache is unavailable.
 
     Args:
         loaded_data: Output from Stage 1 (loader) with passages and paths
@@ -54,13 +72,12 @@ def generate_placeholder_data(loaded_data):
         'conflicts': [],
         'metadata': {
             'generation_mode': 'placeholder',
-            'reason': 'AI extraction unavailable (Ollama service not running)',
+            'reason': 'Story Bible cache not found (use /extract-story-bible webhook)',
             'passages_loaded': len(loaded_data.get('passages', {})),
             'paths_loaded': len(loaded_data.get('paths', [])),
             'message': (
-                'Story Bible requires AI extraction via Ollama. '
-                'To generate full Story Bible, run locally with Ollama service running, '
-                'or use the continuity webhook service.'
+                'Story Bible requires extraction via webhook service. '
+                'Use /extract-story-bible command in PR to populate cache.'
             )
         }
     }
@@ -70,64 +87,49 @@ def main():
     """Main entry point for Story Bible generator."""
     # Parse arguments
     parser = argparse.ArgumentParser(
-        description='Story Bible Generator - Generate human and machine-readable story bible'
+        description='Story Bible Generator - Cache-first rendering'
     )
     parser.add_argument('dist_dir', type=Path, help='Path to dist/ directory')
-    parser.add_argument('--cache', type=Path, help='Path to extraction cache file (optional)')
+    parser.add_argument('--cache', type=Path, help='Path to cache file (default: story-bible-cache.json)')
 
     args = parser.parse_args()
 
     dist_dir = args.dist_dir
     cache_file = args.cache
 
-    # Default cache location
+    # Default cache location: repo root (dist_dir.parent)
     if cache_file is None:
-        cache_file = dist_dir.parent / 'story-bible-extraction-cache.json'
+        cache_file = dist_dir.parent / 'story-bible-cache.json'
 
     try:
         # ===================================================================
-        # STAGE 1: LOAD
+        # CHECK CACHE FIRST
         # ===================================================================
         print("\n" + "="*80, file=sys.stderr)
-        print("STAGE 1: LOAD - Loading AllPaths data", file=sys.stderr)
+        print("CACHE CHECK - Looking for story-bible-cache.json", file=sys.stderr)
         print("="*80, file=sys.stderr)
 
-        loaded_data = load_allpaths_data(dist_dir)
-        print(f"Loaded {len(loaded_data['passages'])} unique passages", file=sys.stderr)
-        print(f"Across {len(loaded_data['paths'])} total paths", file=sys.stderr)
+        cache = load_cache(cache_file)
 
-        # ===================================================================
-        # STAGE 2: EXTRACT
-        # ===================================================================
-        print("\n" + "="*80, file=sys.stderr)
-        print("STAGE 2: EXTRACT - Extracting facts with AI", file=sys.stderr)
-        print("="*80, file=sys.stderr)
+        if cache and 'categorized_facts' in cache:
+            # Cache exists - use it!
+            print(f"✓ Cache found: {cache_file}", file=sys.stderr)
+            categorized = cache['categorized_facts']
+            cache_meta = cache.get('meta', {})
+            print(f"  Last extracted: {cache_meta.get('last_extracted', 'unknown')}", file=sys.stderr)
+            print(f"  Total passages: {cache_meta.get('total_passages_extracted', 0)}", file=sys.stderr)
+            print(f"  Total facts: {cache_meta.get('total_facts', 0)}", file=sys.stderr)
+            print("  Skipping to rendering stages (no Ollama needed)", file=sys.stderr)
 
-        try:
-            extracted_facts = extract_facts_with_ai(loaded_data, cache_file=cache_file)
-            print(f"Extracted facts from {len(extracted_facts['extractions'])} passages", file=sys.stderr)
+        else:
+            # No cache - generate placeholder
+            print(f"ℹ️  Cache not found: {cache_file}", file=sys.stderr)
+            print("  Generating placeholder Story Bible", file=sys.stderr)
+            print("  Use /extract-story-bible webhook to populate cache", file=sys.stderr)
 
-            # ===================================================================
-            # STAGE 3: CATEGORIZE
-            # ===================================================================
-            print("\n" + "="*80, file=sys.stderr)
-            print("STAGE 3: CATEGORIZE - Organizing facts", file=sys.stderr)
-            print("="*80, file=sys.stderr)
-
-            categorized = categorize_facts(extracted_facts, loaded_data)
-            print(f"Categorized into:", file=sys.stderr)
-            print(f"  Constants: {count_facts(categorized['constants'])}", file=sys.stderr)
-            print(f"  Variables: {count_facts(categorized['variables'])}", file=sys.stderr)
-            print(f"  Characters: {len(categorized['characters'])}", file=sys.stderr)
-            print(f"  Conflicts: {len(categorized.get('conflicts', []))}", file=sys.stderr)
-
-        except RuntimeError as e:
-            # Handle Ollama unavailability gracefully
-            print(f"\n⚠️  {e}", file=sys.stderr)
-            print("Generating placeholder Story Bible...", file=sys.stderr)
-
+            # Load AllPaths data for placeholder metadata
+            loaded_data = load_allpaths_data(dist_dir)
             categorized = generate_placeholder_data(loaded_data)
-            print(f"Generated placeholder with metadata about {len(loaded_data.get('passages', {}))} passages", file=sys.stderr)
 
         # ===================================================================
         # STAGE 4: GENERATE HTML
@@ -159,7 +161,10 @@ def main():
         print("="*80, file=sys.stderr)
         print(f"HTML: {html_output}", file=sys.stderr)
         print(f"JSON: {json_output}", file=sys.stderr)
-        print(f"Cache: {cache_file}", file=sys.stderr)
+        if cache:
+            print(f"Source: Cache ({cache_file})", file=sys.stderr)
+        else:
+            print(f"Source: Placeholder (cache not found)", file=sys.stderr)
         print("="*80 + "\n", file=sys.stderr)
 
         return 0
@@ -167,10 +172,6 @@ def main():
     except FileNotFoundError as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         print(f"\nMake sure you've run 'npm run build:allpaths' first.", file=sys.stderr)
-        return 1
-
-    except RuntimeError as e:
-        print(f"\n❌ Error generating Story Bible: {e}", file=sys.stderr)
         return 1
 
     except Exception as e:
