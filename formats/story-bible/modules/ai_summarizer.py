@@ -29,15 +29,24 @@ OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 300  # 5 minutes for summarization
 
-# AI prompt for summarization/deduplication
-SUMMARIZATION_PROMPT = """=== SECTION 1: ROLE & CONTEXT ===
+# Category labels for prompts
+CATEGORY_LABELS = {
+    'world_rule': 'world rule',
+    'setting': 'setting',
+    'timeline': 'timeline',
+    'character_identity': 'character identity',
+    'variables': 'variable outcome'
+}
 
-You are deduplicating facts extracted from multiple passages in an interactive fiction story.
+# AI prompt for category-specific summarization
+CATEGORY_SUMMARIZATION_PROMPT = """=== SECTION 1: ROLE & CONTEXT ===
 
-Your task: Create a unified Story Bible by intelligently merging related facts while preserving complete evidence.
+You are deduplicating {category_label} facts extracted from multiple passages in an interactive fiction story.
+
+Your task: Create a unified list by intelligently merging related facts while preserving complete evidence.
 
 CRITICAL UNDERSTANDING:
-- Input: Facts extracted from individual passages (may contain duplicates)
+- Input: {category_label} facts extracted from individual passages (may contain duplicates)
 - Output: Unified facts with complete evidence citations
 - Goal: Reduce redundancy while preserving all information
 - Principle: Conservative deduplication (when uncertain, keep separate)
@@ -88,37 +97,21 @@ CRITICAL UNDERSTANDING:
 Respond with ONLY valid JSON (no markdown, no code blocks):
 
 {{
-  "constants": {{
-    "world_rules": [
-      {{
-        "fact": "Combined or single fact statement",
-        "evidence": [
-          {{
-            "passage": "passage name",
-            "quote": "exact quote from passage"
-          }}
-        ],
-        "confidence": "high|medium|low",
-        "merged_from": ["original fact 1", "original fact 2"]
-      }}
-    ],
-    "setting": [...],
-    "timeline": [...]
-  }},
-  "characters": {{
-    "CharacterName": {{
-      "identity": [...],
-      "zero_action_state": [...],
-      "variables": [...]
+  "facts": [
+    {{
+      "fact": "Combined or single fact statement",
+      "evidence": [
+        {{
+          "passage": "passage name",
+          "quote": "exact quote from passage"
+        }}
+      ],
+      "confidence": "high|medium|low",
+      "merged_from": ["original fact 1", "original fact 2"]
     }}
-  }},
-  "variables": {{
-    "events": [...],
-    "outcomes": [...]
-  }},
+  ],
   "conflicts": [
     {{
-      "type": "contradictory_constants",
       "description": "Brief description of conflict",
       "facts": [
         {{"fact": "...", "evidence": [...]}},
@@ -136,7 +129,7 @@ CRITICAL: Include merged_from field ONLY when facts were actually merged.
 
 === SECTION 4: INPUT FACTS ===
 
-{per_passage_facts_json}
+{facts_json}
 
 BEGIN SUMMARIZATION (JSON only):
 """
@@ -222,6 +215,86 @@ def validate_summarized_structure(summarized: Dict) -> bool:
     return all(key in summarized for key in required_keys)
 
 
+def extract_character_from_fact(fact_text: str) -> str:
+    """
+    Extract character name from a character identity fact.
+
+    Uses simple heuristic: looks for capitalized word at start of fact.
+
+    Args:
+        fact_text: The fact statement
+
+    Returns:
+        Character name or "Unknown" if not found
+    """
+    words = fact_text.split()
+    if not words:
+        return "Unknown"
+
+    # Skip common articles
+    skip_words = {'The', 'A', 'An'}
+    for word in words:
+        if word not in skip_words and word[0].isupper():
+            return word
+
+    return "Unknown"
+
+
+def group_facts_by_category(all_facts: List[Dict]) -> Dict[str, List[Dict]]:
+    """
+    Group facts by category type for chunked summarization.
+
+    Groups facts into categories to send smaller batches to Ollama:
+    - world_rule: World rules and magic systems
+    - setting: Geography, landmarks, locations
+    - timeline: Historical events and chronology
+    - character_identity: Character identities and zero-action states
+    - variables: Variable outcomes, events, and player-dependent facts
+
+    Args:
+        all_facts: List of all facts from per-passage extractions
+
+    Returns:
+        Dict mapping category name to list of facts in that category
+    """
+    groups = {}
+
+    for fact in all_facts:
+        fact_type = fact.get('type', 'unknown')
+        category = fact.get('category', 'constant')
+
+        # Variables go into their own group regardless of type
+        if category == 'variable':
+            if 'variables' not in groups:
+                groups['variables'] = []
+            groups['variables'].append(fact)
+        # Character identity facts (including zero_action_state)
+        elif fact_type == 'character_identity':
+            if 'character_identity' not in groups:
+                groups['character_identity'] = []
+            groups['character_identity'].append(fact)
+        # Constants group by type
+        elif fact_type == 'world_rule':
+            if 'world_rule' not in groups:
+                groups['world_rule'] = []
+            groups['world_rule'].append(fact)
+        elif fact_type == 'setting':
+            if 'setting' not in groups:
+                groups['setting'] = []
+            groups['setting'].append(fact)
+        elif fact_type == 'timeline':
+            if 'timeline' not in groups:
+                groups['timeline'] = []
+            groups['timeline'].append(fact)
+        else:
+            # Unknown types go to variables as fallback
+            if 'variables' not in groups:
+                groups['variables'] = []
+            groups['variables'].append(fact)
+
+    return groups
+
+
 def merge_chunk_facts(per_passage_extractions: Dict) -> Dict:
     """
     Merge facts from chunks of the same passage before main deduplication.
@@ -289,9 +362,77 @@ def merge_chunk_facts(per_passage_extractions: Dict) -> Dict:
     return merged
 
 
+def summarize_category(facts: List[Dict], category_name: str) -> Tuple[Optional[Dict], List[Dict]]:
+    """
+    Summarize facts for a single category using AI.
+
+    Args:
+        facts: List of facts in this category
+        category_name: Name of category (for logging and prompt)
+
+    Returns:
+        Tuple of (summarized_facts_list, conflicts_list)
+        Returns (None, []) if summarization fails
+    """
+    if not facts:
+        return ([], [])
+
+    label = CATEGORY_LABELS.get(category_name, category_name)
+
+    try:
+        # Format facts as JSON for prompt
+        facts_json = json.dumps(facts, indent=2)
+
+        # Build AI prompt
+        prompt = CATEGORY_SUMMARIZATION_PROMPT.format(
+            category_label=label,
+            facts_json=facts_json
+        )
+
+        # Call Ollama API
+        logging.info(f"Summarizing {category_name}: {len(facts)} facts...")
+
+        response = requests.post(
+            OLLAMA_API_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.3,
+                    "num_predict": 16000  # Smaller limit per category
+                },
+                "think": "low"
+            },
+            timeout=OLLAMA_TIMEOUT
+        )
+
+        response.raise_for_status()
+        result = response.json()
+
+        # Parse response
+        raw_response = result.get('response', '')
+        summarized = parse_json_from_response(raw_response)
+
+        # Extract facts and conflicts
+        summarized_facts = summarized.get('facts', [])
+        conflicts = summarized.get('conflicts', [])
+
+        logging.info(f"  → {len(summarized_facts)} summarized facts, {len(conflicts)} conflicts")
+        return (summarized_facts, conflicts)
+
+    except Exception as e:
+        logging.error(f"Error summarizing {category_name}: {e}")
+        return (None, [])
+
+
 def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]:
     """
     Deduplicate and merge facts from per-passage extractions using AI.
+
+    Uses category-based chunking to avoid Ollama context truncation:
+    - Summarizes each category separately (smaller context per call)
+    - Combines results into unified structure
 
     Args:
         per_passage_extractions: Dict of passage_id -> extraction data
@@ -312,46 +453,86 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
             logging.warning("No facts to summarize")
             return (None, "failed")
 
-        # Format as JSON for prompt
-        facts_json = json.dumps(all_facts, indent=2)
+        logging.info(f"Summarizing {len(all_facts)} facts using category chunking...")
 
-        # Build AI prompt
-        prompt = SUMMARIZATION_PROMPT.format(per_passage_facts_json=facts_json)
+        # Group facts by category
+        fact_groups = group_facts_by_category(all_facts)
 
-        # Call Ollama API
-        logging.info(f"Calling Ollama for summarization ({len(all_facts)} facts)...")
+        # Summarize each category separately
+        summarized_world_rules = []
+        summarized_setting = []
+        summarized_timeline = []
+        summarized_characters = {}
+        summarized_variables = []
+        all_conflicts = []
 
-        response = requests.post(
-            OLLAMA_API_URL,
-            json={
-                "model": OLLAMA_MODEL,
-                "prompt": prompt,
-                "stream": False,
-                "options": {
-                    "temperature": 0.3,  # Lower temperature for consistent deduplication
-                    "num_predict": 32000  # Enough for thinking + response
-                },
-                "think": "low"  # Key fix: minimize thinking for gpt-oss
+        for category_name, facts in fact_groups.items():
+            logging.info(f"Processing category: {category_name} ({len(facts)} facts)")
+
+            summarized_facts, conflicts = summarize_category(facts, category_name)
+
+            if summarized_facts is None:
+                logging.error(f"Failed to summarize {category_name}")
+                return (None, "failed")
+
+            # Add conflicts
+            all_conflicts.extend(conflicts)
+
+            # Route summarized facts to appropriate structure
+            if category_name == 'world_rule':
+                summarized_world_rules = summarized_facts
+            elif category_name == 'setting':
+                summarized_setting = summarized_facts
+            elif category_name == 'timeline':
+                summarized_timeline = summarized_facts
+            elif category_name == 'character_identity':
+                # Group character facts by character name
+                for fact in summarized_facts:
+                    # Extract character name from fact
+                    char_name = extract_character_from_fact(fact.get('fact', ''))
+                    category = fact.get('category', 'constant')
+
+                    if char_name not in summarized_characters:
+                        summarized_characters[char_name] = {
+                            'identity': [],
+                            'zero_action_state': [],
+                            'variables': []
+                        }
+
+                    # Route to appropriate sub-category
+                    if category == 'variable':
+                        summarized_characters[char_name]['variables'].append(fact)
+                    elif category == 'zero_action_state':
+                        summarized_characters[char_name]['zero_action_state'].append(fact)
+                    else:
+                        summarized_characters[char_name]['identity'].append(fact)
+            elif category_name == 'variables':
+                summarized_variables = summarized_facts
+
+        # Build final structure
+        result = {
+            'constants': {
+                'world_rules': summarized_world_rules,
+                'setting': summarized_setting,
+                'timeline': summarized_timeline
             },
-            timeout=OLLAMA_TIMEOUT
-        )
-
-        response.raise_for_status()
-        result = response.json()
-
-        # Parse response
-        raw_response = result.get('response', '')
-
-        # Extract JSON from response
-        summarized = parse_json_from_response(raw_response)
-
-        # Validate structure
-        if not validate_summarized_structure(summarized):
-            logging.error("Summarization response missing required keys")
-            return (None, "failed")
+            'characters': summarized_characters,
+            'variables': {
+                'events': [],
+                'outcomes': summarized_variables
+            },
+            'conflicts': all_conflicts
+        }
 
         logging.info("Summarization successful")
-        return (summarized, "success")
+        logging.info(f"  World rules: {len(summarized_world_rules)}")
+        logging.info(f"  Setting: {len(summarized_setting)}")
+        logging.info(f"  Timeline: {len(summarized_timeline)}")
+        logging.info(f"  Characters: {len(summarized_characters)}")
+        logging.info(f"  Variables: {len(summarized_variables)}")
+        logging.info(f"  Conflicts: {len(all_conflicts)}")
+
+        return (result, "success")
 
     except requests.Timeout:
         logging.error("Summarization timeout (exceeded 300 seconds)")

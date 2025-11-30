@@ -21,6 +21,14 @@ from story_bible_extractor import (
     chunk_passage
 )
 
+# Add formats/story-bible/modules to path for ai_summarizer tests
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'formats' / 'story-bible' / 'modules'))
+
+try:
+    from ai_summarizer import group_facts_by_category
+except ImportError:
+    group_facts_by_category = None
+
 
 class TestParseJsonFromResponse(unittest.TestCase):
     """Test JSON parsing from AI responses."""
@@ -265,6 +273,84 @@ class TestCategorizeAllFactsFallback(unittest.TestCase):
         result = categorize_all_facts(passage_extractions, summarized_facts=None)
 
         self.assertEqual(len(result['constants']['timeline']), 1)
+
+
+@unittest.skipIf(group_facts_by_category is None, "ai_summarizer module not available")
+class TestGroupFactsByCategory(unittest.TestCase):
+    """Test grouping facts by category for chunked summarization."""
+
+    def test_groups_by_type_for_constants(self):
+        """Should group world_rule, setting, timeline facts separately."""
+        all_facts = [
+            {'fact': 'Magic exists', 'type': 'world_rule', 'category': 'constant'},
+            {'fact': 'City is coastal', 'type': 'setting', 'category': 'constant'},
+            {'fact': 'War ended 10 years ago', 'type': 'timeline', 'category': 'constant'},
+            {'fact': 'Magic requires training', 'type': 'world_rule', 'category': 'constant'},
+        ]
+
+        result = group_facts_by_category(all_facts)
+
+        # Should have separate groups
+        self.assertIn('world_rule', result)
+        self.assertIn('setting', result)
+        self.assertIn('timeline', result)
+
+        # Check counts
+        self.assertEqual(len(result['world_rule']), 2)
+        self.assertEqual(len(result['setting']), 1)
+        self.assertEqual(len(result['timeline']), 1)
+
+    def test_groups_character_identity_separately(self):
+        """Should group character_identity facts by character."""
+        all_facts = [
+            {'fact': 'Javlyn is a student', 'type': 'character_identity', 'category': 'constant'},
+            {'fact': 'Eldon is a teacher', 'type': 'character_identity', 'category': 'constant'},
+            {'fact': 'Javlyn studies magic', 'type': 'character_identity', 'category': 'zero_action_state'},
+        ]
+
+        result = group_facts_by_category(all_facts)
+
+        # Should have character group
+        self.assertIn('character_identity', result)
+        self.assertEqual(len(result['character_identity']), 3)
+
+    def test_groups_variables_together(self):
+        """Should group variable/event/outcome facts together."""
+        all_facts = [
+            {'fact': 'Javlyn masters magic', 'type': 'character_identity', 'category': 'variable'},
+            {'fact': 'War breaks out', 'type': 'event', 'category': 'variable'},
+            {'fact': 'City is destroyed', 'type': 'outcome', 'category': 'variable'},
+        ]
+
+        result = group_facts_by_category(all_facts)
+
+        # Should have variables group
+        self.assertIn('variables', result)
+        self.assertEqual(len(result['variables']), 3)
+
+    def test_handles_empty_facts(self):
+        """Should handle empty fact list."""
+        result = group_facts_by_category([])
+        self.assertEqual(len(result), 0)
+
+    def test_handles_mixed_categories(self):
+        """Should correctly separate constants from variables."""
+        all_facts = [
+            {'fact': 'Magic exists', 'type': 'world_rule', 'category': 'constant'},
+            {'fact': 'Javlyn masters magic', 'type': 'character_identity', 'category': 'variable'},
+            {'fact': 'City is coastal', 'type': 'setting', 'category': 'constant'},
+        ]
+
+        result = group_facts_by_category(all_facts)
+
+        # Constants and variables should be separate
+        self.assertIn('world_rule', result)
+        self.assertIn('setting', result)
+        self.assertIn('variables', result)
+
+        self.assertEqual(len(result['world_rule']), 1)
+        self.assertEqual(len(result['setting']), 1)
+        self.assertEqual(len(result['variables']), 1)
 
 
 if __name__ == '__main__':
