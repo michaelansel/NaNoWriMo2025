@@ -1153,6 +1153,8 @@ def handle_comment_webhook(payload):
         return handle_approve_path_command(payload)
     elif re.search(r'/extract-story-bible\b', comment_body):
         return handle_extract_story_bible_command(payload)
+    elif re.search(r'/summarize-story-bible\b', comment_body):
+        return handle_summarize_story_bible_command(payload)
     else:
         return jsonify({"message": "No recognized command"}), 200
 
@@ -1388,6 +1390,57 @@ def handle_extract_story_bible_command(payload):
     thread.start()
 
     return jsonify({"message": "Extraction started", "mode": mode, "workflow_id": workflow_id}), 202
+
+
+def handle_summarize_story_bible_command(payload):
+    """Handle /summarize-story-bible command from PR comments."""
+    comment_body = payload['comment']['body']
+    pr_number = payload['issue']['number']
+    username = payload['comment']['user']['login']
+    comment_id = payload['comment']['id']
+
+    # Deduplication check
+    with metrics_lock:
+        now = time.time()
+        expired_ids = [cid for cid, ts in processed_comment_ids.items() if now - ts > COMMENT_DEDUP_TTL]
+        for cid in expired_ids:
+            del processed_comment_ids[cid]
+
+        if comment_id in processed_comment_ids:
+            app.logger.info(f"Ignoring duplicate /summarize-story-bible for comment {comment_id}")
+            return jsonify({"message": "Duplicate webhook"}), 200
+
+        processed_comment_ids[comment_id] = now
+
+    # Ignore bot's own comments
+    bot_markers = [
+        '📖 Story Bible',
+        'Powered by Ollama',
+        '**Mode:**'
+    ]
+    if any(marker in comment_body for marker in bot_markers):
+        app.logger.info(f"Ignoring bot's own comment")
+        return jsonify({"message": "Ignoring bot's own comment"}), 200
+
+    app.logger.info(f"Received /summarize-story-bible command for PR #{pr_number} from {username}")
+
+    # Get PR info
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        post_pr_comment(pr_number, "⚠️ Could not retrieve PR information")
+        return jsonify({"message": "PR info error"}), 500
+
+    # Spawn background thread for processing
+    workflow_id = f"summarize-story-bible-{pr_number}-{int(time.time())}"
+
+    thread = threading.Thread(
+        target=process_summarize_story_bible_async,
+        args=(workflow_id, pr_number, username),
+        daemon=True
+    )
+    thread.start()
+
+    return jsonify({"message": "Summarization started", "workflow_id": workflow_id}), 202
 
 
 def parse_story_bible_command_mode(comment_body: str) -> str:
@@ -1641,6 +1694,205 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
     except Exception as e:
         app.logger.error(f"[Story Bible] Error during extraction: {e}", exc_info=True)
         post_pr_comment(pr_number, "⚠️ Error during extraction. Please contact repository maintainers.")
+
+
+def process_summarize_story_bible_async(workflow_id, pr_number, username):
+    """Process Story Bible summarization in background thread.
+
+    Re-runs only the AI summarization step (Stage 2.5) without re-extracting facts.
+    Useful for testing/updating summarization with new AI prompts.
+    """
+    # Import the extractor module
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+    from story_bible_extractor import (
+        categorize_all_facts,
+        run_summarization
+    )
+
+    try:
+        app.logger.info(f"[Story Bible] Processing summarization for PR #{pr_number}")
+
+        # Post initial comment
+        post_pr_comment(pr_number, f"""## 📖 Story Bible Summarization - Starting
+
+**Requested by:** @{username}
+
+Loading existing extractions and running AI summarization...
+
+_This will deduplicate and merge related facts while preserving evidence._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+        # Load cache from PR branch
+        cache = load_story_bible_cache_from_branch(pr_number)
+
+        # Check that passage_extractions exists
+        if not cache:
+            post_pr_comment(pr_number, """⚠️ No Story Bible cache found on this branch.
+
+**Next steps:**
+- Run `/extract-story-bible` first to extract facts from passages
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            return
+
+        if 'passage_extractions' not in cache or not cache['passage_extractions']:
+            post_pr_comment(pr_number, """⚠️ No passage extractions found in cache.
+
+**Next steps:**
+- Run `/extract-story-bible` first to extract facts from passages
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            return
+
+        total_passages = len(cache['passage_extractions'])
+
+        post_pr_comment(pr_number, f"""## 📖 Story Bible Summarization - Processing
+
+Found **{total_passages}** passage(s) with extracted facts.
+
+Running AI summarization to deduplicate and merge facts...
+""")
+
+        # Run AI summarization on existing extractions
+        app.logger.info(f"[Story Bible] Running AI summarization on {total_passages} passages")
+        summarized_facts = None
+        summarization_status = "skipped"
+        summarization_time = 0.0
+
+        try:
+            summarized_facts, summarization_status, summarization_time = run_summarization(
+                cache.get('passage_extractions', {})
+            )
+            app.logger.info(f"[Story Bible] Summarization {summarization_status} in {summarization_time:.2f}s")
+
+            # Store summarization results in cache
+            cache['summarized_facts'] = summarized_facts
+            cache['summarization_status'] = summarization_status
+            cache['summarization_time_seconds'] = summarization_time
+
+        except Exception as e:
+            # Graceful degradation: log error but continue
+            app.logger.warning(f"[Story Bible] Summarization failed: {e}")
+            cache['summarization_status'] = 'failed'
+            cache['summarization_error'] = str(e)
+
+            post_pr_comment(pr_number, f"""## 📖 Story Bible Summarization - Failed
+
+**Error:** Summarization process failed
+
+**Details:** {str(e)}
+
+The cache has been updated to reflect the failure status.
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            return
+
+        # Re-run categorization with new summarized facts
+        app.logger.info(f"[Story Bible] Categorizing facts with summarized results")
+        categorized_facts = categorize_all_facts(
+            cache.get('passage_extractions', {}),
+            summarized_facts=summarized_facts
+        )
+        cache['categorized_facts'] = categorized_facts
+
+        # Update metadata
+        total_facts = (
+            len(categorized_facts.get('constants', {}).get('world_rules', [])) +
+            len(categorized_facts.get('constants', {}).get('setting', [])) +
+            len(categorized_facts.get('constants', {}).get('timeline', [])) +
+            len(categorized_facts.get('variables', {}).get('events', [])) +
+            len(categorized_facts.get('variables', {}).get('outcomes', []))
+        )
+
+        # Update last_summarized timestamp
+        from datetime import datetime
+        cache['meta'] = cache.get('meta', {})
+        cache['meta']['last_summarized'] = datetime.now().isoformat()
+        cache['meta']['total_facts'] = total_facts
+
+        # Commit cache to PR branch
+        pr_info = get_pr_info(pr_number)
+        branch_name = pr_info['head']['ref']
+
+        # Build commit message
+        commit_message = f"""Update Story Bible summarization
+
+Re-ran AI summarization on {total_passages} passage(s)
+Summarization status: {summarization_status}
+Total facts after summarization: {total_facts}
+
+Requested by: @{username}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+        cache_content = json.dumps(cache, indent=2, ensure_ascii=False)
+        if not commit_file_to_branch(branch_name, 'story-bible-cache.json', cache_content, commit_message):
+            post_pr_comment(pr_number, "⚠️ Failed to commit updated cache to branch")
+            return
+
+        # Post final summary
+        character_count = len(categorized_facts.get('characters', {}))
+        constant_count = (
+            len(categorized_facts.get('constants', {}).get('world_rules', [])) +
+            len(categorized_facts.get('constants', {}).get('setting', [])) +
+            len(categorized_facts.get('constants', {}).get('timeline', []))
+        )
+        variable_count = (
+            len(categorized_facts.get('variables', {}).get('events', [])) +
+            len(categorized_facts.get('variables', {}).get('outcomes', []))
+        )
+
+        # Format summarization status for display
+        if summarization_status == 'success':
+            summarization_display = f"✅ Success ({summarization_time:.1f}s) - facts deduplicated"
+        elif summarization_status == 'failed':
+            summarization_display = "⚠️ Failed - using per-passage view"
+        else:
+            summarization_display = "⏭️ Skipped"
+
+        post_pr_comment(pr_number, f"""## 📖 Story Bible Summarization - Complete
+
+**Passages processed:** {total_passages}
+**Total facts:** {total_facts}
+**Summarization:** {summarization_display}
+
+**Summary:**
+- **Constants:** {constant_count} world facts
+- **Characters:** {character_count} characters
+- **Variables:** {variable_count} player-determined facts
+
+**Story Bible updated:**
+- `story-bible-cache.json` committed to branch `{branch_name}`
+- Facts deduplicated and merged with preserved evidence
+
+**Next steps:**
+- Review deduplicated facts in `story-bible-cache.json`
+- Use `/summarize-story-bible` again if AI summarization prompt is updated
+- Use `/extract-story-bible` to add new passages
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+        app.logger.info(f"[Story Bible] Summarization complete for PR #{pr_number}")
+
+    except Exception as e:
+        app.logger.error(f"[Story Bible] Error during summarization: {e}", exc_info=True)
+        post_pr_comment(pr_number, "⚠️ Error during summarization. Please contact repository maintainers.")
 
 
 def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
