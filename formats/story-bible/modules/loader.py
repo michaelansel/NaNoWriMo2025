@@ -39,7 +39,8 @@ def load_allpaths_data(dist_dir: Path) -> Dict:
                 "passage_name": {
                     "text": "Full passage text",
                     "appears_in_paths": ["path_id1", "path_id2"],
-                    "passage_id": "hex_id"
+                    "passage_id": "hex_id",
+                    "length": 5000
                 }
             },
             "paths": [
@@ -177,7 +178,8 @@ def load_allpaths_data(dist_dir: Path) -> Dict:
                     passages[actual_passage_name] = {
                         'text': passage_text,
                         'appears_in_paths': [],
-                        'passage_id': passage_id
+                        'passage_id': passage_id,
+                        'length': len(passage_text)
                     }
 
                 # Track which paths this passage appears in

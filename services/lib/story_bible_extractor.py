@@ -70,6 +70,69 @@ BEGIN EXTRACTION (JSON only):
 """
 
 
+def chunk_passage(
+    passage_name: str,
+    passage_text: str,
+    max_chars: int = 20000,
+    overlap_chars: int = 200
+) -> List[Tuple[str, str, int]]:
+    """
+    Split passage into chunks that fit within max_chars.
+
+    Args:
+        passage_name: Name of the passage
+        passage_text: Full passage text
+        max_chars: Maximum characters per chunk
+        overlap_chars: Characters to overlap between chunks
+
+    Returns:
+        List of (chunk_name, chunk_text, chunk_number) tuples
+
+    Example:
+        chunk_passage("Start", "...", 20000)
+        -> [("Start", "...", 1)]  # Single chunk if fits
+        -> [("Start_chunk_1", "...", 1), ("Start_chunk_2", "...", 2)]  # Multiple if large
+    """
+    # Fast path: passage fits in one chunk
+    if len(passage_text) <= max_chars:
+        return [(passage_name, passage_text, 1)]
+
+    chunks = []
+    chunk_num = 1
+
+    # Split at paragraph boundaries (double newline preferred)
+    paragraphs = passage_text.split('\n\n')
+
+    current_chunk = ""
+
+    for para in paragraphs:
+        # If adding this paragraph exceeds limit
+        if current_chunk and len(current_chunk) + len(para) + 2 > max_chars:
+            # Save current chunk
+            chunk_name = f"{passage_name}_chunk_{chunk_num}"
+            chunks.append((chunk_name, current_chunk, chunk_num))
+            chunk_num += 1
+
+            # Start new chunk with overlap from previous chunk
+            overlap = current_chunk[-overlap_chars:] if len(current_chunk) > overlap_chars else current_chunk
+            current_chunk = overlap + '\n\n' + para
+
+        elif not current_chunk:
+            # First paragraph in chunk
+            current_chunk = para
+
+        else:
+            # Add paragraph to current chunk
+            current_chunk += '\n\n' + para
+
+    # Save final chunk
+    if current_chunk:
+        chunk_name = f"{passage_name}_chunk_{chunk_num}"
+        chunks.append((chunk_name, current_chunk, chunk_num))
+
+    return chunks
+
+
 def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]:
     """
     Extract facts from a single passage using Ollama.
@@ -201,6 +264,24 @@ def run_summarization(per_passage_extractions: Dict) -> Tuple[Optional[Dict], st
         return (None, "failed", 0.0)
 
 
+def calculate_metrics(cache: Dict) -> Dict:
+    """
+    Calculate quality metrics for extraction validation.
+
+    Args:
+        cache: Story Bible cache dict
+
+    Returns:
+        Dict with extraction statistics
+    """
+    try:
+        from story_bible_metrics import calculate_extraction_stats
+        return calculate_extraction_stats(cache)
+    except Exception as e:
+        logging.error(f"Failed to calculate metrics: {e}")
+        return {}
+
+
 def categorize_all_facts(passage_extractions: Dict, summarized_facts: Optional[Dict] = None) -> Dict:
     """
     Cross-reference facts across all passages to categorize as constants/variables.
@@ -324,6 +405,43 @@ def extract_character_name(fact_text: str) -> str:
             return word
 
     return "Unknown"
+
+
+def extract_facts_from_passage_with_chunking(
+    passage_name: str,
+    passage_text: str,
+    max_chars: int = 20000
+) -> Tuple[List[Dict], int]:
+    """
+    Extract facts from a passage, chunking if necessary.
+
+    Args:
+        passage_name: Name/ID of the passage
+        passage_text: Full passage text
+        max_chars: Maximum characters per chunk
+
+    Returns:
+        Tuple of (all_facts, chunks_processed) where:
+        - all_facts: Combined list of facts from all chunks
+        - chunks_processed: Number of chunks created (1 for most passages)
+    """
+    # Chunk the passage
+    chunks = chunk_passage(passage_name, passage_text, max_chars)
+
+    all_facts = []
+
+    for chunk_name, chunk_text, chunk_num in chunks:
+        # Extract facts from this chunk
+        chunk_facts = extract_facts_from_passage(chunk_text, chunk_name)
+
+        # Tag facts with chunk metadata for debugging
+        for fact in chunk_facts:
+            fact['_chunk_number'] = chunk_num
+            fact['_chunk_total'] = len(chunks)
+
+        all_facts.extend(chunk_facts)
+
+    return (all_facts, len(chunks))
 
 
 def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:

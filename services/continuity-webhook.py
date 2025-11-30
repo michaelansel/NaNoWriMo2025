@@ -1429,9 +1429,11 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
     sys.path.insert(0, str(Path(__file__).parent / 'lib'))
     from story_bible_extractor import (
         extract_facts_from_passage,
+        extract_facts_from_passage_with_chunking,
         categorize_all_facts,
         get_passages_to_extract,
-        run_summarization
+        run_summarization,
+        calculate_metrics
     )
 
     try:
@@ -1547,8 +1549,10 @@ _Progress updates will be posted as each passage completes._
                     app.logger.info(f"[Story Bible] Extracting passage {idx}/{total_passages}: {passage_id}")
 
                     try:
-                        # Call Ollama API
-                        extracted_facts = extract_facts_from_passage(passage_content, passage_id)
+                        # Call Ollama API with chunking support
+                        extracted_facts, chunks_processed = extract_facts_from_passage_with_chunking(
+                            passage_id, passage_content
+                        )
 
                         # Update cache
                         if 'passage_extractions' not in cache:
@@ -1557,7 +1561,10 @@ _Progress updates will be posted as each passage completes._
                         cache['passage_extractions'][passage_id] = {
                             'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
                             'extracted_at': datetime.now().isoformat(),
-                            'facts': extracted_facts
+                            'facts': extracted_facts,
+                            'chunks_processed': chunks_processed,
+                            'passage_name': passage_id,
+                            'passage_length': len(passage_content)
                         }
 
                         # Post progress
@@ -1622,6 +1629,11 @@ Continuing with remaining passages...
         )
         cache['categorized_facts'] = categorized_facts
 
+        # Calculate quality metrics
+        app.logger.info(f"[Story Bible] Calculating quality metrics")
+        extraction_stats = calculate_metrics(cache)
+        cache['extraction_stats'] = extraction_stats
+
         # Update metadata
         total_facts = (
             len(categorized_facts.get('constants', {}).get('world_rules', [])) +
@@ -1676,13 +1688,29 @@ Continuing with remaining passages...
             title = "Story Bible Extraction - Complete"
             passages_label = "Passages extracted"
 
+        # Format quality metrics for display
+        metrics_text = ""
+        if extraction_stats:
+            character_coverage = extraction_stats.get('character_coverage', 0)
+            avg_facts = extraction_stats.get('average_facts_per_passage', 0)
+            success_rate = extraction_stats.get('extraction_success_rate', 0) * 100
+            dedup_ratio = extraction_stats.get('deduplication_effectiveness', 0) * 100
+
+            metrics_text = f"""
+**Quality Metrics:**
+- **Character coverage:** {character_coverage} characters detected
+- **Extraction success:** {extraction_stats.get('passages_with_facts', 0)}/{extraction_stats.get('total_passages', 0)} passages ({success_rate:.1f}%)
+- **Average facts/passage:** {avg_facts:.1f}
+- **Deduplication:** {dedup_ratio:.0f}% reduction
+"""
+
         post_pr_comment(pr_number, f"""## 📖 {title}
 
 **Mode:** `{mode}`
 **{passages_label}:** {total_passages}
 **Total facts:** {total_facts}
 **Summarization:** {summarization_display}
-
+{metrics_text}
 **Summary:**
 - **Constants:** {constant_count} world facts
 - **Characters:** {character_count} characters

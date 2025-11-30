@@ -222,6 +222,73 @@ def validate_summarized_structure(summarized: Dict) -> bool:
     return all(key in summarized for key in required_keys)
 
 
+def merge_chunk_facts(per_passage_extractions: Dict) -> Dict:
+    """
+    Merge facts from chunks of the same passage before main deduplication.
+
+    For passages that were chunked (chunks_processed > 1), merge duplicate facts
+    from different chunks of the same passage.
+
+    Args:
+        per_passage_extractions: Dict of passage_id -> extraction data
+
+    Returns:
+        Modified per_passage_extractions with chunk facts merged
+    """
+    merged = {}
+
+    for passage_id, extraction in per_passage_extractions.items():
+        chunks_processed = extraction.get('chunks_processed', 1)
+
+        if chunks_processed == 1:
+            # No merging needed - single chunk
+            merged[passage_id] = extraction
+        else:
+            # Multiple chunks - merge duplicate facts
+            facts = extraction.get('facts', [])
+
+            # Group facts by similarity (simple: same fact text)
+            fact_groups = {}
+            for fact in facts:
+                fact_text = fact.get('fact', '').strip()
+                if fact_text not in fact_groups:
+                    fact_groups[fact_text] = []
+                fact_groups[fact_text].append(fact)
+
+            # Merge facts in each group
+            merged_facts = []
+            for fact_text, group in fact_groups.items():
+                if len(group) == 1:
+                    # Unique fact - keep as is (but strip chunk metadata)
+                    fact = dict(group[0])
+                    fact.pop('_chunk_number', None)
+                    fact.pop('_chunk_total', None)
+                    merged_facts.append(fact)
+                else:
+                    # Duplicate fact across chunks - merge evidence
+                    base_fact = dict(group[0])
+                    base_fact.pop('_chunk_number', None)
+                    base_fact.pop('_chunk_total', None)
+
+                    # Combine evidence from all chunks
+                    all_evidence = []
+                    for fact in group:
+                        evidence = fact.get('evidence', [])
+                        if evidence:
+                            all_evidence.extend(evidence)
+
+                    base_fact['evidence'] = all_evidence
+                    merged_facts.append(base_fact)
+
+            # Update extraction with merged facts
+            merged[passage_id] = {
+                **extraction,
+                'facts': merged_facts
+            }
+
+    return merged
+
+
 def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]:
     """
     Deduplicate and merge facts from per-passage extractions using AI.
@@ -235,8 +302,11 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
         - status: "success" or "failed"
     """
     try:
+        # Pre-process: Merge facts from chunks of same passage
+        merged_extractions = merge_chunk_facts(per_passage_extractions)
+
         # Build input for AI
-        all_facts = build_summarization_input(per_passage_extractions)
+        all_facts = build_summarization_input(merged_extractions)
 
         if not all_facts:
             logging.warning("No facts to summarize")

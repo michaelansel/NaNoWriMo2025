@@ -17,7 +17,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from story_bible_extractor import (
     parse_json_from_response,
     categorize_all_facts,
-    extract_character_name
+    extract_character_name,
+    chunk_passage
 )
 
 
@@ -156,6 +157,67 @@ class TestExtractCharacterName(unittest.TestCase):
         """Should skip 'A' and 'An' articles."""
         result = extract_character_name("A wizard named Merlin appears")
         self.assertEqual(result, "Merlin")
+
+
+class TestChunkPassage(unittest.TestCase):
+    """Test passage chunking functionality."""
+
+    def test_small_passage_single_chunk(self):
+        """Should return single chunk for passage within limit."""
+        text = "This is a small passage.\n\nIt has two paragraphs."
+        result = chunk_passage("TestPassage", text, max_chars=20000)
+
+        self.assertEqual(len(result), 1)
+        chunk_name, chunk_text, chunk_num = result[0]
+        self.assertEqual(chunk_name, "TestPassage")
+        self.assertEqual(chunk_text, text)
+        self.assertEqual(chunk_num, 1)
+
+    def test_large_passage_multiple_chunks(self):
+        """Should split large passage into multiple chunks."""
+        # Create passage > 100 chars (using low limit for test)
+        para1 = "A" * 60
+        para2 = "B" * 60
+        text = f"{para1}\n\n{para2}"
+
+        result = chunk_passage("TestPassage", text, max_chars=100)
+
+        # Should create 2 chunks
+        self.assertEqual(len(result), 2)
+
+        # Check chunk names
+        self.assertEqual(result[0][0], "TestPassage_chunk_1")
+        self.assertEqual(result[1][0], "TestPassage_chunk_2")
+
+        # Check chunk numbers
+        self.assertEqual(result[0][2], 1)
+        self.assertEqual(result[1][2], 2)
+
+    def test_chunk_overlap(self):
+        """Should include overlap between chunks."""
+        para1 = "A" * 60
+        para2 = "B" * 60
+        text = f"{para1}\n\n{para2}"
+
+        result = chunk_passage("TestPassage", text, max_chars=100, overlap_chars=20)
+
+        # Second chunk should start with overlap from first
+        self.assertIn("A", result[1][1])  # Contains some As from para1
+
+    def test_empty_passage(self):
+        """Should handle empty passage gracefully."""
+        result = chunk_passage("Empty", "", max_chars=20000)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0][1], "")
+
+    def test_exactly_at_limit(self):
+        """Should handle passage exactly at character limit."""
+        text = "A" * 100
+        result = chunk_passage("Exact", text, max_chars=100)
+
+        # Should be single chunk (not over limit)
+        self.assertEqual(len(result), 1)
 
 
 class TestCategorizeAllFactsFallback(unittest.TestCase):
