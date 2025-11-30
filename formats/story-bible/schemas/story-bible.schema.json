@@ -1,0 +1,183 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Story Bible",
+  "description": "Schema for Story Bible JSON output - canonical facts about the story world",
+  "type": "object",
+  "required": ["meta", "constants", "characters", "variables"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "description": "Metadata about the Story Bible generation",
+      "required": ["generated", "commit", "version", "schema_version"],
+      "properties": {
+        "generated": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 timestamp of generation"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Git commit hash of source content"
+        },
+        "version": {
+          "type": "string",
+          "description": "Story Bible version"
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "Schema version (semver)"
+        }
+      }
+    },
+    "constants": {
+      "type": "object",
+      "description": "Facts that are true in all story paths",
+      "properties": {
+        "world_rules": {
+          "type": "array",
+          "description": "World rules and systems (magic, technology, physics)",
+          "items": {"$ref": "#/definitions/fact"}
+        },
+        "setting": {
+          "type": "array",
+          "description": "Geographic and historical facts",
+          "items": {"$ref": "#/definitions/fact"}
+        },
+        "timeline": {
+          "type": "array",
+          "description": "Events before story starts",
+          "items": {"$ref": "#/definitions/fact"}
+        },
+        "other": {
+          "type": "array",
+          "description": "Other constant facts",
+          "items": {"$ref": "#/definitions/fact"}
+        }
+      }
+    },
+    "characters": {
+      "type": "object",
+      "description": "Character-specific facts organized by character name",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "identity": {
+            "type": "array",
+            "description": "Core character traits and background (constants)",
+            "items": {"$ref": "#/definitions/fact"}
+          },
+          "zero_action_state": {
+            "type": "array",
+            "description": "What happens if player does nothing",
+            "items": {"$ref": "#/definitions/fact"}
+          },
+          "variables": {
+            "type": "array",
+            "description": "Outcomes that depend on player choices",
+            "items": {"$ref": "#/definitions/fact"}
+          }
+        }
+      }
+    },
+    "variables": {
+      "type": "object",
+      "description": "Facts that change based on player choices",
+      "properties": {
+        "events": {
+          "type": "array",
+          "description": "Variable events",
+          "items": {"$ref": "#/definitions/fact"}
+        },
+        "outcomes": {
+          "type": "array",
+          "description": "Variable outcomes",
+          "items": {"$ref": "#/definitions/fact"}
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "description": "Detected contradictions that need author review",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "description": "Type of conflict"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable conflict description"
+          },
+          "facts": {
+            "type": "array",
+            "description": "Conflicting facts",
+            "items": {
+              "type": "object",
+              "properties": {
+                "fact": {"type": "string"},
+                "evidence": {
+                  "type": "array",
+                  "items": {"$ref": "#/definitions/evidence"}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Statistics about the Story Bible",
+      "properties": {
+        "total_facts": {"type": "integer"},
+        "total_constants": {"type": "integer"},
+        "total_variables": {"type": "integer"},
+        "total_characters": {"type": "integer"}
+      }
+    }
+  },
+  "definitions": {
+    "fact": {
+      "type": "object",
+      "description": "A single fact about the story world",
+      "required": ["fact", "evidence"],
+      "properties": {
+        "fact": {
+          "type": "string",
+          "description": "The fact statement"
+        },
+        "evidence": {
+          "type": "array",
+          "description": "Supporting evidence from passages",
+          "items": {"$ref": "#/definitions/evidence"}
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "AI confidence in this fact"
+        },
+        "appears_in_paths": {
+          "type": "array",
+          "description": "Path IDs where this fact appears",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "description": "Evidence for a fact",
+      "required": ["passage", "quote"],
+      "properties": {
+        "passage": {
+          "type": "string",
+          "description": "Passage name or ID"
+        },
+        "quote": {
+          "type": "string",
+          "description": "Quote from passage demonstrating the fact"
+        }
+      }
+    }
+  }
+}
