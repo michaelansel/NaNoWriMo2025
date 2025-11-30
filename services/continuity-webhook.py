@@ -43,6 +43,13 @@ get_unvalidated_paths = _checker_module.get_unvalidated_paths
 load_validation_cache = _checker_module.load_validation_cache
 save_validation_cache = _checker_module.save_validation_cache
 
+# Import Story Bible validator (Phase 3: World consistency validation)
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from story_bible_validator import (
+    validate_against_story_bible,
+    merge_validation_results
+)
+
 # Configuration (from environment variables)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
@@ -403,6 +410,25 @@ _No paths to check with this mode._
         elif mode == 'modified' and stats['unchanged'] > 0:
             comment += "_Use `/check-continuity all` for full validation._\n\n"
 
+    # Phase 3: Story Bible validation section
+    story_bible_available = any(
+        p.get('world_validation') for p in all_checked_paths
+    )
+
+    if story_bible_available:
+        comment += "### 📖 Story Bible Validation\n\n"
+        comment += "✓ Validated against established world constants\n"
+
+        world_issues_count = sum(
+            1 for p in all_checked_paths
+            if p.get('world_validation', {}).get('has_violations', False)
+        )
+
+        if world_issues_count > 0:
+            comment += f"⚠️ Found world consistency issues in {world_issues_count} path(s)\n\n"
+        else:
+            comment += "✅ No world consistency issues detected\n\n"
+
     if not results["paths_with_issues"]:
         comment += "### ✅ All Paths Passed\n\n"
         comment += f"No issues found in {results['checked_count']} path(s).\n"
@@ -476,14 +502,15 @@ _No paths to check with this mode._
 
 
 def format_path_issues(path: dict) -> str:
-    """Format issues for a single path."""
+    """Format issues for a single path, including world validation (Phase 3)."""
     path_id = path.get("id", "unknown")
     route_str = " → ".join(path["route"]) if path["route"] else path_id
     output = f"**Path:** `{path_id}` ({route_str})\n\n"
     output += f"_{sanitize_ai_content(path['summary'])}_\n\n"
 
+    # Path consistency issues
     if path.get("issues"):
-        output += "<details>\n<summary>Details</summary>\n\n"
+        output += "<details>\n<summary>Path Consistency Issues</summary>\n\n"
         for issue in path["issues"]:
             issue_type = issue.get("type", "unknown")
             severity = issue.get("severity", "unknown")
@@ -513,6 +540,34 @@ def format_path_issues(path: dict) -> str:
                             if quote_text:
                                 output += f'  > In "{passage_name}": "{quote_text}"\n'
                     output += "\n"
+
+        output += "</details>\n\n"
+
+    # Phase 3: World consistency issues
+    world_validation = path.get('world_validation')
+    if world_validation and world_validation.get('has_violations'):
+        output += "<details>\n<summary>World Consistency Issues (Story Bible)</summary>\n\n"
+        output += f"_{sanitize_ai_content(world_validation.get('summary', ''))}_\n\n"
+
+        for violation in world_validation.get('violations', []):
+            violation_type = violation.get('type', 'unknown')
+            severity = violation.get('severity', 'unknown')
+            description = sanitize_ai_content(violation.get('description', ''))
+            constant_fact = sanitize_ai_content(violation.get('constant_fact', ''))
+            passage_statement = sanitize_ai_content(violation.get('passage_statement', ''))
+
+            output += f"- **{violation_type.replace('_', ' ').capitalize()}** ({severity}): {description}\n"
+            if constant_fact:
+                output += f"  - **Established constant**: \"{constant_fact}\"\n"
+            if passage_statement:
+                output += f"  - **This passage states**: \"{passage_statement}\"\n"
+
+            evidence = violation.get('evidence', {})
+            if evidence and isinstance(evidence, dict):
+                const_source = evidence.get('constant_source', '')
+                if const_source:
+                    output += f"  - **Constant source**: {sanitize_ai_content(const_source)}\n"
+            output += "\n"
 
         output += "</details>\n\n"
 
@@ -656,6 +711,17 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                         app.logger.info(f"Loaded passage ID mapping with {len(id_to_name)} passages")
                 except Exception as e:
                     app.logger.warning(f"Could not load passage mapping: {e}")
+
+            # Phase 3: Load Story Bible cache from PR branch for world consistency validation
+            story_bible_cache = load_story_bible_cache_from_branch(pr_number)
+            story_bible_available = bool(
+                story_bible_cache and
+                story_bible_cache.get('categorized_facts', {}).get('constants', {})
+            )
+            if story_bible_available:
+                app.logger.info(f"[Story Bible] Story Bible cache loaded, will validate world consistency")
+            else:
+                app.logger.info(f"[Story Bible] No Story Bible cache available, skipping world validation")
 
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
@@ -830,6 +896,62 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 app.logger.info(f"[Background] Job was cancelled during validation (after some paths completed)")
                 post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled after checking some paths - newer commit or manual request detected.\n\n_This is expected during rapid development. The latest commit will be validated instead._\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
+
+            # Phase 3: Add Story Bible validation to each checked path
+            if story_bible_available:
+                app.logger.info(f"[Story Bible] Running world consistency validation for {results['checked_count']} paths")
+
+                # Validate each path against Story Bible constants
+                all_paths = results.get('all_checked_paths', [])
+                for path_result in all_paths:
+                    # Get the path text file
+                    path_id = path_result.get('id')
+                    text_file = text_dir / f"path-{path_id}.txt"
+
+                    if text_file.exists():
+                        try:
+                            story_text = text_file.read_text()
+
+                            # Run Story Bible validation
+                            world_result = validate_against_story_bible(
+                                passage_text=story_text,
+                                story_bible_cache=story_bible_cache,
+                                passage_id=path_id
+                            )
+
+                            # Merge with path consistency results
+                            # Note: path_result doesn't have all fields, need to reconstruct
+                            path_consistency_result = {
+                                'has_issues': path_result.get('has_issues', False),
+                                'severity': path_result.get('severity', 'none'),
+                                'issues': path_result.get('issues', []),
+                                'summary': path_result.get('summary', '')
+                            }
+
+                            merged = merge_validation_results(path_consistency_result, world_result)
+
+                            # Update path_result with merged data
+                            path_result['world_validation'] = merged.get('world_validation')
+                            path_result['severity'] = merged.get('severity')
+                            path_result['has_issues'] = merged.get('has_issues')
+
+                        except Exception as e:
+                            app.logger.error(f"[Story Bible] Error validating path {path_id}: {e}", exc_info=True)
+                            # Continue with other paths
+
+                # Also update paths_with_issues
+                paths_with_issues = results.get('paths_with_issues', [])
+                for path in paths_with_issues:
+                    # Find matching path in all_checked_paths
+                    path_id = path.get('id')
+                    matching = [p for p in all_paths if p.get('id') == path_id]
+                    if matching:
+                        # Copy world_validation from merged result
+                        path['world_validation'] = matching[0].get('world_validation')
+                        path['severity'] = matching[0].get('severity')
+                        path['has_issues'] = matching[0].get('has_issues')
+
+                app.logger.info(f"[Story Bible] World consistency validation complete")
 
             # Translate passage IDs in final results
             if results.get("paths_with_issues"):
@@ -1485,7 +1607,16 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
 
 def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
-    """Load story-bible-cache.json from the PR branch if it exists."""
+    """Load story-bible-cache.json from the PR branch if it exists.
+
+    Used for both Story Bible extraction (Phase 2) and validation (Phase 3).
+
+    Args:
+        pr_number: Pull request number
+
+    Returns:
+        Story Bible cache dict, or empty dict if not found
+    """
     pr_info = get_pr_info(pr_number)
     if not pr_info:
         return {}
@@ -1504,7 +1635,9 @@ def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
             import base64
             content = response.json()['content']
             decoded = base64.b64decode(content).decode('utf-8')
-            return json.loads(decoded)
+            cache = json.loads(decoded)
+            app.logger.info(f"[Story Bible] Loaded cache from branch {branch_name}")
+            return cache
         else:
             app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name}, starting fresh")
             return {}
