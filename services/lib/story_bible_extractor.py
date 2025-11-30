@@ -20,7 +20,7 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 120  # 2 minutes per passage
 
 # AI prompt for fact extraction
-EXTRACTION_PROMPT = """Reasoning: high
+EXTRACTION_PROMPT = """Reasoning: low
 
 === SECTION 1: ROLE & CONTEXT ===
 

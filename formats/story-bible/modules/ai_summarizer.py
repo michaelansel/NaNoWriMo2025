@@ -30,7 +30,7 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 600  # 10 minutes for summarization (large fact sets with thinking model)
 
 # AI prompt for summarization/deduplication
-SUMMARIZATION_PROMPT = """Reasoning: high
+SUMMARIZATION_PROMPT = """Reasoning: low
 
 === SECTION 1: ROLE & CONTEXT ===
 
