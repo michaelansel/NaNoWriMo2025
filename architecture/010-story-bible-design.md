@@ -214,6 +214,141 @@ scripts/
 └── build-story-bible.sh            # Build script integration
 ```
 
+### Data Contracts
+
+This section defines the canonical data formats and schemas that components must adhere to.
+
+#### Evidence Format Contract
+
+**Canonical Format** (REQUIRED for all new AI extractions):
+
+Evidence MUST be an array of objects, where each object contains:
+- `passage` (string): The passage name where the evidence was found
+- `quote` (string): The quoted text from the passage
+
+**TypeScript Schema**:
+```typescript
+evidence: Array<{
+  passage: string;  // e.g., "Start", "Chapter 1", "Epilogue"
+  quote: string;    // e.g., "The city lay on the coast..."
+}>
+```
+
+**JSON Examples**:
+```json
+// Single piece of evidence
+"evidence": [
+  {
+    "passage": "Start",
+    "quote": "The city lay on the coast, waves crashing against the harbor walls"
+  }
+]
+
+// Multiple pieces of evidence from different passages
+"evidence": [
+  {
+    "passage": "Start",
+    "quote": "The city lay on the coast"
+  },
+  {
+    "passage": "Harbor Scene",
+    "quote": "waves crashing against ancient stone walls"
+  }
+]
+```
+
+**Rationale**:
+- Templates need structured data to render evidence with passage context
+- Multiple evidence sources can be tracked per fact
+- Clear provenance for each quote enhances verification and debugging
+- Enables future features like evidence cross-referencing and passage linking
+
+**Contract Requirements**:
+
+1. **AI Extraction (Stage 2)**:
+   - Prompt MUST instruct AI to return evidence in array-of-objects format
+   - Each fact extraction MUST produce `evidence: [{passage, quote}, ...]`
+   - See: `modules/ai_extractor.py` - AI prompt template, Section 3: Output Format
+
+2. **HTML Templates**:
+   - Templates MUST iterate over evidence as array: `{% for ev in fact.evidence %}`
+   - Templates MUST access structured fields: `{{ ev.passage }}`, `{{ ev.quote }}`
+   - See: `templates/story-bible.html.jinja2` - Evidence rendering blocks
+
+3. **Cache Schema**:
+   - `story-bible-cache.json` SHOULD store evidence in canonical array-of-objects format
+   - Cache MAY contain legacy string format during transition period
+   - See: `schemas/categorized_facts.schema.json`
+
+**Backwards Compatibility Layer**:
+
+The HTML generator provides automatic normalization for legacy evidence formats found in existing cache entries:
+
+**Normalization Rules** (implemented in `modules/html_generator.py::normalize_evidence()`):
+
+| Input Format | Example | Normalized Output |
+|--------------|---------|-------------------|
+| String (legacy) | `"evidence": "Some quote"` | `[{passage: "Source", quote: "Some quote"}]` |
+| Array of strings (legacy) | `"evidence": ["quote1", "quote2"]` | `[{passage: "Source", quote: "quote1"}, {passage: "Source", quote: "quote2"}]` |
+| Array of objects (canonical) | `"evidence": [{passage: "X", quote: "Y"}]` | Used as-is (no transformation) |
+| Null/missing | `"evidence": null` | `[]` (empty array) |
+
+**Normalization Functions** (all in `modules/html_generator.py`):
+- `normalize_evidence(evidence)` - Core normalization logic
+- `normalize_facts(facts_list)` - Apply to list of facts
+- `normalize_constants(constants)` - Normalize world_rules, setting, timeline
+- `normalize_variables(variables)` - Normalize events, outcomes
+- `normalize_characters(characters)` - Normalize identity, zero_action_state, variables
+- `normalize_conflicts(conflicts)` - Normalize conflict facts
+
+**Guarantees**:
+1. Old cached data continues to render correctly (no breakage)
+2. New extractions use the richer canonical format (forward progress)
+3. Migration happens naturally as cache is rebuilt over time (no manual intervention)
+4. Templates always receive consistent array-of-objects format (simplified rendering logic)
+
+**Migration Path**:
+1. **Current state**: Mixed formats in cache (some string, some array-of-objects)
+2. **Transition period**: Normalization layer handles all formats transparently at render time
+3. **Future state**: As passages are re-extracted, cache converges to canonical format naturally
+4. **No action required**: Migration happens automatically through normal extraction workflow
+
+**Verification and Testing**:
+
+To ensure compliance with this contract:
+
+✅ **AI Prompt Validation**:
+- Review `modules/ai_extractor.py` Section 3 output format specification
+- Confirm example output shows `"evidence": [{passage: "...", quote: "..."}]`
+
+✅ **Template Validation**:
+- Search templates for evidence rendering: `{% for ev in fact.evidence %}`
+- Confirm all templates access `ev.passage` and `ev.quote` (not treating as string)
+
+✅ **Normalization Tests**:
+- Unit tests in `tests/test_html_generator.py` verify normalization handles:
+  - String input → Array of objects output
+  - Array of strings input → Array of objects output
+  - Array of objects input → Unchanged output
+  - Null/missing input → Empty array output
+
+✅ **Integration Tests**:
+- End-to-end test with mock cache containing mixed evidence formats
+- Verify HTML renders correctly regardless of input format
+- Confirm no template rendering errors
+
+✅ **Schema Validation** (Future Enhancement):
+- JSON Schema for cache format allows both legacy and canonical evidence formats
+- Schema linter can warn about legacy format usage in new extractions
+- Automated migration tool can convert cache to canonical format
+
+**Related Architecture Decisions**:
+- Normalization occurs at render time (Stage 4), not at cache write time (Stage 6)
+- This preserves original cache data format for debugging and migration tracking
+- Cache remains source of truth; HTML generator is responsible for format compatibility
+
+---
+
 ### Data Flow
 
 **BUILD WORKFLOW (Cache-First)**:
@@ -371,7 +506,12 @@ Check: Does story-bible-cache.json exist in repo root?
           "fact": "The city is on the coast",
           "type": "setting",
           "confidence": "high",
-          "evidence": "...coastal breeze..."
+          "evidence": [
+            {
+              "passage": "Start",
+              "quote": "The coastal breeze carried the scent of salt and seaweed"
+            }
+          ]
         }
       ],
       "extracted_at": "2025-12-01T10:05:00Z"
@@ -425,11 +565,22 @@ Respond with JSON:
       "fact": "The city is on the coast",
       "type": "setting|world_rule|character_identity|timeline",
       "confidence": "high|medium|low",
-      "evidence": "Quote from passage demonstrating this fact",
+      "evidence": [
+        {
+          "passage": "Start",
+          "quote": "The city lay on the coast, waves crashing against the harbor"
+        }
+      ],
       "category": "constant|variable|zero_action_state"
     }
   ]
 }
+
+CRITICAL: Evidence format MUST be an array of objects:
+- Each evidence item MUST have "passage" (passage name) and "quote" (quoted text)
+- Use the ACTUAL passage name from the story (e.g., "Start", "Chapter 1")
+- Multiple evidence sources can be included for the same fact
+- Do NOT use string format for evidence
 
 === SECTION 4: PASSAGE TEXT ===
 
@@ -803,6 +954,16 @@ def generate_html_output(categorized_facts: Dict, output_path: Path):
     commit_hash = get_current_commit_hash()
     generated_at = datetime.now().isoformat()
 
+    # Normalize evidence format from cache (handles legacy string format)
+    # See: Data Contracts > Evidence Format Contract > Backwards Compatibility
+    normalized_facts = {
+        'story_title': categorized_facts.get('story_title', 'Unknown'),
+        'constants': normalize_constants(categorized_facts.get('constants', {})),
+        'characters': normalize_characters(categorized_facts.get('characters', {})),
+        'variables': normalize_variables(categorized_facts.get('variables', {})),
+        'conflicts': normalize_conflicts(categorized_facts.get('conflicts', []))
+    }
+
     # Load Jinja2 template
     template_dir = Path(__file__).parent.parent / 'templates'
     env = Environment(loader=FileSystemLoader(template_dir))
@@ -810,18 +971,20 @@ def generate_html_output(categorized_facts: Dict, output_path: Path):
 
     # Render
     html = template.render(
-        story_title=categorized_facts.get('story_title', 'Unknown'),
+        story_title=normalized_facts['story_title'],
         generated_at=format_date_for_display(generated_at),
         commit_hash=commit_hash[:8],
-        constants=categorized_facts['constants'],
-        characters=categorized_facts['characters'],
-        variables=categorized_facts['variables'],
-        conflicts=categorized_facts.get('conflicts', [])
+        constants=normalized_facts['constants'],
+        characters=normalized_facts['characters'],
+        variables=normalized_facts['variables'],
+        conflicts=normalized_facts['conflicts']
     )
 
     # Write output
     output_path.write_text(html, encoding='utf-8')
 ```
+
+**Key Implementation Detail**: The normalization step ensures that regardless of the evidence format in the cache (string, array of strings, or array of objects), the template always receives the canonical array-of-objects format. This provides backwards compatibility for legacy cache entries while enabling new extractions to use the richer structured format.
 
 ---
 
@@ -1462,7 +1625,12 @@ def handle_extract_story_bible_command(payload):
           "fact": "The city is on the coast",
           "type": "setting",
           "confidence": "high",
-          "evidence": "...coastal breeze..."
+          "evidence": [
+            {
+              "passage": "Start",
+              "quote": "The coastal breeze carried the scent of salt and seaweed"
+            }
+          ]
         }
       ]
     }
@@ -1890,11 +2058,22 @@ Respond with ONLY valid JSON (no markdown, no code blocks):
       "fact": "The city is on the coast",
       "type": "setting|world_rule|character_identity|timeline",
       "confidence": "high|medium|low",
-      "evidence": "Quote from passage demonstrating this fact",
+      "evidence": [
+        {
+          "passage": "Start",
+          "quote": "The city lay on the coast, waves crashing against the harbor"
+        }
+      ],
       "category": "constant|variable|zero_action_state"
     }
   ]
 }
+
+CRITICAL: Evidence format MUST be an array of objects:
+- Each evidence item MUST have "passage" (passage name) and "quote" (quoted text)
+- Use the ACTUAL passage name from the story (e.g., "Start", "Chapter 1")
+- Multiple evidence sources can be included for the same fact
+- Do NOT use string format for evidence
 
 === SECTION 4: PASSAGE TEXT ===
 

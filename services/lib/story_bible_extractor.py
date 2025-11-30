@@ -55,7 +55,7 @@ Respond with ONLY valid JSON (no markdown, no code blocks):
       "fact": "The city is on the coast",
       "type": "setting|world_rule|character_identity|timeline",
       "confidence": "high|medium|low",
-      "evidence": "Quote from passage demonstrating this fact",
+      "evidence": [{{"passage": "PassageName", "quote": "Quote from passage demonstrating this fact"}}],
       "category": "constant|variable|zero_action_state"
     }}
   ]
