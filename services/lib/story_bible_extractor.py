@@ -17,7 +17,7 @@ from pathlib import Path
 # Ollama configuration
 OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
-OLLAMA_TIMEOUT = 120  # 2 minutes per passage
+OLLAMA_TIMEOUT = 600  # 10 minutes per passage - go all out
 
 # AI prompt for fact extraction
 EXTRACTION_PROMPT = """=== SECTION 1: ROLE & CONTEXT ===
@@ -97,8 +97,10 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
                 "stream": False,
                 "options": {
                     "temperature": 0.3,  # Lower temperature for more consistent extraction
-                    "num_predict": 16000  # Max tokens for response (thinking can use 8k+, need room for actual response)
-                }
+                    "num_predict": 50000,  # Go all out - 50k tokens per passage
+                    "num_ctx": 131072  # Use full context window
+                },
+                "think": "low"  # Minimize thinking for gpt-oss
             },
             timeout=OLLAMA_TIMEOUT
         )
