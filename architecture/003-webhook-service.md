@@ -252,16 +252,12 @@ return jsonify({"message": "Accepted"}), 202
    - Category-based bulk approval
 
 5. `/extract-story-bible [mode]`
-   - Extract world facts from passages
-   - Modes: incremental (default), full
-   - Runs AI extraction and summarization
+   - Extract and/or summarize world facts from passages
+   - Modes:
+     - `incremental` (default): Extract changed passages + summarize
+     - `full`: Extract all passages + summarize
+     - `summarize`: Skip extraction, only run AI summarization on existing facts
    - Commits story-bible-cache.json to PR branch
-
-6. `/summarize-story-bible`
-   - Re-run AI summarization on existing extractions
-   - Does NOT re-extract facts from passages
-   - Useful for testing/updating summarization prompts
-   - Updates story-bible-cache.json with new results
 
 **Command Processing**:
 1. Receive issue_comment webhook
