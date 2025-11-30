@@ -259,7 +259,7 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
                 "stream": False,
                 "options": {
                     "temperature": 0.3,  # Lower temperature for consistent deduplication
-                    "num_predict": 16000  # Max tokens for response
+                    "num_predict": 32000  # Max tokens (thinking model uses ~20k for thinking)
                 }
             },
             timeout=OLLAMA_TIMEOUT
