@@ -114,11 +114,33 @@ def main():
         if cache and 'categorized_facts' in cache:
             # Cache exists - use it!
             print(f"✓ Cache found: {cache_file}", file=sys.stderr)
-            categorized = cache['categorized_facts']
+
+            # Check summarization status to determine which view to use
+            summarization_status = cache.get('summarization_status', 'not_run')
             cache_meta = cache.get('meta', {})
+
             print(f"  Last extracted: {cache_meta.get('last_extracted', 'unknown')}", file=sys.stderr)
             print(f"  Total passages: {cache_meta.get('total_passages_extracted', 0)}", file=sys.stderr)
             print(f"  Total facts: {cache_meta.get('total_facts', 0)}", file=sys.stderr)
+            print(f"  Summarization status: {summarization_status}", file=sys.stderr)
+
+            # Determine which data to use based on summarization status
+            if summarization_status == 'success' and 'summarized_facts' in cache:
+                print("  Using: Summarized facts (unified view)", file=sys.stderr)
+                categorized = cache['summarized_facts']
+                # Ensure metadata includes view_type
+                if 'metadata' not in categorized:
+                    categorized['metadata'] = {}
+                categorized['metadata']['view_type'] = 'summarized'
+            else:
+                print("  Using: Categorized facts (per-passage view)", file=sys.stderr)
+                categorized = cache['categorized_facts']
+                # Ensure metadata includes view_type
+                if 'metadata' not in categorized:
+                    categorized['metadata'] = {}
+                if 'view_type' not in categorized['metadata']:
+                    categorized['metadata']['view_type'] = 'per_passage'
+
             print("  Skipping to rendering stages (no Ollama needed)", file=sys.stderr)
 
         else:

@@ -116,8 +116,12 @@ def categorize_facts(extracted_facts: Dict, loaded_data: Dict) -> Dict:
     """
     Categorize facts into constants, variables, and character states.
 
+    Can accept either:
+    - Summarized facts (from Stage 2.5) - already categorized, just pass through
+    - Per-passage extractions (from Stage 2) - need categorization
+
     Args:
-        extracted_facts: Output from Stage 2 (ai_extractor)
+        extracted_facts: Either summarized_facts or output from Stage 2 (ai_extractor)
         loaded_data: Output from Stage 1 (loader)
 
     Returns:
@@ -143,6 +147,29 @@ def categorize_facts(extracted_facts: Dict, loaded_data: Dict) -> Dict:
         }
     """
     print("\nCategorizing facts...", file=sys.stderr)
+
+    # Check if we received already-summarized facts (from Stage 2.5)
+    # Summarized facts have 'constants', 'characters', 'variables' keys
+    # Per-passage facts have 'extractions' key
+    if 'constants' in extracted_facts and 'characters' in extracted_facts:
+        print("  Input: Summarized facts (already categorized)", file=sys.stderr)
+        # Already categorized - just pass through with metadata
+        return {
+            'constants': extracted_facts.get('constants', {}),
+            'characters': extracted_facts.get('characters', {}),
+            'variables': extracted_facts.get('variables', {}),
+            'conflicts': extracted_facts.get('conflicts', []),
+            'metadata': {
+                'view_type': 'summarized',
+                'total_facts': count_all_facts(extracted_facts),
+                'total_constants': count_constants(extracted_facts.get('constants', {})),
+                'total_variables': count_variables(extracted_facts.get('variables', {})),
+                'total_characters': len(extracted_facts.get('characters', {}))
+            }
+        }
+
+    # Otherwise, we have per-passage extractions that need categorization
+    print("  Input: Per-passage extractions (needs categorization)", file=sys.stderr)
 
     # Get total number of paths for coverage calculation
     total_paths = loaded_data['metadata']['total_paths']
@@ -252,6 +279,7 @@ def categorize_facts(extracted_facts: Dict, loaded_data: Dict) -> Dict:
         'variables': dict(variables_by_type),
         'conflicts': conflicts,
         'metadata': {
+            'view_type': 'per_passage',  # Mark as per-passage view (not summarized)
             'total_facts': len(fact_occurrences),
             'total_constants': sum(len(v) for v in constants_by_type.values()),
             'total_variables': sum(len(v) for v in variables_by_type.values()),
@@ -268,6 +296,58 @@ def categorize_facts(extracted_facts: Dict, loaded_data: Dict) -> Dict:
     print(f"  Conflicts detected: {len(conflicts)}", file=sys.stderr)
 
     return result
+
+
+def count_all_facts(facts_dict: Dict) -> int:
+    """
+    Count total facts across all categories.
+
+    Args:
+        facts_dict: Dict with constants, characters, variables
+
+    Returns:
+        Total fact count
+    """
+    total = 0
+
+    # Count constants
+    if 'constants' in facts_dict:
+        for category, facts in facts_dict['constants'].items():
+            if isinstance(facts, list):
+                total += len(facts)
+
+    # Count characters
+    if 'characters' in facts_dict:
+        for char_name, char_data in facts_dict['characters'].items():
+            for section, facts in char_data.items():
+                if isinstance(facts, list):
+                    total += len(facts)
+
+    # Count variables
+    if 'variables' in facts_dict:
+        for category, facts in facts_dict['variables'].items():
+            if isinstance(facts, list):
+                total += len(facts)
+
+    return total
+
+
+def count_constants(constants: Dict) -> int:
+    """Count facts in constants dict."""
+    total = 0
+    for category, facts in constants.items():
+        if isinstance(facts, list):
+            total += len(facts)
+    return total
+
+
+def count_variables(variables: Dict) -> int:
+    """Count facts in variables dict."""
+    total = 0
+    for category, facts in variables.items():
+        if isinstance(facts, list):
+            total += len(facts)
+    return total
 
 
 def extract_character_name(fact_text: str) -> str:

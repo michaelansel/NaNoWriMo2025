@@ -220,6 +220,10 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     variables = normalize_variables(categorized_facts.get('variables', {}))
     conflicts = normalize_conflicts(categorized_facts.get('conflicts', []))
 
+    # Get metadata and view type
+    metadata = categorized_facts.get('metadata', {})
+    view_type = metadata.get('view_type', 'unknown')
+
     # Prepare template data
     template_data = {
         'story_title': 'NaNoWriMo2025',  # Could be extracted from story data
@@ -229,7 +233,8 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
         'characters': characters,
         'variables': variables,
         'conflicts': conflicts,
-        'metadata': categorized_facts.get('metadata', {})
+        'metadata': metadata,
+        'view_type': view_type  # Pass view_type separately for easy access in template
     }
 
     # Render template

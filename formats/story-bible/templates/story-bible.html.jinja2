@@ -251,6 +251,15 @@
             <p><strong>Last Updated:</strong> {{ generated_at }}</p>
             <p><strong>Source Commit:</strong> {{ commit_hash }}</p>
             {% if metadata and metadata.generation_mode != 'placeholder' %}
+            <p><strong>View Type:</strong>
+                {% if view_type == 'summarized' %}
+                ✨ Summarized (deduplicated facts with unified evidence)
+                {% elif view_type == 'per_passage' %}
+                📄 Per-passage (facts extracted from individual passages)
+                {% else %}
+                ❓ {{ view_type }}
+                {% endif %}
+            </p>
             <p><strong>Statistics:</strong>
                 {{ metadata.total_constants or 0 }} constants,
                 {{ metadata.total_variables or 0 }} variables,

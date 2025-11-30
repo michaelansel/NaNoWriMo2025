@@ -4,7 +4,28 @@
 
 **Phase 1**: Implemented - Cache-first build (reads committed cache)
 **Phase 2**: Implemented - Webhook service integration for extraction
-**Updated**: 2025-11-30 - Bug fixes for cache behavior and failed extractions
+**Phase 3**: In Design - Summarization pipeline for deduplication
+**Updated**: 2025-11-30 - Adding summarization/deduplication design
+
+## Bug Fixes and Design Clarifications (2025-11-30)
+
+This document has been updated to fix two critical bugs, clarify the correct workflow separation between build and webhook, and add the summarization/deduplication feature:
+
+### Feature Addition: Summarization (Phase 3)
+
+**Context**: Per-passage extraction produces duplicate facts (same world fact mentioned in multiple passages). PM has specified requirements for deduplication to create a unified Story Bible that's easier to read.
+
+**New Behavior**:
+- **Two-level cache**: `per_passage_extractions` + `summarized_facts` sections in cache
+- **Summarization runs in webhook** (new Stage 2.5 after extraction, before categorization)
+- **Build renders from summarized data** when available (with fallback to per-passage)
+- **Graceful degradation**: If summarization fails, build uses per-passage data
+- **Complete evidence preservation**: Merged facts cite ALL source passages
+- **Conservative deduplication**: When uncertain, keep facts separate
+- **Contradictions surfaced**: Conflicting facts flagged as CONFLICT, not auto-resolved
+- See: PRD sections on "Summarization Rules" and Edge Cases 10-14
+
+---
 
 ## Bug Fixes and Design Clarifications (2025-11-30)
 
@@ -42,14 +63,24 @@ WORKFLOW 1: Webhook Extraction (Populates Cache)
   ↓
 Webhook service loads AllPaths format
   ↓
+STEP 1: Per-Passage Extraction
 For each passage:
   - Extract facts using Ollama
-  - If successful → Add to cache
+  - If successful → Add to per_passage_extractions
   - If failed (timeout/error) → Log error, do NOT cache
   ↓
-Commit story-bible-cache.json to repository
+STEP 2: Summarization (Deduplication) ← NEW
+  - Load all per-passage facts
+  - Run AI summarization to deduplicate and merge related facts
+  - Preserve ALL evidence citations for each merged fact
+  - Conservative merging: when uncertain, keep separate
+  - If successful → Store in summarized_facts, set status="success"
+  - If failed → Log error, set status="failed" (per-passage data still usable)
   ↓
-Report: "Extracted X of Y passages, Z failures"
+Commit story-bible-cache.json to repository
+  (Contains both per_passage_extractions and summarized_facts)
+  ↓
+Report: "Extracted X of Y passages (Z failures), Summarization: [success/failed]"
 
 
 WORKFLOW 2: Build (Renders from Cache)
@@ -60,8 +91,11 @@ Check if story-bible-cache.json exists in repo
   ↓
 If cache exists:
   - Read cache contents
-  - Skip to Stage 4: Render story-bible.html from cache
-  - Skip to Stage 5: Render story-bible.json from cache
+  - Check summarization_status ← NEW
+  - If status="success" → Use summarized_facts (unified view)
+  - If status="failed" or "not_run" → Use per_passage_extractions (fallback)
+  - Skip to Stage 4: Render story-bible.html from selected data
+  - Skip to Stage 5: Render story-bible.json from selected data
   - NO Ollama calls (fast, reliable)
   ↓
 If cache missing:
@@ -75,6 +109,9 @@ Publish to GitHub Pages
 **Key Points**:
 - **Build NEVER calls Ollama** (only reads cache or generates placeholder)
 - **Webhook ONLY calls Ollama** (not build)
+- **Two-level cache**: Per-passage extractions + summarized facts
+- **Summarization runs in webhook** (not build)
+- **Graceful fallback**: If summarization fails, build uses per-passage data
 - **Cache is source of truth** for build rendering
 - **Failed extractions NOT cached** (automatic retry on next webhook run)
 
@@ -155,14 +192,20 @@ Stage 1: Load AllPaths Data
 
 Stage 2: Extract Facts with AI (WEBHOOK ONLY)
    Input: loaded_paths.json
-   Output: extracted_facts (in-memory)
-   Responsibility: Call Ollama to extract constants/variables
+   Output: per_passage_extractions (in-memory)
+   Responsibility: Call Ollama to extract constants/variables per passage
    CRITICAL: Only cache successful extractions, skip failures
 
+Stage 2.5: Summarize/Deduplicate Facts (WEBHOOK ONLY) ← NEW
+   Input: per_passage_extractions (in-memory)
+   Output: summarized_facts (in-memory) + summarization_status
+   Responsibility: AI deduplication and merging with complete evidence
+   CRITICAL: If fails, set status="failed" but keep per-passage data
+
 Stage 3: Categorize and Organize
-   Input: extracted_facts
+   Input: summarized_facts OR per_passage_extractions (fallback)
    Output: categorized_facts (in-memory)
-   Responsibility: Organize facts by type, merge duplicates
+   Responsibility: Organize facts by type, character, category
 
 Stage 4: Generate HTML Output (BUILD + WEBHOOK)
    Input: story-bible-cache.json OR categorized_facts
@@ -175,20 +218,21 @@ Stage 5: Generate JSON Output (BUILD + WEBHOOK)
    Responsibility: Export machine-readable structured data
 
 Stage 6: Commit Cache (WEBHOOK ONLY)
-   Input: categorized_facts
+   Input: per_passage_extractions + summarized_facts + categorized_facts
    Output: story-bible-cache.json (committed to repo)
-   Responsibility: Persist cache for builds to consume
+   Responsibility: Persist TWO-LEVEL cache for builds to consume
 ```
 
 ### Component Architecture
 
 ```
 formats/story-bible/
-├── generator.py                    # Main orchestrator (5-stage pipeline)
+├── generator.py                    # Main orchestrator (6-stage pipeline)
 ├── modules/
 │   ├── __init__.py
 │   ├── loader.py                   # Stage 1: Load AllPaths data
-│   ├── ai_extractor.py             # Stage 2: AI fact extraction
+│   ├── ai_extractor.py             # Stage 2: AI fact extraction (per-passage)
+│   ├── ai_summarizer.py            # Stage 2.5: AI summarization/deduplication ← NEW
 │   ├── categorizer.py              # Stage 3: Organize facts
 │   ├── html_generator.py           # Stage 4: Generate HTML
 │   └── json_generator.py           # Stage 5: Generate JSON
@@ -199,12 +243,14 @@ formats/story-bible/
 ├── templates/
 │   └── story-bible.html.jinja2     # HTML template
 ├── schemas/
-│   ├── extracted_facts.schema.json # Stage 2 output schema
+│   ├── extracted_facts.schema.json # Stage 2 output schema (per-passage)
+│   ├── summarized_facts.schema.json # Stage 2.5 output schema (unified) ← NEW
 │   ├── categorized_facts.schema.json # Stage 3 output schema
 │   └── story-bible.schema.json     # Final JSON output schema
 ├── tests/
 │   ├── test_loader.py
 │   ├── test_ai_extractor.py
+│   ├── test_ai_summarizer.py      # ← NEW
 │   ├── test_categorizer.py
 │   ├── test_html_generator.py
 │   └── test_json_generator.py
@@ -403,32 +449,55 @@ Check: Does story-bible-cache.json exist in repo root?
     │   └─ Continue to next passage
     ├─ Parse JSON responses from successful extractions
     ├─ CRITICAL: Only successful extractions included
-    └─ Output: extracted_facts (in-memory)
+    └─ Output: per_passage_extractions (in-memory)
+    ↓
+[Stage 2.5: AI Summarizer] ← NEW, WEBHOOK ONLY
+    ├─ Load all per-passage facts
+    ├─ Call Ollama API to deduplicate and merge related facts
+    ├─ Merge Rules:
+    │   ├─ Identical facts (different wording) → Merge with all evidence
+    │   ├─ Additive details → Combine into richer fact
+    │   ├─ Contradictions → Keep separate, flag as CONFLICT
+    │   ├─ Uncertain cases → Keep separate (conservative)
+    │   └─ Different aspects → Keep separate
+    ├─ If successful:
+    │   ├─ Output: summarized_facts (in-memory)
+    │   └─ Set summarization_status="success"
+    ├─ If failed (timeout/error/invalid):
+    │   ├─ Log error with details
+    │   ├─ Set summarization_status="failed"
+    │   └─ Continue (per-passage data still usable)
+    └─ CRITICAL: Summarization failure doesn't invalidate extractions
     ↓
 [Stage 3: Categorizer]
+    ├─ Input: summarized_facts OR per_passage_extractions (if summarization failed)
     ├─ Cross-reference facts across all passages
     ├─ Identify constants (appear in multiple paths)
     ├─ Identify variables (differ by path)
     ├─ Determine zero action state
-    ├─ Merge duplicate facts
+    ├─ Organize by category and character
     └─ Output: categorized_facts (in-memory)
     ↓
 [Stage 4: HTML Generator]
     ├─ Load Jinja2 template
     ├─ Render facts with evidence
     ├─ Generate navigation structure
+    ├─ Show message if using fallback: "Per-passage view (summarization pending)"
     └─ Output: dist/story-bible.html (temporary)
     ↓
 [Stage 5: JSON Generator]
     ├─ Validate against schema
-    ├─ Add metadata (timestamp, commit hash)
+    ├─ Add metadata (timestamp, commit hash, view_type)
+    ├─ view_type = "summarized" | "per_passage_fallback"
     └─ Output: dist/story-bible.json (temporary)
     ↓
 [Stage 6: Commit Cache] ← WEBHOOK ONLY
-    ├─ Build cache structure with:
-    │   ├─ passage_extractions (successful only)
+    ├─ Build TWO-LEVEL cache structure with:
+    │   ├─ per_passage_extractions (successful only)
+    │   ├─ summarized_facts (if summarization succeeded)
+    │   ├─ summarization_status ("success" | "failed" | "not_run")
     │   ├─ categorized_facts
-    │   └─ metadata (timestamps, statistics)
+    │   └─ metadata (timestamps, statistics, summarization_time)
     ├─ Commit story-bible-cache.json to PR branch
     └─ Post results comment to PR
 ```
@@ -589,23 +658,51 @@ CRITICAL: Evidence format MUST be an array of objects:
 BEGIN EXTRACTION:
 ```
 
-**Caching Strategy**:
+**Caching Strategy (Two-Level Cache)**:
 - Cache key: Passage ID (from AllPaths format)
 - Cache location: `story-bible-cache.json` (repo root, committed by webhook)
-- Cache structure:
+- **Two-Level Cache Structure**:
   ```json
   {
     "meta": {
       "last_extracted": "2025-12-01T10:00:00Z",
       "total_passages_extracted": 50,
-      "total_facts": 127
+      "total_passages_successful": 48,
+      "total_passages_failed": 2,
+      "total_facts": 127,
+      "summarization_time_seconds": 12.5
     },
-    "passage_extractions": {
+    "summarization_status": "success",
+    "per_passage_extractions": {
       "passage_id_1": {
         "content_hash": "abc123def456",
         "extracted_at": "2025-12-01T10:00:00Z",
-        "facts": [...]
+        "passage_name": "Start",
+        "facts": [
+          {
+            "fact": "Magic system exists",
+            "type": "world_rule",
+            "evidence": [{"passage": "Start", "quote": "..."}]
+          }
+        ]
       }
+    },
+    "summarized_facts": {
+      "constants": {
+        "world_rules": [
+          {
+            "fact": "Magic system exists and requires formal training",
+            "evidence": [
+              {"passage": "Start", "quote": "..."},
+              {"passage": "Academy", "quote": "..."}
+            ],
+            "merged_from": ["Magic system exists", "Magic requires formal training"]
+          }
+        ]
+      },
+      "characters": {...},
+      "variables": {...},
+      "conflicts": [...]
     },
     "categorized_facts": {
       "constants": {...},
@@ -614,12 +711,19 @@ BEGIN EXTRACTION:
     }
   }
   ```
+- **Summarization Status Values**:
+  - `"success"`: Summarization completed successfully, use `summarized_facts`
+  - `"failed"`: Summarization failed, fallback to `per_passage_extractions`
+  - `"not_run"`: Summarization not attempted (old cache format)
 - On each webhook run (incremental mode):
   1. Check if passage content hash exists in cache
   2. If yes and hash matches → skip extraction (use cached)
   3. If no or hash differs → call AI, update cache
   4. **CRITICAL**: If AI extraction fails → Log error, do NOT add to cache
-  5. Save cache after all extractions complete (successful only)
+  5. After all extractions: Run summarization on ALL per-passage facts
+  6. If summarization succeeds → Store in `summarized_facts`, set status="success"
+  7. If summarization fails → Set status="failed", keep `per_passage_extractions`
+  8. Save TWO-LEVEL cache after all stages complete
 - Failed passages automatically retried on next run (not in cache)
 
 **Performance Optimization**:
@@ -643,11 +747,340 @@ BEGIN EXTRACTION:
 
 ---
 
+### Stage 2.5: AI Summarizer (modules/ai_summarizer.py) ← NEW
+
+**Purpose**: Deduplicate and merge related facts from per-passage extractions to create unified Story Bible
+
+**Input**: `per_passage_extractions` (in-memory or from cache)
+
+**Output**: `summarized_facts` (in-memory) + `summarization_status`
+
+**When it Runs**: WEBHOOK ONLY (after Stage 2 extraction, before Stage 3 categorization)
+
+**Output Schema** (`summarized_facts`):
+```json
+{
+  "constants": {
+    "world_rules": [
+      {
+        "fact": "Magic system exists and requires formal training",
+        "evidence": [
+          {
+            "passage": "Start",
+            "passage_id": "a1b2c3d4",
+            "quote": "The magical academy stood tall..."
+          },
+          {
+            "passage": "Academy Introduction",
+            "passage_id": "e5f6g7h8",
+            "quote": "Magic requires years of formal training"
+          }
+        ],
+        "confidence": "high",
+        "merged_from": ["Magic system exists", "Magic requires formal training"]
+      }
+    ],
+    "setting": [...],
+    "timeline": [...]
+  },
+  "characters": {
+    "Javlyn": {
+      "identity": [
+        {
+          "fact": "Student at the Academy",
+          "evidence": [
+            {"passage": "Start", "quote": "Javlyn is a student"},
+            {"passage": "Academy Introduction", "quote": "Javlyn attends the Academy"}
+          ],
+          "merged_from": ["Javlyn is a student", "Javlyn attends the Academy"]
+        }
+      ],
+      "zero_action_state": [...],
+      "variables": [...]
+    }
+  },
+  "variables": {
+    "events": [...],
+    "outcomes": [...]
+  },
+  "conflicts": [
+    {
+      "type": "contradictory_constants",
+      "description": "City location differs",
+      "facts": [
+        {
+          "fact": "City is on the coast",
+          "evidence": [{"passage": "Start", "quote": "coastal breeze..."}]
+        },
+        {
+          "fact": "City is in the mountains",
+          "evidence": [{"passage": "Chapter 2", "quote": "mountain peaks..."}]
+        }
+      ],
+      "severity": "critical"
+    }
+  ]
+}
+```
+
+**AI Prompt Structure for Summarization**:
+
+```
+=== SECTION 1: ROLE & CONTEXT ===
+
+You are deduplicating facts extracted from multiple passages in an interactive fiction story.
+
+Your task: Create a unified Story Bible by intelligently merging related facts while preserving complete evidence.
+
+CRITICAL UNDERSTANDING:
+- Input: Facts extracted from individual passages (may contain duplicates)
+- Output: Unified facts with complete evidence citations
+- Goal: Reduce redundancy while preserving all information
+- Principle: Conservative deduplication (when uncertain, keep separate)
+
+=== SECTION 2: MERGE RULES ===
+
+**MERGE when facts are identical:**
+1. Same meaning, different wording
+   - Example: "Javlyn is a student" + "Javlyn attends as a student" → MERGE
+   - Action: Combine into single fact, cite ALL source passages
+
+2. Same fact with additive details
+   - Example: "City is coastal" + "City is on eastern coast" → MERGE
+   - Action: Combine details into richer fact, cite ALL sources
+
+3. Repeated world rules
+   - Example: Multiple passages mention "Magic requires training" → MERGE
+   - Action: Single entry with complete evidence list
+
+**KEEP SEPARATE when:**
+1. Facts contradict each other
+   - Example: "War ended 10 years ago" vs "War ended 2 years ago" → SEPARATE + FLAG CONFLICT
+   - Action: Keep both, flag as "CONFLICT", mark severity
+
+2. Path-specific variations (variables)
+   - Example: "Javlyn masters magic" vs "Javlyn gives up on magic" → SEPARATE
+   - Action: Keep as separate variable outcomes
+
+3. Different aspects of same subject
+   - Example: "Javlyn is a student" vs "Javlyn struggles with magic" → SEPARATE
+   - Action: Different facts about same character (identity vs state)
+
+4. Uncertain whether same fact
+   - Example: "City has grand library" vs "Academy library contains texts" → SEPARATE
+   - Action: Conservative deduplication (unclear if same building)
+
+5. Different scope or context
+   - Example: "Magic system exists" (world rule) vs "Javlyn studies magic" (character action) → SEPARATE
+   - Action: Different fact types
+
+**CONSERVATIVE PRINCIPLE:**
+- When uncertain → Keep separate
+- Better to have slight redundancy than lose meaningful distinctions
+- Authors can verify merged facts are correct
+
+=== SECTION 3: OUTPUT FORMAT ===
+
+Respond with JSON:
+
+{
+  "constants": {
+    "world_rules": [
+      {
+        "fact": "Combined or single fact statement",
+        "evidence": [
+          {
+            "passage": "passage name",
+            "passage_id": "passage id if available",
+            "quote": "exact quote from passage"
+          }
+        ],
+        "confidence": "high|medium|low",
+        "merged_from": ["original fact 1", "original fact 2"] // ONLY if merged
+      }
+    ],
+    "setting": [...],
+    "timeline": [...]
+  },
+  "characters": {
+    "CharacterName": {
+      "identity": [...],
+      "zero_action_state": [...],
+      "variables": [...]
+    }
+  },
+  "variables": {
+    "events": [...],
+    "outcomes": [...]
+  },
+  "conflicts": [
+    {
+      "type": "contradictory_constants",
+      "description": "Brief description of conflict",
+      "facts": [
+        {"fact": "...", "evidence": [...]},
+        {"fact": "...", "evidence": [...]}
+      ],
+      "severity": "critical|major|minor"
+    }
+  ]
+}
+
+CRITICAL: Evidence format MUST be array of objects with passage, quote (and optional passage_id).
+CRITICAL: ALL evidence must be preserved. Never drop source passages.
+CRITICAL: If facts conflict, keep both and add to conflicts array.
+CRITICAL: Include merged_from field ONLY when facts were actually merged.
+
+=== SECTION 4: INPUT FACTS ===
+
+{per_passage_facts_json}
+
+BEGIN SUMMARIZATION:
+```
+
+**Merge Logic Implementation**:
+
+```python
+def summarize_facts(per_passage_extractions: Dict) -> Tuple[Dict, str]:
+    """
+    Deduplicate and merge facts from per-passage extractions.
+
+    Args:
+        per_passage_extractions: Dict of passage_id -> extracted facts
+
+    Returns:
+        (summarized_facts, status) where status is "success" or "failed"
+    """
+    try:
+        # Prepare input for AI
+        all_facts = []
+        for passage_id, extraction in per_passage_extractions.items():
+            for fact in extraction['facts']:
+                all_facts.append({
+                    'fact': fact['fact'],
+                    'type': fact['type'],
+                    'evidence': fact['evidence'],
+                    'passage_id': passage_id,
+                    'passage_name': extraction['passage_name']
+                })
+
+        # Build AI prompt
+        prompt = build_summarization_prompt(all_facts)
+
+        # Call Ollama with timeout
+        response = call_ollama_api(
+            prompt=prompt,
+            model="gpt-oss:20b-fullcontext",
+            timeout=120  # 2 minutes for summarization
+        )
+
+        # Parse and validate response
+        summarized = json.loads(response)
+        validate_summarized_structure(summarized)
+
+        # Verify evidence preservation
+        if not all_evidence_preserved(all_facts, summarized):
+            logging.warning("Some evidence may have been dropped during summarization")
+
+        return (summarized, "success")
+
+    except OllamaTimeoutError as e:
+        logging.error(f"Summarization timeout: {e}")
+        return (None, "failed")
+    except json.JSONDecodeError as e:
+        logging.error(f"Summarization produced invalid JSON: {e}")
+        return (None, "failed")
+    except Exception as e:
+        logging.error(f"Summarization failed: {e}")
+        return (None, "failed")
+```
+
+**Incremental Summarization**:
+
+When incremental extraction adds new passages:
+1. Load existing `summarized_facts` from cache
+2. Load new `per_passage_extractions` from current run
+3. Combine ALL per-passage facts (old + new)
+4. Re-run full summarization on combined set
+5. This allows new evidence to be added to existing merged facts
+6. Example: Fact previously cited in 2 passages now cited in 3
+
+**Performance Considerations**:
+- Summarization processes all per-passage data (not incremental within summarization)
+- Timeout: 120 seconds (can be increased if needed)
+- If timeout occurs: Set status="failed", keep per-passage data
+- Full re-summarization acceptable for Phase 1 (still faster than re-extraction)
+- Future optimization: Incremental summarization (only merge new facts)
+
+**Error Handling**:
+
+1. **Ollama timeout**:
+   - Log error with details
+   - Set `summarization_status="failed"`
+   - Return `None` for summarized_facts
+   - Continue to Stage 3 with per-passage data
+
+2. **Invalid JSON response**:
+   - Log error with response excerpt
+   - Set `summarization_status="failed"`
+   - Save raw response for debugging
+   - Continue to Stage 3 with per-passage data
+
+3. **Evidence not preserved**:
+   - Log warning about dropped evidence
+   - Still mark as success (partial deduplication acceptable)
+   - Log which facts have incomplete evidence
+
+4. **Malformed output structure**:
+   - Log validation errors
+   - Set `summarization_status="failed"`
+   - Continue to Stage 3 with per-passage data
+
+**CRITICAL: Summarization failure does NOT invalidate extraction**
+- Per-passage data remains usable
+- Build falls back to per-passage view
+- Story Bible still generated, just with more duplication
+- Next webhook run can retry summarization
+
+**Validation Functions**:
+
+```python
+def validate_summarized_structure(summarized: Dict) -> bool:
+    """Validate summarized facts have required structure."""
+    required_keys = ['constants', 'characters', 'variables']
+    return all(key in summarized for key in required_keys)
+
+def all_evidence_preserved(original_facts: List[Dict], summarized: Dict) -> bool:
+    """
+    Verify all evidence citations from original facts appear in summarized version.
+    Returns True if all evidence preserved, False if some missing.
+    """
+    original_evidence = collect_all_evidence(original_facts)
+    summarized_evidence = collect_all_evidence_from_summarized(summarized)
+
+    # Check that all original passages cited somewhere in summary
+    missing = original_evidence - summarized_evidence
+    if missing:
+        logging.warning(f"Evidence from {len(missing)} passages not found in summary")
+        return False
+    return True
+```
+
+---
+
 ### Stage 3: Categorizer (modules/categorizer.py)
 
 **Purpose**: Cross-reference facts across paths to categorize as constants/variables
 
-**Input**: `extracted_facts.json`
+**Input**: `summarized_facts` (if summarization succeeded) OR `per_passage_extractions` (fallback)
+
+**Decision Logic**:
+```python
+if summarization_status == "success" and summarized_facts is not None:
+    input_data = summarized_facts  # Use deduplicated facts
+else:
+    input_data = per_passage_extractions  # Fallback to raw per-passage facts
+```
 
 **Output**: `categorized_facts.json`
 ```json
@@ -949,7 +1382,7 @@ def categorize_facts(extracted_facts):
 
 **Rendering Logic**:
 ```python
-def generate_html_output(categorized_facts: Dict, output_path: Path):
+def generate_html_output(categorized_facts: Dict, output_path: Path, view_type: str = "legacy"):
     # Get git metadata
     commit_hash = get_current_commit_hash()
     generated_at = datetime.now().isoformat()
@@ -964,6 +1397,14 @@ def generate_html_output(categorized_facts: Dict, output_path: Path):
         'conflicts': normalize_conflicts(categorized_facts.get('conflicts', []))
     }
 
+    # Determine view message based on view_type
+    view_messages = {
+        'summarized': 'Unified view (facts deduplicated and merged)',
+        'per_passage_fallback': 'Per-passage view (summarization pending - some duplication may occur)',
+        'legacy': 'Standard view'
+    }
+    view_message = view_messages.get(view_type, 'Standard view')
+
     # Load Jinja2 template
     template_dir = Path(__file__).parent.parent / 'templates'
     env = Environment(loader=FileSystemLoader(template_dir))
@@ -974,6 +1415,8 @@ def generate_html_output(categorized_facts: Dict, output_path: Path):
         story_title=normalized_facts['story_title'],
         generated_at=format_date_for_display(generated_at),
         commit_hash=commit_hash[:8],
+        view_type=view_type,
+        view_message=view_message,
         constants=normalized_facts['constants'],
         characters=normalized_facts['characters'],
         variables=normalized_facts['variables'],
@@ -1080,14 +1523,15 @@ def generate_html_output(categorized_facts: Dict, output_path: Path):
 
 **JSON Generation**:
 ```python
-def generate_json_output(categorized_facts: Dict, output_path: Path):
+def generate_json_output(categorized_facts: Dict, output_path: Path, view_type: str = "legacy"):
     # Build JSON structure
     story_bible = {
         "meta": {
             "generated": datetime.now().isoformat(),
             "commit": get_current_commit_hash(),
             "version": "1.0",
-            "schema_version": "1.0.0"
+            "schema_version": "1.0.0",
+            "view_type": view_type  # "summarized", "per_passage_fallback", or "legacy"
         },
         "constants": categorized_facts['constants'],
         "characters": categorized_facts['characters'],
@@ -1278,6 +1722,21 @@ def main():
         if cache and 'categorized_facts' in cache:
             # Cache exists - use it!
             print(f"✓ Cache found: {cache_file}", file=sys.stderr)
+
+            # Check summarization status
+            summarization_status = cache.get('summarization_status', 'not_run')
+            print(f"  Summarization status: {summarization_status}", file=sys.stderr)
+
+            if summarization_status == "success":
+                print("  Using summarized facts (unified view)", file=sys.stderr)
+                view_type = "summarized"
+            elif summarization_status == "failed":
+                print("  Using per-passage facts (summarization failed, fallback mode)", file=sys.stderr)
+                view_type = "per_passage_fallback"
+            else:
+                print("  Using categorized facts (legacy cache format)", file=sys.stderr)
+                view_type = "legacy"
+
             categorized = cache['categorized_facts']
             cache_meta = cache.get('meta', {})
             print(f"  Last extracted: {cache_meta.get('last_extracted', 'unknown')}", file=sys.stderr)
@@ -1303,7 +1762,7 @@ def main():
         print("="*80, file=sys.stderr)
 
         html_output = dist_dir / 'story-bible.html'
-        generate_html_output(categorized, html_output)
+        generate_html_output(categorized, html_output, view_type=view_type)
         print(f"Generated: {html_output}", file=sys.stderr)
 
         # ===================================================================
@@ -1314,7 +1773,7 @@ def main():
         print("="*80, file=sys.stderr)
 
         json_output = dist_dir / 'story-bible.json'
-        generate_json_output(categorized, json_output)
+        generate_json_output(categorized, json_output, view_type=view_type)
         print(f"Generated: {json_output}", file=sys.stderr)
 
         # ===================================================================
@@ -1392,21 +1851,28 @@ fi
 
 ### Positive
 
-1. **Follows Established Patterns**: Uses same 5-stage pipeline as AllPaths (ADR-008)
+1. **Follows Established Patterns**: Uses 6-stage pipeline extending AllPaths pattern (ADR-008)
 2. **Reuses Infrastructure**: Ollama integration, Jinja2 templates, build scripts
-3. **Modular and Testable**: Each stage independently testable
-4. **Graceful Degradation**: Build continues if Story Bible fails
+3. **Modular and Testable**: Each stage independently testable (including new summarization stage)
+4. **Graceful Degradation**: Build continues if Story Bible fails, and falls back to per-passage view if summarization fails
 5. **Incremental Extraction**: Caching avoids re-processing unchanged passages
-6. **Extensible**: Easy to add Phase 2 validation features
-7. **Evidence-Based**: All facts cite source passages for verification
+6. **Two-Level Cache**: Per-passage extractions preserved even if summarization fails
+7. **Extensible**: Easy to add Phase 2 validation features
+8. **Evidence-Based**: All facts cite source passages for verification, preserved through summarization
+9. **Reduced Cognitive Load**: Summarization creates unified Story Bible easier to read
+10. **Complete Evidence Trail**: Merged facts cite ALL source passages (complete citations)
+11. **Conservative Merging**: When uncertain, keeps facts separate (preserves information)
+12. **Conflicts Surfaced**: Contradictions flagged for author review, not hidden
 
 ### Negative
 
-1. **AI Dependency**: Requires Ollama service running locally
-2. **Performance**: May take 2-5 minutes for large stories
-3. **Quality Variance**: AI extraction accuracy depends on prompt engineering
-4. **Cache Management**: Need to handle cache invalidation correctly
-5. **Fact Deduplication**: Fuzzy matching may miss some duplicates or create false positives
+1. **AI Dependency**: Requires Ollama service running locally (both extraction and summarization)
+2. **Performance**: May take 3-7 minutes for large stories (extraction + summarization)
+3. **Quality Variance**: AI extraction and summarization accuracy depends on prompt engineering
+4. **Cache Management**: Need to handle two-level cache invalidation correctly
+5. **Summarization Complexity**: Additional AI call adds failure point (mitigated by fallback)
+6. **Full Re-Summarization**: Phase 1 re-summarizes all facts on each run (acceptable, but not optimal for very large stories)
+7. **Evidence Preservation Verification**: Need to validate all evidence citations preserved during merging
 
 ### Risks and Mitigations
 
@@ -1417,12 +1883,97 @@ fi
 | Extraction too slow | Medium - long build times | Caching, parallel processing, 5-minute timeout |
 | Cache corruption | Low - forces full re-extraction | Validate cache on load, regenerate if invalid |
 | Contradictory facts | Medium - confuses authors | Flag conflicts clearly, don't auto-resolve |
+| **Summarization incorrect merging** | **High - loses meaningful distinctions** | **Conservative deduplication, keep uncertain cases separate, preserve all evidence** |
+| **Summarization drops evidence** | **High - incomplete citations** | **Validate evidence preservation, log warnings, authors can verify** |
+| **Summarization timeout** | **Medium - no unified view** | **Fallback to per-passage view, build still succeeds, retry on next run** |
+| **Summarization creates false conflicts** | **Medium - unnecessary flags** | **Conservative conflict detection, only flag clear contradictions** |
+| **Re-summarization slow** | **Low - webhook delays** | **Acceptable for Phase 1, optimize later if needed** |
 
 ---
 
 ## Alternatives Considered
 
-### Alternative 1: Single-Stage Simple Script
+### Alternative 1: Incremental Summarization (Not AI-Based Full Re-Summarization)
+
+**Approach**: Only summarize new facts extracted in incremental run, merge with existing summarized data
+
+**Pros**:
+- Faster for incremental runs (only process new facts)
+- Scales better for very large stories
+
+**Cons**:
+- More complex implementation (merge logic)
+- Existing merged facts don't get new evidence citations when found in new passages
+- Harder to fix summarization errors (would need full re-summarization anyway)
+
+**Decision**: Rejected for Phase 1
+- Full re-summarization is simpler and more correct
+- Allows evidence accumulation naturally (new passages add to existing facts' citations)
+- Performance acceptable for current story sizes (still faster than re-extraction)
+- Can optimize later if becomes bottleneck
+
+### Alternative 2: Rule-Based Deduplication (Not AI Summarization)
+
+**Approach**: Use fuzzy string matching (Levenshtein distance) and heuristics to merge facts
+
+**Pros**:
+- Faster (no AI call)
+- Deterministic results
+- No Ollama dependency
+
+**Cons**:
+- Can't understand semantic similarity ("student at Academy" vs "attends the Academy")
+- Can't combine additive details intelligently
+- Can't detect contradictions vs different aspects
+- Misses context-dependent merges
+
+**Decision**: Rejected
+- AI provides much better semantic understanding
+- Conservative prompt can be tuned for quality
+- Ollama already required for extraction, not an additional dependency
+- Quality over speed for Phase 1
+
+### Alternative 3: Manual Author Curation (Not Automated)
+
+**Approach**: Generate per-passage facts, authors manually merge in Story Bible UI
+
+**Pros**:
+- Perfect accuracy (humans decide what to merge)
+- Authors understand their story best
+
+**Cons**:
+- Requires building interactive editing UI (out of scope for Phase 1)
+- Manual work burden on authors
+- Doesn't scale (authors have to repeat on each run)
+- Defeats purpose of automation
+
+**Decision**: Rejected for Phase 1
+- Phase 1 is informational/read-only (no editing UI)
+- Automated summarization provides immediate value
+- Can add manual override in Phase 2 if needed
+
+### Alternative 4: Two-Pass AI (Extract Then Categorize+Summarize Together)
+
+**Approach**: Combine Stage 2.5 (Summarization) and Stage 3 (Categorization) into single AI call
+
+**Pros**:
+- Single AI call instead of two
+- Potentially faster
+
+**Cons**:
+- More complex prompt (doing two tasks at once)
+- Harder to debug (mixed responsibilities)
+- Can't fallback to per-passage categorization if summarization fails
+- Violates single responsibility principle
+
+**Decision**: Rejected
+- Keep stages separate for clarity and testability
+- Allows independent failure/fallback of summarization
+- Follows established pattern (one AI call per stage)
+
+---
+
+### Alternative 5: Single-Stage Simple Script
 
 **Approach**: One Python script that does everything in sequence
 
@@ -3582,6 +4133,114 @@ def test_merge_validation_results():
 | Missing Story Bible | Low - validation skipped | Clear message in PR comment, docs explain `/extract-story-bible` |
 | Cache corruption | Low - validation fails | Validate cache structure, fallback to no validation |
 | Ollama API errors | Medium - validation fails | Catch exceptions, log errors, continue without world validation |
+
+---
+
+## Summary: Key Design Decisions for Summarization (Phase 3)
+
+This section summarizes the critical design decisions for the summarization/deduplication feature:
+
+### 1. Two-Level Cache Architecture
+
+**Decision**: Store both `per_passage_extractions` and `summarized_facts` in cache
+
+**Rationale**:
+- Preserves raw extraction data for debugging and fallback
+- Allows build to choose which view to render based on summarization status
+- Graceful degradation: if summarization fails, per-passage data remains usable
+- Evidence accumulation: re-summarization can add new citations to existing merged facts
+
+### 2. Summarization Runs in Webhook (Not Build)
+
+**Decision**: Stage 2.5 (Summarization) runs ONLY in webhook service, NEVER in build
+
+**Rationale**:
+- Build is cache-first (reads committed cache, no Ollama calls)
+- Webhook has Ollama access, build does not (CI environment)
+- Consistent with existing extraction pattern (webhook extracts, build renders)
+- Fast builds (no waiting for AI summarization)
+
+### 3. Graceful Fallback to Per-Passage View
+
+**Decision**: If summarization fails, build renders from `per_passage_extractions`
+
+**Rationale**:
+- Summarization failure doesn't invalidate successful extractions
+- Story Bible still useful, just with more duplication
+- Build never fails due to summarization (informational artifact)
+- Next webhook run can retry summarization
+
+### 4. AI-Based Summarization (Not Rule-Based)
+
+**Decision**: Use Ollama AI with conservative prompt, not fuzzy string matching
+
+**Rationale**:
+- AI understands semantic similarity ("student" vs "attends Academy")
+- Can combine additive details intelligently
+- Detects contradictions vs different aspects
+- Conservative prompt tunable for quality
+- Ollama already required, not new dependency
+
+### 5. Full Re-Summarization (Not Incremental)
+
+**Decision**: Re-summarize ALL per-passage facts on each webhook run
+
+**Rationale**:
+- Simpler implementation (no incremental merge logic)
+- Allows evidence accumulation (new passages add citations to existing facts)
+- Still faster than re-extraction (summarization timeout: 120s vs extraction: 5min+)
+- Performance acceptable for Phase 1
+- Can optimize to incremental later if becomes bottleneck
+
+### 6. Conservative Deduplication Principle
+
+**Decision**: When uncertain whether to merge, keep facts separate
+
+**Rationale**:
+- Better slight redundancy than losing meaningful distinctions
+- Authors can verify merged facts are correct
+- Incorrect merges lose information (hard to recover)
+- Keeping separate preserves all information (easy to merge later)
+
+### 7. Complete Evidence Preservation
+
+**Decision**: Validate that ALL evidence citations from per-passage facts appear in summarized version
+
+**Rationale**:
+- Evidence is critical for verification and trust
+- Merged facts MUST cite all source passages
+- Log warnings if evidence missing
+- Allows authors to verify merges are correct
+
+### 8. Conflicts Surfaced, Not Auto-Resolved
+
+**Decision**: Keep contradictory facts separate, flag as CONFLICT
+
+**Rationale**:
+- Authors need to see and resolve contradictions
+- Auto-resolution would hide important information
+- Conservative: only flag clear contradictions
+- Severity levels help prioritize resolution
+
+### 9. Separate Stage (Not Combined with Categorization)
+
+**Decision**: Stage 2.5 (Summarization) is separate from Stage 3 (Categorization)
+
+**Rationale**:
+- Single responsibility per stage (easier to test and debug)
+- Allows independent failure/fallback
+- Categorization can work on either summarized or per-passage data
+- Follows established pipeline pattern
+
+### 10. View Type Metadata in Output
+
+**Decision**: HTML and JSON include `view_type` ("summarized", "per_passage_fallback", or "legacy")
+
+**Rationale**:
+- Authors know which view they're seeing
+- Clear messaging if summarization failed ("summarization pending")
+- Allows future features to adapt based on view type
+- Helps debugging (know which code path was used)
 
 ---
 

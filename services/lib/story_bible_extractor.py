@@ -3,12 +3,15 @@
 Story Bible fact extraction using Ollama.
 
 Extracts world constants, variables, and character information from passages.
+Includes AI summarization/deduplication (Stage 2.5).
 """
 
 import requests
 import json
 import hashlib
-from typing import Dict, List
+import logging
+import time
+from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 
 # Ollama configuration
@@ -160,12 +163,54 @@ def parse_json_from_response(text: str) -> Dict:
         raise json.JSONDecodeError(f"Invalid JSON in response: {e}", text, 0)
 
 
-def categorize_all_facts(passage_extractions: Dict) -> Dict:
+def run_summarization(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str, float]:
+    """
+    Run AI summarization/deduplication on per-passage extractions.
+
+    This is Stage 2.5: Deduplicate and merge related facts while preserving
+    complete evidence trail.
+
+    Args:
+        per_passage_extractions: Dict of passage_id -> extraction data
+
+    Returns:
+        Tuple of (summarized_facts, status, duration_seconds) where:
+        - summarized_facts: Unified facts dict (or None if failed)
+        - status: "success" or "failed"
+        - duration_seconds: Time taken for summarization
+    """
+    try:
+        # Import summarizer (local import to avoid circular dependency)
+        import sys
+        from pathlib import Path
+
+        # Add formats/story-bible/modules to path
+        story_bible_modules = Path(__file__).parent.parent.parent / 'formats' / 'story-bible' / 'modules'
+        if str(story_bible_modules) not in sys.path:
+            sys.path.insert(0, str(story_bible_modules))
+
+        from ai_summarizer import summarize_facts
+
+        start_time = time.time()
+        summarized_facts, status = summarize_facts(per_passage_extractions)
+        duration = time.time() - start_time
+
+        return (summarized_facts, status, duration)
+
+    except Exception as e:
+        logging.error(f"Failed to run summarization: {e}")
+        return (None, "failed", 0.0)
+
+
+def categorize_all_facts(passage_extractions: Dict, summarized_facts: Optional[Dict] = None) -> Dict:
     """
     Cross-reference facts across all passages to categorize as constants/variables.
 
+    Can accept either summarized facts (from Stage 2.5) or raw per-passage extractions.
+
     Args:
-        passage_extractions: Dict of passage_id -> extraction data
+        passage_extractions: Dict of passage_id -> extraction data (fallback)
+        summarized_facts: Optional pre-summarized facts from Stage 2.5
 
     Returns:
         Categorized facts structure:
@@ -181,6 +226,14 @@ def categorize_all_facts(passage_extractions: Dict) -> Dict:
             }
         }
     """
+    # If we have summarized facts, they're already categorized!
+    if summarized_facts:
+        logging.info("Using summarized facts (already categorized)")
+        return summarized_facts
+
+    # Otherwise, fall back to basic categorization from per-passage extractions
+    logging.info("Using per-passage extractions (no summarization)")
+
     # Collect all facts
     all_facts = []
     for passage_id, extraction in passage_extractions.items():

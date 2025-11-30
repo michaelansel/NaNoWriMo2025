@@ -11,7 +11,7 @@
 
 **Updated:** 2025-11-30
 
-This PRD has been updated to address two critical bugs and clarify correct behavior:
+This PRD has been updated to address two critical bugs, clarify correct behavior, and add the Summarization feature:
 
 ### Bug Fix 1: Failed Extractions Must NOT Be Cached
 **Problem:** When Ollama fails to extract facts from a passage (timeout, error), the passage was being marked in the cache as if it succeeded. This caused incremental mode to skip failed passages on subsequent runs.
@@ -32,10 +32,24 @@ This PRD has been updated to address two critical bugs and clarify correct behav
 - Build NEVER calls Ollama (extraction is webhook-only)
 - See: "Workflow Separation: Build vs Webhook", Acceptance Criteria "Build Integration"
 
+### Feature Addition: Summarization (Deduplication)
+**Context:** Per-passage extraction produces duplicate facts (same world fact mentioned in multiple passages). CEO approved adding summarization step to create unified Story Bible.
+
+**Correct Behavior:**
+- **Two-level cache:** Per-passage extractions + summarized/deduplicated facts
+- **Summarization runs in webhook** (after extraction, before commit)
+- **Build renders from summarized data** when available
+- **Graceful fallback:** If summarization fails, build uses per-passage data
+- **Complete evidence preservation:** Merged facts cite ALL source passages
+- **Conservative deduplication:** When uncertain, keep facts separate
+- **Contradictions surfaced:** Conflicting facts flagged, not auto-resolved
+- See: User Story 6, "Summarization Rules", Edge Cases 10-14
+
 ### Workflow Clarification:
 ```
-/extract-story-bible (webhook) → Extracts with Ollama → Commits cache to repo
-CI build → Reads cache from repo → Renders HTML/JSON from cache
+/extract-story-bible (webhook) → Extracts per-passage with Ollama
+  → Summarizes/deduplicates facts → Commits two-level cache to repo
+CI build → Reads cache from repo → Renders from summarized (or fallback to per-passage)
 ```
 
 **Key Changes:**
@@ -44,6 +58,13 @@ CI build → Reads cache from repo → Renders HTML/JSON from cache
 - Added Edge Cases 8 & 9 for failed extractions and cache behavior
 - Updated Acceptance Criteria with cache handling requirements
 - Moved cache strategy from "Open Questions" to "Resolved Design Decisions"
+- **NEW:** Added User Story 6 for unified Story Bible
+- **NEW:** Added "Summarization Rules: When to Merge vs Keep Separate" section
+- **NEW:** Added "What Makes a Good Summary" quality criteria
+- **NEW:** Added Edge Cases 10-14 for summarization scenarios
+- **NEW:** Updated Acceptance Criteria with summarization requirements
+- **NEW:** Updated "Extraction Methodology" with two-step process
+- **NEW:** Added summarization risks and success metrics
 
 ---
 
@@ -53,10 +74,12 @@ Writers need a canonical source of truth about their story world that distinguis
 
 **Key Capabilities:**
 - Extract world constants vs variables from story passages
+- Deduplicate facts across passages while preserving all evidence citations
 - Display "zero action state" for each character (what happens if player does nothing)
 - Generate human-readable and machine-readable story bible
 - Post-build artifact (HTML + JSON) for authors and AI assistants
 - Frame extraction as "world reconstruction" not summarization
+- Two-level cache: per-passage extractions + unified summary (graceful fallback)
 
 **Two-Phase Approach:**
 
@@ -171,6 +194,22 @@ This feature complements AI Continuity Checking:
 
 ---
 
+### Story 6: Unified Story Bible Without Duplication
+**As a** writer reviewing the Story Bible
+**I want** to see each fact presented once with all supporting evidence
+**So that** I can quickly understand the world without reading duplicate entries
+
+**Acceptance Criteria:**
+- Story Bible presents unified view of facts (not per-passage duplication)
+- Each fact shows ALL passages that mention it (complete evidence trail)
+- Facts mentioned in multiple passages are deduplicated intelligently
+- Similar facts from different passages are combined when appropriate
+- Contradictory facts are kept separate and flagged
+- Can still access per-passage extraction details if needed
+- Summarization preserves all source citations
+
+---
+
 ## Feature Behavior
 
 ### Phase 1: Informational Extraction (Immediate)
@@ -199,12 +238,14 @@ Story Bible is generated as a post-build artifact alongside existing formats (Ha
 
 **How It's Generated:**
 
-**Cache-First Approach:**
+**Cache-First Approach with Two-Level Cache:**
 1. **Check for committed cache first:**
    - If `story-bible-cache.json` exists in repository → Read cache and render HTML/JSON from it (no Ollama needed)
    - If cache does not exist → Generate placeholder HTML/JSON with "Story Bible will be generated after first extraction"
 
 2. **Cache generation (via webhook service):**
+
+   **Step 2a: Per-Passage Extraction**
    - Webhook service (`/extract-story-bible`) extracts facts using Ollama
    - Uses AllPaths format as input (complete view of all paths)
    - Applies "world reconstruction" approach (not summarization)
@@ -212,11 +253,34 @@ Story Bible is generated as a post-build artifact alongside existing formats (Ha
    - Identifies zero action state for each character
    - **Only successful extractions** are added to cache
    - Failed extractions (timeout, error) are NOT cached
+   - Stores per-passage extractions in cache
+
+   **Step 2b: Summarization (Deduplication)**
+   - After per-passage extraction completes, run summarization
+   - Analyzes all per-passage facts to identify duplicates and related facts
+   - Merges facts that represent the same information
+   - Combines details from multiple passages when appropriate
+   - Preserves ALL evidence citations (shows all passages that mention each fact)
+   - Conservative deduplication: when uncertain, keep facts separate
+   - Stores summarized/unified facts in same cache file
+   - If summarization fails → Cache still contains per-passage data (fallback available)
+
+   **Two-Level Cache Structure:**
+   ```json
+   {
+     "per_passage_extractions": { /* raw facts per passage */ },
+     "summarized_facts": { /* unified/deduplicated facts */ },
+     "summarization_status": "success" | "failed" | "not_run"
+   }
+   ```
+
    - Commits `story-bible-cache.json` to repository
 
 3. **Subsequent builds:**
    - Read from committed cache (no extraction needed in CI)
-   - Render HTML/JSON from cache contents
+   - Check `summarization_status` in cache
+   - If summarization succeeded → Render HTML/JSON from `summarized_facts`
+   - If summarization failed → Render HTML/JSON from `per_passage_extractions` (fallback)
    - Fast and reliable (no Ollama dependency in build)
 
 ---
@@ -232,14 +296,24 @@ WORKFLOW 1: Webhook Extraction (Populates Cache)
   ↓
 Webhook service loads AllPaths format
   ↓
+STEP 1: Per-Passage Extraction
 For each passage:
   - Extract facts using Ollama
-  - If successful → Add to cache
+  - If successful → Add to per_passage_extractions in cache
   - If failed (timeout/error) → Log error, do NOT cache
   ↓
-Commit story-bible-cache.json to repository
+STEP 2: Summarization (Deduplication)
+  - Load all per-passage facts from cache
+  - Run AI summarization to deduplicate and merge related facts
+  - Preserve ALL evidence citations for each merged fact
+  - Conservative merging: when uncertain, keep separate
+  - If successful → Store in summarized_facts, set status="success"
+  - If failed → Log error, set status="failed" (per-passage data still usable)
   ↓
-Report: "Extracted X of Y passages, Z failures"
+Commit story-bible-cache.json to repository
+  (Contains both per-passage and summarized data)
+  ↓
+Report: "Extracted X of Y passages (Z failures), Summarization: [success/failed]"
 
 
 WORKFLOW 2: Build (Renders from Cache)
@@ -250,8 +324,11 @@ Check if story-bible-cache.json exists in repo
   ↓
 If cache exists:
   - Read cache contents
-  - Render story-bible.html from cache
-  - Render story-bible.json from cache
+  - Check summarization_status
+  - If "success" → Render from summarized_facts (unified view)
+  - If "failed" or "not_run" → Render from per_passage_extractions (fallback)
+  - Render story-bible.html from selected data
+  - Render story-bible.json from selected data
   - NO Ollama calls (fast, reliable)
   ↓
 If cache missing:
@@ -265,8 +342,176 @@ Publish to GitHub Pages
 **Key Points:**
 - **Build NEVER calls Ollama** (only reads cache or generates placeholder)
 - **Webhook ONLY calls Ollama** (not build)
+- **Two-level cache:** Per-passage extractions + summarized facts
+- **Summarization runs in webhook** (not build)
+- **Graceful fallback:** If summarization fails, build uses per-passage data
 - **Cache is source of truth** for build rendering
 - **Failed extractions NOT cached** (automatic retry on next webhook run)
+
+---
+
+### Summarization Rules: When to Merge vs Keep Separate
+
+**Purpose of Summarization:**
+Reduce duplication while preserving complete information and evidence. The goal is a unified Story Bible that's easier to read without losing any source citations.
+
+**When to MERGE facts (same information, different wording):**
+
+1. **Identical facts with different phrasing**
+   - Passage A: "Javlyn is a student at the Academy"
+   - Passage B: "Javlyn attends the Academy as a student"
+   - **Action:** Merge into single fact, cite both passages
+   - **Merged:** "Javlyn is a student at the Academy" (Evidence: Passage A, Passage B)
+
+2. **Same fact with additive details**
+   - Passage A: "The city is on the coast"
+   - Passage B: "The city sits on the eastern coast"
+   - **Action:** Merge and combine details
+   - **Merged:** "The city is on the eastern coast" (Evidence: Passage A, Passage B)
+
+3. **Repeated world rules across passages**
+   - Multiple passages mention "Magic requires formal training"
+   - **Action:** Merge into single fact, cite all passages
+   - **Merged:** Single entry with complete evidence list
+
+**When to KEEP SEPARATE (different or contradictory information):**
+
+1. **Contradictory facts (conflicts)**
+   - Passage A: "The war ended 10 years ago"
+   - Passage B: "The war ended recently, just 2 years past"
+   - **Action:** Keep separate, flag as "CONFLICT"
+   - **Reason:** Authors need to see and resolve contradiction
+
+2. **Path-specific variations (variables)**
+   - Path 1: "Javlyn masters the magic"
+   - Path 2: "Javlyn gives up on magic"
+   - **Action:** Keep separate under "Variables" section
+   - **Reason:** These are player-determined outcomes, not duplicates
+
+3. **Different aspects of same subject**
+   - Passage A: "Javlyn is a student at the Academy"
+   - Passage B: "Javlyn struggles with magic studies"
+   - **Action:** Keep separate
+   - **Reason:** Different facts about same character (identity vs current state)
+
+4. **Uncertain whether same fact**
+   - Passage A: "The city has a grand library"
+   - Passage B: "The Academy library contains ancient texts"
+   - **Action:** Keep separate (conservative deduplication)
+   - **Reason:** Unclear if "grand library" and "Academy library" are the same building
+
+5. **Different scope or context**
+   - Passage A: "Magic system exists" (world rule)
+   - Passage B: "Javlyn studies magic" (character action)
+   - **Action:** Keep separate
+   - **Reason:** Different types of facts (world constant vs character activity)
+
+**Conservative Deduplication Principle:**
+- **When uncertain → Keep separate**
+- Better to have slight redundancy than lose meaningful distinctions
+- Authors can always read both entries and understand relationship
+- Merging loses information if done incorrectly; keeping separate preserves it
+
+**Evidence Preservation:**
+- **ALWAYS cite ALL passages** that mention a fact
+- Merged facts show complete evidence list
+- Separate facts each show their own evidence
+- Evidence includes passage names/IDs and path IDs where relevant
+
+**Example Summarization Output:**
+
+**Before Summarization (Per-Passage):**
+```
+Passage "Start":
+  - "Javlyn is a student"
+  - "The Academy teaches magic"
+
+Passage "Meeting Javlyn":
+  - "Javlyn attends the Academy"
+  - "Javlyn struggles with spells"
+
+Passage "Academy Tour":
+  - "The Academy is the premier magic institution"
+```
+
+**After Summarization (Unified):**
+```
+Character: Javlyn
+  - "Javlyn is a student at the Academy"
+    Evidence: "Start", "Meeting Javlyn"
+  - "Javlyn struggles with magic studies"
+    Evidence: "Meeting Javlyn"
+
+World Constants:
+  - "The Academy is the premier institution for magic education"
+    Evidence: "Start", "Academy Tour"
+```
+
+---
+
+### What Makes a Good Summary (Quality Criteria)
+
+A high-quality summarized Story Bible achieves these goals:
+
+**1. Reduced Cognitive Load**
+- **Goal:** Author can scan Story Bible quickly without reading duplicate information
+- **Measure:** Same fact appears once (or intentionally multiple times if different aspects)
+- **Example:** "Javlyn is a student" appears once, not repeated for every passage that mentions it
+
+**2. Complete Evidence Trail**
+- **Goal:** Author can verify every fact by seeing ALL passages that establish it
+- **Measure:** Every fact lists all source passages (complete citation)
+- **Example:** "Magic system exists (Evidence: Start, Academy Tour, Javlyn's Struggle, City Description)"
+
+**3. Richer Combined Details**
+- **Goal:** Facts from multiple passages combine to create more complete picture
+- **Measure:** Additive details merged intelligently
+- **Example:**
+  - Passage A: "The city is coastal"
+  - Passage B: "The city faces the eastern sea"
+  - **Good Summary:** "The city is on the eastern coast" (combines both)
+  - **Bad Summary:** Two separate entries (loses connection)
+
+**4. Preserved Distinctions**
+- **Goal:** Different facts remain separate even if about same subject
+- **Measure:** Identity vs state vs outcome kept distinct
+- **Example:**
+  - "Javlyn is a student" (identity - constant)
+  - "Javlyn struggles with magic" (current state - constant)
+  - "Javlyn masters magic" (outcome - variable)
+  - All three kept separate because they're different types of facts
+
+**5. Surfaced Conflicts**
+- **Goal:** Contradictions visible to author for resolution
+- **Measure:** Conflicting facts flagged prominently
+- **Example:** "⚠️ CONFLICT: War ended 10 years ago (Passage A) vs 2 years ago (Passage B)"
+
+**6. Conservative When Uncertain**
+- **Goal:** Avoid incorrect merges that lose meaning
+- **Measure:** Ambiguous cases kept separate
+- **Example:** "Grand library" vs "Academy library" - keep separate unless clearly same building
+
+**7. Organized by Type**
+- **Goal:** Facts categorized logically for easy navigation
+- **Measure:** Constants, Variables, Characters organized clearly
+- **Example:** World rules grouped together, character facts under character name
+
+**Bad Summary Indicators (What to Avoid):**
+- ❌ Lost evidence: Merged fact missing some source citations
+- ❌ Incorrect merge: Combined facts that are actually different
+- ❌ Hidden conflicts: Contradictions merged/resolved without author input
+- ❌ Lost nuance: Additive details discarded instead of combined
+- ❌ Over-merging: Different aspects collapsed into single entry
+- ❌ Over-splitting: Identical facts kept separate due to trivial wording differences
+
+**Success Criteria for Summarization:**
+- Most duplicate facts merged (less repetition)
+- All evidence preserved (complete citations)
+- Conflicts surfaced (not hidden or auto-resolved)
+- Additive details combined (richer facts)
+- Uncertain cases kept separate (conservative)
+- Result is easier to read than per-passage view
+- No information lost from per-passage data
 
 ---
 
@@ -448,10 +693,12 @@ Appears in paths: [Path IDs]
 
 ### Extraction Methodology
 
-**World Reconstruction Approach:**
+**Two-Step Process: Extraction + Summarization**
+
+**Step 1: Per-Passage Extraction (World Reconstruction)**
 Story Bible uses AI to "reconstruct the world" from passages, not summarize the story.
 
-**Key Principles:**
+**Key Principles for Extraction:**
 1. **Focus on facts, not plot:** Extract what IS, not what HAPPENS
 2. **Identify constants:** Facts that appear consistently across all paths
 3. **Distinguish variables:** Facts that differ based on player choices
@@ -459,12 +706,12 @@ Story Bible uses AI to "reconstruct the world" from passages, not summarize the 
 5. **Cite evidence:** Link every fact to source passages
 6. **Cross-path validation:** Verify constants are truly consistent across all paths
 
-**AI Extraction Prompt Template:**
+**AI Extraction Prompt Template (Per-Passage):**
 
 ```
 You are reconstructing the world of an interactive fiction story.
 
-Your task: Extract FACTS about the world, NOT plot summary.
+Your task: Extract FACTS about the world from this passage, NOT plot summary.
 
 Distinguish between:
 - CONSTANTS: Facts true in all paths regardless of player choices
@@ -477,10 +724,52 @@ For each character, identify:
 - Zero Action State: What happens if player does nothing
 - Variables: Outcomes that depend on player choices
 
-Input: All story paths from AllPaths format
-Output: Structured list of constants, variables, and character states with evidence
+Input: Single passage from story
+Output: Structured list of facts from this passage with evidence
 
 Focus on world reconstruction, not story summarization.
+```
+
+**Step 2: Summarization (Deduplication)**
+
+After all passages are extracted, run summarization to create unified view.
+
+**Key Principles for Summarization:**
+1. **Merge identical facts:** Same fact with different wording → single entry with all citations
+2. **Combine additive details:** Related facts with complementary details → richer combined fact
+3. **Preserve distinctions:** Different aspects of same subject → keep separate
+4. **Surface conflicts:** Contradictory facts → keep separate and flag
+5. **Conservative approach:** When uncertain → keep separate (better redundancy than incorrect merge)
+6. **Complete citations:** Always list ALL source passages for each fact
+
+**AI Summarization Prompt Template:**
+
+```
+You are deduplicating facts extracted from multiple passages in a story.
+
+Your task: Create a unified Story Bible by intelligently merging related facts.
+
+Rules:
+1. MERGE when facts are identical (different wording, same meaning)
+   - Combine evidence: cite ALL passages that mention the fact
+   - Combine additive details into richer single fact
+
+2. KEEP SEPARATE when:
+   - Facts contradict each other → Flag as "CONFLICT"
+   - Facts describe different aspects of same subject
+   - Uncertainty whether facts refer to same thing
+   - Facts are path-specific variations (variables)
+
+3. ALWAYS preserve ALL evidence citations
+   - Merged facts must show complete evidence list
+   - Never drop source passages
+
+4. Conservative deduplication: When in doubt, keep separate
+
+Input: All per-passage facts from extraction step
+Output: Unified facts with complete evidence trails
+
+Be conservative. Prefer slight redundancy over incorrect merging.
 ```
 
 ---
@@ -615,18 +904,31 @@ Integrated into continuity checking PR comment with two sections:
 - HTML accessible on GitHub Pages
 - JSON format valid and parseable
 - Authors reference Story Bible when writing new content
+- Summarization succeeds on majority of extraction runs
+- Unified view easier to read than per-passage duplication
 
 **Secondary Metrics:**
 - Collaborators cite Story Bible when learning project
 - Reduced contradictions in new content (anecdotal)
 - Writers understand constants vs variables distinction
 - Zero action state helps guide character development
+- Deduplication reduces cognitive load (fewer duplicate entries)
+- Evidence trails complete (all sources cited)
 
 **Qualitative Indicators:**
 - Writers report Story Bible is useful for maintaining consistency
 - New collaborators find Story Bible helpful for onboarding
 - Team uses Story Bible terms in discussion ("is this a constant or variable?")
 - AI assistants (like Claude) use Story Bible for context
+- Authors trust summarization (verify merged facts are correct)
+- Conflicts surfaced help authors catch contradictions early
+
+**Summarization Quality Metrics:**
+- Duplicate facts successfully merged (quantitative: % reduction in total facts)
+- All evidence preserved (audit: random sample of merged facts has complete citations)
+- Contradictions flagged not hidden (qualitative: authors find flagged conflicts useful)
+- Conservative merging (qualitative: few/no complaints about incorrect merges)
+- Fallback works when needed (build succeeds even if summarization fails)
 
 ### Phase 2 (CI Validation)
 
@@ -767,6 +1069,88 @@ Integrated into continuity checking PR comment with two sections:
 
 ---
 
+### Edge Case 10: Summarization Fails After Successful Extraction
+**Scenario:** Per-passage extraction succeeds, but summarization step fails (AI timeout, error, malformed output)
+
+**Behavior:**
+- Cache contains complete `per_passage_extractions` data
+- Summarization error logged with details
+- Cache `summarization_status` set to "failed"
+- Cache committed to repository with per-passage data only
+- Build detects `summarization_status: "failed"`
+- Build renders HTML/JSON from `per_passage_extractions` (fallback mode)
+- HTML shows message: "Showing per-passage view (summarization pending)"
+- Story Bible still useful, just has more duplication
+- Next webhook run can retry summarization (incremental mode)
+
+**Critical:** Summarization failure does NOT invalidate successful extractions.
+
+---
+
+### Edge Case 11: Partial Summarization (Some Facts Merged, Some Not)
+**Scenario:** Summarization succeeds for most facts but encounters ambiguous cases
+
+**Behavior:**
+- AI merges facts it's confident about
+- Keeps uncertain facts separate (conservative deduplication)
+- Cache `summarization_status` set to "success"
+- Summarized output includes both merged and unmerged facts
+- HTML renders normally from `summarized_facts`
+- Some redundancy may remain, but it's intentional (safer than incorrect merging)
+
+**Outcome:** Partial deduplication is acceptable and expected.
+
+---
+
+### Edge Case 12: Evidence Accumulation Across Incremental Runs
+**Scenario:** New passages added in incremental run mention existing facts
+
+**Behavior:**
+- New passage extracted and added to `per_passage_extractions`
+- Summarization re-runs on all per-passage data (including new passages)
+- Existing merged facts updated with new evidence citations
+- Example: Fact previously cited in 2 passages now cited in 3
+- Evidence list grows to include new passage
+- Story Bible becomes more comprehensive over time
+
+**Outcome:** Evidence trails accumulate naturally as story grows.
+
+---
+
+### Edge Case 13: Contradictions Discovered During Summarization
+**Scenario:** Summarization detects that two facts contradict each other
+
+**Behavior:**
+- AI keeps both facts separate (doesn't choose one)
+- Flags both as "CONFLICT: [brief description]"
+- Both facts appear in Story Bible with conflict warning
+- HTML displays prominently: "⚠️ CONFLICT DETECTED"
+- Evidence shows which passages establish each version
+- Authors notified to review and resolve
+- Does NOT fail summarization (conflicts are expected in drafts)
+
+**Outcome:** Conflicts surfaced for author review, not hidden or auto-resolved.
+
+---
+
+### Edge Case 14: Incremental Summarization Performance
+**Scenario:** Large story with many passages, summarization becomes slow on full re-run
+
+**Phase 1 Behavior (Acceptable):**
+- Summarization processes all per-passage data each time
+- May take longer as story grows
+- Still faster than re-extracting all passages (extraction is slower)
+- Webhook reports time taken: "Summarization completed in 45s"
+
+**Phase 2 Consideration (Future Optimization):**
+- Could implement incremental summarization (only merge new facts)
+- Deferred until performance becomes actual problem
+- Not required for Phase 1
+
+**Outcome:** Full re-summarization acceptable for Phase 1.
+
+---
+
 ## Risk Considerations
 
 ### Risk 1: AI Extraction Accuracy
@@ -838,6 +1222,40 @@ Integrated into continuity checking PR comment with two sections:
 
 ---
 
+### Risk 6: Summarization Accuracy
+**Impact:** Medium - Incorrect merging loses meaningful distinctions or creates false facts
+
+**Mitigation:**
+- Conservative deduplication: when uncertain, keep separate
+- All evidence preserved (complete citations allow verification)
+- Conflicts flagged, never auto-resolved
+- Phase 1: Authors review and validate summarization output
+- Fallback to per-passage view if summarization fails
+- Iterative prompt refinement based on author feedback
+- Track author complaints about incorrect merges
+
+**Monitoring:**
+- Author feedback on merge quality
+- False merge rate (author reports incorrect combinations)
+- Evidence preservation (audit random sample for complete citations)
+- Conflict detection rate (are contradictions being surfaced?)
+
+---
+
+### Risk 7: Summarization Performance
+**Impact:** Low - Summarization slow on large stories, delays webhook response
+
+**Mitigation:**
+- Phase 1: Full re-summarization acceptable (still faster than re-extraction)
+- Per-passage timeout prevents single failure blocking all
+- Summarization failure doesn't invalidate extractions (fallback available)
+- Webhook reports time taken for monitoring
+- Phase 2: Consider incremental summarization if becomes bottleneck
+
+**Monitoring:** Track summarization time as story grows
+
+---
+
 ## Acceptance Criteria Summary
 
 ### Phase 1: Informational Tool
@@ -900,12 +1318,32 @@ Integrated into continuity checking PR comment with two sections:
 - [ ] Evidence cited for every fact
 - [ ] Contradictions flagged (not resolved, just noted)
 
+**Summarization (Deduplication):**
+- [ ] Summarization runs in webhook after per-passage extraction
+- [ ] Two-level cache structure: `per_passage_extractions` + `summarized_facts` + `summarization_status`
+- [ ] Identical facts merged with combined evidence (cite ALL source passages)
+- [ ] Additive details from multiple passages combined into richer facts
+- [ ] Conservative deduplication: when uncertain, keep facts separate
+- [ ] Contradictory facts kept separate and flagged as conflicts
+- [ ] Path-specific variations kept separate under "Variables" section
+- [ ] Different aspects of same subject kept separate
+- [ ] ALL evidence preserved in merged facts (complete citation lists)
+- [ ] Graceful fallback: if summarization fails, build uses per-passage data
+- [ ] HTML indicates which view is displayed (unified vs per-passage fallback)
+- [ ] Summarization status reported in webhook output
+- [ ] Incremental mode: summarization re-runs on all per-passage data (includes new facts)
+- [ ] Evidence accumulates across incremental runs (new citations added to existing facts)
+
 **Documentation:**
 - [ ] Usage guide in README or documentation
 - [ ] Explanation of constants vs variables
 - [ ] Definition of zero action state
+- [ ] Explanation of summarization/deduplication rules
+- [ ] When facts are merged vs kept separate (with examples)
+- [ ] How evidence accumulation works across incremental runs
+- [ ] How to interpret unified vs per-passage fallback views
 - [ ] Instructions for referencing Story Bible
-- [ ] Examples showing extraction output
+- [ ] Examples showing extraction output (per-passage and summarized)
 
 ### Phase 2: CI Validation (Future)
 
@@ -1150,12 +1588,17 @@ Phase 2 planning begins when:
 - [ ] Document in architecture/
 
 **After Design (Developer):**
-- [ ] Implement AI extraction logic
-- [ ] Build HTML format generator
-- [ ] Build JSON format generator
-- [ ] Integrate into build pipeline
+- [ ] Implement per-passage AI extraction logic
+- [ ] Implement AI summarization/deduplication logic
+- [ ] Build two-level cache structure
+- [ ] Build HTML format generator (with fallback handling)
+- [ ] Build JSON format generator (with fallback handling)
+- [ ] Integrate into webhook service (extraction + summarization)
+- [ ] Integrate into build pipeline (cache-first rendering)
 - [ ] Test with current story content
-- [ ] Document usage in README
+- [ ] Test summarization quality (merge accuracy, evidence preservation)
+- [ ] Test fallback behavior (summarization failure scenarios)
+- [ ] Document usage in README (including summarization)
 
 ---
 
@@ -1265,7 +1708,9 @@ Phase 2 planning begins when:
 </html>
 ```
 
-### Example JSON Output (Partial)
+### Example Cache JSON (Two-Level Structure)
+
+**Full cache structure** (story-bible-cache.json):
 
 ```json
 {
@@ -1275,21 +1720,140 @@ Phase 2 planning begins when:
     "version": "1.0",
     "schema_version": "1.0.0"
   },
+  "summarization_status": "success",
+  "extraction_stats": {
+    "total_passages": 15,
+    "successfully_extracted": 15,
+    "failed_extractions": 0,
+    "summarization_time_seconds": 12.5
+  },
+  "per_passage_extractions": {
+    "passage_id_1": {
+      "passage_name": "Start",
+      "facts": [
+        {
+          "fact": "Magic system exists",
+          "category": "world_rule",
+          "type": "constant"
+        },
+        {
+          "fact": "Javlyn is a student",
+          "category": "character_identity",
+          "type": "constant",
+          "character": "Javlyn"
+        }
+      ]
+    },
+    "passage_id_5": {
+      "passage_name": "Academy Introduction",
+      "facts": [
+        {
+          "fact": "Magic requires formal training",
+          "category": "world_rule",
+          "type": "constant"
+        },
+        {
+          "fact": "Javlyn attends the Academy",
+          "category": "character_identity",
+          "type": "constant",
+          "character": "Javlyn"
+        }
+      ]
+    }
+  },
+  "summarized_facts": {
+    "constants": {
+      "world_rules": [
+        {
+          "fact": "Magic system exists and requires formal training",
+          "evidence": ["passage_id_1", "passage_id_5", "passage_id_7"],
+          "category": "world_rule",
+          "merged_from": ["Magic system exists", "Magic requires formal training"]
+        }
+      ],
+      "setting": [
+        {
+          "fact": "City is on the coast",
+          "evidence": ["passage_id_3"],
+          "category": "geography"
+        }
+      ]
+    },
+    "characters": {
+      "Javlyn": {
+        "identity": [
+          {
+            "fact": "Student at the Academy",
+            "evidence": ["passage_id_1", "passage_id_5", "passage_id_7"],
+            "type": "constant",
+            "merged_from": ["Javlyn is a student", "Javlyn attends the Academy"]
+          }
+        ],
+        "zero_action_state": [
+          {
+            "fact": "Continues to struggle and eventually gives up on magic",
+            "evidence": ["path_id_default"],
+            "type": "default_trajectory"
+          }
+        ],
+        "variables": [
+          {
+            "fact": "Masters the magic",
+            "condition": "Player helps Javlyn study",
+            "evidence": ["path_id_7", "path_id_8"],
+            "type": "outcome"
+          }
+        ]
+      }
+    },
+    "variables": {
+      "events": [
+        {
+          "fact": "Player finds the ancient artifact",
+          "paths_true": ["path_id_2", "path_id_4", "path_id_7"],
+          "paths_false": ["path_id_1", "path_id_3", "path_id_5"],
+          "type": "player_action"
+        }
+      ]
+    }
+  }
+}
+```
+
+**Notes on two-level structure:**
+- `per_passage_extractions`: Raw facts per passage (fallback data)
+- `summarized_facts`: Unified/deduplicated facts (preferred for display)
+- `summarization_status`: "success" | "failed" | "not_run"
+- `merged_from`: Optional field showing which original facts were combined
+- Build renders from `summarized_facts` if status is "success"
+- Build falls back to `per_passage_extractions` if summarization failed
+
+### Example Story Bible JSON Output (What Gets Published)
+
+**story-bible.json** (rendered from cache for publishing):
+
+```json
+{
+  "meta": {
+    "generated": "2025-12-05T14:30:00Z",
+    "commit": "abc123def",
+    "version": "1.0",
+    "schema_version": "1.0.0",
+    "view_type": "summarized"
+  },
   "constants": {
     "world_rules": [
       {
-        "fact": "Magic system exists",
-        "evidence": ["passage_id_1", "passage_id_5"],
-        "category": "world_rule",
-        "confidence": "high"
+        "fact": "Magic system exists and requires formal training",
+        "evidence": ["passage_id_1", "passage_id_5", "passage_id_7"],
+        "category": "world_rule"
       }
     ],
     "setting": [
       {
         "fact": "City is on the coast",
         "evidence": ["passage_id_3"],
-        "category": "geography",
-        "confidence": "high"
+        "category": "geography"
       }
     ]
   },
@@ -1298,17 +1862,15 @@ Phase 2 planning begins when:
       "identity": [
         {
           "fact": "Student at the Academy",
-          "evidence": ["passage_id_7"],
-          "type": "constant",
-          "confidence": "high"
+          "evidence": ["passage_id_1", "passage_id_5", "passage_id_7"],
+          "type": "constant"
         }
       ],
       "zero_action_state": [
         {
           "fact": "Continues to struggle and eventually gives up on magic",
           "evidence": ["path_id_default"],
-          "type": "default_trajectory",
-          "confidence": "medium"
+          "type": "default_trajectory"
         }
       ],
       "variables": [
@@ -1316,8 +1878,7 @@ Phase 2 planning begins when:
           "fact": "Masters the magic",
           "condition": "Player helps Javlyn study",
           "evidence": ["path_id_7", "path_id_8"],
-          "type": "outcome",
-          "confidence": "high"
+          "type": "outcome"
         }
       ]
     }
