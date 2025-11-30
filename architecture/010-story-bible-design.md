@@ -2029,6 +2029,1021 @@ If Phase 1 is already implemented locally:
 
 ---
 
+## Phase 3: Story Bible Validation Integration
+
+### Status
+
+**Proposed** - Integration with continuity checking for world consistency validation
+
+### Context
+
+**Problem**: After Story Bible extraction (Phase 2) creates `story-bible-cache.json` with established world constants, we need to validate new/changed content against these constants during continuity checking.
+
+**User Flow**:
+1. Author extracts Story Bible using `/extract-story-bible` command
+2. Story Bible cache committed to PR branch with world constants
+3. Continuity checking runs (automatically or via `/check-continuity`)
+4. **NEW**: Continuity checker also validates against Story Bible constants
+5. Combined results posted to PR: path consistency + world consistency
+
+### Requirements from PM
+
+From `/home/user/NaNoWriMo2025/features/story-bible.md` Phase 3 scope:
+
+1. **Automatic integration**: When continuity checking runs, also validate against Story Bible
+2. **Load from PR branch**: Read `story-bible-cache.json` from PR branch (not main)
+3. **Validate new content**: Check new passages against established constants
+4. **Combined output**: Single PR comment with both path consistency and world consistency results
+5. **Graceful degradation**: If Story Bible cache doesn't exist, skip validation (don't fail)
+6. **Severity levels**: critical, major, minor (same as continuity checking)
+
+### Architecture Overview
+
+```
+Continuity Checking Workflow (Enhanced)
+────────────────────────────────────────
+
+1. Download PR artifacts
+   ├─ dist/allpaths-metadata/*.txt
+   ├─ allpaths-validation-status.json
+   └─ [OPTIONAL] story-bible-cache.json from PR branch
+
+2. For each path to validate:
+
+   ┌──────────────────────────────────────┐
+   │  Path Consistency Check              │
+   │  (existing continuity checking)      │
+   │  → Internal path logic               │
+   │  → Character consistency             │
+   │  → Timeline coherence                │
+   └──────────────────────────────────────┘
+            ↓
+   ┌──────────────────────────────────────┐
+   │  World Consistency Check (NEW)       │
+   │  (validate against Story Bible)      │
+   │  → Load Story Bible constants        │
+   │  → Validate passage against constants│
+   │  → Detect contradictions             │
+   └──────────────────────────────────────┘
+            ↓
+   ┌──────────────────────────────────────┐
+   │  Merge Results                       │
+   │  → Combine path issues + world issues│
+   │  → Calculate combined severity       │
+   └──────────────────────────────────────┘
+
+3. Post combined results to PR
+   ├─ Path Consistency section
+   └─ World Consistency section (if Story Bible exists)
+```
+
+### Design Decisions
+
+#### 1. Validation Module Location
+
+**Decision**: Create `services/lib/story_bible_validator.py`
+
+**Structure**:
+```
+services/lib/
+├── story_bible_extractor.py    # Phase 2: Extract facts from passages
+└── story_bible_validator.py    # Phase 3: Validate against constants (NEW)
+```
+
+**Rationale**:
+- **Separation of concerns**: Extraction (discovery) vs Validation (checking)
+- **Reusability**: Can be used by other services in future
+- **Independent testing**: Test validation logic separately from extraction
+- **Follows pattern**: Similar to how continuity checking is modular
+
+**Responsibilities**:
+- Load Story Bible cache from PR branch
+- Validate passage content against established constants
+- Return structured violations with evidence
+- Handle missing/corrupt cache gracefully
+
+---
+
+#### 2. Validation Prompt Design
+
+**New AI Prompt**: Validate passage against known constants
+
+```python
+VALIDATION_PROMPT = """Reasoning: high
+
+=== SECTION 1: ROLE & CONTEXT ===
+
+You are validating a story passage against established world constants.
+
+Your task: Detect CONTRADICTIONS between the passage and known world facts.
+
+CRITICAL UNDERSTANDING:
+- World constants are CANONICAL - they represent established lore
+- This passage is NEW CONTENT being validated
+- Only flag DIRECT CONTRADICTIONS, not missing details
+- Constants are true across ALL story paths
+
+=== SECTION 2: WORLD CONSTANTS ===
+
+The following facts are ESTABLISHED CONSTANTS about this story world:
+
+{world_constants}
+
+These constants are:
+- **World Rules**: Magic systems, technology level, physical laws
+- **Setting**: Geography, landmarks, historical events
+- **Timeline**: Established chronology before story starts
+
+=== SECTION 3: PASSAGE TO VALIDATE ===
+
+{passage_text}
+
+=== SECTION 4: VALIDATION TASK ===
+
+Compare the passage against the world constants and detect:
+
+1. **Direct Contradictions**: Passage states something that conflicts with constants
+2. **Inconsistent Details**: Passage describes world differently than constants
+3. **Timeline Violations**: Events contradict established chronology
+
+DO NOT FLAG:
+- Missing information (constants don't require all details to be mentioned)
+- Character choices/outcomes (these are variables, not constants)
+- Plot events (story progression is independent of world constants)
+- Stylistic differences (same fact described differently is OK)
+
+ONLY FLAG if passage DIRECTLY CONTRADICTS a constant.
+
+=== SECTION 5: OUTPUT FORMAT ===
+
+Respond with ONLY valid JSON (no markdown, no code blocks):
+
+{
+  "has_violations": true/false,
+  "severity": "none|minor|major|critical",
+  "violations": [
+    {
+      "type": "world_rule|setting|timeline|contradiction",
+      "severity": "minor|major|critical",
+      "description": "Brief description of the contradiction",
+      "constant_fact": "The established constant being violated",
+      "passage_statement": "Quote from passage that contradicts it",
+      "evidence": {
+        "constant_source": "Passage where constant was established",
+        "conflict_location": "Location in this passage"
+      }
+    }
+  ],
+  "summary": "Brief overall assessment"
+}
+
+If no violations found, return:
+{"has_violations": false, "severity": "none", "violations": [], "summary": "No world consistency issues detected"}
+
+=== SECTION 6: SEVERITY RUBRIC ===
+
+**CRITICAL** - Fundamental world-building contradictions:
+- Magic system works differently than established
+- Geography contradicts (city on coast vs mountains)
+- Technology level inconsistent (medieval vs modern)
+- Major historical events contradicted
+
+**MAJOR** - Significant world detail contradictions:
+- Landmark description differs from constant
+- World rule details inconsistent
+- Timeline order contradicted
+
+**MINOR** - Small detail variations:
+- Minor setting details differ
+- Slight chronology ambiguity
+- Non-essential world fact variance
+
+BEGIN VALIDATION (JSON only):
+"""
+```
+
+**Key Differences from Extraction Prompt**:
+- **Input**: Takes both constants AND passage (extraction only takes passage)
+- **Task**: Find contradictions (not extract facts)
+- **Output**: Violations with references to constants (not facts)
+- **Severity**: Focuses on contradictions (not discovery confidence)
+
+---
+
+#### 3. Integration with Continuity Checking
+
+**Modify**: `services/continuity-webhook.py` in `process_webhook_async()`
+
+**Current Flow**:
+```python
+# Existing code in process_webhook_async()
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'):
+    # ... download artifacts ...
+    # ... load allpaths metadata ...
+
+    for path_id, text_file in unvalidated:
+        # Read story text
+        story_text = text_file.read_text()
+
+        # Check continuity
+        result = run_continuity_check(...)  # Uses check-story-continuity.py
+
+        # Update cache and post results
+        # ...
+```
+
+**Enhanced Flow**:
+```python
+# Enhanced code with Story Bible validation
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'):
+    # ... download artifacts ...
+    # ... load allpaths metadata ...
+
+    # NEW: Load Story Bible cache from PR branch (if exists)
+    story_bible_cache = load_story_bible_from_pr_branch(pr_number)
+    story_bible_available = bool(story_bible_cache and story_bible_cache.get('categorized_facts'))
+
+    for path_id, text_file in unvalidated:
+        # Read story text
+        story_text = text_file.read_text()
+
+        # 1. Path Consistency Check (existing)
+        path_result = run_continuity_check(text_dir, cache_file, pr_number, ...)
+
+        # 2. World Consistency Check (NEW)
+        world_result = None
+        if story_bible_available:
+            world_result = validate_against_story_bible(
+                passage_text=story_text,
+                story_bible_cache=story_bible_cache,
+                passage_id=path_id
+            )
+
+        # 3. Merge Results
+        combined_result = merge_validation_results(path_result, world_result)
+
+        # Update cache and post results with combined output
+        # ...
+```
+
+**Helper Function**:
+```python
+def load_story_bible_from_pr_branch(pr_number: int) -> Dict:
+    """Load story-bible-cache.json from PR branch if it exists.
+
+    Returns:
+        Story Bible cache dict, or empty dict if not found
+    """
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        return {}
+
+    branch_name = pr_info['head']['ref']
+    token = get_github_token()
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/story-bible-cache.json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params={"ref": branch_name})
+        if response.status_code == 200:
+            import base64
+            content = response.json()['content']
+            decoded = base64.b64decode(content).decode('utf-8')
+            cache = json.loads(decoded)
+            app.logger.info(f"Loaded Story Bible cache from branch {branch_name}")
+            return cache
+        else:
+            app.logger.info(f"No Story Bible cache found on branch {branch_name}")
+            return {}
+    except Exception as e:
+        app.logger.warning(f"Could not load Story Bible cache: {e}")
+        return {}
+```
+
+---
+
+#### 4. Validation Implementation
+
+**New Module**: `services/lib/story_bible_validator.py`
+
+```python
+#!/usr/bin/env python3
+"""
+Story Bible validation against established world constants.
+
+Validates new story content against extracted Story Bible constants to detect
+world-building contradictions.
+"""
+
+import requests
+import json
+from typing import Dict, List, Optional
+
+OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_TIMEOUT = 120  # 2 minutes per validation
+
+VALIDATION_PROMPT = """Reasoning: high
+
+=== SECTION 1: ROLE & CONTEXT ===
+
+You are validating a story passage against established world constants.
+
+Your task: Detect CONTRADICTIONS between the passage and known world facts.
+
+CRITICAL UNDERSTANDING:
+- World constants are CANONICAL - they represent established lore
+- This passage is NEW CONTENT being validated
+- Only flag DIRECT CONTRADICTIONS, not missing details
+- Constants are true across ALL story paths
+
+=== SECTION 2: WORLD CONSTANTS ===
+
+The following facts are ESTABLISHED CONSTANTS about this story world:
+
+{world_constants}
+
+These constants are:
+- **World Rules**: Magic systems, technology level, physical laws
+- **Setting**: Geography, landmarks, historical events
+- **Timeline**: Established chronology before story starts
+
+=== SECTION 3: PASSAGE TO VALIDATE ===
+
+{passage_text}
+
+=== SECTION 4: VALIDATION TASK ===
+
+Compare the passage against the world constants and detect:
+
+1. **Direct Contradictions**: Passage states something that conflicts with constants
+2. **Inconsistent Details**: Passage describes world differently than constants
+3. **Timeline Violations**: Events contradict established chronology
+
+DO NOT FLAG:
+- Missing information (constants don't require all details to be mentioned)
+- Character choices/outcomes (these are variables, not constants)
+- Plot events (story progression is independent of world constants)
+- Stylistic differences (same fact described differently is OK)
+
+ONLY FLAG if passage DIRECTLY CONTRADICTS a constant.
+
+=== SECTION 5: OUTPUT FORMAT ===
+
+Respond with ONLY valid JSON (no markdown, no code blocks):
+
+{{
+  "has_violations": true/false,
+  "severity": "none|minor|major|critical",
+  "violations": [
+    {{
+      "type": "world_rule|setting|timeline|contradiction",
+      "severity": "minor|major|critical",
+      "description": "Brief description of the contradiction",
+      "constant_fact": "The established constant being violated",
+      "passage_statement": "Quote from passage that contradicts it",
+      "evidence": {{
+        "constant_source": "Passage where constant was established",
+        "conflict_location": "Location in this passage"
+      }}
+    }}
+  ],
+  "summary": "Brief overall assessment"
+}}
+
+If no violations found, return:
+{{"has_violations": false, "severity": "none", "violations": [], "summary": "No world consistency issues detected"}}
+
+=== SECTION 6: SEVERITY RUBRIC ===
+
+**CRITICAL** - Fundamental world-building contradictions:
+- Magic system works differently than established
+- Geography contradicts (city on coast vs mountains)
+- Technology level inconsistent (medieval vs modern)
+- Major historical events contradicted
+
+**MAJOR** - Significant world detail contradictions:
+- Landmark description differs from constant
+- World rule details inconsistent
+- Timeline order contradicted
+
+**MINOR** - Small detail variations:
+- Minor setting details differ
+- Slight chronology ambiguity
+- Non-essential world fact variance
+
+BEGIN VALIDATION (JSON only):
+"""
+
+
+def format_constants_for_validation(story_bible_cache: Dict) -> str:
+    """
+    Format Story Bible constants into text for validation prompt.
+
+    Args:
+        story_bible_cache: Story Bible cache with categorized facts
+
+    Returns:
+        Formatted string of constants for prompt
+    """
+    categorized = story_bible_cache.get('categorized_facts', {})
+    constants = categorized.get('constants', {})
+
+    formatted_lines = []
+
+    # World Rules
+    world_rules = constants.get('world_rules', [])
+    if world_rules:
+        formatted_lines.append("**World Rules:**")
+        for fact in world_rules:
+            fact_text = fact.get('fact', 'Unknown')
+            evidence = fact.get('evidence', '')
+            formatted_lines.append(f"  - {fact_text}")
+            if evidence:
+                formatted_lines.append(f"    Evidence: \"{evidence}\"")
+        formatted_lines.append("")
+
+    # Setting
+    setting = constants.get('setting', [])
+    if setting:
+        formatted_lines.append("**Setting:**")
+        for fact in setting:
+            fact_text = fact.get('fact', 'Unknown')
+            evidence = fact.get('evidence', '')
+            formatted_lines.append(f"  - {fact_text}")
+            if evidence:
+                formatted_lines.append(f"    Evidence: \"{evidence}\"")
+        formatted_lines.append("")
+
+    # Timeline
+    timeline = constants.get('timeline', [])
+    if timeline:
+        formatted_lines.append("**Timeline:**")
+        for fact in timeline:
+            fact_text = fact.get('fact', 'Unknown')
+            evidence = fact.get('evidence', '')
+            formatted_lines.append(f"  - {fact_text}")
+            if evidence:
+                formatted_lines.append(f"    Evidence: \"{evidence}\"")
+        formatted_lines.append("")
+
+    if not formatted_lines:
+        return "(No world constants established yet)"
+
+    return "\n".join(formatted_lines)
+
+
+def validate_against_story_bible(
+    passage_text: str,
+    story_bible_cache: Dict,
+    passage_id: str
+) -> Optional[Dict]:
+    """
+    Validate a passage against Story Bible constants.
+
+    Args:
+        passage_text: The passage content to validate
+        story_bible_cache: Story Bible cache with categorized facts
+        passage_id: Identifier for passage (for logging)
+
+    Returns:
+        Validation result dict with violations, or None if validation failed
+    """
+    # Check if Story Bible has constants
+    categorized = story_bible_cache.get('categorized_facts', {})
+    constants = categorized.get('constants', {})
+
+    # If no constants, skip validation
+    if not constants or not any(constants.values()):
+        return {
+            "has_violations": False,
+            "severity": "none",
+            "violations": [],
+            "summary": "No Story Bible constants available for validation"
+        }
+
+    # Format constants for prompt
+    world_constants = format_constants_for_validation(story_bible_cache)
+
+    # Build validation prompt
+    prompt = VALIDATION_PROMPT.format(
+        world_constants=world_constants,
+        passage_text=passage_text
+    )
+
+    # Call Ollama API
+    try:
+        response = requests.post(
+            OLLAMA_API_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.2,  # Low temperature for consistent validation
+                    "num_predict": 1500
+                }
+            },
+            timeout=OLLAMA_TIMEOUT
+        )
+
+        response.raise_for_status()
+        result = response.json()
+
+        # Parse response
+        raw_response = result.get('response', '')
+
+        # Extract JSON from response
+        validation_result = parse_json_from_response(raw_response)
+
+        return validation_result
+
+    except requests.Timeout:
+        # Timeout is non-blocking - log and return no violations
+        return {
+            "has_violations": False,
+            "severity": "none",
+            "violations": [],
+            "summary": "Story Bible validation timed out (skipped)"
+        }
+    except Exception as e:
+        # Other errors are non-blocking - log and return no violations
+        return {
+            "has_violations": False,
+            "severity": "none",
+            "violations": [],
+            "summary": f"Story Bible validation error: {str(e)[:50]} (skipped)"
+        }
+
+
+def parse_json_from_response(text: str) -> Dict:
+    """
+    Extract JSON object from AI response that may contain extra text.
+
+    Args:
+        text: Raw AI response text
+
+    Returns:
+        Parsed JSON object
+
+    Raises:
+        json.JSONDecodeError: If no valid JSON found
+    """
+    # Try parsing entire response first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Find JSON object boundaries
+    start = text.find('{')
+    end = text.rfind('}')
+
+    if start == -1 or end == -1:
+        return {
+            "has_violations": False,
+            "severity": "none",
+            "violations": [],
+            "summary": "Could not parse validation response"
+        }
+
+    json_text = text[start:end+1]
+
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError:
+        return {
+            "has_violations": False,
+            "severity": "none",
+            "violations": [],
+            "summary": "Could not parse validation response"
+        }
+
+
+def merge_validation_results(path_result: Dict, world_result: Optional[Dict]) -> Dict:
+    """
+    Merge path consistency and world consistency validation results.
+
+    Args:
+        path_result: Result from path consistency checking
+        world_result: Result from Story Bible validation (may be None)
+
+    Returns:
+        Combined result dict
+    """
+    # Start with path result
+    combined = path_result.copy()
+
+    # If no world validation, return path result as-is
+    if not world_result:
+        combined['world_validation'] = None
+        return combined
+
+    # Add world validation section
+    combined['world_validation'] = world_result
+
+    # Merge issues and recalculate severity
+    path_issues = path_result.get('issues', [])
+    world_violations = world_result.get('violations', [])
+
+    # Combine issues (keep separate for formatting)
+    # Don't merge into single list - we'll format separately in PR comment
+
+    # Recalculate combined severity (take max of path and world)
+    path_severity = path_result.get('severity', 'none')
+    world_severity = world_result.get('severity', 'none')
+
+    severity_order = {'none': 0, 'minor': 1, 'major': 2, 'critical': 3}
+    combined_severity_value = max(
+        severity_order.get(path_severity, 0),
+        severity_order.get(world_severity, 0)
+    )
+    combined_severity = [k for k, v in severity_order.items() if v == combined_severity_value][0]
+
+    combined['severity'] = combined_severity
+    combined['has_issues'] = (
+        path_result.get('has_issues', False) or
+        world_result.get('has_violations', False)
+    )
+
+    return combined
+```
+
+---
+
+#### 5. PR Comment Format
+
+**Enhanced format_pr_comment()** in `continuity-webhook.py`:
+
+```python
+def format_pr_comment(results: dict) -> str:
+    """Format the continuity check results as a PR comment."""
+    mode = results.get('mode', 'new-only')
+    stats = results.get('statistics', {})
+    all_checked_paths = results.get('all_checked_paths', [])
+
+    # ... existing mode explanation and header ...
+
+    comment = f"""## 🤖 AI Continuity Check
+
+**Mode:** `{mode}` _({mode_text})_
+
+**Summary:** {results["summary"]}
+
+"""
+
+    # ... existing statistics section ...
+
+    # NEW: Story Bible section (if available)
+    story_bible_available = any(
+        p.get('world_validation') for p in all_checked_paths
+    )
+
+    if story_bible_available:
+        comment += "\n### 📖 Story Bible Validation\n\n"
+        comment += "✓ Validated against established world constants\n"
+
+        world_issues_count = sum(
+            1 for p in results["paths_with_issues"]
+            if p.get('world_validation', {}).get('has_violations', False)
+        )
+
+        if world_issues_count > 0:
+            comment += f"⚠️ Found world consistency issues in {world_issues_count} path(s)\n\n"
+        else:
+            comment += "✅ No world consistency issues detected\n\n"
+
+    # ... existing path issues section ...
+
+    # Modified: Format path issues with world validation
+    if results["paths_with_issues"]:
+        comment += f"### ⚠️ Issues Found\n\n"
+        comment += f"Found issues in **{len(results['paths_with_issues'])}** of {results['checked_count']} path(s).\n\n"
+
+        # Group by severity (existing code)
+        critical = [p for p in results["paths_with_issues"] if p["severity"] == "critical"]
+        major = [p for p in results["paths_with_issues"] if p["severity"] == "major"]
+        minor = [p for p in results["paths_with_issues"] if p["severity"] == "minor"]
+
+        # Format each severity group
+        if critical:
+            comment += f"#### 🔴 Critical Issues ({len(critical)})\n\n"
+            for path in critical:
+                comment += format_path_issues_with_world(path)  # NEW: Enhanced formatter
+
+        # ... similar for major and minor ...
+
+    # ... existing bulk approval section ...
+
+    return comment
+
+
+def format_path_issues_with_world(path: dict) -> str:
+    """Format issues for a single path, including world validation."""
+    path_id = path.get("id", "unknown")
+    route_str = " → ".join(path["route"]) if path["route"] else path_id
+    output = f"**Path:** `{path_id}` ({route_str})\n\n"
+
+    # Path consistency summary
+    output += f"_{sanitize_ai_content(path['summary'])}_\n\n"
+
+    # Path consistency issues (existing)
+    if path.get("issues"):
+        output += "<details>\n<summary>Path Consistency Issues</summary>\n\n"
+        for issue in path["issues"]:
+            # ... existing issue formatting ...
+        output += "</details>\n\n"
+
+    # World consistency issues (NEW)
+    world_validation = path.get('world_validation')
+    if world_validation and world_validation.get('has_violations'):
+        output += "<details>\n<summary>World Consistency Issues</summary>\n\n"
+        output += f"_{sanitize_ai_content(world_validation.get('summary', '')}_\n\n"
+
+        for violation in world_validation.get('violations', []):
+            violation_type = violation.get('type', 'unknown')
+            severity = violation.get('severity', 'unknown')
+            description = sanitize_ai_content(violation.get('description', ''))
+            constant_fact = sanitize_ai_content(violation.get('constant_fact', ''))
+            passage_statement = sanitize_ai_content(violation.get('passage_statement', ''))
+
+            output += f"- **{violation_type.capitalize()}** ({severity}): {description}\n"
+            output += f"  - **Established constant**: \"{constant_fact}\"\n"
+            output += f"  - **This passage states**: \"{passage_statement}\"\n"
+
+            evidence = violation.get('evidence', {})
+            if evidence:
+                const_source = evidence.get('constant_source', '')
+                if const_source:
+                    output += f"  - **Constant source**: {const_source}\n"
+            output += "\n"
+
+        output += "</details>\n\n"
+
+    return output
+```
+
+---
+
+#### 6. Performance Considerations
+
+**Sequential vs Parallel**:
+
+**Option A: Sequential (Simpler)**:
+```python
+# Run path check, then world check
+path_result = run_continuity_check(...)
+world_result = validate_against_story_bible(...) if story_bible_available else None
+combined = merge_validation_results(path_result, world_result)
+```
+
+**Pros**: Simpler code, easier to debug, clear execution flow
+**Cons**: ~30-60s longer per path (serial execution)
+
+**Option B: Parallel (Faster)**:
+```python
+# Run both checks concurrently
+from concurrent.futures import ThreadPoolExecutor
+
+with ThreadPoolExecutor(max_workers=2) as executor:
+    path_future = executor.submit(run_continuity_check, ...)
+    world_future = executor.submit(validate_against_story_bible, ...) if story_bible_available else None
+
+    path_result = path_future.result()
+    world_result = world_future.result() if world_future else None
+    combined = merge_validation_results(path_result, world_result)
+```
+
+**Pros**: Faster (parallel execution)
+**Cons**: More complex, harder to debug, need thread-safe code
+
+**Recommendation**: Start with **Sequential (Option A)** for initial implementation:
+- Simpler to implement and test
+- Performance impact acceptable (~30s per path extra)
+- Can optimize to parallel later if needed
+- Reduces risk of threading issues
+
+**Performance Impact Estimate**:
+- Path consistency check: ~60-120s per path
+- World validation: ~30-60s per path
+- **Sequential total**: ~90-180s per path
+- **Parallel total**: ~60-120s per path (if we implement parallel)
+
+For typical PR with 1-3 new paths: ~3-9 minutes total (acceptable)
+
+---
+
+#### 7. Error Handling and Graceful Degradation
+
+**Story Bible Cache Not Found**:
+```python
+# In process_webhook_async()
+story_bible_cache = load_story_bible_from_pr_branch(pr_number)
+
+if not story_bible_cache:
+    app.logger.info(f"[Story Bible] No cache found for PR #{pr_number}, skipping world validation")
+    story_bible_available = False
+else:
+    app.logger.info(f"[Story Bible] Loaded cache with {len(story_bible_cache.get('categorized_facts', {}).get('constants', {}))} constant categories")
+    story_bible_available = True
+```
+
+**Validation Errors** (non-blocking):
+- Ollama timeout → Log warning, skip world validation, continue
+- Invalid JSON response → Log error, skip world validation, continue
+- API error → Log error, skip world validation, continue
+
+**Cache Corruption**:
+```python
+def load_story_bible_from_pr_branch(pr_number: int) -> Dict:
+    try:
+        # ... download and parse cache ...
+
+        # Validate cache structure
+        if 'categorized_facts' not in cache:
+            app.logger.warning("Story Bible cache missing 'categorized_facts', skipping validation")
+            return {}
+
+        return cache
+    except json.JSONDecodeError as e:
+        app.logger.error(f"Story Bible cache is corrupted: {e}")
+        return {}
+    except Exception as e:
+        app.logger.warning(f"Could not load Story Bible cache: {e}")
+        return {}
+```
+
+**PR Comment When Story Bible Not Available**:
+```python
+# In format_pr_comment()
+if not story_bible_available:
+    comment += "\n_ℹ️ Story Bible validation not available. Use `/extract-story-bible` to enable world consistency checking._\n\n"
+```
+
+---
+
+### Implementation Checklist
+
+**Phase 3A: Core Validation (Week 1)**
+- [ ] Create `services/lib/story_bible_validator.py` module
+- [ ] Implement `validate_against_story_bible()` function
+- [ ] Implement `format_constants_for_validation()` helper
+- [ ] Implement `merge_validation_results()` helper
+- [ ] Add validation prompt to validator module
+- [ ] Test validation logic with sample data
+
+**Phase 3B: Webhook Integration (Week 1)**
+- [ ] Modify `continuity-webhook.py` to load Story Bible cache
+- [ ] Integrate validation into `process_webhook_async()` workflow
+- [ ] Enhance `format_pr_comment()` to include world validation
+- [ ] Enhance `format_path_issues()` to show world violations
+- [ ] Add error handling for missing/corrupt cache
+- [ ] Test end-to-end with real PR
+
+**Phase 3C: Testing and Refinement (Week 2)**
+- [ ] Unit tests for `story_bible_validator.py`
+- [ ] Integration tests with continuity webhook
+- [ ] Test graceful degradation (no cache, corrupt cache, API errors)
+- [ ] Test combined PR comment formatting
+- [ ] Refine validation prompt based on results
+- [ ] Document usage in README
+
+---
+
+### Testing Strategy
+
+**Unit Tests** (`tests/test_story_bible_validator.py`):
+```python
+def test_format_constants_for_validation():
+    """Test formatting of constants for prompt."""
+    cache = {
+        'categorized_facts': {
+            'constants': {
+                'world_rules': [
+                    {'fact': 'Magic exists', 'evidence': 'Academy passage'}
+                ],
+                'setting': [
+                    {'fact': 'City on coast', 'evidence': 'Opening scene'}
+                ]
+            }
+        }
+    }
+
+    formatted = format_constants_for_validation(cache)
+
+    assert 'Magic exists' in formatted
+    assert 'City on coast' in formatted
+    assert 'Academy passage' in formatted
+
+def test_validate_against_story_bible_no_violations():
+    """Test validation when passage matches constants."""
+    # Mock Ollama API response
+    with mock_ollama_response({
+        'has_violations': False,
+        'severity': 'none',
+        'violations': [],
+        'summary': 'No issues'
+    }):
+        result = validate_against_story_bible(
+            passage_text="The magical academy stood on the coastal cliffs.",
+            story_bible_cache=sample_cache,
+            passage_id='test123'
+        )
+
+    assert result['has_violations'] is False
+    assert result['severity'] == 'none'
+
+def test_validate_against_story_bible_with_violation():
+    """Test validation when passage contradicts constants."""
+    # Mock Ollama API response
+    with mock_ollama_response({
+        'has_violations': True,
+        'severity': 'critical',
+        'violations': [{
+            'type': 'setting',
+            'severity': 'critical',
+            'description': 'City location contradicted',
+            'constant_fact': 'City on coast',
+            'passage_statement': 'City in mountains'
+        }],
+        'summary': 'Geography contradiction'
+    }):
+        result = validate_against_story_bible(
+            passage_text="The city was nestled in the mountains.",
+            story_bible_cache=sample_cache,
+            passage_id='test456'
+        )
+
+    assert result['has_violations'] is True
+    assert result['severity'] == 'critical'
+    assert len(result['violations']) == 1
+
+def test_merge_validation_results():
+    """Test merging path and world validation results."""
+    path_result = {
+        'severity': 'minor',
+        'has_issues': True,
+        'issues': [{'type': 'character', 'severity': 'minor'}]
+    }
+
+    world_result = {
+        'severity': 'major',
+        'has_violations': True,
+        'violations': [{'type': 'setting', 'severity': 'major'}]
+    }
+
+    combined = merge_validation_results(path_result, world_result)
+
+    assert combined['severity'] == 'major'  # Takes max severity
+    assert combined['has_issues'] is True
+    assert combined['world_validation'] is not None
+```
+
+**Integration Tests**:
+- Test loading Story Bible cache from PR branch
+- Test validation in webhook context
+- Test combined PR comment formatting
+- Test error handling (no cache, corrupt cache, API errors)
+
+**End-to-End Tests**:
+1. Create test PR with Story Bible cache
+2. Trigger continuity checking
+3. Verify combined results in PR comment
+4. Verify world validation section appears
+
+---
+
+### Consequences
+
+**Positive**:
+1. **Automated world consistency**: Catches contradictions automatically
+2. **Combined workflow**: Single check validates both path logic and world facts
+3. **Non-blocking**: Missing Story Bible doesn't break continuity checking
+4. **Reuses infrastructure**: Same Ollama API, same webhook service
+5. **Clear separation**: Validation logic separate from extraction
+6. **Gradual adoption**: Authors can enable by extracting Story Bible when ready
+
+**Negative**:
+1. **Performance impact**: Adds ~30-60s per path (if sequential)
+2. **AI dependency**: Requires Ollama for both path and world validation
+3. **Prompt quality**: Validation accuracy depends on prompt engineering
+4. **False positives**: May flag stylistic differences as contradictions
+
+**Risks and Mitigations**:
+
+| Risk | Impact | Mitigation |
+|------|--------|-----------|
+| Validation too slow | High - long PR check times | Start sequential, optimize to parallel if needed |
+| False positive violations | Medium - author frustration | Clear severity rubric, conservative validation prompt |
+| Missing Story Bible | Low - validation skipped | Clear message in PR comment, docs explain `/extract-story-bible` |
+| Cache corruption | Low - validation fails | Validate cache structure, fallback to no validation |
+| Ollama API errors | Medium - validation fails | Catch exceptions, log errors, continue without world validation |
+
+---
+
 ## References
 
 - **PRD**: `/home/user/NaNoWriMo2025/features/story-bible.md`
