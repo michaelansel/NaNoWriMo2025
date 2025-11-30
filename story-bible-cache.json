@@ -5579,6 +5579,2020 @@
           "category": "zero_action_state"
         }
       ]
+    },
+    "path-0d807122": {
+      "content_hash": "8f8ad5b99b75abb2066243d30a877528",
+      "extracted_at": "2025-11-30T11:25:42.099701",
+      "facts": [
+        {
+          "fact": "Light magic can be delayed until inside a dark area.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "6813b3985bf9",
+              "quote": "Once we get into somewhere truly dark you should see a faint glow, ... I decided to do a delayed onset."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Light magic can be created by focusing on the sun.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "6813b3985bf9",
+              "quote": "She closed her eyes and focused intently on the sun."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Light magic can provide protective effects over eyes.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "Terence weaved a bit of protection over his and Danita's eyes."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The mushroom cave contains a monster.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "the monster was already on the ground with Danita and Terence investigating the cave."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village holds open training sessions weekly.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village is located near a cliffside that contains a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The path from the cave leads to the village of Dekley.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "I think it was Detley?  Dekley?"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a village resident who participates in training and can perform light magic.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session."
+            },
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            },
+            {
+              "passage": "6813b3985bf9",
+              "quote": "She closed her eyes and focused intently on the sun."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Danita is a female traveler with a heavy shield.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "I am Danita, and with me is Kian and Terence."
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Danita had a heavy shield."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Kian is a male traveler with a crossbow.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "I am Kian."
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Kian had a crossbow slung over his should."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Terence is a male traveler with a sword and can weave protective magic.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "I am Terence."
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Terence had a large sword."
+            },
+            {
+              "passage": "7890831c7a83",
+              "quote": "Terence weaved a bit of protection over his and Danita's eyes."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If Javlyn does nothing, she remains in the village.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player does nothing, the travelers will continue to Dekley.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "I think it was Detley?  Dekley?"
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player chooses to join, Javlyn will accompany the travelers.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "828d29263bc6",
+              "quote": "Javlyn nodded, and continued on with the three following."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The success of the light working depends on player choice.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "6813b3985bf9",
+              "quote": "Working was [unselected] or delayed"
+            },
+            {
+              "passage": "7890831c7a83",
+              "quote": "It failed?"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the working succeeds, the monster is defeated.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "the monster was already on the ground with Danita and Terence investigating the cave."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to continue, they travel to Dekley.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "They all did, though Danita bickered back and forth with Kian for the first leg of it."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If player interacts, Javlyn learns about weaving focus.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "Terence walked with her, explaining a bit of the process."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The rumor about a monster moving into the mushroom cave existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The travelers Danita, Kian, and Terence are from other villages.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "I am Danita, and with me is Kian and Terence."
+            }
+          ],
+          "category": "constant"
+        }
+      ]
+    },
+    "path-9ddaf143": {
+      "content_hash": "7092ad74c07bf0e4ff26fb2083cf00d4",
+      "extracted_at": "2025-11-30T11:26:43.589558",
+      "facts": [
+        {
+          "fact": "The village is located near a cliffside with a cave entrance.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "The cliffside the cave was a part of came into sight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The weather is rainy, with three days of rain.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Lanterns can be lit and provide light in caves.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn stopped to light the lantern she had brought"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Swords exist and can be used as weapons.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "Nivek's old sword"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Monsters can inhabit caves and attack villagers.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who attends training sessions and is protective.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn had announced her plans this morning during the open training session"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Nivek is a previous owner of the sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "Nivek's old sword"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster is a creature with a long snout, two curved horns, wide shoulders, and can die.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7add1bb7167b",
+              "quote": "Still sitting, its head was near half again Javlyn's own height. The face had a long snout with two curved horns. The shoulders were wide, wide enough Javlyn had no idea how the monster fit through the cave's entrance."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Before the story, a rumor about a monster moving into the mushroom cave existed.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will encounter the monster and may be attacked.",
+          "type": "character_identity",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "7add1bb7167b",
+              "quote": "Attack the monster"
+            },
+            {
+              "passage": "70b5e9082ab6",
+              "quote": "Javlyn considered looking for the lantern, but her head ached and there was a lingering fear something else was here in the darkness."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player chooses to attack the monster, Javlyn kills it, obtains the sword, and finds a bag with a message tube.",
+          "type": "character_identity",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "7add1bb7167b",
+              "quote": "Javlyn finally darted forward, sword swinging."
+            },
+            {
+              "passage": "70b5e9082ab6",
+              "quote": "Javlyn considered looking for the lantern, but her head ached and there was a lingering fear something else was here in the darkness."
+            },
+            {
+              "passage": "eb7b2c7cd13d",
+              "quote": "In the light, she was able to tell it was a canvas bag, and appeared to be waxed. It was wet, but the inside still seemed to be dry. There was only a single item inside - a message tube."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The cave has a narrow entrance, a larger chamber, and a tunnel leading out.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The entry way was narrow and the walls brushed her shoulders on either side, but she wasn't forced to turn sideways."
+            },
+            {
+              "passage": "70b5e9082ab6",
+              "quote": "She eventually found the tunnel out."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The environment is wet, muddy, and the ground is slippery.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "ground stuck to her boots"
+            },
+            {
+              "passage": "70b5e9082ab6",
+              "quote": "wet ground"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn's equipment includes a lantern, sword, leather vest, jacket, and pants.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn had a sword"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The story starts at midday, but feels like twilight due to overcast.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It was just past midday, but felt like twilight"
+            }
+          ],
+          "category": "constant"
+        }
+      ]
+    },
+    "path-9f159dd9": {
+      "content_hash": "19b386a183dbd06f33f4227bfa55b59b",
+      "extracted_at": "2025-11-30T11:28:15.449800",
+      "facts": [
+        {
+          "fact": "The village is located near a cliffside that is part of a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "The cliffside the cave was a part of came into sight"
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cave entrance was just around the corner"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "It is raining heavily in the village.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "There is a rumor of a monster in the mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who attends training sessions.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            },
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn has a borrowed sword and a thick jacket over a leather vest.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "with a borrowed sword"
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "she wore a thick jacket over the leather vest."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Danita, Kian, and Terence are travelers who meet Javlyn.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "I am Danita, and with me is Kian and Terence."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Danita has a heavy shield, Kian has a crossbow, Terence has a sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "828d29263bc6",
+              "quote": "Danita had a heavy shield but left her own sword sheathed"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Kian ... had a crossbow slung over his shoulder"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Terence ... pulling out a sword"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Luck magic exists and can be performed by villagers.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "cc7f1359ec45",
+              "quote": "What about luck magic?"
+            },
+            {
+              "passage": "cc7f1359ec45",
+              "quote": "Javlyn nodded, 'Always helped out for the village workings.'"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village has a system of village workings.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "cc7f1359ec45",
+              "quote": "Always helped out for the village workings."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster in the cave is a giant creature that can be fought.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "cc7f1359ec45",
+              "quote": "Danita had her shield raised against a giant creature that towered above her."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The path to the cave is muddy and narrow.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "The ground stuck to her boots"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "The cave entrance came into view"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "The cave entrance was just around the corner"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The player has the option to continue the quest or join the group.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Continue the quest"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Join them."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to join the group, they will go into the cave and fight the monster.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "828d29263bc6",
+              "quote": "Javlyn nodded, and continued on with the three following."
+            },
+            {
+              "passage": "cc7f1359ec45",
+              "quote": "They entered the cave."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to continue the quest alone, they will not join the group.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Continue the quest"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player does nothing, the story ends with no action.",
+          "type": "setting",
+          "confidence": "low",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Continue the quest"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "Join them."
+            }
+          ],
+          "category": "zero_action_state"
+        }
+      ]
+    },
+    "path-2c9d5733": {
+      "content_hash": "c6c61ff9545fce6c7769415ef200f129",
+      "extracted_at": "2025-11-30T11:29:37.509126",
+      "facts": [
+        {
+          "fact": "The world has a magic system called 'working' that can heal.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "Kian closed his eyes amid stifled sobs; Javlyn quickly followed suit. She envisioned a needle sewing up a hole in a shirt, a farmer filling in a hole with fresh dirt, skin forming back together."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Swords and wooden swords exist in the world.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            },
+            {
+              "passage": "590400dece2b",
+              "quote": "the wooden swords used for practice."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village has a rumor about a monster moving into a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The weather is rainy and overcast.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The cave is located near a cliffside.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who is taller than average, wearing a leather vest, thick jacket, muddy boots, and has a borrowed sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Nivek is a person who lent Javlyn a sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "Nivek had lent her the sword after all."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The travelers are a female (Danita) and two males (Terence, Kian), older than Javlyn, late fifties.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The group was composed of a female and two males, with one of the males clearly engrossed in a story."
+            },
+            {
+              "passage": "0ed81c156c02",
+              "quote": "They were older than Javlyn, late fifties maybe."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster has a long snout, two curved horns, wide shoulders.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough Javlyn had no idea how the monster fit through the cave's entrance."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has a cave that can be entered by humans.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cave's entrance was just around the corner."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The travelers are traveling along a path to the cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The path did continue on past the mushroom cave, but it was a long days travel to the next village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will go to the cave and fight the monster.",
+          "type": "zero_action_state",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "She climbed out from behind the bushes and quickly and quietly scurried up the path after them. //She// was here to clear the cave of this monster."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player does nothing, the travelers will go to the cave, fight the monster, get injured, then healed.",
+          "type": "zero_action_state",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The travelers were traveling along the path... The healing... Kian closed his eyes... The bleeding had apparently stopped."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player does nothing, Nivek will lend the sword to Javlyn.",
+          "type": "zero_action_state",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "Nivek had lent her the sword after all."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player does nothing, the monster will attack the travelers and kill them.",
+          "type": "zero_action_state",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The creature crashed into Danita, who slammed into Javlyn, knocking them both to the floor."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "Whether Javlyn kills the monster depends on player choice to continue quest.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "She pulled herself out from under Danita and drew Nivek's sword... The sword slid deeply into the creature's chest."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "Whether the travelers get injured depends on player choice.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The creature crashed into Danita, who slammed into Javlyn, knocking them both to the floor."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "Whether healing occurs depends on player choice.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "Kian closed his eyes amid stifled sobs; Javlyn quickly followed suit. She envisioned a needle sewing up a hole in a shirt, a farmer filling in a hole with fresh dirt, skin forming back together."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The rumor about the monster existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        }
+      ]
+    },
+    "path-cd7103ba": {
+      "content_hash": "22ba12683bba8b51c14af58e83d51c74",
+      "extracted_at": "2025-11-30T11:30:08.222928",
+      "facts": [
+        {
+          "fact": "The village is located near a cliffside cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "The cave's entrance was just around the corner."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The area experiences heavy rain during the story.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The ground is muddy, making movement difficult.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "The ground stuck to her boots, making each step harder than it had to be."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "There is no magic system described; all interactions are physical.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0b8acf24395c",
+              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who attends training sessions and has a borrowed sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn carries a lantern into the cave.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0b8acf24395c",
+              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Nivek is the former owner of the sword used by Javlyn.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "A rumor about a monster moving into the mushroom cave existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that \"monster moving into the mushroom cave\" rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn announced her plans during an open training session.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn can choose to block the cave entrance with a rockslide.",
+          "type": "variable",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0b8acf24395c",
+              "quote": "She kicked at what looked like the look rocks from the bottom, huge as they were her kicks did near nothing. She tried to push, and then scrambled near their base with her fingers trying to do something to help it move. There was a moment of disbelief when the boulder started to actually shift forward before the sword broke two thirds of the way down the blade and the boulder started to rock back. With a grunt of effort, the boulder broke free of the cliff and tumbled down, knocking several other rocks along the way. Javlyn stumbled and barely saved herself from following the boulder. Once she was sure she wouldn't tumble, she peered over the ledge and grinned to see she had caused enough of a rockslide to cover the cave entrance."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "Javlyn can choose to fight the creatures inside the cave, but she does not in this path.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "0b8acf24395c",
+              "quote": "Grouped together at the back of the cave were three, no four creatures. They were focused on something on the ground and almost before she could fully process what she'd seen Javlyn pulled back around the corner. Lips pressed tight together, she tried not to breathe too heavily, terrified the creatures would hear her."
+            },
+            {
+              "passage": "0b8acf24395c",
+              "quote": "There was no way she could fight four creatures."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player does nothing, Javlyn would not block the cave entrance, leaving it open.",
+          "type": "zero_action_state",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "0b8acf24395c",
+              "quote": "She decided there was nothing else to do and turned and headed home."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player does nothing, Javlyn would not attempt to fight the creatures inside the cave.",
+          "type": "zero_action_state",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "0b8acf24395c",
+              "quote": "There was no way she could fight four creatures."
+            }
+          ],
+          "category": "zero_action_state"
+        }
+      ]
+    },
+    "path-9bb49805": {
+      "content_hash": "580dddd6e3aa85a6b74e7420a25d5f99",
+      "extracted_at": "2025-11-30T11:36:14.050740",
+      "facts": [
+        {
+          "fact": "The village has a mushroom cave rumored to have a monster.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "\"monster moving into the mushroom cave\" rumor"
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "\"monster moving into the mushroom cave\" rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The mushroom cave is empty.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "They made their way through the narrow entrance of the mushroom cave, with Javlyn put last, to find the cavern. It was empty."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The cave entrance is just around the corner from the village.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cave's entrance was just around the corner."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village experiences heavy rain, making the path muddy.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight"
+            },
+            {
+              "passage": "590400dece2b",
+              "quote": "It would rain again before the day was out"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village holds a weekly training session that villagers attend.",
+          "type": "setting",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager trainer who wears a leather vest, protective gear, and a borrowed sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            },
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Danita is a traveler, female, older, well-armed, and cheerful.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Kian is a traveler, male, older, and talkative.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Kian"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Terence is a traveler, male, older, and skeptical.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "Terence"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The group travels along a path from the village to Dekley and Furlsby.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "The path by the cave entrance"
+            },
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "They made their way through the narrow entrance of the mushroom cave"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster rumor has been floating around the village for some time.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "\"monster moving into the mushroom cave\" rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The last known monster attack was at least a week ago.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "It had been at least a week since the last attack."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Villagers avoid the area with the monster and take a longer road between Dekley and Furlsby.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "people avoided the area with the monster and took the long road between Dekley and Furlsby."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If the player chooses to investigate the mushroom cave, they find it empty.",
+          "type": "variable",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "They made their way through the narrow entrance of the mushroom cave, with Javlyn put last, to find the cavern. It was empty."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player does nothing, the default trajectory is that the group leaves the cave empty and continues on their way.",
+          "type": "zero_action_state",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "They left the cave, and the group continued on their way."
+            }
+          ],
+          "category": "zero_action_state"
+        }
+      ]
+    },
+    "path-dcb74e64": {
+      "content_hash": "c2a756d693f251a34bc141aa6c03ae2c",
+      "extracted_at": "2025-11-30T11:37:52.822847",
+      "facts": [
+        {
+          "fact": "The cave is located near a cliffside.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The cave is dark.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "It was dark, with nothing but her lantern providing light and the tunnel in preventing any natural light from making it in."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village holds training sessions weekly.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has monsters that hunt humans.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster had been hunting humans before she didn't have time to think about it."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster can grow to twice human height.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster slid out of the tight tunnel and then seemed to grow. Stretching out and standing tall at near twice her height, head nearing the top of the cavern."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster can drag victims.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "It sounded like it was dragging something, though it was hard to tell."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster can attack humans.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster was attacking."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster can be fought with a sword.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "Javlyn dodged to the side and struggled to pull Nivek's sword. It took to tries and she kept fumbling it when dodging. She struck out with the sword twice, and had to duck under the creatures arm swipe."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has a lantern for light.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn stopped to light the lantern she had brought."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "She had a lantern."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has a sword that can be used to fight monsters.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "Javlyn had Nivek's sword."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has a donkey used by merchants.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "Down the road towards Furlsby, there was a donkey grazing off the path, laden with packs."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has rain.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "It had started to rain by the time she finished checking the man over."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world has a cave with a monster.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster dropped whatever it was dragging and turned, seeking the light source."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who trains with a sword.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn had announced her plans this morning during the open training session."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "Javlyn had Nivek's sword."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a female.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If the player chooses to help the man, the man will survive.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "She said slowly, 'My name is Javlyn... and I'm going to help you get out of here.'"
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to bring the lantern, she can see the monster.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "Javlyn stopped to light the lantern she had brought."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "She had a lantern."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to fight the monster, she can defeat it.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "She struck out with the sword twice, and had to duck under the creatures arm swipe. She lunged forward, catching the monster in the stomach, and pulled back and dodged to the side again - only to stumble over the monster's victim."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster toppled and Javlyn backed out of its arm's reach and watched it, ensuring it wasn't going to stand again."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If Javlyn does nothing, the monster will likely kill the man.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster had been hunting humans before she didn't have time to think about it."
+            }
+          ],
+          "category": "zero_action_state"
+        }
+      ]
+    },
+    "path-6a052e97": {
+      "content_hash": "c2d1d36b4027589e75b4e79cc4427e65",
+      "extracted_at": "2025-11-30T11:40:19.284764",
+      "facts": [
+        {
+          "fact": "The village holds an open training session that most villagers attend at least once a week.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The mushroom cave contains a monster with horns, nearly twice Javlyn’s height, and is described as unnatural.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The creature had a long snout with two curved horns. The shoulders were wide, ... near twice her height"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who carries a borrowed sword and a lantern, and is concerned about the monster.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Jerrick is an aging blacksmith who believes in the monster and fights with a hammer.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "92b597d232f8",
+              "quote": "Only Jerrick, the aging blacksmith was able to overcome such a chasm and bring himself to believe that there was truth to Javlyn's tale."
+            },
+            {
+              "passage": "2af2324301d4",
+              "quote": "Jerrick ... his hammer held high."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Nivek is a villager who owned an old sword that Javlyn uses.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "but what she got was Nivek's old sword."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will still go to the cave, encounter the monster, fight, and ultimately kill the monster while Jerrick dies.",
+          "type": "timeline",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "2af2324301d4",
+              "quote": "Javlyn finally darted forward, sword swinging... The creature was dead."
+            },
+            {
+              "passage": "6930a6ccb923",
+              "quote": "She had to leave him and hope to return later with more assistance."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player chooses to recruit help, more villagers may join Javlyn’s quest.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "When she asked for help, she was joined by: No one."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to leave Jerrick behind, Jerrick will die.",
+          "type": "variable",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "6930a6ccb923",
+              "quote": "She had to leave him and hope to return later with more assistance."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The cave is located near a cliffside and is part of the village’s geography.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The weather is rainy, with overcast clouds threatening more rain.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        }
+      ]
+    },
+    "path-8a4503a3": {
+      "content_hash": "e2ac0eb0d65c53cd69b4520e0f1ffe40",
+      "extracted_at": "2025-11-30T11:41:52.319740",
+      "facts": [
+        {
+          "fact": "The world contains medieval-level technology such as swords, crossbows, and lanterns.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "e524e5bec136",
+              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
+            },
+            {
+              "passage": "195754277a03",
+              "quote": "I’ll stay defensive, the female of the group called out, and the crossbowman said."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The world contains monsters that inhabit caves.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "f295816555c0",
+              "quote": "Hunched over the ground on the far side of the cavern was… something."
+            },
+            {
+              "passage": "aaa3cfd95830",
+              "quote": "Still sitting, its head was near half again Javlyn's own height. The face had a long snout with two curved horns."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village has a mushroom cave located on a cliffside.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight."
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village experiences rain that can last multiple days.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn is a villager who attends training sessions and wears a thick jacket over a leather vest.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Javlyn carries a lantern and a sword into the cave.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "e524e5bec136",
+              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Nivek is referenced by his old sword, which Javlyn obtains.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "what she got was Nivek's old sword."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Kian is a crossbowman who helps defend against the monster.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "195754277a03",
+              "quote": "I'm Kian, and that giant with the greatsword is Terence."
+            },
+            {
+              "passage": "195754277a03",
+              "quote": "crossbowman said."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Terence is a greatsword wielder who helps defend against the monster.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "195754277a03",
+              "quote": "I'm Kian, and that giant with the greatsword is Terence."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "Danita is a shield bearer who helps defend against the monster.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "195754277a03",
+              "quote": "The female of the group called out,"
+            },
+            {
+              "passage": "195754277a03",
+              "quote": "Danita"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster has a long snout, two curved horns, and two legs with forearms.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "aaa3cfd95830",
+              "quote": "Still sitting, its head was near half again Javlyn's own height. The face had a long snout with two curved horns."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The monster can move fast and has a weird bobbing gait.",
+          "type": "world_rule",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "195754277a03",
+              "quote": "It moved deceptively fast."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The village has an open training session that villagers attend weekly.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "If Javlyn does nothing, she remains in the village and does not investigate the monster.",
+          "type": "character_identity",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "zero_action_state"
+        },
+        {
+          "fact": "If the player chooses to have Javlyn go into the cave, she will encounter the monster.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "f295816555c0",
+              "quote": "Hunched over the ground on the far side of the cavern was… something."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses to have the travelers help, they will defeat the monster.",
+          "type": "character_identity",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "195754277a03",
+              "quote": "The monster fell from the attack, weakened from two well aimed bolts."
+            },
+            {
+              "passage": "195754277a03",
+              "quote": "I’ll stay defensive, the female of the group called out."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "If the player chooses not to have the travelers help, the monster may defeat Javlyn.",
+          "type": "character_identity",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "195754277a03",
+              "quote": "If the travelers do not help, the monster may defeat Javlyn."
+            }
+          ],
+          "category": "variable"
+        },
+        {
+          "fact": "The timeline before the story includes rumors of a monster moving into the mushroom cave.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The timeline before the story includes a rainy period of at least three days.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "fact": "The timeline before the story includes a training session that Javlyn attends.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
+        }
+      ]
     }
   },
   "categorized_facts": {
@@ -6896,6 +8910,514 @@
           "confidence": "high",
           "evidence": "Mushrooms grew in the creases and water trickled along the floor.",
           "category": "constant"
+        },
+        {
+          "passage_id": "path-0d807122",
+          "fact": "The village holds open training sessions weekly.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-0d807122",
+          "fact": "The village is located near a cliffside that contains a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-0d807122",
+          "fact": "The path from the cave leads to the village of Dekley.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7890831c7a83",
+              "quote": "I think it was Detley?  Dekley?"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-0d807122",
+          "fact": "The travelers Danita, Kian, and Terence are from other villages.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "I am Danita, and with me is Kian and Terence."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9ddaf143",
+          "fact": "The village is located near a cliffside with a cave entrance.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "The cliffside the cave was a part of came into sight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9ddaf143",
+          "fact": "The weather is rainy, with three days of rain.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9ddaf143",
+          "fact": "The cave has a narrow entrance, a larger chamber, and a tunnel leading out.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The entry way was narrow and the walls brushed her shoulders on either side, but she wasn't forced to turn sideways."
+            },
+            {
+              "passage": "70b5e9082ab6",
+              "quote": "She eventually found the tunnel out."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9ddaf143",
+          "fact": "The environment is wet, muddy, and the ground is slippery.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "ground stuck to her boots"
+            },
+            {
+              "passage": "70b5e9082ab6",
+              "quote": "wet ground"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9ddaf143",
+          "fact": "The story starts at midday, but feels like twilight due to overcast.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It was just past midday, but felt like twilight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9f159dd9",
+          "fact": "The village is located near a cliffside that is part of a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "The cliffside the cave was a part of came into sight"
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cave entrance was just around the corner"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9f159dd9",
+          "fact": "It is raining heavily in the village.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9f159dd9",
+          "fact": "There is a rumor of a monster in the mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9f159dd9",
+          "fact": "The monster in the cave is a giant creature that can be fought.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "cc7f1359ec45",
+              "quote": "Danita had her shield raised against a giant creature that towered above her."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9f159dd9",
+          "fact": "The path to the cave is muddy and narrow.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "The ground stuck to her boots"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "The cave entrance came into view"
+            },
+            {
+              "passage": "828d29263bc6",
+              "quote": "The cave entrance was just around the corner"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-2c9d5733",
+          "fact": "The village has a rumor about a monster moving into a mushroom cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-2c9d5733",
+          "fact": "The weather is rainy and overcast.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-2c9d5733",
+          "fact": "The cave is located near a cliffside.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-2c9d5733",
+          "fact": "The travelers are traveling along a path to the cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "0ed81c156c02",
+              "quote": "The path did continue on past the mushroom cave, but it was a long days travel to the next village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-cd7103ba",
+          "fact": "The village is located near a cliffside cave.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "The cave's entrance was just around the corner."
+            },
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The village has a mushroom cave rumored to have a monster.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "590400dece2b",
+              "quote": "\"monster moving into the mushroom cave\" rumor"
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "\"monster moving into the mushroom cave\" rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The mushroom cave is empty.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "They made their way through the narrow entrance of the mushroom cave, with Javlyn put last, to find the cavern. It was empty."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The cave entrance is just around the corner from the village.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cave's entrance was just around the corner."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The village experiences heavy rain, making the path muddy.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight"
+            },
+            {
+              "passage": "590400dece2b",
+              "quote": "It would rain again before the day was out"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The village holds a weekly training session that villagers attend.",
+          "type": "setting",
+          "confidence": "medium",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The group travels along a path from the village to Dekley and Furlsby.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "872119a696dd",
+              "quote": "The path by the cave entrance"
+            },
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "They made their way through the narrow entrance of the mushroom cave"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "Villagers avoid the area with the monster and take a longer road between Dekley and Furlsby.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "people avoided the area with the monster and took the long road between Dekley and Furlsby."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-dcb74e64",
+          "fact": "The cave is located near a cliffside.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-dcb74e64",
+          "fact": "The cave is dark.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "It was dark, with nothing but her lantern providing light and the tunnel in preventing any natural light from making it in."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-dcb74e64",
+          "fact": "The village holds training sessions weekly.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-dcb74e64",
+          "fact": "The world has a donkey used by merchants.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "Down the road towards Furlsby, there was a donkey grazing off the path, laden with packs."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-dcb74e64",
+          "fact": "The world has a cave with a monster.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "56a194085bbd",
+              "quote": "The monster dropped whatever it was dragging and turned, seeking the light source."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-6a052e97",
+          "fact": "The village holds an open training session that most villagers attend at least once a week.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-6a052e97",
+          "fact": "The cave is located near a cliffside and is part of the village’s geography.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-6a052e97",
+          "fact": "The weather is rainy, with overcast clouds threatening more rain.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-8a4503a3",
+          "fact": "The village has a mushroom cave located on a cliffside.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "7e35fe311599",
+              "quote": "The cliffside the cave was a part of came into sight."
+            },
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-8a4503a3",
+          "fact": "The village has an open training session that villagers attend weekly.",
+          "type": "setting",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
         }
       ],
       "timeline": [
@@ -7354,6 +9876,136 @@
           "confidence": "high",
           "evidence": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village.",
           "category": "constant"
+        },
+        {
+          "passage_id": "path-0d807122",
+          "fact": "The rumor about a monster moving into the mushroom cave existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9ddaf143",
+          "fact": "Before the story, a rumor about a monster moving into the mushroom cave existed.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "monster moving into the mushroom cave rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-2c9d5733",
+          "fact": "The rumor about the monster existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-cd7103ba",
+          "fact": "A rumor about a monster moving into the mushroom cave existed before the story.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that \"monster moving into the mushroom cave\" rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-cd7103ba",
+          "fact": "Javlyn announced her plans during an open training session.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "Javlyn had announced her plans this morning during the open training session."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The monster rumor has been floating around the village for some time.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "\"monster moving into the mushroom cave\" rumor"
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-9bb49805",
+          "fact": "The last known monster attack was at least a week ago.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "ed5b5e389e61",
+              "quote": "It had been at least a week since the last attack."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-8a4503a3",
+          "fact": "The timeline before the story includes rumors of a monster moving into the mushroom cave.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-8a4503a3",
+          "fact": "The timeline before the story includes a rainy period of at least three days.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            }
+          ],
+          "category": "constant"
+        },
+        {
+          "passage_id": "path-8a4503a3",
+          "fact": "The timeline before the story includes a training session that Javlyn attends.",
+          "type": "timeline",
+          "confidence": "high",
+          "evidence": [
+            {
+              "passage": "c77aa3e62bb2",
+              "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+            }
+          ],
+          "category": "constant"
         }
       ]
     },
@@ -7732,6 +10384,62 @@
             "confidence": "high",
             "evidence": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing. ... It might not have turned out how she expected, but it still felt worthwhile to have gone.",
             "category": "zero_action_state"
+          },
+          {
+            "passage_id": "path-0d807122",
+            "fact": "If Javlyn does nothing, she remains in the village.",
+            "type": "character_identity",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              }
+            ],
+            "category": "zero_action_state"
+          },
+          {
+            "passage_id": "path-0d807122",
+            "fact": "If the player does nothing, the travelers will continue to Dekley.",
+            "type": "character_identity",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7890831c7a83",
+                "quote": "I think it was Detley?  Dekley?"
+              }
+            ],
+            "category": "zero_action_state"
+          },
+          {
+            "passage_id": "path-9ddaf143",
+            "fact": "If the player does nothing, Javlyn will encounter the monster and may be attacked.",
+            "type": "character_identity",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "7add1bb7167b",
+                "quote": "Attack the monster"
+              },
+              {
+                "passage": "70b5e9082ab6",
+                "quote": "Javlyn considered looking for the lantern, but her head ached and there was a lingering fear something else was here in the darkness."
+              }
+            ],
+            "category": "zero_action_state"
+          },
+          {
+            "passage_id": "path-8a4503a3",
+            "fact": "If Javlyn does nothing, she remains in the village and does not investigate the monster.",
+            "type": "character_identity",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+              }
+            ],
+            "category": "zero_action_state"
           }
         ],
         "variables": []
@@ -7807,8 +10515,11 @@
     }
   },
   "meta": {
-    "last_extracted": "2025-11-30T03:31:49.784110",
-    "total_passages_extracted": 46,
-    "total_facts": 221
-  }
+    "last_extracted": "2025-11-30T11:43:52.835172",
+    "total_passages_extracted": 55,
+    "total_facts": 267
+  },
+  "summarized_facts": null,
+  "summarization_status": "failed",
+  "summarization_time_seconds": 120.10780549049377
 }
