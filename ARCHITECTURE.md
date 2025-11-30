@@ -196,7 +196,86 @@ Return structured results
 - **Content Sanitization**: Removes malicious markdown/XSS from AI output
 - **Text-only Processing**: Never executes code from story content
 
-### 5. Webhook Service
+### 5. Story Bible Generation
+
+**Location**: `/formats/story-bible/`, `/services/lib/story_bible_extractor.py`
+
+**Purpose**: AI-powered extraction of world constants, variables, and character information
+
+**Architecture**: 5-Stage Modular Processing Pipeline
+
+The Story Bible generator implements a pipeline that extracts facts from AllPaths format passages and produces organized documentation of the story world.
+
+**Pipeline Stages**:
+
+1. **Stage 1: Load Passages** (webhook service)
+   - Input: AllPaths metadata text files
+   - Output: Passage content ready for extraction
+   - Responsibility: Load passages, check cache for changes
+
+2. **Stage 2: AI Extraction** (`story_bible_extractor.py`)
+   - Input: Individual passage text
+   - Output: Per-passage facts with evidence
+   - Responsibility: Call Ollama to extract constants, variables, character states
+
+3. **Stage 2.5: AI Summarization** (`ai_summarizer.py`)
+   - Input: All per-passage extractions
+   - Output: Deduplicated unified facts
+   - Responsibility: Merge identical facts, detect conflicts, preserve evidence
+
+4. **Stage 3: Categorization** (`story_bible_extractor.py`)
+   - Input: Per-passage + summarized facts
+   - Output: Organized fact structure with both views
+   - Responsibility: Categorize by type, preserve per-passage breakdown
+
+5. **Stage 4: HTML Generation** (`html_generator.py`)
+   - Input: Categorized facts
+   - Output: Human-readable HTML Story Bible
+   - Responsibility: Render template, normalize evidence formats
+
+**Data Flow**:
+```
+AllPaths metadata files
+    ↓
+Stage 1: Load → passage content
+    ↓
+Stage 2: AI Extract → per_passage_extractions (937 facts)
+    ↓
+Stage 2.5: AI Summarize → summarized_facts (38 facts)
+    ↓
+Stage 3: Categorize → categorized_facts (both views)
+    ↓
+Stage 4: Generate → story-bible.html
+```
+
+**Cache Structure**:
+```json
+{
+  "passage_extractions": { "passage_id": { "facts": [...] } },
+  "summarized_facts": { "constants": {...}, "characters": {...} },
+  "categorized_facts": { "...", "per_passage": {...} }
+}
+```
+
+**Key Features**:
+- **Two-level cache**: Per-passage (detailed) + summarized (unified)
+- **Evidence preservation**: Every fact cites source passages with quotes
+- **Conservative deduplication**: When uncertain, keep facts separate
+- **Conflict detection**: Contradictions flagged, not auto-resolved
+- **Cache-first build**: HTML renders from cache, no Ollama in CI
+- **Graceful fallback**: Uses per-passage data if summarization fails
+
+**Ollama Configuration**:
+- Model: `gpt-oss:20b-fullcontext`
+- Thinking mode: `think: "low"` (reduces token consumption)
+- Extraction timeout: 120 seconds per passage
+- Summarization timeout: 300 seconds
+
+See `architecture/010-story-bible-design.md` for complete design documentation.
+
+---
+
+### 6. Webhook Service
 
 **Location**: `/services/continuity-webhook.py`
 
@@ -258,7 +337,7 @@ Update job metrics
 - `/approve-path all`: Approve all checked paths
 - `/approve-path new`: Approve all new paths
 
-### 6. GitHub Actions Pipeline
+### 7. GitHub Actions Pipeline
 
 **Location**: `/.github/workflows/build-and-deploy.yml`
 

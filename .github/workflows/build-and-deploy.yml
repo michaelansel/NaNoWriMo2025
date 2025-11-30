@@ -108,6 +108,12 @@ jobs:
           chmod +x scripts/build-metrics.sh
           ./scripts/build-metrics.sh
 
+      - name: Build Story Bible (world consistency tracking)
+        continue-on-error: true
+        run: |
+          chmod +x scripts/build-story-bible.sh
+          ./scripts/build-story-bible.sh
+
       - name: Upload build artifacts (for PR preview and continuity checking)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
