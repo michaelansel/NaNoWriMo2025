@@ -1029,6 +1029,8 @@ def handle_comment_webhook(payload):
         return handle_check_continuity_command(payload)
     elif re.search(r'/approve-path\b', comment_body):
         return handle_approve_path_command(payload)
+    elif re.search(r'/extract-story-bible\b', comment_body):
+        return handle_extract_story_bible_command(payload)
     else:
         return jsonify({"message": "No recognized command"}), 200
 
@@ -1204,6 +1206,335 @@ def handle_check_continuity_command(payload):
     thread.start()
 
     return jsonify({"message": "Check started", "mode": mode, "workflow_id": workflow_id}), 202
+
+
+def handle_extract_story_bible_command(payload):
+    """Handle /extract-story-bible command from PR comments."""
+    comment_body = payload['comment']['body']
+    pr_number = payload['issue']['number']
+    username = payload['comment']['user']['login']
+    comment_id = payload['comment']['id']
+
+    # Deduplication check
+    with metrics_lock:
+        now = time.time()
+        expired_ids = [cid for cid, ts in processed_comment_ids.items() if now - ts > COMMENT_DEDUP_TTL]
+        for cid in expired_ids:
+            del processed_comment_ids[cid]
+
+        if comment_id in processed_comment_ids:
+            app.logger.info(f"Ignoring duplicate /extract-story-bible for comment {comment_id}")
+            return jsonify({"message": "Duplicate webhook"}), 200
+
+        processed_comment_ids[comment_id] = now
+
+    # Ignore bot's own comments
+    bot_markers = [
+        '📖 Story Bible Extraction',
+        'Powered by Ollama',
+        '**Mode:**'
+    ]
+    if any(marker in comment_body for marker in bot_markers):
+        app.logger.info(f"Ignoring bot's own comment")
+        return jsonify({"message": "Ignoring bot's own comment"}), 200
+
+    # Parse mode from command
+    mode = parse_story_bible_command_mode(comment_body)
+
+    app.logger.info(f"Received /extract-story-bible command for PR #{pr_number} with mode={mode} from {username}")
+
+    # Get PR info
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        post_pr_comment(pr_number, "⚠️ Could not retrieve PR information")
+        return jsonify({"message": "PR info error"}), 500
+
+    # Find the latest successful workflow run for this PR
+    artifacts_url = get_latest_artifacts_url(pr_number)
+    if not artifacts_url:
+        post_pr_comment(pr_number, "⚠️ No successful workflow run found for this PR. Please ensure the CI has completed successfully at least once.")
+        return jsonify({"message": "No artifacts found"}), 404
+
+    # Spawn background thread for processing
+    workflow_id = f"story-bible-{pr_number}-{int(time.time())}"
+
+    thread = threading.Thread(
+        target=process_story_bible_extraction_async,
+        args=(workflow_id, pr_number, artifacts_url, username, mode),
+        daemon=True
+    )
+    thread.start()
+
+    return jsonify({"message": "Extraction started", "mode": mode, "workflow_id": workflow_id}), 202
+
+
+def parse_story_bible_command_mode(comment_body: str) -> str:
+    """Parse extraction mode from /extract-story-bible command.
+
+    Formats:
+        /extract-story-bible           -> 'incremental' (default)
+        /extract-story-bible full      -> 'full'
+        /extract-story-bible incremental -> 'incremental'
+
+    Args:
+        comment_body: The comment text
+
+    Returns:
+        One of: 'incremental', 'full'
+    """
+    match = re.search(r'/extract-story-bible(?:\s+(full|incremental))?', comment_body, re.IGNORECASE)
+
+    if match and match.group(1):
+        return match.group(1).lower()
+
+    return 'incremental'  # Default
+
+
+def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, username, mode):
+    """Process Story Bible extraction in background thread."""
+    # Import the extractor module
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+    from story_bible_extractor import (
+        extract_facts_from_passage,
+        categorize_all_facts,
+        get_passages_to_extract
+    )
+
+    try:
+        app.logger.info(f"[Story Bible] Processing extraction for PR #{pr_number} with mode={mode}")
+
+        # Post initial comment
+        mode_text = 'full re-extraction' if mode == 'full' else 'incremental extraction of new/changed passages'
+        post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Starting
+
+**Mode:** `{mode}` _({mode_text})_
+**Requested by:** @{username}
+
+Downloading artifacts and preparing extraction...
+
+_This may take several minutes. Progress updates will be posted as extraction proceeds._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+        # Download artifacts
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            # Download and extract
+            if not download_artifact_for_pr(artifacts_url, tmpdir_path):
+                post_pr_comment(pr_number, "⚠️ Failed to download artifacts")
+                return
+
+            # Load cache from PR branch (if exists)
+            cache = load_story_bible_cache_from_branch(pr_number)
+
+            # Load allpaths metadata
+            metadata_dir = tmpdir_path / "dist" / "allpaths-metadata"
+
+            if not metadata_dir.exists():
+                post_pr_comment(pr_number, "⚠️ No allpaths-metadata found in artifacts. Please ensure the build completed successfully.")
+                return
+
+            # Identify passages to extract
+            passages_to_extract = get_passages_to_extract(cache, metadata_dir, mode)
+
+            if not passages_to_extract:
+                post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
+
+**Mode:** `{mode}`
+
+No passages need extraction. Story Bible is up to date.
+
+_Use `/extract-story-bible full` to force full re-extraction._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                return
+
+            # Post list of passages
+            total_passages = len(passages_to_extract)
+            post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Processing
+
+**Mode:** `{mode}`
+
+Found **{total_passages}** passage(s) to extract.
+
+_Progress updates will be posted as each passage completes._
+""")
+
+            # Extract facts from each passage
+            for idx, (passage_id, passage_file, passage_content) in enumerate(passages_to_extract, 1):
+                app.logger.info(f"[Story Bible] Extracting passage {idx}/{total_passages}: {passage_id}")
+
+                try:
+                    # Call Ollama API
+                    extracted_facts = extract_facts_from_passage(passage_content, passage_id)
+
+                    # Update cache
+                    if 'passage_extractions' not in cache:
+                        cache['passage_extractions'] = {}
+
+                    cache['passage_extractions'][passage_id] = {
+                        'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
+                        'extracted_at': datetime.now().isoformat(),
+                        'facts': extracted_facts
+                    }
+
+                    # Post progress
+                    fact_count = len(extracted_facts)
+                    preview_facts = extracted_facts[:3] if extracted_facts else []
+                    preview_text = '\n'.join(f"- {f.get('fact', 'N/A')}" for f in preview_facts)
+                    more_text = f"\n- ... and {fact_count - 3} more" if fact_count > 3 else ""
+
+                    post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
+
+**Passage:** `{passage_id}`
+**Facts extracted:** {fact_count}
+
+<details>
+<summary>Preview facts</summary>
+
+{preview_text}{more_text}
+
+</details>
+""")
+
+                except Exception as e:
+                    app.logger.error(f"[Story Bible] Error extracting passage {passage_id}: {e}", exc_info=True)
+                    post_pr_comment(pr_number, f"""### ⚠️ Passage {idx}/{total_passages} Failed
+
+**Passage:** `{passage_id}`
+**Error:** Extraction failed
+
+Continuing with remaining passages...
+""")
+                    continue
+
+            # Categorize facts (cross-reference across all passages)
+            app.logger.info(f"[Story Bible] Categorizing facts across {len(cache['passage_extractions'])} passages")
+            categorized_facts = categorize_all_facts(cache.get('passage_extractions', {}))
+            cache['categorized_facts'] = categorized_facts
+
+            # Update metadata
+            total_facts = (
+                len(categorized_facts.get('constants', {}).get('world_rules', [])) +
+                len(categorized_facts.get('constants', {}).get('setting', [])) +
+                len(categorized_facts.get('constants', {}).get('timeline', [])) +
+                len(categorized_facts.get('variables', {}).get('events', [])) +
+                len(categorized_facts.get('variables', {}).get('outcomes', []))
+            )
+
+            cache['meta'] = {
+                'last_extracted': datetime.now().isoformat(),
+                'total_passages_extracted': len(cache['passage_extractions']),
+                'total_facts': total_facts
+            }
+
+            # Commit cache to PR branch
+            pr_info = get_pr_info(pr_number)
+            branch_name = pr_info['head']['ref']
+
+            commit_story_bible_to_branch(pr_number, branch_name, cache, username, mode, total_passages)
+
+            # Post final summary
+            character_count = len(categorized_facts.get('characters', {}))
+            constant_count = (
+                len(categorized_facts.get('constants', {}).get('world_rules', [])) +
+                len(categorized_facts.get('constants', {}).get('setting', [])) +
+                len(categorized_facts.get('constants', {}).get('timeline', []))
+            )
+            variable_count = (
+                len(categorized_facts.get('variables', {}).get('events', [])) +
+                len(categorized_facts.get('variables', {}).get('outcomes', []))
+            )
+
+            post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
+
+**Mode:** `{mode}`
+**Passages extracted:** {total_passages}
+**Total facts:** {total_facts}
+
+**Summary:**
+- **Constants:** {constant_count} world facts
+- **Characters:** {character_count} characters
+- **Variables:** {variable_count} player-determined facts
+
+**Story Bible updated:**
+- `story-bible-cache.json` committed to branch `{branch_name}`
+- Facts cached for incremental updates
+
+**Next steps:**
+- Review extracted facts in `story-bible-cache.json`
+- Use `/extract-story-bible` again to update as story evolves
+- Facts will be preserved and incrementally updated
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+            app.logger.info(f"[Story Bible] Extraction complete for PR #{pr_number}")
+
+    except Exception as e:
+        app.logger.error(f"[Story Bible] Error during extraction: {e}", exc_info=True)
+        post_pr_comment(pr_number, "⚠️ Error during extraction. Please contact repository maintainers.")
+
+
+def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
+    """Load story-bible-cache.json from the PR branch if it exists."""
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        return {}
+
+    branch_name = pr_info['head']['ref']
+    token = get_github_token()
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/story-bible-cache.json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    try:
+        response = requests.get(url, headers=headers, params={"ref": branch_name})
+        if response.status_code == 200:
+            import base64
+            content = response.json()['content']
+            decoded = base64.b64decode(content).decode('utf-8')
+            return json.loads(decoded)
+        else:
+            app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name}, starting fresh")
+            return {}
+    except Exception as e:
+        app.logger.warning(f"[Story Bible] Could not load cache from branch: {e}")
+        return {}
+
+
+def commit_story_bible_to_branch(pr_number: int, branch_name: str, cache_data: Dict, username: str, mode: str, passages_extracted: int) -> bool:
+    """Commit updated Story Bible cache to PR branch."""
+    # Serialize cache
+    cache_content = json.dumps(cache_data, indent=2, ensure_ascii=False)
+
+    # Build commit message
+    total_facts = cache_data.get('meta', {}).get('total_facts', 0)
+    commit_message = f"""Update Story Bible extraction ({mode} mode)
+
+Extracted facts from {passages_extracted} passage(s)
+Total facts in cache: {total_facts}
+
+Mode: {mode}
+Requested by: @{username}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+    # Commit to branch
+    return commit_file_to_branch(branch_name, 'story-bible-cache.json', cache_content, commit_message)
 
 
 def is_authorized(username: str) -> bool:
