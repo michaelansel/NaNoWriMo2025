@@ -7,6 +7,46 @@
 
 ---
 
+## IMPORTANT: Bug Fixes and Behavioral Clarifications
+
+**Updated:** 2025-11-30
+
+This PRD has been updated to address two critical bugs and clarify correct behavior:
+
+### Bug Fix 1: Failed Extractions Must NOT Be Cached
+**Problem:** When Ollama fails to extract facts from a passage (timeout, error), the passage was being marked in the cache as if it succeeded. This caused incremental mode to skip failed passages on subsequent runs.
+
+**Correct Behavior:**
+- Only successful extractions are added to `story-bible-cache.json`
+- Failed passages are logged with error details but NOT cached
+- Next incremental run automatically retries failed passages (they're not in cache)
+- See: Edge Case 8, Acceptance Criteria "Cache Handling"
+
+### Bug Fix 2: Build Must Read Cache First (Not Extract)
+**Problem:** The CI build was trying to call Ollama to extract facts, failing (no Ollama in CI), and generating empty placeholder HTML. But the cache was already committed to the repo by the webhook service.
+
+**Correct Behavior:**
+- Build checks for `story-bible-cache.json` in repository FIRST
+- If cache exists → Render HTML/JSON from cache (no Ollama needed)
+- If cache missing → Generate placeholder (no Ollama attempted)
+- Build NEVER calls Ollama (extraction is webhook-only)
+- See: "Workflow Separation: Build vs Webhook", Acceptance Criteria "Build Integration"
+
+### Workflow Clarification:
+```
+/extract-story-bible (webhook) → Extracts with Ollama → Commits cache to repo
+CI build → Reads cache from repo → Renders HTML/JSON from cache
+```
+
+**Key Changes:**
+- Added "Workflow Separation: Build vs Webhook" section
+- Updated "How It's Generated" with cache-first approach
+- Added Edge Cases 8 & 9 for failed extractions and cache behavior
+- Updated Acceptance Criteria with cache handling requirements
+- Moved cache strategy from "Open Questions" to "Resolved Design Decisions"
+
+---
+
 ## Executive Summary
 
 Writers need a canonical source of truth about their story world that distinguishes between **constants** (facts always true regardless of player choices) and **variables** (facts determined by player actions). This Story Bible feature extracts and maintains world knowledge to help authors avoid contradictions and collaborators understand established lore.
@@ -158,11 +198,75 @@ Story Bible is generated as a post-build artifact alongside existing formats (Ha
 - Graceful degradation: missing Story Bible doesn't block deployment
 
 **How It's Generated:**
-- AI extracts facts from all story paths
-- Uses AllPaths format as input (complete view of all paths)
-- Applies "world reconstruction" approach (not summarization)
-- Distinguishes constants (true in all paths) from variables (differ by path)
-- Identifies zero action state for each character
+
+**Cache-First Approach:**
+1. **Check for committed cache first:**
+   - If `story-bible-cache.json` exists in repository → Read cache and render HTML/JSON from it (no Ollama needed)
+   - If cache does not exist → Generate placeholder HTML/JSON with "Story Bible will be generated after first extraction"
+
+2. **Cache generation (via webhook service):**
+   - Webhook service (`/extract-story-bible`) extracts facts using Ollama
+   - Uses AllPaths format as input (complete view of all paths)
+   - Applies "world reconstruction" approach (not summarization)
+   - Distinguishes constants (true in all paths) from variables (differ by path)
+   - Identifies zero action state for each character
+   - **Only successful extractions** are added to cache
+   - Failed extractions (timeout, error) are NOT cached
+   - Commits `story-bible-cache.json` to repository
+
+3. **Subsequent builds:**
+   - Read from committed cache (no extraction needed in CI)
+   - Render HTML/JSON from cache contents
+   - Fast and reliable (no Ollama dependency in build)
+
+---
+
+### Workflow Separation: Build vs Webhook
+
+**Critical distinction between two workflows:**
+
+```
+WORKFLOW 1: Webhook Extraction (Populates Cache)
+----------------------------------------------------
+/extract-story-bible webhook triggered
+  ↓
+Webhook service loads AllPaths format
+  ↓
+For each passage:
+  - Extract facts using Ollama
+  - If successful → Add to cache
+  - If failed (timeout/error) → Log error, do NOT cache
+  ↓
+Commit story-bible-cache.json to repository
+  ↓
+Report: "Extracted X of Y passages, Z failures"
+
+
+WORKFLOW 2: Build (Renders from Cache)
+----------------------------------------------------
+make build / make deploy triggered
+  ↓
+Check if story-bible-cache.json exists in repo
+  ↓
+If cache exists:
+  - Read cache contents
+  - Render story-bible.html from cache
+  - Render story-bible.json from cache
+  - NO Ollama calls (fast, reliable)
+  ↓
+If cache missing:
+  - Generate placeholder HTML/JSON
+  - Placeholder message: "Use /extract-story-bible to populate"
+  - NO Ollama calls (no Ollama in CI)
+  ↓
+Publish to GitHub Pages
+```
+
+**Key Points:**
+- **Build NEVER calls Ollama** (only reads cache or generates placeholder)
+- **Webhook ONLY calls Ollama** (not build)
+- **Cache is source of truth** for build rendering
+- **Failed extractions NOT cached** (automatic retry on next webhook run)
 
 ---
 
@@ -621,15 +725,45 @@ Integrated into continuity checking PR comment with two sections:
 
 ---
 
-### Edge Case 7: Build Failure During Story Bible Generation
-**Scenario:** AI extraction fails or times out
+### Edge Case 7: Cache Missing During Build
+**Scenario:** Build runs but `story-bible-cache.json` doesn't exist in repository
 
 **Behavior:**
-- Build continues (Story Bible is post-build artifact)
-- Missing story-bible.html on GitHub Pages
-- Clear error logged for debugging
-- Previous version of Story Bible remains (if any)
+- Build checks for `story-bible-cache.json` in repository
+- Cache not found → Generate placeholder HTML/JSON
+- Placeholder shows: "Story Bible will be generated after first extraction. Use `/extract-story-bible` webhook to populate."
+- Build succeeds (Story Bible is post-build artifact)
 - Does NOT block deployment of other formats
+- Does NOT attempt to call Ollama (no Ollama in CI environment)
+
+---
+
+### Edge Case 8: Failed Extraction (Individual Passages)
+**Scenario:** Ollama fails to extract facts from a passage (timeout, network error, parse error)
+
+**Behavior:**
+- **Failed passage NOT added to cache**
+- Error logged with passage ID and failure reason
+- Extraction continues with remaining passages
+- Partial cache committed (only successful extractions)
+- Next incremental run will retry failed passages
+- HTML/JSON rendered from successful extractions only
+- Failed passages noted in extraction logs for debugging
+
+**Critical:** Incremental mode must NOT skip failed passages on subsequent runs.
+
+---
+
+### Edge Case 9: Extraction Timeout During Webhook
+**Scenario:** Webhook service times out while extracting facts (Ollama slow or unresponsive)
+
+**Behavior:**
+- Webhook returns 202 Accepted (processing continues async)
+- Extraction attempts each passage with per-passage timeout
+- Successfully extracted passages committed to cache
+- Failed passages logged but NOT cached
+- Webhook reports: "Extracted X of Y passages, Z failures logged"
+- Next incremental run can retry failures
 
 ---
 
@@ -734,10 +868,30 @@ Integrated into continuity checking PR comment with two sections:
 
 **Build Integration:**
 - [ ] Integrated into `make build` and `make deploy`
+- [ ] **Cache-first approach:** Build checks for `story-bible-cache.json` in repository FIRST
+- [ ] If cache exists → Render HTML/JSON from cache (no Ollama needed)
+- [ ] If cache missing → Generate placeholder HTML/JSON (no Ollama attempted)
+- [ ] Build NEVER attempts to call Ollama (extraction is webhook-only)
 - [ ] Runs after successful build (post-build artifact)
 - [ ] Build continues if Story Bible generation fails (graceful degradation)
 - [ ] Clear build output showing Story Bible generation status
 - [ ] Does NOT block deployment of other formats
+
+**Cache Handling:**
+- [ ] **Failed extractions NOT cached:** Only successful passage extractions added to cache
+- [ ] Failed passages logged with error details (passage ID, failure reason)
+- [ ] Partial cache committed (successful extractions only)
+- [ ] Cache file (`story-bible-cache.json`) committed to repository by webhook service
+- [ ] Cache includes metadata: timestamp, commit hash, extraction statistics
+
+**Incremental Extraction (Webhook Service):**
+- [ ] `/extract-story-bible` webhook extracts facts using Ollama
+- [ ] Incremental mode: Only extract passages not already in cache
+- [ ] **Failed passages retried:** Passages that failed previously are NOT in cache, so they're retried on next run
+- [ ] Per-passage timeout to prevent single failure blocking all extraction
+- [ ] Extraction continues even if individual passages fail
+- [ ] Webhook reports extraction statistics: "Extracted X of Y passages, Z failures"
+- [ ] Commits cache to repository after successful extraction (partial or complete)
 
 **Extraction Quality:**
 - [ ] Constants are facts true in all paths
@@ -912,33 +1066,48 @@ This feature demonstrates several core principles:
 
 ---
 
+## Resolved Design Decisions
+
+These decisions have been made and are now part of the requirements:
+
+1. **Cache Strategy:** ✅ RESOLVED
+   - **Decision:** Cache-first approach with incremental extraction
+   - Build reads from `story-bible-cache.json` (no Ollama in CI)
+   - Webhook service (`/extract-story-bible`) populates cache using Ollama
+   - Only successful extractions cached (failures retried on next run)
+   - Cache committed to repository by webhook service
+
+2. **Extraction Frequency:** ✅ RESOLVED
+   - **Decision:** Webhook-based extraction (on-demand via `/extract-story-bible`)
+   - Build reads cache and renders HTML/JSON (every build)
+   - Incremental mode: Only extract passages not already in cache
+   - Failed passages NOT cached, so they're retried automatically
+
+---
+
 ## Open Questions
 
 Questions to resolve during implementation (for Architect and Developer):
 
-1. **Extraction Frequency:**
-   - Every build, or only on main branch deployments?
-   - **Recommendation:** Every build (PR preview shows Story Bible evolution)
-
-2. **Cache Strategy:**
-   - Cache previous extractions to speed up builds?
-   - **Recommendation:** Cache, invalidate when passages change
-
-3. **AI Model Choice:**
+1. **AI Model Choice:**
    - Same model as continuity checking, or different?
    - **Recommendation:** Same model (gpt-oss:20b-fullcontext)
 
-4. **Evidence Format:**
+2. **Evidence Format:**
    - Passage IDs (random) or passage names (semantic)?
    - **Recommendation:** Both (ID for uniqueness, name for readability)
 
-5. **JSON Schema Version:**
+3. **JSON Schema Version:**
    - How to handle schema evolution over time?
    - **Recommendation:** Semver schema versioning
 
-6. **Conflict Resolution:**
+4. **Conflict Resolution:**
    - How to handle contradictory constants?
    - **Recommendation:** Flag all, let authors resolve (Phase 1 doesn't resolve)
+
+5. **Per-Passage Timeout:**
+   - What timeout value for individual passage extraction?
+   - **Recommendation:** 30 seconds per passage (prevents single passage blocking all extraction)
 
 These questions should be addressed during technical design (Architect phase).
 
