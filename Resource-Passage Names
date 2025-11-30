@@ -131,8 +131,13 @@ KEB-251128.twee
 KEB-251129.twee
   :: Day 29 KEB
 
+KEB-251130.twee
+  :: Day 30 KEB
+
 Start.twee
   :: Start
+  It's [[sunny->Day 30 KEB]] or [[raining]].
+  :: raining
   [[A rumor]]
   [[The laundry->mansel-20251112]]
   [[Sleep->Day 19 KEB]]
