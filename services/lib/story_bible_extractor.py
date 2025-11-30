@@ -99,7 +99,7 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
                 "stream": False,
                 "options": {
                     "temperature": 0.3,  # Lower temperature for more consistent extraction
-                    "num_predict": 8000  # Max tokens for response (includes thinking tokens)
+                    "num_predict": 16000  # Max tokens for response (thinking can use 8k+, need room for actual response)
                 }
             },
             timeout=OLLAMA_TIMEOUT
@@ -111,9 +111,9 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
         # Parse response
         raw_response = result.get('response', '')
 
-        # DEBUG: Log raw response length and preview
+        # DEBUG: Log full Ollama result
         import logging
-        logging.warning(f"[DEBUG] Passage {passage_id}: response len={len(raw_response)}, preview={repr(raw_response[:200]) if raw_response else 'EMPTY'}")
+        logging.warning(f"[DEBUG] Passage {passage_id}: done_reason={result.get('done_reason')}, response len={len(raw_response)}, thinking len={len(result.get('thinking', ''))}")
 
         # Extract JSON from response (may have preamble text)
         facts_data = parse_json_from_response(raw_response)
