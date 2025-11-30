@@ -11110,11 +11110,11 @@
     }
   },
   "meta": {
-    "last_extracted": "2025-11-30T12:48:14.085157",
+    "last_extracted": "2025-11-30T12:57:20.275312",
     "total_passages_extracted": 57,
     "total_facts": 278
   },
   "summarized_facts": null,
   "summarization_status": "failed",
-  "summarization_time_seconds": 384.3391330242157
+  "summarization_time_seconds": 385.9599800109863
 }
