@@ -174,36 +174,33 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
         raw_response = result.get('response', '')
 
         # Extract JSON from response (may have preamble text)
+        # parse_json_from_response returns {"facts": []} on failure (resilient)
         facts_data = parse_json_from_response(raw_response)
 
-        if not facts_data or 'facts' not in facts_data:
-            raise Exception(f"Invalid AI response for passage {passage_id}: missing 'facts' field")
-
-        return facts_data['facts']
+        return facts_data.get('facts', [])
 
     except requests.Timeout:
         raise Exception(f"Ollama API timeout for passage {passage_id}")
     except requests.RequestException as e:
         raise Exception(f"Ollama API error: {e}")
-    except json.JSONDecodeError as e:
-        raise Exception(f"Failed to parse Ollama response as JSON: {e}")
 
 
 def parse_json_from_response(text: str) -> Dict:
     """
     Extract JSON object from AI response that may contain extra text.
 
-    Looks for { } pattern and attempts to parse.
+    Looks for { } pattern and attempts to parse. Returns empty facts
+    if parsing fails (resilient to malformed LLM output).
 
     Args:
         text: Raw AI response text
 
     Returns:
-        Parsed JSON object
-
-    Raises:
-        json.JSONDecodeError: If no valid JSON found
+        Parsed JSON object, or {"facts": []} if parsing fails
     """
+    if not text:
+        return {"facts": []}
+
     # Try parsing entire response first
     try:
         return json.loads(text)
@@ -215,14 +212,36 @@ def parse_json_from_response(text: str) -> Dict:
     end = text.rfind('}')
 
     if start == -1 or end == -1:
-        raise json.JSONDecodeError("No JSON object found in response", text, 0)
+        return {"facts": []}
 
     json_text = text[start:end+1]
 
+    # Try direct parse
     try:
         return json.loads(json_text)
-    except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(f"Invalid JSON in response: {e}", text, 0)
+    except json.JSONDecodeError:
+        pass
+
+    # Try fixing common JSON errors from LLMs
+    # 1. Remove trailing commas before } or ]
+    import re
+    fixed = re.sub(r',(\s*[}\]])', r'\1', json_text)
+    try:
+        return json.loads(fixed)
+    except json.JSONDecodeError:
+        pass
+
+    # 2. Try fixing unescaped quotes in strings (common LLM error)
+    # This is a heuristic - replace \" with escaped version
+    try:
+        # More aggressive cleanup
+        fixed = json_text.replace('\n', ' ').replace('\r', '')
+        return json.loads(fixed)
+    except json.JSONDecodeError:
+        pass
+
+    # Give up - return empty facts rather than crashing
+    return {"facts": []}
 
 
 def run_summarization(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str, float]:

@@ -43,11 +43,11 @@ class TestParseJsonFromResponse(unittest.TestCase):
         result = parse_json_from_response(text)
         self.assertEqual(result['facts'], [])
 
-    def test_no_json_raises_error(self):
-        """Should raise JSONDecodeError when no JSON found."""
+    def test_no_json_returns_empty_facts(self):
+        """Should return empty facts when no JSON found (resilient behavior)."""
         text = 'No JSON here at all'
-        with self.assertRaises(json.JSONDecodeError):
-            parse_json_from_response(text)
+        result = parse_json_from_response(text)
+        self.assertEqual(result, {"facts": []})
 
 
 class TestCategorizeAllFacts(unittest.TestCase):
