@@ -217,9 +217,9 @@ def validate_summarized_structure(summarized: Dict) -> bool:
 
 def extract_character_from_fact(fact_text: str) -> str:
     """
-    Extract character name from a character identity fact.
+    Extract primary character name from a character identity fact.
 
-    Uses simple heuristic: looks for capitalized word at start of fact.
+    Uses simple heuristic: looks for first capitalized word.
 
     Args:
         fact_text: The fact statement
@@ -227,18 +227,50 @@ def extract_character_from_fact(fact_text: str) -> str:
     Returns:
         Character name or "Unknown" if not found
     """
+    names = extract_all_characters_from_fact(fact_text)
+    return names[0] if names else "Unknown"
+
+
+def extract_all_characters_from_fact(fact_text: str) -> List[str]:
+    """
+    Extract ALL character names from a fact.
+
+    Looks for capitalized words that appear to be proper nouns (names).
+    Handles comma-separated lists like "Danita, Kian, and Terence".
+
+    Args:
+        fact_text: The fact statement
+
+    Returns:
+        List of character names found (may be empty)
+    """
     words = fact_text.split()
     if not words:
-        return "Unknown"
+        return []
 
-    # Skip common articles
-    skip_words = {'The', 'A', 'An'}
+    # Words to skip (articles, conjunctions, common words)
+    skip_words = {
+        'The', 'A', 'An', 'If', 'When', 'While', 'After', 'Before',
+        'This', 'That', 'These', 'Those', 'There', 'Here',
+        'During', 'Throughout', 'Whether', 'Although',
+        'Three', 'Two', 'One', 'Four', 'Five',  # Numbers
+        'Player', 'Unknown',  # Meta terms
+    }
+
+    names = []
     for word in words:
-        if word not in skip_words and word[0].isupper():
-            # Strip trailing punctuation from name
-            return word.rstrip(',.;:!?\'\"')
+        # Strip trailing punctuation
+        clean_word = word.rstrip(',.;:!?\'\"')
 
-    return "Unknown"
+        # Check if it's a potential name
+        if (clean_word and
+            clean_word[0].isupper() and
+            clean_word.isalpha() and
+            clean_word not in skip_words and
+            len(clean_word) > 1):
+            names.append(clean_word)
+
+    return names
 
 
 def aggregate_facts_deterministically(per_passage_extractions: Dict) -> Dict[str, List[Dict]]:
@@ -470,6 +502,10 @@ def group_facts_by_character(facts: List[Dict], name_mapping: Dict[str, str]) ->
     """
     Group character facts by character name, applying name normalization.
 
+    Each fact is added to ALL characters mentioned in it, not just the first.
+    This ensures facts like "Danita, Kian, and Terence are travelers" appear
+    under all three characters.
+
     Args:
         facts: List of character_identity facts
         name_mapping: Dict mapping variant names to canonical names
@@ -487,30 +523,36 @@ def group_facts_by_character(facts: List[Dict], name_mapping: Dict[str, str]) ->
     characters = {}
 
     for fact in facts:
-        # Extract character name
+        # Extract ALL character names from this fact
         fact_text = fact.get('fact', '')
-        char_name = extract_character_from_fact(fact_text)
+        char_names = extract_all_characters_from_fact(fact_text)
 
-        # Apply name normalization
-        char_name = name_mapping.get(char_name, char_name)
+        # If no names found, use "Unknown"
+        if not char_names:
+            char_names = ["Unknown"]
 
-        # Initialize character entry if needed
-        if char_name not in characters:
-            characters[char_name] = {
-                'identity': [],
-                'zero_action_state': [],
-                'variables': []
-            }
+        # Apply name normalization and add fact to each character
+        for char_name in char_names:
+            # Apply name normalization
+            canonical_name = name_mapping.get(char_name, char_name)
 
-        # Route to appropriate sub-category
-        category = fact.get('category', 'constant')
+            # Initialize character entry if needed
+            if canonical_name not in characters:
+                characters[canonical_name] = {
+                    'identity': [],
+                    'zero_action_state': [],
+                    'variables': []
+                }
 
-        if category == 'variable':
-            characters[char_name]['variables'].append(fact)
-        elif category == 'zero_action_state':
-            characters[char_name]['zero_action_state'].append(fact)
-        else:
-            characters[char_name]['identity'].append(fact)
+            # Route to appropriate sub-category
+            category = fact.get('category', 'constant')
+
+            if category == 'variable':
+                characters[canonical_name]['variables'].append(fact)
+            elif category == 'zero_action_state':
+                characters[canonical_name]['zero_action_state'].append(fact)
+            else:
+                characters[canonical_name]['identity'].append(fact)
 
     return characters
 
