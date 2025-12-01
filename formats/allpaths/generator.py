@@ -444,13 +444,20 @@ def main() -> None:
     print(f"Loaded validation cache with {len(validation_cache)} entries", file=sys.stderr)
 
     # Determine git base ref for comparison
-    # In PR context (GitHub Actions), compare against base branch
-    # In local context, compare against HEAD (for uncommitted changes)
-    base_ref = os.getenv('GITHUB_BASE_REF')
-    if base_ref:
-        # GitHub Actions PR context - use origin/base_branch
-        base_ref = f'origin/{base_ref}'
-        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF)", file=sys.stderr)
+    # Priority order:
+    # 1. GITHUB_MERGE_BASE (PR context with proper isolation) - preferred
+    # 2. origin/GITHUB_BASE_REF (PR context fallback) - may include concurrent main changes
+    # 3. HEAD (local development) - detects uncommitted changes
+    merge_base = os.getenv('GITHUB_MERGE_BASE')
+    if merge_base:
+        # GitHub Actions PR context - use merge base for proper scope isolation
+        base_ref = merge_base
+        print(f"Using git base ref: {base_ref} (merge base - isolates PR changes)", file=sys.stderr)
+    elif os.getenv('GITHUB_BASE_REF'):
+        # Fallback to origin/base_branch if merge base not available
+        base_ref = f"origin/{os.getenv('GITHUB_BASE_REF')}"
+        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF - may include concurrent main changes)", file=sys.stderr)
+        print(f"[WARN] GITHUB_MERGE_BASE not set, categorization may include changes from main", file=sys.stderr)
     else:
         # Local context - use HEAD to detect uncommitted changes
         base_ref = 'HEAD'
