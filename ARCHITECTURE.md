@@ -9,6 +9,8 @@ NaNoWriMo2025 is an interactive fiction project built using Twee3/Tweego with Ha
 - **AI-Powered Validation**: Automated continuity checking using Ollama
 - **CI/CD Pipeline**: GitHub Actions for build, test, and deployment
 - **Webhook Service**: Real-time AI validation feedback on pull requests
+- **Core Library Separation**: Reusable parsing and graph construction shared across formats (see ADR-012)
+- **Constraint-Based Pipeline Categories**: Tools categorized by constraints (CI Build, Webhook AI, Local Dev)
 
 ## System Components
 
@@ -48,13 +50,19 @@ Story content is written in Twee3 format, a plain-text markup language for inter
 
 #### Build Outputs
 
+**Constraint Category: CI Build** - All outputs are generated deterministically without Ollama
+
 ```
 dist/
+├── index.html                         # Harlowe playable story (main output)
+├── proofread.html                     # Paperthin format for proofreading
 ├── allpaths.html                      # Interactive browser for all story paths
 ├── allpaths-clean/*.txt               # Clean prose (public deployment)
 ├── allpaths-metadata/*.txt            # With metadata (AI validation)
 ├── allpaths-passage-mapping.json      # Random ID to passage name mapping
-└── (other build outputs)
+├── metrics.html                       # Writing metrics and statistics
+├── story-bible.html                   # Story Bible (rendered from cache)
+└── landing/index.html                 # Landing page with links to all formats
 
 allpaths-validation-status.json        # Validation cache (repository root)
 ```
@@ -75,26 +83,31 @@ The AllPaths generator implements a modular pipeline that transforms Tweego HTML
    - Input: HTML from Tweego (paperthin format)
    - Output: `story_graph.json` - Clean story structure
    - Responsibility: Extract passages, links, and metadata from HTML
+   - **Note**: Candidate for core library extraction (see ADR-012)
 
 2. **Stage 2: Generate Paths** (`modules/path_generator.py`)
    - Input: `story_graph.json`
    - Output: `paths.json` - All possible story paths
    - Responsibility: DFS traversal to enumerate paths, generate stable IDs
+   - **Note**: Candidate for core library extraction (see ADR-012)
 
 3. **Stage 3: Enrich with Git Data** (`modules/git_enricher.py`)
    - Input: `paths.json` + git repository
    - Output: `paths_enriched.json` - Paths with git metadata
    - Responsibility: Add file associations, commit dates, passage-to-file mapping
+   - **Note**: Candidate for core library extraction (see ADR-012)
 
 4. **Stage 4: Categorize Paths** (`modules/categorizer.py`)
    - Input: `paths_enriched.json` + validation cache
    - Output: `paths_categorized.json` - Classified paths
    - Responsibility: Classify as new/modified/unchanged using git-based detection
+   - **Note**: AllPaths-specific, remains in format module
 
 5. **Stage 5: Generate Outputs** (`modules/output_generator.py`)
    - Input: `paths_categorized.json`
    - Output: HTML browser, clean text, metadata text, updated cache
    - Responsibility: Create all output formats with random ID substitution
+   - **Note**: AllPaths-specific, remains in format module
 
 **Orchestrator**: `generator.py` coordinates all five stages and manages the pipeline flow.
 
@@ -202,50 +215,45 @@ Return structured results
 
 **Purpose**: AI-powered extraction of world constants, variables, and character information
 
-**Architecture**: 5-Stage Modular Processing Pipeline
+**Architecture**: Two-Phase Model (see ADR-012)
 
-The Story Bible generator implements a pipeline that extracts facts from AllPaths format passages and produces organized documentation of the story world.
+The Story Bible implements a two-phase architecture:
+- **Render Phase (CI Build)**: Deterministic HTML generation from cache, no Ollama required
+- **Extract Phase (Webhook AI)**: Async AI extraction updates cache for future renders
 
-**Pipeline Stages**:
+This allows fast CI builds while still leveraging AI benefits. The generator consumes core library artifacts (`passages_deduplicated.json`) instead of depending on AllPaths format output.
 
-1. **Stage 1: Load Passages** (webhook service)
-   - Input: AllPaths metadata text files
-   - Output: Passage content ready for extraction
-   - Responsibility: Load passages, check cache for changes
+**Two-Phase Pipeline**:
 
-2. **Stage 2: AI Extraction** (`story_bible_extractor.py`)
-   - Input: Individual passage text
-   - Output: Per-passage facts with evidence
-   - Responsibility: Call Ollama to extract constants, variables, character states
+**Phase 1: Render (CI Build - Deterministic)**
+1. **Load Cache** - Read validated_nouns.json (persistent cache)
+2. **Render HTML** - Generate story-bible.html using Jinja2 template
+3. **Output** - Deploy story-bible.html to GitHub Pages
 
-3. **Stage 2.5: AI Summarization** (`ai_summarizer.py`)
-   - Input: All per-passage extractions
-   - Output: Deduplicated unified facts
-   - Responsibility: Merge identical facts, detect conflicts, preserve evidence
-
-4. **Stage 3: Categorization** (`story_bible_extractor.py`)
-   - Input: Per-passage + summarized facts
-   - Output: Organized fact structure with both views
-   - Responsibility: Categorize by type, preserve per-passage breakdown
-
-5. **Stage 4: HTML Generation** (`html_generator.py`)
-   - Input: Categorized facts
-   - Output: Human-readable HTML Story Bible
-   - Responsibility: Render template, normalize evidence formats
+**Phase 2: Extract (Webhook AI - Async)**
+1. **Load Passages** - Read from core library artifact `passages_deduplicated.json`
+2. **AI Extraction** - Call Ollama to extract constants, variables, character states (per passage)
+3. **AI Summarization** - Deduplicate and merge facts across passages
+4. **Update Cache** - Write validated_nouns.json for next render
+5. **Commit Cache** - PR commit triggers next CI build with updated cache
 
 **Data Flow**:
 ```
-AllPaths metadata files
+CI Build (Render Phase):
+  validated_nouns.json (cache)
     ↓
-Stage 1: Load → passage content
+  Jinja2 template
     ↓
-Stage 2: AI Extract → per_passage_extractions (937 facts)
+  story-bible.html (deployed)
+
+Webhook (Extract Phase):
+  passages_deduplicated.json (core library artifact)
     ↓
-Stage 2.5: AI Summarize → summarized_facts (38 facts)
+  Ollama AI extraction
     ↓
-Stage 3: Categorize → categorized_facts (both views)
+  AI summarization & deduplication
     ↓
-Stage 4: Generate → story-bible.html
+  validated_nouns.json (updated cache)
 ```
 
 **Cache Structure**:
@@ -273,9 +281,62 @@ Stage 4: Generate → story-bible.html
 
 See `architecture/010-story-bible-design.md` for complete design documentation.
 
+### 6. Writing Metrics & Statistics
+
+**Location**: `/scripts/calculate-metrics.py`, `/formats/metrics/`
+
+**Purpose**: Word count statistics and writing progress tracking
+
+**Constraint Category**: CI Build (deterministic, no Ollama)
+
+**Features**:
+- Total word count across Twee source files
+- Passage statistics (min/mean/median/max words per passage)
+- File statistics (min/mean/median/max words per file)
+- Distribution buckets (0-100, 101-300, 301-500, 501-1000, 1000+ words)
+- Top N longest passages
+- CLI output (text) and HTML output (metrics.html)
+
+**Future Enhancement**: Will consume `story_graph.json` from core library (see ADR-012)
+
+See `architecture/009-writing-metrics-design.md` for complete design documentation.
+
+### 7. Landing Page
+
+**Location**: `/formats/landing/`
+
+**Purpose**: Central navigation hub linking to all output formats
+
+**Constraint Category**: CI Build (static HTML generation)
+
+**Features**:
+- Links to all formats (Harlowe story, AllPaths, Metrics, Story Bible, Proofread)
+- Descriptions of each format and its intended use
+- Consistent styling with other formats
+
+See `architecture/011-landing-page-design.md` for complete design documentation.
+
+### 8. Twee Linter
+
+**Location**: `/scripts/lint-twee.py` (planned)
+
+**Purpose**: Static analysis and quality checks for Twee source files
+
+**Constraint Category**: CI Build (gating check that blocks merge)
+
+**Planned Features**:
+- Passage name validation
+- Dead-end detection (passages with no links)
+- Unreachable passage detection
+- Duplicate passage detection
+- Link target validation (ensure all link targets exist)
+- Style consistency checks
+
+See `architecture/twee-linter-design.md` for design documentation.
+
 ---
 
-### 6. Webhook Service
+### 9. Webhook Service
 
 **Location**: `/services/continuity-webhook.py`
 
@@ -337,7 +398,7 @@ Update job metrics
 - `/approve-path all`: Approve all checked paths
 - `/approve-path new`: Approve all new paths
 
-### 7. GitHub Actions Pipeline
+### 10. GitHub Actions Pipeline
 
 **Location**: `/.github/workflows/build-and-deploy.yml`
 
