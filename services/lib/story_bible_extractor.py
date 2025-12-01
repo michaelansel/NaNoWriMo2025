@@ -11,6 +11,7 @@ import json
 import hashlib
 import logging
 import time
+import re
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 
@@ -547,26 +548,129 @@ def extract_facts_from_passage_with_chunking(
     return (combined_extraction, len(chunks))
 
 
+def parse_passages_from_allpaths(allpaths_content: str, mapping: Dict[str, str]) -> List[Dict]:
+    """
+    Extract individual passages from AllPaths output.
+
+    Process:
+    1. Split on [PASSAGE: hex_id] markers
+    2. Extract hex ID from marker
+    3. Translate hex_id → passage_name using mapping
+    4. Extract passage content (between PASSAGE marker and next marker or end)
+    5. Deduplicate: track seen passages, process each only once
+
+    Args:
+        allpaths_content: Raw AllPaths output (allpaths.txt)
+        mapping: hex_id → passage_name translation (allpaths-passage-mapping.json)
+
+    Returns:
+        List of unique passages:
+        [
+          {
+            "passage_id": "locked-room",  # Human-readable name
+            "hex_id": "6c6f636b65642d726f6f6d",  # Original hex ID
+            "content": ":: Locked Room\nYou try the door...",  # Full passage text
+            "source": "allpaths.txt"
+          },
+          ...
+        ]
+    """
+    passages = []
+    seen_hex_ids = set()  # Deduplication tracker
+
+    # Split on PASSAGE markers
+    # Pattern matches: [PASSAGE: hex_id] where hex_id is lowercase hex digits
+    passage_blocks = re.split(r'\[PASSAGE: ([a-f0-9]+)\]', allpaths_content)
+
+    # After split, we get: [text_before_first_passage, hex_id1, content1, hex_id2, content2, ...]
+    # Skip first block (before any passage), process pairs of (hex_id, content)
+    for i in range(1, len(passage_blocks), 2):
+        hex_id = passage_blocks[i]
+        content = passage_blocks[i + 1] if i + 1 < len(passage_blocks) else ""
+
+        # Deduplicate: skip if already seen
+        if hex_id in seen_hex_ids:
+            continue
+        seen_hex_ids.add(hex_id)
+
+        # Translate hex ID to passage name
+        passage_name = mapping.get(hex_id)
+        if not passage_name:
+            # Log warning but continue (unmapped ID)
+            logging.warning(f"Unmapped hex ID: {hex_id}")
+            continue
+
+        # Extract content (strip separator lines and extra whitespace)
+        content_clean = content.strip()
+        # Remove separator lines (=== markers at start of lines)
+        content_clean = re.sub(r'^=+$', '', content_clean, flags=re.MULTILINE)
+        # Clean up extra blank lines
+        content_clean = re.sub(r'\n{3,}', '\n\n', content_clean)
+        content_clean = content_clean.strip()
+
+        # Skip empty passages
+        if not content_clean:
+            logging.warning(f"Empty passage content for hex_id: {hex_id} (passage: {passage_name})")
+            continue
+
+        passages.append({
+            "passage_id": passage_name,
+            "hex_id": hex_id,
+            "content": content_clean,
+            "source": "allpaths.txt"
+        })
+
+    logging.info(f"Parsed {len(passages)} unique passages from AllPaths output (deduplication removed {len(seen_hex_ids) - len(passages)} duplicates)")
+    return passages
+
+
 def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:
     """
     Identify which passages need fact extraction based on cache and mode.
 
+    Now extracts from allpaths.txt using passage-based approach (each passage once).
+
     Args:
         cache: Story Bible cache dict
-        metadata_dir: Directory containing allpaths-metadata/*.txt files
+        metadata_dir: Directory containing allpaths.txt and allpaths-passage-mapping.json
         mode: 'incremental' (only new/changed) or 'full' (all passages)
 
     Returns:
-        List of (passage_id, passage_file_path, passage_content) tuples to process
+        List of (passage_id, passage_name, passage_content) tuples to process
     """
     passages_to_process = []
 
-    for passage_file in metadata_dir.glob("*.txt"):
-        # Get passage identifier from filename
-        passage_id = passage_file.stem  # filename without extension
+    # Load AllPaths output
+    allpaths_file = metadata_dir / "allpaths.txt"
+    if not allpaths_file.exists():
+        logging.error(f"AllPaths output not found: {allpaths_file}")
+        return passages_to_process
 
-        # Read passage content
-        passage_content = passage_file.read_text()
+    # Load passage mapping
+    mapping_file = metadata_dir / "allpaths-passage-mapping.json"
+    if not mapping_file.exists():
+        logging.error(f"Passage mapping not found: {mapping_file}")
+        return passages_to_process
+
+    try:
+        with open(allpaths_file, 'r') as f:
+            allpaths_content = f.read()
+
+        with open(mapping_file, 'r') as f:
+            mapping = json.load(f)
+
+        logging.info(f"Loaded AllPaths output ({len(allpaths_content)} chars) and mapping ({len(mapping)} entries)")
+    except Exception as e:
+        logging.error(f"Failed to load AllPaths files: {e}")
+        return passages_to_process
+
+    # Parse passages from AllPaths output
+    passages = parse_passages_from_allpaths(allpaths_content, mapping)
+
+    # Filter based on mode and cache
+    for passage in passages:
+        passage_id = passage["passage_id"]
+        passage_content = passage["content"]
         content_hash = hashlib.md5(passage_content.encode()).hexdigest()
 
         # Check cache for this passage
@@ -574,10 +678,11 @@ def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'increm
 
         if mode == 'full':
             # Force re-extraction regardless of cache
-            passages_to_process.append((passage_id, passage_file, passage_content))
+            passages_to_process.append((passage_id, passage_id, passage_content))
         elif mode == 'incremental':
             # Only extract if new or changed
             if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
-                passages_to_process.append((passage_id, passage_file, passage_content))
+                passages_to_process.append((passage_id, passage_id, passage_content))
 
+    logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode})")
     return passages_to_process
