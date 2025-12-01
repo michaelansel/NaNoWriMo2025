@@ -537,6 +537,15 @@ npm run metrics | grep "Total Words" || echo "FAIL: CLI output missing"
 
 ## Future Enhancements
 
+### Core Library Integration
+
+**Note**: The current implementation parses Twee files directly. Future enhancement will consume `story_graph.json` from the core library (see ADR-012):
+
+- **Current**: Parses Twee files, strips Harlowe syntax, counts words
+- **Future**: Consume `story_graph.json` which already has clean passage content
+- **Benefits**: Eliminate duplication of parsing logic, consistent story structure handling
+- **Migration**: Low priority (current implementation works well for metrics use case)
+
 ### Potential Additions (Out of Scope for Initial Implementation)
 
 1. **Historical Tracking:** Compare metrics over time (requires git integration)
@@ -583,3 +592,4 @@ None. Design is ready for implementation.
 - **Architecture:** `ARCHITECTURE.md`
 - **Standards:** `STANDARDS.md`
 - **Similar Implementation:** AllPaths generator (`formats/allpaths/generator.py`)
+- **Related ADR:** ADR-012: Core Library and Format Separation Architecture

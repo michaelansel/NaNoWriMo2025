@@ -249,6 +249,13 @@ These are directional goals we cannot directly measure but inform our design dec
 **Output:** `dist/story-bible.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/story-bible.html`
 
+**Two-Phase Model:**
+Story Bible uses a two-phase approach:
+- **Render Phase (CI Build)**: Every push reads cache, generates HTML (fast, no AI)
+- **Extract Phase (Webhook)**: Auto after builds + manual `/extract-story-bible`, updates cache via Ollama
+
+This means Story Bible is always available in builds but may be one build behind if extraction is still running. Cache is updated automatically after each build completes.
+
 **Detailed Feature Spec:** See [Story Bible](story-bible.md) for full acceptance criteria, user stories, and detailed requirements.
 
 ---

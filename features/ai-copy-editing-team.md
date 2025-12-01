@@ -67,9 +67,27 @@ The AI Copy Editing Team is a **validation feature** that automatically checks s
 - Evidence quotes from both sources
 - Suggested resolution actions
 
-**Note:** World Fact Checker only runs if the Story Bible cache exists. If missing, they sit this one out and suggest running `/extract-story-bible`.
+**Cache Dependency (Two-Phase Story Bible Model):**
 
-For complete Story Bible feature details, see [features/story-bible.md](./story-bible.md)
+World Fact Checker requires the Story Bible cache to validate against. The cache is populated by the Extract Phase (webhook-triggered, runs after builds).
+
+**When cache might be missing:**
+- First-time PR setup (Story Bible never extracted yet)
+- Extract Phase still running (cache update in progress)
+- Extract Phase failed (cache not updated)
+
+**What happens when cache is missing:**
+- World Fact Checker gracefully skips validation
+- Shows informational message: "Story Bible cache not found - run `/extract-story-bible` to enable World Fact Checker"
+- Validation continues with other team members (Continuity Checker still runs)
+- Build and validation succeed (non-blocking)
+
+**How to enable World Fact Checker:**
+1. Comment `/extract-story-bible` on your PR
+2. Wait for Extract Phase to complete (cache commits to repo)
+3. World Fact Checker automatically uses cache in next validation
+
+For complete Story Bible feature details and two-phase model explanation, see [features/story-bible.md](./story-bible.md)
 
 ---
 

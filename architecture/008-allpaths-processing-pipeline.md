@@ -364,6 +364,16 @@ Potential enhancements enabled by this architecture:
 7. **Caching**: Cache stage outputs for unchanged inputs
 8. **Alternative Categorizers**: Swap categorization algorithms
 
+### Core Library Migration
+
+**Note**: Stages 1-3 (Parse & Extract, Generate Paths, Enrich with Git Data) contain reusable logic that will migrate to the core library per ADR-012:
+
+- **Stage 1** will become part of core library's `parse_story.py` (produces `story_graph.json`)
+- **Stage 2** path enumeration logic is reusable across formats
+- **Stage 3** git enrichment provides passage-to-file mapping needed by multiple formats
+
+Stages 4-5 (Categorize Paths, Generate Outputs) remain AllPaths-specific as they implement format-specific concerns (validation cache management, AllPaths HTML/text output).
+
 ## Related Work
 
 **Related to existing ADRs**:
@@ -386,3 +396,4 @@ Potential enhancements enabled by this architecture:
 - ADR-001: AllPaths Format for AI Continuity Validation
 - ADR-002: Validation Cache Architecture
 - ADR-004: Content-Based Hashing for Change Detection
+- ADR-012: Core Library and Format Separation Architecture
