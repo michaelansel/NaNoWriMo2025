@@ -152,7 +152,10 @@ def normalize_variables(variables):
 
 
 def normalize_characters(characters):
-    """Normalize all fact lists in characters dict."""
+    """Normalize all fact lists in characters dict.
+
+    Preserves passages and mentions fields from entity-first summarizer.
+    """
     if not characters:
         return {}
 
@@ -163,6 +166,15 @@ def normalize_characters(characters):
             'zero_action_state': normalize_facts(char_data.get('zero_action_state', [])),
             'variables': normalize_facts(char_data.get('variables', []))
         }
+
+        # Preserve passages field if present (entity-first summarizer)
+        if 'passages' in char_data:
+            result[char_name]['passages'] = char_data['passages']
+
+        # Preserve mentions field if present (entity-first summarizer)
+        if 'mentions' in char_data:
+            result[char_name]['mentions'] = char_data['mentions']
+
     return result
 
 

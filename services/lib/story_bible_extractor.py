@@ -11,6 +11,7 @@ import json
 import hashlib
 import logging
 import time
+import re
 from typing import Dict, List, Tuple, Optional
 from pathlib import Path
 
@@ -19,67 +20,112 @@ OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 120  # 2 minutes per passage
 
-# AI prompt for fact extraction
-EXTRACTION_PROMPT = """=== SECTION 1: ROLE & CONTEXT ===
+# AI prompt for entity-first extraction (simplified for reliability)
+EXTRACTION_PROMPT = """Extract ALL named entities from this story passage.
 
-You are extracting FACTS about an interactive fiction story world.
+IMPORTANT - Extract EVERY:
+- Character name (e.g., "Jerrick", "Miss Rosie", "Javlyn")
+- Titles with names as ONE entity (e.g., "Miss Rosie" not just "Rosie")
+- Possessive mentions (e.g., "Miss Rosie's beef stew" -> extract "Miss Rosie")
+- Location name (e.g., "cave", "village", "Academy")
+- Item name (e.g., "lantern", "beef stew", "hammer")
 
-Your task: Extract CONSTANTS (always true) and VARIABLES (depend on player choices).
+Respond with ONLY valid JSON (no markdown):
+{{"entities": [{{"name": "Name", "type": "character|location|item"}}]}}
 
-CRITICAL UNDERSTANDING:
-- Focus on WORLD FACTS, not plot events
-- Constants: True in all story paths regardless of player action
-- Variables: Change based on player choices
-- Zero Action State: What happens if player does nothing
-
-=== SECTION 2: WHAT TO EXTRACT ===
-
-Extract these fact types:
-
-1. **World Rules**: Magic systems, technology level, physical laws
-2. **Setting**: Geography, landmarks, historical events before story
-3. **Character Identities**: Names, backgrounds, core traits (not fates)
-4. **Timeline**: Events before story starts, chronological constants
-
-For each character, identify:
-- Identity (constants): Who they are, background
-- Zero Action State: Default trajectory if player doesn't intervene
-- Variables: Outcomes that depend on player choices
-
-=== SECTION 3: OUTPUT FORMAT ===
-
-Respond with ONLY valid JSON (no markdown, no code blocks):
-
-{{
-  "facts": [
-    {{
-      "fact": "The city is on the coast",
-      "type": "setting|world_rule|character_identity|timeline",
-      "confidence": "high|medium|low",
-      "evidence": [{{"passage": "PassageName", "quote": "Quote from passage demonstrating this fact"}}],
-      "category": "constant|variable|zero_action_state"
-    }}
-  ]
-}}
-
-=== SECTION 4: PASSAGE TEXT ===
-
+PASSAGE:
 {passage_text}
 
-BEGIN EXTRACTION (JSON only):
+JSON:
 """
 
 
-def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]:
+def chunk_passage(
+    passage_name: str,
+    passage_text: str,
+    max_chars: int = 20000,
+    overlap_chars: int = 200
+) -> List[Tuple[str, str, int]]:
     """
-    Extract facts from a single passage using Ollama.
+    Split passage into chunks that fit within max_chars.
+
+    Args:
+        passage_name: Name of the passage
+        passage_text: Full passage text
+        max_chars: Maximum characters per chunk
+        overlap_chars: Characters to overlap between chunks
+
+    Returns:
+        List of (chunk_name, chunk_text, chunk_number) tuples
+
+    Example:
+        chunk_passage("Start", "...", 20000)
+        -> [("Start", "...", 1)]  # Single chunk if fits
+        -> [("Start_chunk_1", "...", 1), ("Start_chunk_2", "...", 2)]  # Multiple if large
+    """
+    # Fast path: passage fits in one chunk
+    if len(passage_text) <= max_chars:
+        return [(passage_name, passage_text, 1)]
+
+    chunks = []
+    chunk_num = 1
+
+    # Split at paragraph boundaries (double newline preferred)
+    paragraphs = passage_text.split('\n\n')
+
+    current_chunk = ""
+
+    for para in paragraphs:
+        # If adding this paragraph exceeds limit
+        if current_chunk and len(current_chunk) + len(para) + 2 > max_chars:
+            # Save current chunk
+            chunk_name = f"{passage_name}_chunk_{chunk_num}"
+            chunks.append((chunk_name, current_chunk, chunk_num))
+            chunk_num += 1
+
+            # Start new chunk with overlap from previous chunk
+            overlap = current_chunk[-overlap_chars:] if len(current_chunk) > overlap_chars else current_chunk
+            current_chunk = overlap + '\n\n' + para
+
+        elif not current_chunk:
+            # First paragraph in chunk
+            current_chunk = para
+
+        else:
+            # Add paragraph to current chunk
+            current_chunk += '\n\n' + para
+
+    # Save final chunk
+    if current_chunk:
+        chunk_name = f"{passage_name}_chunk_{chunk_num}"
+        chunks.append((chunk_name, current_chunk, chunk_num))
+
+    return chunks
+
+
+def extract_facts_from_passage(passage_text: str, passage_id: str) -> Dict:
+    """
+    Extract entities and facts from a single passage using Ollama.
+
+    Now uses entity-first extraction approach: extracts entities (characters,
+    locations, items) FIRST, then associates facts with those entities.
 
     Args:
         passage_text: The passage content
         passage_id: Unique identifier for passage
 
     Returns:
-        List of extracted facts
+        Dict with extraction data:
+        {
+            "entities": {
+                "characters": [...],
+                "locations": [...],
+                "items": [...],
+                "organizations": [...],
+                "concepts": [...]
+            },
+            "facts": []  # Empty list for backward compatibility
+        }
 
     Raises:
         Exception: If Ollama API fails or times out
@@ -111,55 +157,157 @@ def extract_facts_from_passage(passage_text: str, passage_id: str) -> List[Dict]
         raw_response = result.get('response', '')
 
         # Extract JSON from response (may have preamble text)
-        facts_data = parse_json_from_response(raw_response)
+        # parse_json_from_response returns {"facts": []} or {"entities": {...}} on success
+        extraction_data = parse_json_from_response(raw_response)
 
-        if not facts_data or 'facts' not in facts_data:
-            raise Exception(f"Invalid AI response for passage {passage_id}: missing 'facts' field")
+        # Ensure entity-first structure
+        if 'entities' not in extraction_data:
+            # Fallback: create empty entity structure
+            extraction_data = {
+                'entities': {
+                    'characters': [],
+                    'locations': [],
+                    'items': [],
+                    'organizations': [],
+                    'concepts': []
+                },
+                'facts': extraction_data.get('facts', [])  # Preserve old format if present
+            }
+        else:
+            # Add empty facts list for backward compatibility
+            if 'facts' not in extraction_data:
+                extraction_data['facts'] = []
 
-        return facts_data['facts']
+        return extraction_data
 
     except requests.Timeout:
         raise Exception(f"Ollama API timeout for passage {passage_id}")
     except requests.RequestException as e:
         raise Exception(f"Ollama API error: {e}")
-    except json.JSONDecodeError as e:
-        raise Exception(f"Failed to parse Ollama response as JSON: {e}")
 
 
 def parse_json_from_response(text: str) -> Dict:
     """
     Extract JSON object from AI response that may contain extra text.
 
-    Looks for { } pattern and attempts to parse.
+    Handles multiple LLM output formats:
+    1. Clean JSON
+    2. JSON wrapped in ```json...``` markdown code blocks
+    3. Flat entity list format ({"entities": [{"name": "X", "type": "character"}]})
+    4. Nested entity format ({"entities": {"characters": [...]}})
 
     Args:
         text: Raw AI response text
 
     Returns:
-        Parsed JSON object
-
-    Raises:
-        json.JSONDecodeError: If no valid JSON found
+        Parsed JSON object in normalized entity format, or {"facts": []} if parsing fails
     """
+    import re
+
+    if not text:
+        return {"facts": []}
+
+    # Strip markdown code blocks if present
+    if '```' in text:
+        # Extract content between ```json and ``` (or just ``` and ```)
+        match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+        if match:
+            text = match.group(1)
+
     # Try parsing entire response first
+    parsed = None
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Find JSON object boundaries
-    start = text.find('{')
-    end = text.rfind('}')
+    if not parsed:
+        # Find JSON object boundaries
+        start = text.find('{')
+        end = text.rfind('}')
 
-    if start == -1 or end == -1:
-        raise json.JSONDecodeError("No JSON object found in response", text, 0)
+        if start == -1 or end == -1:
+            return {"facts": []}
 
-    json_text = text[start:end+1]
+        json_text = text[start:end+1]
 
-    try:
-        return json.loads(json_text)
-    except json.JSONDecodeError as e:
-        raise json.JSONDecodeError(f"Invalid JSON in response: {e}", text, 0)
+        # Try direct parse
+        try:
+            parsed = json.loads(json_text)
+        except json.JSONDecodeError:
+            pass
+
+        if not parsed:
+            # Try fixing common JSON errors from LLMs
+            # 1. Remove trailing commas before } or ]
+            fixed = re.sub(r',(\s*[}\]])', r'\1', json_text)
+            try:
+                parsed = json.loads(fixed)
+            except json.JSONDecodeError:
+                pass
+
+        if not parsed:
+            # 2. Try fixing unescaped quotes in strings (common LLM error)
+            try:
+                fixed = json_text.replace('\n', ' ').replace('\r', '')
+                parsed = json.loads(fixed)
+            except json.JSONDecodeError:
+                pass
+
+    if not parsed:
+        # Give up - return empty facts rather than crashing
+        return {"facts": []}
+
+    # Normalize entity format: convert flat list to nested dict
+    # LLM sometimes returns: {"entities": [{"name": "X", "type": "character"}, ...]}
+    # We need: {"entities": {"characters": [...], "locations": [...], ...}}
+    if 'entities' in parsed and isinstance(parsed['entities'], list):
+        flat_entities = parsed['entities']
+        nested_entities = {
+            'characters': [],
+            'locations': [],
+            'items': [],
+            'organizations': [],
+            'concepts': []
+        }
+
+        # Type mapping (normalize various type names)
+        type_map = {
+            'character': 'characters',
+            'person': 'characters',
+            'people': 'characters',
+            'location': 'locations',
+            'place': 'locations',
+            'item': 'items',
+            'object': 'items',
+            'thing': 'items',
+            'weapon': 'items',
+            'tool': 'items',
+            'food': 'items',
+            'organization': 'organizations',
+            'group': 'organizations',
+            'concept': 'concepts',
+            'ability': 'concepts',
+            'weather': 'concepts',  # Map weather to concepts
+        }
+
+        for entity in flat_entities:
+            entity_type = entity.get('type', '').lower()
+            target_key = type_map.get(entity_type)
+
+            if target_key:
+                # Convert to expected format with name, mentions, facts
+                normalized_entity = {
+                    'name': entity.get('name', ''),
+                    'title': entity.get('title'),
+                    'mentions': entity.get('mentions', []),
+                    'facts': entity.get('facts', [])
+                }
+                nested_entities[target_key].append(normalized_entity)
+
+        parsed['entities'] = nested_entities
+
+    return parsed
 
 
 def run_summarization(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str, float]:
@@ -199,6 +347,24 @@ def run_summarization(per_passage_extractions: Dict) -> Tuple[Optional[Dict], st
     except Exception as e:
         logging.error(f"Failed to run summarization: {e}")
         return (None, "failed", 0.0)
+
+
+def calculate_metrics(cache: Dict) -> Dict:
+    """
+    Calculate quality metrics for extraction validation.
+
+    Args:
+        cache: Story Bible cache dict
+
+    Returns:
+        Dict with extraction statistics
+    """
+    try:
+        from story_bible_metrics import calculate_extraction_stats
+        return calculate_extraction_stats(cache)
+    except Exception as e:
+        logging.error(f"Failed to calculate metrics: {e}")
+        return {}
 
 
 def categorize_all_facts(passage_extractions: Dict, summarized_facts: Optional[Dict] = None) -> Dict:
@@ -326,21 +492,206 @@ def extract_character_name(fact_text: str) -> str:
     return "Unknown"
 
 
+def extract_facts_from_passage_with_chunking(
+    passage_name: str,
+    passage_text: str,
+    max_chars: int = 20000
+) -> Tuple[Dict, int]:
+    """
+    Extract entities and facts from a passage, chunking if necessary.
+
+    Args:
+        passage_name: Name/ID of the passage
+        passage_text: Full passage text
+        max_chars: Maximum characters per chunk
+
+    Returns:
+        Tuple of (extraction_data, chunks_processed) where:
+        - extraction_data: Combined entity extraction from all chunks
+        - chunks_processed: Number of chunks created (1 for most passages)
+    """
+    # Chunk the passage
+    chunks = chunk_passage(passage_name, passage_text, max_chars)
+
+    # Initialize combined extraction
+    combined_extraction = {
+        'entities': {
+            'characters': [],
+            'locations': [],
+            'items': [],
+            'organizations': [],
+            'concepts': []
+        },
+        'facts': []
+    }
+
+    for chunk_name, chunk_text, chunk_num in chunks:
+        # Extract from this chunk
+        chunk_extraction = extract_facts_from_passage(chunk_text, chunk_name)
+
+        # Merge entities from this chunk
+        for entity_type in ['characters', 'locations', 'items', 'organizations', 'concepts']:
+            chunk_entities = chunk_extraction.get('entities', {}).get(entity_type, [])
+            # Tag entities with chunk metadata for debugging
+            for entity in chunk_entities:
+                entity['_chunk_number'] = chunk_num
+                entity['_chunk_total'] = len(chunks)
+            combined_extraction['entities'][entity_type].extend(chunk_entities)
+
+        # Merge facts (for backward compatibility)
+        chunk_facts = chunk_extraction.get('facts', [])
+        for fact in chunk_facts:
+            fact['_chunk_number'] = chunk_num
+            fact['_chunk_total'] = len(chunks)
+        combined_extraction['facts'].extend(chunk_facts)
+
+    return (combined_extraction, len(chunks))
+
+
+def parse_passages_from_allpaths(allpaths_content: str, mapping: Dict[str, str]) -> List[Dict]:
+    """
+    Extract individual passages from AllPaths output.
+
+    Process:
+    1. Split on [PASSAGE: hex_id] markers
+    2. Extract hex ID from marker
+    3. Translate hex_id → passage_name using mapping
+    4. Extract passage content (between PASSAGE marker and next marker or end)
+    5. Deduplicate: track seen passages, process each only once
+
+    Args:
+        allpaths_content: Raw AllPaths output (allpaths.txt)
+        mapping: hex_id → passage_name translation (allpaths-passage-mapping.json)
+
+    Returns:
+        List of unique passages:
+        [
+          {
+            "passage_id": "locked-room",  # Human-readable name
+            "hex_id": "6c6f636b65642d726f6f6d",  # Original hex ID
+            "content": ":: Locked Room\nYou try the door...",  # Full passage text
+            "source": "allpaths.txt"
+          },
+          ...
+        ]
+    """
+    passages = []
+    seen_hex_ids = set()  # Deduplication tracker
+
+    # Split on PASSAGE markers
+    # Pattern matches: [PASSAGE: hex_id] where hex_id is lowercase hex digits
+    passage_blocks = re.split(r'\[PASSAGE: ([a-f0-9]+)\]', allpaths_content)
+
+    # After split, we get: [text_before_first_passage, hex_id1, content1, hex_id2, content2, ...]
+    # Skip first block (before any passage), process pairs of (hex_id, content)
+    for i in range(1, len(passage_blocks), 2):
+        hex_id = passage_blocks[i]
+        content = passage_blocks[i + 1] if i + 1 < len(passage_blocks) else ""
+
+        # Deduplicate: skip if already seen
+        if hex_id in seen_hex_ids:
+            continue
+        seen_hex_ids.add(hex_id)
+
+        # Translate hex ID to passage name
+        passage_name = mapping.get(hex_id)
+        if not passage_name:
+            # Log warning but continue (unmapped ID)
+            logging.warning(f"Unmapped hex ID: {hex_id}")
+            continue
+
+        # Extract content (strip separator lines and extra whitespace)
+        content_clean = content.strip()
+        # Remove separator lines (=== markers at start of lines)
+        content_clean = re.sub(r'^=+$', '', content_clean, flags=re.MULTILINE)
+        # Clean up extra blank lines
+        content_clean = re.sub(r'\n{3,}', '\n\n', content_clean)
+        content_clean = content_clean.strip()
+
+        # Skip empty passages
+        if not content_clean:
+            logging.warning(f"Empty passage content for hex_id: {hex_id} (passage: {passage_name})")
+            continue
+
+        passages.append({
+            "passage_id": passage_name,
+            "hex_id": hex_id,
+            "content": content_clean,
+            "source": "allpaths.txt"
+        })
+
+    logging.info(f"Parsed {len(passages)} unique passages from AllPaths output (deduplication removed {len(seen_hex_ids) - len(passages)} duplicates)")
+    return passages
+
+
 def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:
     """
     Identify which passages need fact extraction based on cache and mode.
 
+    Supports two extraction modes:
+    1. NEW: allpaths.txt with passage-based approach (preferred, deduplicates)
+    2. LEGACY: path-*.txt files (fallback for backward compatibility)
+
     Args:
         cache: Story Bible cache dict
-        metadata_dir: Directory containing allpaths-metadata/*.txt files
+        metadata_dir: Directory containing allpaths-metadata files
         mode: 'incremental' (only new/changed) or 'full' (all passages)
 
     Returns:
-        List of (passage_id, passage_file_path, passage_content) tuples to process
+        List of (passage_id, passage_file, passage_content) tuples to process
     """
     passages_to_process = []
 
+    # Try NEW passage-based format first (allpaths.txt + mapping)
+    allpaths_file = metadata_dir / "allpaths.txt"
+    mapping_file = metadata_dir / "allpaths-passage-mapping.json"
+
+    if allpaths_file.exists() and mapping_file.exists():
+        # NEW FORMAT: Parse individual passages from allpaths.txt
+        logging.info("Using new passage-based extraction format")
+        try:
+            with open(allpaths_file, 'r') as f:
+                allpaths_content = f.read()
+
+            with open(mapping_file, 'r') as f:
+                mapping = json.load(f)
+
+            logging.info(f"Loaded AllPaths output ({len(allpaths_content)} chars) and mapping ({len(mapping)} entries)")
+
+            # Parse passages from AllPaths output
+            passages = parse_passages_from_allpaths(allpaths_content, mapping)
+
+            # Filter based on mode and cache
+            for passage in passages:
+                passage_id = passage["passage_id"]
+                passage_content = passage["content"]
+                content_hash = hashlib.md5(passage_content.encode()).hexdigest()
+
+                # Check cache for this passage
+                cached_extraction = cache.get('passage_extractions', {}).get(passage_id)
+
+                if mode == 'full':
+                    # Force re-extraction regardless of cache
+                    passages_to_process.append((passage_id, passage_id, passage_content))
+                elif mode == 'incremental':
+                    # Only extract if new or changed
+                    if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
+                        passages_to_process.append((passage_id, passage_id, passage_content))
+
+            logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode})")
+            return passages_to_process
+
+        except Exception as e:
+            logging.error(f"Failed to load AllPaths files: {e}, falling back to legacy format")
+
+    # LEGACY FORMAT: Iterate over path-*.txt files (fallback)
+    logging.info("Using legacy path-based extraction format (path-*.txt files)")
+
     for passage_file in metadata_dir.glob("*.txt"):
+        # Skip allpaths.txt if it exists but failed to parse
+        if passage_file.name == "allpaths.txt":
+            continue
+
         # Get passage identifier from filename
         passage_id = passage_file.stem  # filename without extension
 
@@ -359,4 +710,5 @@ def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'increm
             if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
                 passages_to_process.append((passage_id, passage_file, passage_content))
 
+    logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode}, legacy format)")
     return passages_to_process

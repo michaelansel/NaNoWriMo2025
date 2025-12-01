@@ -181,6 +181,65 @@
             font-size: 1.5rem;
         }
 
+        .mention-count {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            background: #667eea;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-left: 1rem;
+            font-weight: normal;
+        }
+
+        .passage-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .passage-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            border: 1px solid #bbdefb;
+        }
+
+        .mention-item {
+            background: #f8f9fa;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+
+        .mention-context {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            background: #764ba2;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            margin-right: 0.5rem;
+            font-weight: 600;
+        }
+
+        .mention-quote {
+            font-style: italic;
+            color: #555;
+        }
+
+        .mention-passage {
+            font-size: 0.85rem;
+            color: #999;
+            margin-top: 0.25rem;
+        }
+
         .empty-state {
             padding: 2rem;
             text-align: center;
@@ -369,7 +428,34 @@
             {% if characters %}
             {% for char_name, char_data in characters.items() %}
             <div class="character">
-                <h3>{{ char_name }}</h3>
+                <h3>
+                    {{ char_name }}
+                    {% if char_data.passages %}
+                    <span class="mention-count">Mentioned in {{ char_data.passages|length }} passage{% if char_data.passages|length != 1 %}s{% endif %}</span>
+                    {% endif %}
+                </h3>
+
+                {% if char_data.passages %}
+                <h4>Mentioned In</h4>
+                <div class="passage-list">
+                    {% for passage_name in char_data.passages %}
+                    <span class="passage-tag">{{ passage_name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if char_data.mentions %}
+                <h4>Mentions</h4>
+                {% for mention in char_data.mentions %}
+                <div class="mention-item">
+                    <span class="mention-context">{{ mention.context or 'context' }}</span>
+                    <span class="mention-quote">"{{ mention.quote[:200] }}{% if mention.quote|length > 200 %}...{% endif %}"</span>
+                    {% if mention.passage %}
+                    <div class="mention-passage">— {{ mention.passage }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% endif %}
 
                 {% if char_data.identity %}
                 <h4>Identity (Constants)</h4>

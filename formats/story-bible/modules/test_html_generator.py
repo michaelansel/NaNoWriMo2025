@@ -206,6 +206,58 @@ class TestNormalizeCharacters(unittest.TestCase):
         self.assertIn('zero_action_state', result['Javlyn'])
         self.assertIn('variables', result['Javlyn'])
 
+    def test_preserves_passages_field(self):
+        """Should preserve passages field from entity-first summarizer."""
+        characters = {
+            'Marcie': {
+                'identity': [{'fact': 'Former member', 'evidence': 'quote'}],
+                'passages': ['KEB-251101', 'mansel-20251114']
+            }
+        }
+        result = normalize_characters(characters)
+
+        self.assertIn('Marcie', result)
+        self.assertIn('passages', result['Marcie'])
+        self.assertEqual(result['Marcie']['passages'], ['KEB-251101', 'mansel-20251114'])
+
+    def test_preserves_mentions_field(self):
+        """Should preserve mentions field from entity-first summarizer."""
+        characters = {
+            'Marcie': {
+                'identity': [{'fact': 'Former member', 'evidence': 'quote'}],
+                'mentions': [
+                    {'quote': 'when Marcie was with us', 'context': 'dialogue', 'passage': 'KEB-251101'},
+                    {'quote': 'since we lost Marcie', 'context': 'dialogue', 'passage': 'mansel-20251114'}
+                ]
+            }
+        }
+        result = normalize_characters(characters)
+
+        self.assertIn('Marcie', result)
+        self.assertIn('mentions', result['Marcie'])
+        self.assertEqual(len(result['Marcie']['mentions']), 2)
+        self.assertEqual(result['Marcie']['mentions'][0]['context'], 'dialogue')
+
+    def test_preserves_both_passages_and_mentions(self):
+        """Should preserve both passages and mentions fields together."""
+        characters = {
+            'Terence': {
+                'identity': [{'fact': 'Group leader', 'evidence': 'quote'}],
+                'zero_action_state': [],
+                'variables': [],
+                'passages': ['passage1', 'passage2'],
+                'mentions': [
+                    {'quote': 'Terence said', 'context': 'dialogue', 'passage': 'passage1'}
+                ]
+            }
+        }
+        result = normalize_characters(characters)
+
+        self.assertIn('passages', result['Terence'])
+        self.assertIn('mentions', result['Terence'])
+        self.assertEqual(len(result['Terence']['passages']), 2)
+        self.assertEqual(len(result['Terence']['mentions']), 1)
+
 
 class TestNormalizeConflicts(unittest.TestCase):
     """Test conflicts normalization."""

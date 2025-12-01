@@ -1429,9 +1429,11 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
     sys.path.insert(0, str(Path(__file__).parent / 'lib'))
     from story_bible_extractor import (
         extract_facts_from_passage,
+        extract_facts_from_passage_with_chunking,
         categorize_all_facts,
         get_passages_to_extract,
-        run_summarization
+        run_summarization,
+        calculate_metrics
     )
 
     try:
@@ -1547,34 +1549,55 @@ _Progress updates will be posted as each passage completes._
                     app.logger.info(f"[Story Bible] Extracting passage {idx}/{total_passages}: {passage_id}")
 
                     try:
-                        # Call Ollama API
-                        extracted_facts = extract_facts_from_passage(passage_content, passage_id)
+                        # Call Ollama API with chunking support
+                        extracted_facts, chunks_processed = extract_facts_from_passage_with_chunking(
+                            passage_id, passage_content
+                        )
 
                         # Update cache
                         if 'passage_extractions' not in cache:
                             cache['passage_extractions'] = {}
 
+                        # Handle new entity-first extraction format
+                        # extracted_facts is now a dict with 'entities' and 'facts' keys
+                        entities = extracted_facts.get('entities', {})
+                        facts_list = extracted_facts.get('facts', [])
+
                         cache['passage_extractions'][passage_id] = {
                             'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
                             'extracted_at': datetime.now().isoformat(),
-                            'facts': extracted_facts
+                            'entities': entities,
+                            'facts': facts_list,
+                            'chunks_processed': chunks_processed,
+                            'passage_name': passage_id,
+                            'passage_length': len(passage_content)
                         }
 
-                        # Post progress
-                        fact_count = len(extracted_facts)
-                        preview_facts = extracted_facts[:3] if extracted_facts else []
-                        preview_text = '\n'.join(f"- {f.get('fact', 'N/A')}" for f in preview_facts)
-                        more_text = f"\n- ... and {fact_count - 3} more" if fact_count > 3 else ""
+                        # Post progress with entity counts
+                        char_count = len(entities.get('characters', []))
+                        loc_count = len(entities.get('locations', []))
+                        item_count = len(entities.get('items', []))
+
+                        # Build entity preview
+                        char_names = [c.get('name', 'Unknown') for c in entities.get('characters', [])[:5]]
+                        loc_names = [l.get('name', 'Unknown') for l in entities.get('locations', [])[:3]]
+
+                        preview_parts = []
+                        if char_names:
+                            preview_parts.append(f"**Characters:** {', '.join(char_names)}")
+                        if loc_names:
+                            preview_parts.append(f"**Locations:** {', '.join(loc_names)}")
+                        preview_text = '\n'.join(preview_parts) if preview_parts else "No entities found"
 
                         post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
 
 **Passage:** `{passage_id}`
-**Facts extracted:** {fact_count}
+**Entities found:** {char_count} characters, {loc_count} locations, {item_count} items
 
 <details>
-<summary>Preview facts</summary>
+<summary>Preview entities</summary>
 
-{preview_text}{more_text}
+{preview_text}
 
 </details>
 """)
@@ -1621,6 +1644,11 @@ Continuing with remaining passages...
             summarized_facts=summarized_facts
         )
         cache['categorized_facts'] = categorized_facts
+
+        # Calculate quality metrics
+        app.logger.info(f"[Story Bible] Calculating quality metrics")
+        extraction_stats = calculate_metrics(cache)
+        cache['extraction_stats'] = extraction_stats
 
         # Update metadata
         total_facts = (
@@ -1676,13 +1704,29 @@ Continuing with remaining passages...
             title = "Story Bible Extraction - Complete"
             passages_label = "Passages extracted"
 
+        # Format quality metrics for display
+        metrics_text = ""
+        if extraction_stats:
+            character_coverage = extraction_stats.get('character_coverage', 0)
+            avg_facts = extraction_stats.get('average_facts_per_passage', 0)
+            success_rate = extraction_stats.get('extraction_success_rate', 0) * 100
+            dedup_ratio = extraction_stats.get('deduplication_effectiveness', 0) * 100
+
+            metrics_text = f"""
+**Quality Metrics:**
+- **Character coverage:** {character_coverage} characters detected
+- **Extraction success:** {extraction_stats.get('passages_with_facts', 0)}/{extraction_stats.get('total_passages', 0)} passages ({success_rate:.1f}%)
+- **Average facts/passage:** {avg_facts:.1f}
+- **Deduplication:** {dedup_ratio:.0f}% reduction
+"""
+
         post_pr_comment(pr_number, f"""## 📖 {title}
 
 **Mode:** `{mode}`
 **{passages_label}:** {total_passages}
 **Total facts:** {total_facts}
 **Summarization:** {summarization_display}
-
+{metrics_text}
 **Summary:**
 - **Constants:** {constant_count} world facts
 - **Characters:** {character_count} characters
