@@ -308,36 +308,87 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ### How It Works (User Perspective)
 
+**Two-Phase Model:**
+The Story Bible uses a two-phase approach to balance speed with thoroughness:
+
+1. **Extract Phase (Webhook)** - AI-powered extraction updates the cache
+2. **Render Phase (CI Build)** - Fast HTML generation from cache
+
+This separation means:
+- Every build is fast (no AI processing in CI)
+- Extraction runs when you need it (auto after builds + manual webhook)
+- Story Bible is always available but may be one build behind if extraction is in progress
+
+---
+
 **Webhook Command:**
 ```
 /extract-story-bible
 ```
 Use this webhook command (as a PR comment) to trigger Story Bible extraction and updates.
 
-**First-time setup:**
-1. Create a PR and comment with `/extract-story-bible` webhook command
-2. System processes each passage in your Twee source files
-3. Extracts all entities (characters, locations, items) and facts
-4. Deduplicates facts across passages
-5. Commits results to repository cache
-6. Build generates HTML and JSON from cache
+---
 
-**Subsequent builds:**
-1. Build reads cached extraction results
-2. Renders HTML (fast, no AI needed)
-3. Published to GitHub Pages automatically
+**Phase 1: Extract Phase (Updates Cache)**
 
-**When story changes:**
-1. Comment with `/extract-story-bible` webhook command on your PR to update
-2. Changed passages re-extracted
-3. Unchanged passages reuse cached results (faster)
-4. Deduplication re-runs to merge new facts
-5. Updated Story Bible published
+**When it runs:**
+- Automatically after every successful build (webhook triggered by CI)
+- Manually via `/extract-story-bible` comment on PR
 
-**If extraction fails:**
+**What it does:**
+1. Processes each passage in your Twee source files
+2. Extracts all entities (characters, locations, items) and facts using Ollama AI
+3. Deduplicates facts across passages
+4. Commits results to repository cache (`cache/story-bible/`)
+
+**Performance:**
+- Uses AI (Ollama), so takes longer than build
+- Changed passages re-extracted, unchanged passages reuse cached results (faster)
 - Failed passages NOT cached (automatic retry next time)
 - Partial results still useful (some facts better than none)
+
+---
+
+**Phase 2: Render Phase (Generates HTML)**
+
+**When it runs:**
+- Every build (every push, every merge)
+
+**What it does:**
+1. Reads cached extraction results from `cache/story-bible/`
+2. Renders HTML and JSON (fast, deterministic, no AI needed)
+3. Published to GitHub Pages automatically
+
+**Performance:**
+- Very fast (no AI, just rendering)
+- Gracefully handles missing cache (shows informational placeholder)
 - Build always succeeds (Story Bible is informational, not blocking)
+
+---
+
+**Typical Workflow:**
+
+**First-time setup:**
+1. Create a PR and comment with `/extract-story-bible` webhook command
+2. Extract Phase runs (AI processes passages, commits cache)
+3. Next build uses cache to render HTML instantly
+
+**Daily writing:**
+1. Push changes → Build runs (renders from cache if available)
+2. Automatic webhook triggers Extract Phase after build completes
+3. Extract Phase updates cache with new facts
+4. Next build shows updated Story Bible
+
+**If you need Story Bible immediately:**
+1. Comment `/extract-story-bible` on your PR
+2. Wait for Extract Phase to complete
+3. Push a trivial change (or wait for next build)
+4. Build renders updated HTML
+
+**If extraction fails:**
+- Build still succeeds (renders placeholder or stale cache)
+- Failed passages NOT cached (automatic retry next extraction)
+- Story Bible always available, just may be outdated
 
 ---
 
@@ -583,12 +634,15 @@ These are directional goals we cannot directly measure but inform our design dec
 - [ ] Evidence citations match source passages
 - [ ] Can search for passage names in source files (e.g., ":: Academy Entrance")
 
-### Build Integration
-- [ ] Integrated into automated build pipeline
-- [ ] Cache-first approach (build reads cache, doesn't extract)
-- [ ] Graceful degradation if cache missing (placeholder generated)
-- [ ] Build succeeds even if Story Bible generation fails
-- [ ] Does NOT block deployment
+### Build Integration (Two-Phase Model)
+- [ ] **Render Phase**: Integrated into automated build pipeline (every push/merge)
+- [ ] **Render Phase**: Reads cache, generates HTML (fast, deterministic, no AI)
+- [ ] **Render Phase**: Graceful degradation if cache missing (informational placeholder)
+- [ ] **Render Phase**: Build succeeds even if cache missing or rendering fails
+- [ ] **Extract Phase**: Webhook-triggered (auto after builds + manual `/extract-story-bible`)
+- [ ] **Extract Phase**: Uses Ollama AI to extract entities and facts
+- [ ] **Extract Phase**: Commits results to cache for next build to render
+- [ ] Does NOT block deployment (either phase failing is non-fatal)
 
 ### Extraction Quality
 - [ ] All named characters extracted (test by searching source files for character names and verifying they appear in Story Bible)
