@@ -222,6 +222,16 @@ Per PRIORITIES.md Phase 3, these specialists will join the team later:
 
 ## How It Works
 
+**Webhook Commands:**
+```
+/check-continuity              # Validate in new-only mode (default)
+/check-continuity new-only     # Explicitly specify new-only mode
+/check-continuity modified     # Validate NEW + MODIFIED paths
+/check-continuity all          # Validate everything (full audit)
+/approve-path <path-id>        # Mark path as validated
+```
+Use these webhook commands (as PR comments) to trigger Team validation or approve paths.
+
 ---
 
 ### How the Team Determines What to Validate
@@ -244,6 +254,28 @@ For detailed explanation of the categorization logic (two-level tests, decision 
 Based on these internal categories, you can choose how thoroughly to validate:
 
 **Important:** These categories (NEW/MODIFIED/UNCHANGED) are used internally by the Team to determine what to validate. They don't appear in the AllPaths HTML interface. The AllPaths HTML shows date-based filters (created/modified last day/week) and validation status (validated or not), which serve different purposes (progress tracking and quality monitoring).
+
+---
+
+### Which Mode Should I Use?
+
+**Quick Decision Guide:**
+
+| What You Did | Recommended Mode | Why |
+|--------------|------------------|-----|
+| Added new passages/routes | **new-only** (default) | Fast feedback on your new story journeys |
+| Daily writing (1-3 new passages) | **new-only** (default) | Validates new routes, skips existing paths you only linked to |
+| Fixed issues from previous validation | **modified** | Check your fixes plus any paths affected by changes |
+| Reformatted or linted passages | **modified** | Formatting creates MODIFIED paths that need re-checking |
+| Ready to merge PR | **modified** | Ensure all affected routes validated before merge |
+| Major refactoring or rewrites | **all** | Full story audit after significant structural changes |
+| Monthly quality check | **all** | Periodic comprehensive validation |
+| Updated AI model | **all** | Re-validate everything with new model |
+
+**Still not sure?**
+- **Default to new-only** for daily work - it's fast and covers what you just wrote
+- **Use modified before merging** - ensures your changes didn't break existing paths
+- **Use all sparingly** - only when you need comprehensive validation
 
 ---
 

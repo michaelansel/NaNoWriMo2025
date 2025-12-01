@@ -327,8 +327,14 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ### How It Works (User Perspective)
 
+**Webhook Command:**
+```
+/extract-story-bible
+```
+Use this webhook command (as a PR comment) to trigger Story Bible extraction and updates.
+
 **First-time setup:**
-1. Use `/extract-story-bible` webhook to analyze your story
+1. Create a PR and comment with `/extract-story-bible` webhook command
 2. System processes each passage in your Twee source files
 3. Extracts all entities (characters, locations, items) and facts
 4. Deduplicates facts across passages
@@ -341,7 +347,7 @@ Writers creating branching narratives need a canonical reference that captures e
 3. Published to GitHub Pages automatically
 
 **When story changes:**
-1. Use `/extract-story-bible` again to update
+1. Comment with `/extract-story-bible` webhook command on your PR to update
 2. Changed passages re-extracted
 3. Unchanged passages reuse cached results (faster)
 4. Deduplication re-runs to merge new facts
