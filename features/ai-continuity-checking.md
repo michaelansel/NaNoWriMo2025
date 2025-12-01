@@ -226,64 +226,28 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
 
 ### PR Comment Format
 
-**Initial Comment (Validation Start):**
-```markdown
-## 🔍 Continuity Check Started
+**Validation results appear as GitHub PR comments with the following information:**
 
-**Mode:** new-only _(use `/check-continuity modified` for broader checking)_
+**Start of validation:**
+- Validation mode being used (new-only/modified/all)
+- Count of paths in each category (new, modified, unchanged)
+- Explanation of which paths will be validated in this mode
 
-**Paths to validate:**
-- 2 new paths (routes that didn't exist before)
-- 3 modified paths (existing routes with revisions - skipped in new-only mode)
-- 25 unchanged paths (existing routes with no changes - skipped)
+**For each validated path:**
+- Path ID and route description
+- Overall result (none/minor/major/critical)
+- Issues found with details:
+  - Issue type (character/plot/timeline/setting/contradiction)
+  - Severity level
+  - Description of the problem
+  - Specific quotes from passages demonstrating the issue
+  - Location information (passage IDs)
+- Instructions for approving the path
 
-Progress updates will appear below as each path completes...
-```
-
-**Progress Update (Per Path):**
-```markdown
-### 🟡 Path 2/2 Complete
-**Path ID:** `a3f8b912`
-**Route:** `Start → Continue on → Cave → Victory`
-**Result:** minor
-**Summary:** Small timeline inconsistency in character knowledge
-
-<details>
-<summary>Issues Found (1)</summary>
-
-#### Issue 1: Timeline Inconsistency
-- **Type:** timeline
-- **Severity:** minor
-- **Description:** Character knows about magic before learning about it
-- **Location:** Passage a1b2c3d4e5f6
-
-**Quotes:**
-- Passage a1b2c3d4e5f6: "Javlyn used the defense spell..."
-- Passage 9f8e7d6c5b4a: "Javlyn learned about magic for the first time..."
-
-**Explanation:** Character uses magic before learning about it in this path.
-</details>
-
-💡 To approve this path: reply `/approve-path a3f8b912`
-```
-
-**Final Summary:**
-```markdown
-## ✅ Continuity Check Complete
-
-**Mode:** new-only
-**Validated:** 2 paths
-**Skipped:** 3 modified, 25 unchanged
-
-### Results by Severity
-- 🟢 **1 path** with no issues
-- 🟡 **1 path** with minor issues
-
-### Next Steps
-1. Review issues above
-2. Fix or approve as appropriate
-3. Use `/check-continuity modified` before merge for full validation
-```
+**Validation complete:**
+- Summary statistics (paths validated, paths skipped)
+- Results breakdown by severity level
+- Next steps and recommendations
 
 ---
 
@@ -509,382 +473,78 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 
 ### Overview
 
-**Goal**: Integrate Story Bible validation into continuity checking to catch contradictions with established canon.
+When continuity checking runs, it also validates paths against the Story Bible (if available) to ensure new content doesn't contradict established canon (world constants, character identities, timeline facts).
 
-When continuity checking runs, it will ALSO validate paths against the Story Bible (if available) to ensure new content doesn't contradict established constants, character identities, or world-building facts.
-
-**Strategic Alignment**:
-- Story Bible extracts canonical facts (constants, variables, character states)
-- Continuity checking validates paths for internal consistency
-- **Integration**: Continuity checking now ALSO validates against canonical facts
+**For complete Story Bible feature details, see [features/story-bible.md](./story-bible.md)**
 
 ---
 
-### User Story: World Consistency Validation
+### User Stories
 
-**As a** writer adding new story content
-**I want** continuity checking to validate against established world facts
-**So that** I don't contradict canon that's already been established
+**As a writer**, I want continuity checking to validate against established world facts, so that I don't contradict canon that's already been established.
+
+**As a reviewer**, I want a single report showing both path consistency and world consistency, so that I can see all continuity issues in one place.
 
 **Acceptance Criteria:**
-- Continuity checking loads Story Bible cache (if exists)
-- Validates new content against established constants
-- Reports Story Bible violations in same PR comment as path issues
-- Clear distinction between "path consistency issues" and "world consistency issues"
-- Works gracefully if Story Bible doesn't exist yet
+- [ ] Continuity checking loads Story Bible cache (if exists)
+- [ ] Validates new content against established constants (world rules, character identities, timeline facts)
+- [ ] Reports Story Bible violations in same PR comment as path issues
+- [ ] Clear distinction between "path consistency issues" and "world consistency issues"
+- [ ] Works gracefully if Story Bible doesn't exist yet (skips Story Bible validation, posts note)
+- [ ] Story Bible violations categorized by severity (critical/major/minor)
+- [ ] Single PR comment combines both validation types with separate sections
 
 ---
 
-### User Story: Combined Validation Report
+### When It Runs
 
-**As a** reviewer checking a PR
-**I want** a single report showing both path consistency AND world consistency
-**So that** I can see all continuity issues in one place
-
-**Acceptance Criteria:**
-- Single PR comment with both validation types
-- Separate sections: "Path Continuity Issues" and "Story Bible Violations"
-- Summary shows counts for each type
-- Severity levels consistent across both types
-
----
-
-### When Story Bible Validation Runs
-
-**Trigger**: Automatically whenever continuity checking runs
+Story Bible validation runs automatically whenever continuity checking runs:
 - On PR workflow completion (automatic)
 - When `/check-continuity` command is used (manual)
 - For all validation modes (new-only, modified, all)
 
-**Conditional Behavior**:
-- **If Story Bible cache exists**: Run both path validation AND Story Bible validation
-- **If Story Bible cache missing**: Skip Story Bible validation, post note in PR comment
+**Behavior:**
+- If Story Bible cache exists: Run both path validation AND Story Bible validation
+- If Story Bible cache missing: Skip Story Bible validation, post informational note
 
 ---
 
 ### What Gets Validated
 
-**Story Bible validation checks new content against**:
+**Story Bible validation checks new content against:**
+- World constants (setting, geography, world rules, magic systems)
+- Character identity constants (names, backgrounds, core traits, relationships)
+- Timeline facts (historical events before story start)
 
-1. **World Constants**:
-   - Setting facts (geography, landmarks)
-   - World rules (magic system, technology level, physical laws)
-   - Timeline facts (historical events before story start)
-
-2. **Character Identity Constants**:
-   - Character names and core traits
-   - Character backgrounds
-   - Established character relationships
-
-3. **Established Patterns**:
-   - Recurring themes or motifs
-   - Narrative consistency with previous paths
-
-**What Story Bible validation does NOT check**:
+**Does NOT check:**
 - Plot events (those are variables, not constants)
-- Player choices and outcomes (those are path-specific)
-- Character fates (those vary by path)
+- Player choices and outcomes (path-specific)
+- Character fates (vary by path)
+
+**For detailed categorization of constants vs variables, see [features/story-bible.md](./story-bible.md)**
 
 ---
 
-### Validation Output Format
-
-**Integrated PR Comment Structure**:
-
-```markdown
-## 🔍 Continuity Check Complete
-
-**Mode:** new-only
-**Validated:** 2 paths
-**Story Bible:** ✅ Loaded (50 constants, 15 characters)
-
----
-
-### 📊 Results Summary
-
-**Path Consistency:**
-- 🟢 1 path with no issues
-- 🟡 1 path with minor issues
-
-**Story Bible Validation:**
-- 🟢 2 paths consistent with canon
-- 🔴 0 paths with contradictions
-
----
-
-### Path Continuity Issues
-
-#### Path: `a3f8b912` (Start → Continue → Cave → Victory)
-**Result:** minor
-
-<details>
-<summary>Issues Found (1)</summary>
-
-**Issue 1: Timeline Inconsistency**
-- **Type:** timeline
-- **Severity:** minor
-- **Description:** Character uses magic before learning about it
-- **Location:** Passage a1b2c3d4e5f6
-
-**Quotes:**
-- Passage a1b2c3d4e5f6: "Javlyn used the defense spell..."
-- Passage 9f8e7d6c5b4a: "Javlyn learned about magic for the first time..."
-
-</details>
-
----
-
-### Story Bible Violations
-
-#### Path: `a3f8b912` (Start → Continue → Cave → Victory)
-**Result:** 🟢 No contradictions detected
-
----
-
-### Next Steps
-1. Review issues above
-2. Fix or approve as appropriate
-3. Use `/check-continuity modified` before merge for full validation
-```
-
-**When Story Bible Validation Finds Issues**:
-
-```markdown
-### Story Bible Violations
-
-#### Path: `b4c9d213` (Start → Mountain → City)
-**Result:** 🔴 critical
-
-<details>
-<summary>Contradictions Found (1)</summary>
-
-**Issue 1: Setting Contradiction**
-- **Type:** setting_constant
-- **Severity:** critical
-- **Established Constant:** "The city is on the coast" (from passage Start, Academy Introduction)
-- **New Content:** "The city sprawled across the desert plains"
-- **Location:** Passage x9y8z7w6
-
-**Evidence:**
-- **Established (Story Bible):** "...the salty coastal breeze filled the air..." (passage Start)
-- **New Content:** "The city sprawled across the desert plains..." (passage x9y8z7w6)
-
-**Explanation:** This passage describes the city as being in a desert, contradicting the established constant that the city is coastal.
-
-**Possible Actions:**
-- Fix the new passage to match established canon
-- Clarify that this refers to a different city
-- Use `/update-canon` if this constant needs to change
-
-</details>
-```
-
-**When Story Bible Cache Missing**:
-
-```markdown
-## 🔍 Continuity Check Complete
-
-**Mode:** new-only
-**Validated:** 2 paths
-**Story Bible:** ⚠️ Not available
-
----
-
-### 📊 Results Summary
-
-**Path Consistency:**
-- 🟢 2 paths with no issues
-
-**Story Bible Validation:**
-- ⚠️ Skipped - Story Bible cache not found
-- Use `/extract-story-bible` to enable world consistency validation
-
----
-```
-
----
-
-### Severity Levels for Story Bible Violations
-
-**critical** (🔴):
-- Contradicts a core world constant (magic system, setting location)
-- Contradicts character identity (name, background, core trait)
-- Violates fundamental world rule
-
-**major** (🟠):
-- Contradicts timeline constant (historical event)
-- Contradicts setting detail (landmark, geography)
-- Character inconsistency (relationship, established knowledge)
-
-**minor** (🟡):
-- Ambiguous whether contradiction or intentional variation
-- Possible typo or naming inconsistency
-- Low-confidence contradiction
-
----
-
-### Edge Cases
-
-#### Edge Case 1: Story Bible Cache Doesn't Exist
-
-**Scenario:** PR triggers continuity checking but `/extract-story-bible` has never been run
-
-**Behavior:**
-- Path continuity checking runs normally
-- Story Bible validation skipped
-- PR comment shows: "Story Bible validation skipped - cache not found"
-- Note suggests running `/extract-story-bible` to enable
-
-**Acceptance Criteria:**
-- Continuity checking succeeds even without Story Bible
-- Clear message explaining Story Bible is optional
-- Link to documentation on how to enable
-
----
-
-#### Edge Case 2: Story Bible Cache Outdated
-
-**Scenario:** Story Bible cache exists but hasn't been updated in weeks
-
-**Behavior:**
-- Story Bible validation runs with existing cache
-- PR comment shows cache age: "Story Bible: ✅ Loaded (last updated: 2 weeks ago)"
-- Validation uses potentially outdated constants
-- Note suggests re-running `/extract-story-bible` if constants changed
-
-**Acceptance Criteria:**
-- Validation doesn't fail due to outdated cache
-- Cache age displayed in PR comment
-- Recommendation to update if old
-
----
-
-#### Edge Case 3: Intentional Constant Changes
-
-**Scenario:** Writer is deliberately changing a world constant (e.g., retconning city location)
-
-**Behavior:**
-- Story Bible validation flags as contradiction
-- Writer can acknowledge and approve
-- Future option: `/update-canon` command to update Story Bible
-
-**Acceptance Criteria:**
-- Contradiction flagged clearly
-- Writer can explain in PR review
-- Clear path to resolution (fix content OR update canon)
-
----
-
-#### Edge Case 4: False Positives from Story Bible
-
-**Scenario:** Story Bible incorrectly extracted a "constant" that's actually variable
-
-**Behavior:**
-- Story Bible validation flags contradiction
-- Writer reviews and determines it's a false positive
-- Writer can approve path (existing `/approve-path` workflow)
-- Future: Can mark Story Bible fact as incorrect
-
-**Acceptance Criteria:**
-- Writer can override Story Bible validation
-- Path approval workflow works same as before
-- Clear indication in PR comment that validation was overridden
-
----
-
-#### Edge Case 5: Multiple Cities or Locations
-
-**Scenario:** Story has multiple cities, Story Bible needs to distinguish them
-
-**Behavior:**
-- Story Bible extraction should identify distinct entities
-- Validation should check context (which city is being referenced)
-- May produce false positives if entity disambiguation fails
-
-**Acceptance Criteria:**
-- Story Bible extraction attempts entity disambiguation
-- Validation considers context when checking constants
-- False positives explained in issue description
-
----
-
-#### Edge Case 6: Character Name Variations
-
-**Scenario:** Character referred to by nickname, full name, or title in different passages
-
-**Behavior:**
-- Story Bible may extract multiple "characters" for same person
-- Validation may flag inconsistencies incorrectly
-- Requires manual review and correction
-
-**Acceptance Criteria:**
-- Story Bible extraction uses character name normalization (best effort)
-- Validation explains which names/variations were compared
-- Writer can approve if validation misunderstood aliases
-
----
-
-### Success Metrics
-
-**Primary Metrics:**
-- Story Bible validation runs on 100% of PRs (when cache exists)
-- Contradictions detected before merge
-- Integration doesn't slow down continuity checking significantly (<20% overhead)
-
-**Secondary Metrics:**
-- Writers find Story Bible validation useful
-- False positive rate acceptable (<30%)
-- Canon contradictions caught that path validation missed
-
-**Qualitative Metrics:**
-- Writers use Story Bible validation to avoid contradictions
-- Feedback: "Story Bible caught a canon issue I missed"
-- Reduced world-building inconsistencies over time
-
----
-
-### Implementation Notes
-
-**Integration Points:**
-
-1. **Load Story Bible Cache**:
-   - After downloading PR artifacts, load `story-bible-cache.json` from PR branch
-   - If missing, continue without Story Bible validation
-   - Parse categorized facts (constants, characters)
-
-2. **Validate Each Path**:
-   - For each path being validated:
-     - Run existing continuity checking (path consistency)
-     - Run Story Bible validation (world consistency)
-   - Combine results into single report
-
-3. **Story Bible Validation Logic**:
-   - Extract facts from new passages in path
-   - Compare against established constants from Story Bible
-   - Flag contradictions with severity
-   - Provide evidence from both sources
-
-4. **Post Combined Results**:
-   - Single PR comment with both validation types
-   - Separate sections for clarity
-   - Consistent formatting and severity levels
-
-**Technical Design**: See `architecture/010-story-bible-design.md` for detailed architecture
-
----
-
-### Future Enhancements
-
-**Phase 3 (Future)**:
-- `/update-canon` command to revise Story Bible constants
-- Automatic Story Bible updates on merge to main
-- Character relationship validation
-- Conflict resolution suggestions
-
-**Not Planned**:
-- Blocking merges on Story Bible violations (remain informational)
-- Automatic constant updates (require manual approval)
-- Cross-PR Story Bible synchronization (use branch-specific cache)
+### Validation Results
+
+**PR comments include both validation types:**
+
+**Story Bible section shows:**
+- Story Bible load status (loaded, missing, or outdated)
+- Count of constants and characters validated against
+- Story Bible violations found (if any) with:
+  - Issue type (setting_constant, character_identity, timeline_fact)
+  - Severity (critical/major/minor)
+  - Established constant from Story Bible
+  - Contradicting content from new passage
+  - Evidence quotes from both sources
+  - Suggested resolution actions
+
+**Edge cases handled:**
+- Missing Story Bible: Validation skips gracefully, suggests running `/extract-story-bible`
+- Outdated Story Bible: Shows cache age, recommends update if old
+- Intentional constant changes: Writer can approve or use `/update-canon` (future)
+- False positives: Writer can approve path using existing `/approve-path` workflow
 
 ---
 
