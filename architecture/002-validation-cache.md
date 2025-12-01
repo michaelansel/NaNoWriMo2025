@@ -229,11 +229,11 @@ The fingerprint approach optimized for machine time (100ms vs 1 second) at the c
 
 **Component**: `file_has_prose_changes(file_path, repo_root)` and `file_has_any_changes(file_path, repo_root)`
 
-**Purpose**: Determine what changed in a .twee file by comparing against git HEAD.
+**Purpose**: Determine what changed in a .twee file by comparing against git base reference.
 
 **Algorithm**:
 ```
-1. Get file content from git HEAD (git show HEAD:path)
+1. Get file content from git base ref (git show <base_ref>:path)
 2. Get current file content from disk
 3. Strip links and passage markers from both versions
 4. Normalize whitespace (collapse multiple spaces/newlines)
@@ -242,11 +242,83 @@ The fingerprint approach optimized for machine time (100ms vs 1 second) at the c
    - If same → only links/structure changed
 ```
 
+**Base Reference Selection** (PR Scope Isolation):
+
+The system uses different base references depending on context:
+
+**Priority Order**:
+1. **GITHUB_MERGE_BASE** (PR context, preferred)
+   - Set by GitHub Actions: `git merge-base HEAD origin/<base_branch>`
+   - Compares against where PR branched from main
+   - **Critical**: Isolates PR changes from concurrent main changes
+
+2. **origin/GITHUB_BASE_REF** (PR context, fallback)
+   - Compares against latest main branch
+   - **Warning**: May incorrectly include changes merged to main after PR creation
+   - Used when merge base unavailable (backward compatibility)
+
+3. **HEAD** (local development)
+   - Compares against last commit
+   - Detects uncommitted working directory changes
+
+**Why Merge Base Matters**:
+
+**Problem**: When comparing against `origin/main` (latest main), PRs validate paths affected by main's changes even if those changes happened after the PR branched off. This incorrectly categorizes paths as NEW or MODIFIED when they should be UNCHANGED from the PR's perspective.
+
+**Example Scenario**:
+```
+1. Developer creates PR branch from main (commit A)
+2. PR sits open for a week
+3. Main advances with new commits (B, C, D)
+4. Developer pushes changes to PR
+5. Continuity checker runs:
+   - Old behavior (origin/main): Compares against commit D
+     → Sees changes from B, C, D that aren't in the PR
+     → Incorrectly marks paths as changed
+   - New behavior (merge base): Compares against commit A
+     → Only sees PR's actual changes
+     → Correctly categorizes paths
+```
+
+**Solution**: Use `git merge-base HEAD origin/main` to find commit A (where PR branched), then compare against that. This properly isolates what the PR changed from what main changed.
+
+**When Merge Base Updates**:
+
+If the developer merges main into the PR branch:
+- Merge base advances to the new merge commit
+- PR's own file changes remain in scope (correctly detected)
+- Main's changes no longer appear as PR changes (correctly excluded)
+- This is the desired behavior: we want to validate the PR's changes, not main's changes
+
+**Trade-offs**:
+
+**Long-lived PRs**:
+- Old changes from when PR was created still count as "PR changes"
+- Acceptable: PR should validate everything it's introducing, even if written weeks ago
+- Mitigation: Merge main frequently to update merge base
+
+**Rebase Workflows**:
+- After rebasing PR onto latest main, merge base updates
+- All commits in the rebase are now "PR changes" (correct)
+- Paths may shift categories (NEW → MODIFIED or vice versa)
+- Acceptable: Rebase fundamentally rewrites history
+
+**GitHub Actions Implementation**:
+```yaml
+- name: Fetch base branch and calculate merge base
+  if: github.event_name == 'pull_request'
+  run: |
+    git fetch origin ${{ github.base_ref }}
+    MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
+    echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
+```
+
 **Benefits**:
 - Git is authoritative source of truth
 - No cached fingerprints to maintain
 - Handles all edge cases (splits, reorganizations, new files)
-- Simple mental model: "what changed in git"
+- Simple mental model: "what changed since PR branched"
+- Proper PR scope isolation (critical for correctness)
 
 **Performance**:
 - Git subprocess: ~30ms per file

@@ -270,6 +270,41 @@ on:
 - Clean up zip file
 - Quiet mode (`-q`) for cleaner logs
 
+### Base Reference Calculation for PR Scope Isolation
+
+```yaml
+- name: Fetch base branch and calculate merge base for PR categorization
+  if: github.event_name == 'pull_request'
+  run: |
+    # Fetch the base branch so git comparisons work for path categorization
+    git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+    # Calculate merge base to isolate PR changes from concurrent main changes
+    MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
+    echo "Base branch: origin/${{ github.base_ref }}"
+    echo "Merge base: $MERGE_BASE"
+    echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
+```
+
+**Rationale**:
+- **PR scope isolation**: Compare against where PR branched, not latest main
+- **Critical for correctness**: Prevents validating main's changes as PR changes
+- **Merge base calculation**: `git merge-base HEAD origin/main` finds branch point
+- **Environment variable**: GITHUB_MERGE_BASE passed to AllPaths generator
+- **See ADR-002**: Complete rationale and trade-offs documented there
+
+**Why This Matters**:
+
+When a PR sits open for days/weeks, main advances with new commits. Without merge base:
+- Categorizer compares against latest main (incorrect)
+- Sees changes from main as if they're in the PR
+- Validates paths the PR didn't touch
+- Creates noise and confusion
+
+With merge base:
+- Categorizer compares against where PR branched (correct)
+- Only validates actual PR changes
+- Proper scope isolation
+
 ### Build Steps
 
 ```yaml
@@ -277,6 +312,9 @@ on:
   run: npm run build
 
 - name: Build AllPaths version
+  env:
+    GITHUB_BASE_REF: ${{ github.base_ref }}
+    GITHUB_MERGE_BASE: ${{ env.GITHUB_MERGE_BASE }}
   run: |
     chmod +x scripts/build-allpaths.sh
     ./scripts/build-allpaths.sh
@@ -286,6 +324,7 @@ on:
 - Use npm scripts (consistency with local dev)
 - Explicit chmod (ensure executability)
 - Run AllPaths build separately (clear logs)
+- Pass merge base env var for PR categorization
 
 ## Workflow Performance
 
