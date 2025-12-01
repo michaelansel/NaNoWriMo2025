@@ -14,6 +14,8 @@ The current Story Bible extraction focuses on "facts" but misses entities that a
 
 **Strategic Goal:** Ensure nothing mentioned in the story is lost.
 
+**Extraction Source:** Extract from individual Twee passages (story source files), not from generated playthrough paths. Each passage is processed exactly once, using the passage's human-readable name as its identifier.
+
 **Current Problem:**
 - Story Bible extracts "facts" like "Javlyn is a student"
 - Misses characters only mentioned in dialogue: "when Marcie was with us", "Miss Rosie's famous beef stew", "Josie fell out of a tree"
@@ -66,8 +68,9 @@ The current Story Bible extraction focuses on "facts" but misses entities that a
 - Includes characters mentioned in dialogue ("when Marcie was with us")
 - Includes characters in possessive form ("Miss Rosie's beef stew")
 - Includes characters in indirect references ("Josie fell out of a tree")
-- Each entity shows ALL passages where it's mentioned
+- Each entity shows ALL passages where it's mentioned (by passage name, not path ID)
 - Entities with minimal information still appear (even if only mentioned once)
+- Evidence references use passage names I can find in my source files
 
 ---
 
@@ -95,7 +98,8 @@ The current Story Bible extraction focuses on "facts" but misses entities that a
 - Story Bible lists all named locations (cities, buildings, landmarks, rooms)
 - Items mentioned in possessive form captured ("Miss Rosie's beef stew" → "beef stew" as item, "Miss Rosie" as character)
 - Locations mentioned indirectly captured ("the cave entrance", "the passageway")
-- Each item/location shows where it's mentioned
+- Each item/location shows which passages mention it (by human-readable passage name)
+- I can verify claims by searching for the passage name in my Twee source files
 
 ---
 
@@ -115,6 +119,20 @@ The current Story Bible extraction focuses on "facts" but misses entities that a
 
 ## Feature Behavior
 
+### Passage-Based Extraction
+
+**Extraction Source:**
+- Extract from individual **Twee passage files** (story source code)
+- Each passage processed **exactly once** (no redundancy from multiple paths)
+- Use **passage name as identifier** (human-readable, verifiable in source)
+- Example: Passage "Academy Entrance" mentioned in Story Bible → I can search for ":: Academy Entrance" in my Twee files
+
+**Why Passages, Not Paths:**
+- Passages are the ground truth (what the writer wrote)
+- No duplication from different playthrough combinations
+- Writers can verify claims by finding the passage in source
+- Passage names are stable identifiers (not implementation-dependent hashes)
+
 ### Two-Step Extraction Process
 
 **Current (Fact-First) Approach:**
@@ -126,8 +144,10 @@ Extract facts from passage
 "Miss Rosie's beef stew" → MISSED (not about a fact, about food)
 ```
 
-**New (Entity-First) Approach:**
+**New (Entity-First, Passage-Based) Approach:**
 ```
+For each Twee passage (processed once):
+  ↓
 STEP 1: Extract ALL named entities (nouns)
   ↓
 Scan passage for:
@@ -138,19 +158,20 @@ Scan passage for:
   ↓
 STEP 2: Associate facts/mentions with entities
   ↓
-For each entity found, extract:
+For each entity found, record:
   - Identity facts (if available)
-  - Mentions (where entity appears)
+  - Passage name where entity appears (human-readable)
   - Relationships (entity X mentioned with entity Y)
   - Context (dialogue, narrative, possessive, etc.)
 ```
 
 **Result:**
-- Marcie extracted as character entity (mentioned 4 times)
-- Miss Rosie extracted as character entity (mentioned 1 time, possessive context)
-- Josie extracted as character entity (mentioned 1 time, past event context)
+- Marcie extracted as character entity (mentioned in 4 passages by name)
+- Miss Rosie extracted as character entity (mentioned in 1 passage, possessive context)
+- Josie extracted as character entity (mentioned in 1 passage, past event context)
 - Beef stew extracted as item entity (associated with Miss Rosie)
 - ALL entities captured, even if facts are minimal
+- Evidence trails reference passage names, not path hashes
 
 ---
 
@@ -273,10 +294,15 @@ For each entity found, extract:
 
 ### Extraction Methodology
 
-**AI Extraction Prompt Template (Entity-First):**
+**AI Extraction Prompt Template (Entity-First, Passage-Based):**
 
 ```
-You are extracting ALL named entities from an interactive fiction story passage.
+You are extracting ALL named entities from a Twee passage (story source code).
+
+CONTEXT:
+- You are processing ONE passage at a time (by passage name)
+- Each passage is extracted exactly once (no path-based redundancy)
+- Record the passage name as evidence for where entities appear
 
 STEP 1: ENTITY EXTRACTION (CRITICAL - Do this first)
 
@@ -323,7 +349,7 @@ STEP 2: FACT ASSOCIATION (After entities extracted)
 
 For each entity extracted in Step 1, extract:
 - Identity facts (if available): "Javlyn is a student"
-- Mentions: ALL passages where entity appears
+- Passage name where entity appears (human-readable, verifiable in source)
 - Context: How entity is mentioned (dialogue, narrative, possessive, etc.)
 - Relationships: Entity X associated with entity Y
 - Minimal info acceptable: Even if only "Marcie was mentioned"
@@ -331,6 +357,7 @@ For each entity extracted in Step 1, extract:
 OUTPUT FORMAT:
 
 {
+  "passage_name": "KEB-251101",  // Human-readable passage name from Twee
   "entities": {
     "characters": [
       {
@@ -338,7 +365,7 @@ OUTPUT FORMAT:
         "title": null,
         "mentions": [
           {
-            "passage": "passage_id",
+            "passage": "KEB-251101",  // Use passage name, NOT path hash
             "context": "dialogue",
             "quote": "when Marcie was with us",
             "type": "past_member"
@@ -354,7 +381,7 @@ OUTPUT FORMAT:
         "title": "Miss",
         "mentions": [
           {
-            "passage": "passage_id",
+            "passage": "mansel-20251114",  // Use passage name, NOT path hash
             "context": "possessive",
             "quote": "Miss Rosie's famous beef stew",
             "type": "indirect_reference"
@@ -377,9 +404,11 @@ CRITICAL RULES:
 - Dialogue mentions count (don't skip "when Marcie was with us")
 - Possessive mentions count (don't skip "Miss Rosie's beef stew")
 - Indirect mentions count (don't skip "Josie fell out of a tree")
+- Record passage name (human-readable) as evidence source
 - When in doubt, EXTRACT IT (better to over-extract than miss entities)
 
 Your goal: 100% entity detection. Nothing named in the story should be missed.
+Evidence must be verifiable by passage name in source files.
 ```
 
 ---
@@ -404,6 +433,7 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 3. **Context Preservation**
    - ✅ Each mention shows HOW entity appears (dialogue, narrative, possessive)
    - ✅ Quote from passage showing entity mention
+   - ✅ Passage name recorded (human-readable, verifiable in source)
    - ✅ Relationship context (Rosie associated with beef stew)
 
 4. **Entity Type Accuracy**
@@ -425,6 +455,8 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 - ❌ Stripping important titles ("Miss Rosie" → "Rosie")
 - ❌ Failing to normalize possessives ("Rosie's" kept as separate entity)
 - ❌ No context for how entity was mentioned
+- ❌ Using path hashes instead of passage names (evidence not verifiable)
+- ❌ Duplicate extraction from same passage via different paths
 - ❌ Generic references extracted excessively ("the woman", "the man" everywhere)
 
 ---
@@ -546,18 +578,20 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 
 ---
 
-### Edge Case 9: Same Entity, Different Mentions
+### Edge Case 9: Same Entity, Different Passages
 **Scenario:** Entity appears in multiple passages with different contexts
 
 **Example:** Marcie mentioned 4 times across different passages
 
 **Behavior:**
 - Single entity entry for "Marcie"
-- ALL mentions aggregated under one entity:
-  - Mention 1: "when Marcie was with us" (KEB-251101.twee)
-  - Mention 2: "since we lost Marcie" (mansel-20251114.twee)
-  - Mention 3: "even when Marcie was with us" (KEB-251108.twee)
-  - Mention 4: "since we had Marcie" (KEB-251108.twee)
+- ALL passages aggregated under one entity:
+  - Passage: "KEB-251101" - "when Marcie was with us"
+  - Passage: "mansel-20251114" - "since we lost Marcie"
+  - Passage: "KEB-251108" - "even when Marcie was with us"
+  - Passage: "KEB-251108" - "since we had Marcie"
+- Each passage extracted exactly once (no path-based duplication)
+- Passage names are human-readable and verifiable in source
 - Facts inferred from all mentions combined:
   - "Was member of group"
   - "No longer with group (lost/left)"
@@ -627,6 +661,13 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 
 ## Acceptance Criteria
 
+### Passage-Based Extraction
+- [ ] Extract from individual Twee passages (story source files), not playthrough paths
+- [ ] Each passage processed exactly once (no path-based duplication)
+- [ ] Use passage name as identifier (human-readable, verifiable in source)
+- [ ] Evidence references show passage names users can find with search (e.g., ":: KEB-251101")
+- [ ] No path hashes or implementation-dependent IDs in evidence
+
 ### Entity Extraction
 - [ ] AI extracts ALL named entities from passages (characters, locations, items, organizations, concepts)
 - [ ] Entities mentioned only in dialogue are captured ("when Marcie was with us")
@@ -638,9 +679,10 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 - [ ] Every entity type extracted: characters, locations, items, organizations, concepts
 
 ### Entity Context
-- [ ] Each entity shows ALL passages where it's mentioned
+- [ ] Each entity shows ALL passages where it's mentioned (by passage name)
 - [ ] Each mention includes context type (dialogue, narrative, possessive, internal thought)
 - [ ] Each mention includes quote from passage
+- [ ] Passage names are human-readable and verifiable in Twee source files
 - [ ] Relationships between entities captured (Rosie associated with beef stew)
 - [ ] Pronouns resolved to named entities where possible
 - [ ] Group membership inferred from "we"/"us" pronouns in context
@@ -669,12 +711,14 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 - [ ] All dialogue mentions captured (no "when Marcie was with us" skipped)
 
 ### Test Cases
-- [ ] **Test 1:** Extract from "when Marcie was with us" → Entity: Marcie (character)
-- [ ] **Test 2:** Extract from "Miss Rosie's famous beef stew" → Entities: Miss Rosie (character), beef stew (item)
-- [ ] **Test 3:** Extract from "Josie fell out of a tree" → Entity: Josie (character)
-- [ ] **Test 4:** Extract from "the manipulator" (referring to Terence) → Entity: Terence (character, role: manipulator)
-- [ ] **Test 5:** Aggregate 4 Marcie mentions → Single entity with 4 mention records
+- [ ] **Test 1:** Extract from "when Marcie was with us" → Entity: Marcie (character), passage name recorded
+- [ ] **Test 2:** Extract from "Miss Rosie's famous beef stew" → Entities: Miss Rosie (character), beef stew (item), passage name recorded
+- [ ] **Test 3:** Extract from "Josie fell out of a tree" → Entity: Josie (character), passage name recorded
+- [ ] **Test 4:** Extract from "the manipulator" (referring to Terence) → Entity: Terence (character, role: manipulator), passage name recorded
+- [ ] **Test 5:** Aggregate Marcie across 4 passages → Single entity with 4 passage references (KEB-251101, mansel-20251114, KEB-251108)
 - [ ] **Test 6:** Normalize "Rosie's" to "Miss Rosie" (preserve title, strip possessive)
+- [ ] **Test 7:** Verify each passage extracted exactly once (no duplication from different paths)
+- [ ] **Test 8:** Verify passage names match Twee source (can be found with ":: PassageName" search)
 
 ---
 
@@ -770,21 +814,29 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 
 ## What Changed from Current Approach
 
-**Current Fact-First Approach:**
+**Current Fact-First, Path-Based Approach:**
 - Extract declarative facts ("Javlyn is a student")
+- Extract from AllPaths playthrough paths (same passage extracted multiple times)
+- Use path hashes as IDs (hex codes, not human-readable)
 - Miss entities only mentioned in passing
 - Found 12/15 characters
 
-**New Entity-First Approach:**
+**New Entity-First, Passage-Based Approach:**
 - **STEP 1:** Extract ALL named entities (100% detection goal)
 - **STEP 2:** Associate facts with those entities
+- Extract from Twee passages (each passage exactly once)
+- Use passage names as IDs (human-readable, verifiable)
 - Captures dialogue mentions, possessives, indirect references
 - Target: 15/15 characters (100%)
 
 **Key Differences:**
 
-| Aspect | Fact-First (Old) | Entity-First (New) |
-|--------|------------------|-------------------|
+| Aspect | Fact-First, Path-Based (Old) | Entity-First, Passage-Based (New) |
+|--------|------------------------------|-----------------------------------|
+| Extraction Source | AllPaths playthrough paths | Individual Twee passages |
+| Redundancy | Same passage multiple times | Each passage exactly once |
+| Evidence ID | Path hash (hex) | Passage name (human-readable) |
+| Verifiable | No (hash not in source) | Yes (search ":: PassageName") |
 | Primary Goal | Extract facts | Extract entities |
 | Dialogue Mentions | Often missed | Always captured |
 | Possessive References | Often missed | Always captured |
@@ -798,25 +850,32 @@ Your goal: 100% entity detection. Nothing named in the story should be missed.
 
 **Immediate (Product Manager):**
 - [x] Document PRD (this document)
+- [x] Update PRD to reflect passage-based approach
 - [ ] Review with CEO for strategic alignment
 - [ ] Get Developer to update extraction logic
 
 **After Approval (Architect):**
 - [ ] Review current Story Bible extraction architecture
-- [ ] Design entity-first extraction pipeline
-- [ ] Update AI prompt templates for entity-first approach
+- [ ] Design passage-based extraction pipeline (not path-based)
+- [ ] Design entity-first extraction process
+- [ ] Update AI prompt templates for entity-first, passage-based approach
 - [ ] Define entity schema and normalization rules
+- [ ] Define passage identification strategy (use Twee passage names)
 - [ ] Document architecture changes
 
 **After Design (Developer):**
+- [ ] Switch extraction source from AllPaths to Twee passages
+- [ ] Ensure each passage extracted exactly once (no path duplication)
+- [ ] Use passage names as identifiers (not path hashes)
 - [ ] Update extraction logic to entity-first approach
 - [ ] Implement entity normalization (title preservation, possessive stripping)
-- [ ] Update AI prompts with entity-first instructions
+- [ ] Update AI prompts with entity-first, passage-based instructions
 - [ ] Test against known missed entities (Marcie, Miss Rosie, Josie)
 - [ ] Run full extraction on current story
 - [ ] Verify 100% entity detection (15/15 characters)
-- [ ] Update Story Bible HTML to show entities clearly
-- [ ] Update Story Bible JSON schema for entity-first structure
+- [ ] Verify passage names are human-readable and verifiable in source
+- [ ] Update Story Bible HTML to show passage names (not path hashes)
+- [ ] Update Story Bible JSON schema for entity-first, passage-based structure
 
 ---
 
