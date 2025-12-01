@@ -680,5 +680,113 @@ class TestIntegrationLosslessAggregation(unittest.TestCase):
         self.assertEqual(len(magic_exists['evidence']), 2)
 
 
+class TestEntityExtraction(unittest.TestCase):
+    """Test entity-first extraction approach."""
+
+    def test_extract_character_from_dialogue(self):
+        """Should extract 'Marcie' from dialogue mention."""
+        response = """
+        {
+          "entities": {
+            "characters": [
+              {
+                "name": "Marcie",
+                "title": null,
+                "mentions": [{
+                  "context": "dialogue",
+                  "quote": "when Marcie was with us"
+                }],
+                "facts": ["Was previously with the group"]
+              }
+            ],
+            "locations": [],
+            "items": [],
+            "organizations": [],
+            "concepts": []
+          }
+        }
+        """
+        result = parse_json_from_response(response)
+
+        self.assertIn('entities', result)
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+        self.assertEqual(characters[0]['name'], 'Marcie')
+        self.assertEqual(characters[0]['mentions'][0]['context'], 'dialogue')
+
+    def test_extract_character_from_possessive(self):
+        """Should extract 'Miss Rosie' from possessive reference."""
+        response = """
+        {
+          "entities": {
+            "characters": [
+              {
+                "name": "Miss Rosie",
+                "title": "Miss",
+                "mentions": [{
+                  "context": "possessive",
+                  "quote": "Miss Rosie's famous beef stew"
+                }],
+                "facts": ["Makes beef stew (famous for it)"]
+              }
+            ],
+            "locations": [],
+            "items": [
+              {
+                "name": "beef stew",
+                "mentions": [{
+                  "context": "possessive",
+                  "quote": "Miss Rosie's famous beef stew"
+                }],
+                "facts": ["Associated with Miss Rosie", "Described as famous"]
+              }
+            ],
+            "organizations": [],
+            "concepts": []
+          }
+        }
+        """
+        result = parse_json_from_response(response)
+
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+        self.assertEqual(characters[0]['name'], 'Miss Rosie')
+        self.assertEqual(characters[0]['title'], 'Miss')
+
+        items = result['entities']['items']
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]['name'], 'beef stew')
+
+    def test_extract_character_from_narrative(self):
+        """Should extract 'Josie' from narrative mention."""
+        response = """
+        {
+          "entities": {
+            "characters": [
+              {
+                "name": "Josie",
+                "title": null,
+                "mentions": [{
+                  "context": "narrative",
+                  "quote": "Josie fell out of a tree"
+                }],
+                "facts": ["Known to narrator", "Experienced tree-falling incident"]
+              }
+            ],
+            "locations": [],
+            "items": [],
+            "organizations": [],
+            "concepts": []
+          }
+        }
+        """
+        result = parse_json_from_response(response)
+
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+        self.assertEqual(characters[0]['name'], 'Josie')
+        self.assertEqual(characters[0]['mentions'][0]['context'], 'narrative')
+
+
 if __name__ == '__main__':
     unittest.main()
