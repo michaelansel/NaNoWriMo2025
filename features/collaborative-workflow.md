@@ -92,42 +92,37 @@
 - **Preview usage:** Percentage of PRs tested before merge
 - **Conflict resolution time:** When conflicts occur, time to resolve
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writer feedback: "I can contribute anytime without worrying about conflicts"
-- No writers blocked waiting for others
+- Writers work independently without blocking each other
 - No lost work due to conflicts
-- Clear understanding of branching workflow
+- Writers understand branching workflow clearly
 
 ---
 
 ## How It Works
 
-### Branch-Based Workflow
+### How Multiple Writers Work Together
 
-```
-main (production branch)
-  ↓
-  ├─→ feature/forest-path (Writer A)
-  │     ↓ Work in isolation
-  │     ↓ Create passages
-  │     ↓ Test preview
-  │     ↓ AI validation
-  │     ↓ Merge to main
-  │     ↓
-  ├─→ feature/castle-path (Writer B)
-  │     ↓ Work in isolation
-  │     ↓ Create passages
-  │     ↓ Test preview
-  │     ↓ AI validation
-  │     ↓ Merge to main
-  │     ↓
-  └─→ fix/timeline-issue (Writer C)
-        ↓ Work in isolation
-        ↓ Fix passages
-        ↓ Test preview
-        ↓ AI validation
-        ↓ Merge to main
-```
+**The Core Pattern: Work in Isolation, Merge When Ready**
+
+Each writer works independently on their own branch:
+- **Writer A** adds a forest path in their branch
+- **Writer B** adds a castle path in their branch
+- **Writer C** fixes a timeline issue in their branch
+- **None block each other** - all work happens simultaneously
+- **Each tests their changes** before merging
+- **Main stays stable** - only tested, working changes merge in
+
+**Key Benefit:** Writers contribute daily without waiting for others to finish. Changes stay isolated until ready, preventing incomplete work from affecting teammates.
+
+**What This Looks Like:**
+- Create your branch from main (gives you a clean starting point)
+- Make your changes (add passages, fix issues, etc.)
+- Test your preview (verify changes work)
+- Merge when ready (changes go live quickly)
+- Others do the same in their branches (no blocking)
 
 ---
 
@@ -315,6 +310,8 @@ main (production branch)
 
 **Status:** Acceptable - requires coordination, documentation explains approach
 
+**Implementation Note:** Git branching model, merge strategies, and conflict resolution details are in architecture documentation.
+
 ---
 
 ### Edge Case 5: Resource File Merge Conflicts
@@ -439,7 +436,7 @@ See [architecture/collaborative-workflow.md](../architecture/collaborative-workf
 - [CONTRIBUTING.md](/home/user/NaNoWriMo2025/CONTRIBUTING.md) - Step-by-step collaboration guide
 - [features/automated-resource-tracking.md](/home/user/NaNoWriMo2025/features/automated-resource-tracking.md) - Passage name tracking
 - [features/automated-build-deploy.md](/home/user/NaNoWriMo2025/features/automated-build-deploy.md) - Preview artifacts
-- [features/ai-continuity-checking.md](/home/user/NaNoWriMo2025/features/ai-continuity-checking.md) - Automated validation
+- [features/ai-copy-editing-team.md](/home/user/NaNoWriMo2025/features/ai-copy-editing-team.md) - AI Copy Editing Team automated validation
 - [PRINCIPLES.md](/home/user/NaNoWriMo2025/PRINCIPLES.md) - "Automation Over Gatekeeping" principle
 
 ---

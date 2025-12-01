@@ -80,27 +80,34 @@
 ## Success Metrics
 
 ### Primary Metrics
-- **Build reliability:** All 4 formats build successfully on every commit
+- **Build reliability:** All 6 formats build successfully on every commit
 - **Build speed:** Total build time <2 minutes
 - **Format usage:** Each format used for its intended purpose
 - **Maintenance burden:** Zero manual format maintenance
 
 ### Secondary Metrics
-- **Proofreading efficiency:** Linear format makes editing faster
-- **Structure clarity:** Graph format reveals structure issues
 - **Testing coverage:** Players test all formats before merge
 - **Validation thoroughness:** All paths checked for continuity
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
+- Linear format makes editing and proofreading easier
+- Graph format reveals structure issues clearly
 - Writer feedback: "I use Paperthin for proofreading every day"
-- No confusion about which format to use for which task
+- Writers intuitively know which format to use for each task
 - No inconsistencies between formats (single source of truth works)
 
 ---
 
 ## How It Works
 
-### The Four Formats
+### The Six Formats
+
+**Organization:** Formats 1-3 are third-party tools we use (details inline). Formats 4-6 are custom features we built (linked to dedicated feature specs).
+
+---
+
+### Third-Party Formats (1-3)
 
 #### 1. Harlowe (Interactive Playable Story)
 **Purpose:** Player experience - how readers will play the story
@@ -126,12 +133,11 @@
 #### 2. Paperthin (Linear Proofreading)
 **Purpose:** Editing and review - clean prose for proofreading
 
-**Format Details:**
-- Linear text presentation
-- Minimal formatting and distractions
-- All passages in order
-- No interactive elements
-- Clean reading experience
+**What You Get:**
+- Linear text presentation (all passages in reading order)
+- Clean prose without interactive elements or game mechanics
+- Minimal formatting for distraction-free reading
+- Easy-to-read format for editing and review
 
 **Use Cases:**
 - Proofreading for grammar and style
@@ -142,17 +148,19 @@
 **Output:** `dist/proofread.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/proofread.html`
 
+**Technical Note:** Implementation details (how linear text is generated) are in architecture documentation.
+
 ---
 
 #### 3. DotGraph (Story Structure Visualization)
 **Purpose:** Understanding - visual map of story branches
 
-**Format Details:**
-- Interactive graph visualization
-- Nodes represent passages
-- Edges represent links/choices
-- Zoom, pan, and click to explore
-- Shows story structure at a glance
+**What You Get:**
+- Interactive graph showing story structure
+- Visual nodes (passages) and edges (choices/links)
+- Zoom, pan, and click to explore the graph
+- Story branching visible at a glance
+- Identify dead ends, loops, and connection patterns
 
 **Use Cases:**
 - Visualizing branching structure
@@ -163,31 +171,85 @@
 **Output:** `dist/graph.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/graph.html`
 
+**Technical Note:** Implementation details (graph generation library, rendering approach) are in architecture documentation.
+
 ---
 
-#### 4. AllPaths (Enumerated Paths for AI Validation)
-**Purpose:** Validation - all possible paths for continuity checking
+### Custom Formats (4-6)
 
-**Format Details:**
-- Depth-first search finds all paths from start to end
-- Each path as individual text file
-- Two versions: clean (prose only) and metadata (with headers)
-- Random passage IDs prevent AI confusion
-- Path tracking with unique IDs and fingerprints
+#### 4. AllPaths (allpaths.html)
+
+**Purpose:** Enumerate all possible paths through the story for validation and testing
+
+**What You Get:**
+- Every possible path through the story listed
+- Progress tracking with creation and modification dates
+- Filtering by recent activity (last day/week)
+- Validation status tracking (which paths have been checked)
+- Integration with AI continuity checking
+- Browsable web interface and text files for AI validation
 
 **Use Cases:**
 - AI continuity checking
 - Exhaustive story validation
 - Tracking which paths are new vs. modified
 - Browsing all possible player journeys
+- Monitoring NaNoWriMo daily and weekly progress
 
-**Outputs:**
-- `dist/allpaths.html` - Browse all paths in web interface
-- `dist/allpaths-clean/*.txt` - Clean prose for deployment
-- `dist/allpaths-metadata/*.txt` - Metadata format for AI checking
-- `allpaths-validation-status.json` - Validation cache
-
+**Output:** `dist/allpaths.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/allpaths.html`
+
+**Detailed Feature Spec:** See [AllPaths Progress Tracking](allpaths-categorization.md) for full acceptance criteria and user stories.
+
+---
+
+#### 5. Metrics (Writing Statistics)
+**Purpose:** Quantitative writing statistics and progress tracking
+
+**What You Get:**
+- Total word count across the entire story
+- Aggregate passage statistics (min/mean/median/max word counts)
+- Aggregate file statistics (min/mean/median/max word counts per file)
+- Word count distributions (fixed ranges: 0-100, 101-300, 301-500, 501-1000, 1000+)
+- Top 5 longest passages for review
+- Accessible on any device with a browser
+
+**Use Cases:**
+- Understanding writing output and volume
+- Staying motivated with quantitative progress
+- Analyzing writing patterns and typical passage lengths
+- Identifying refactoring candidates (exceptionally long or short passages)
+- Tracking contributions in collaborative projects
+
+**Output:** `dist/metrics.html`
+**Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/metrics.html`
+
+**Detailed Feature Spec:** See [Writing Metrics](writing-metrics.md) for full acceptance criteria, user stories, and detailed requirements.
+
+---
+
+#### 6. Story Bible (World Consistency Reference)
+**Purpose:** Canonical reference for characters, locations, items, and world facts
+
+**What You Get:**
+- Complete entity detection (ALL named characters, locations, items)
+- Constants vs Variables distinction (facts always true vs player-determined)
+- Zero Action State (what happens if player does nothing)
+- Evidence-based (every fact cites source passages)
+- Deduplication (merged facts with preserved evidence)
+- Searchable entity database extracted from prose
+
+**Use Cases:**
+- Maintaining world consistency across branches
+- Onboarding new collaborators with established lore
+- Distinguishing canon from player-determined outcomes
+- Understanding character baselines before player intervention
+- Avoiding contradictions in collaborative writing
+
+**Output:** `dist/story-bible.html`
+**Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/story-bible.html`
+
+**Detailed Feature Spec:** See [Story Bible](story-bible.md) for full acceptance criteria, user stories, and detailed requirements.
 
 ---
 
@@ -285,19 +347,20 @@
 ### Edge Case 6: AllPaths Cycles
 **Scenario:** Story has loops (passage links back to earlier passage)
 
-**Current Behavior:**
-- AllPaths uses cycle detection (max_cycles=1)
-- Terminates path on first revisit
-- Prevents infinite loops
+**What You See:**
+- AllPaths terminates path when it revisits a passage
+- Each path shown once through the loop (no infinite repetition)
+- Prevents exponential explosion of paths
 
-**Desired Behavior:**
-- Document cycle handling behavior
-- Allow configuring max_cycles if needed
-- Prevent exponential path growth
+**What You Can Do:**
+- Review how loops are represented in AllPaths
+- Verify loop behavior matches your story design
+- If you need different cycle handling, discuss with team
 
-**Status:** Working as intended - cycles handled correctly
+**Status:** Working as intended - cycles handled to prevent infinite loops
 
-See [architecture/multiple-output-formats.md](../architecture/multiple-output-formats.md) for technical design.
+**For All Edge Cases:**
+Implementation details (how formats are generated, error handling, performance optimization) are documented in architecture specs.
 
 ---
 
@@ -352,9 +415,9 @@ See [architecture/multiple-output-formats.md](../architecture/multiple-output-fo
 
 ### Current Performance (as of Nov 22, 2025)
 - ✅ **Build success rate:** 100% (all formats build on every commit)
-- ✅ **Build speed:** <2 minutes for all 4 formats
+- ✅ **Build speed:** <2 minutes for all 6 formats
 - ✅ **Output quality:** All formats usable for intended purposes
-- ✅ **Format sizes:** Harlowe 51KB, Paperthin 42KB, DotGraph 38KB, AllPaths 165KB
+- ✅ **Format sizes:** Harlowe 51KB, Paperthin 42KB, DotGraph 38KB, AllPaths 165KB, Metrics ~20KB, Story Bible ~50KB
 - ✅ **Path count:** 11 paths enumerated successfully
 
 ### Format-Specific Metrics
@@ -367,12 +430,14 @@ See [architecture/multiple-output-formats.md](../architecture/multiple-output-fo
 
 ## Success Criteria Met
 
-- [x] All 4 formats build automatically on every commit
+- [x] All 6 formats build automatically on every commit
 - [x] Build completes in <2 minutes
 - [x] Single source of truth (no manual format maintenance)
 - [x] Each format optimized for specific use case
 - [x] Formats published to GitHub Pages for easy access
 - [x] AllPaths integrated with AI continuity checking
+- [x] Metrics provides quantitative writing insights
+- [x] Story Bible maintains world consistency reference
 - [x] No inconsistencies between formats
 - [x] Writers use appropriate format for each task
 
@@ -381,7 +446,7 @@ See [architecture/multiple-output-formats.md](../architecture/multiple-output-fo
 ## Related Documents
 
 - [formats/allpaths/README.md](/home/user/NaNoWriMo2025/formats/allpaths/README.md) - AllPaths format documentation
-- [features/ai-continuity-checking.md](/home/user/NaNoWriMo2025/features/ai-continuity-checking.md) - AI validation using AllPaths
+- [features/ai-copy-editing-team.md](/home/user/NaNoWriMo2025/features/ai-copy-editing-team.md) - AI Copy Editing Team using AllPaths
 - [features/automated-build-deploy.md](/home/user/NaNoWriMo2025/features/automated-build-deploy.md) - Build automation
 - [PRINCIPLES.md](/home/user/NaNoWriMo2025/PRINCIPLES.md) - "Multiple Perspectives, Same Source" principle
 
@@ -392,8 +457,9 @@ See [architecture/multiple-output-formats.md](../architecture/multiple-output-fo
 ### What Worked Well
 - **Single source, multiple views:** .twee files compile to all formats without issues
 - **Format specialization:** Each format excels at its specific purpose
-- **Fast builds:** All 4 formats in <2 minutes keeps feedback loop tight
+- **Fast builds:** All 6 formats in <2 minutes keeps feedback loop tight
 - **AllPaths innovation:** Random IDs prevent AI confusion from semantic passage names
+- **Comprehensive tooling:** Six distinct perspectives serve different writing and review needs
 
 ### What Could Be Better
 - **Format documentation:** Could better explain when to use each format

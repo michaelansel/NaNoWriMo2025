@@ -592,7 +592,7 @@ Possible architectural improvements beyond this ADR:
   - Specifies single consistent interface requirement
   - Documents time-based filters and validation status display
 
-- **AI Continuity Checking**: `/home/user/NaNoWriMo2025/features/ai-continuity-checking.md`
+- **AI Copy Editing Team**: `/home/user/NaNoWriMo2025/features/ai-copy-editing-team.md`
   - Defines internal categorization (NEW/MODIFIED/UNCHANGED)
   - Specifies that categories are internal to validation logic
   - Documents that validation results go to PR comments, not HTML

@@ -3,6 +3,9 @@
 **Status:** ✅ Active Feature
 **Owner:** Product Manager
 **Priority:** Core Feature
+**Feature Type:** Sub-feature extending AllPaths format
+
+> **Note:** This feature extends the AllPaths format described in [Multiple Output Formats](multiple-output-formats.md). AllPaths is one of six output formats (Harlowe, Paperthin, DotGraph, AllPaths, Metrics, Story Bible) generated from the story source. This document details the progress tracking and browsing capabilities within the AllPaths format.
 
 ---
 
@@ -245,22 +248,23 @@ AllPaths provides a consistent browsing interface showing all story paths with d
 
 ## Success Metrics
 
-### User Understanding
+### User Understanding (Qualitative)
+These indicators require user feedback and observation:
 - **Interface clarity:** Writers can explain what information is shown and how to use filters
 - **Consistency:** Writers trust that PR preview matches deployment
 - **Date interpretation:** Writers correctly interpret creation and modification dates
 
-### Feature Usage
-- **Active filtering:** Writers regularly use date filters to find paths of interest
-- **Progress tracking:** Writers use date filters and metadata to monitor daily/weekly activity
-- **Validation tracking:** Writers use validation status to coordinate review work
-- **Collaboration:** Teams use date information to coordinate work and track progress
+### Feature Usage (Observable Metrics)
+- **Active filtering:** Observable through user reports and PR discussions of recent work
+- **Progress tracking:** Observable through team discussions citing date metadata
+- **Validation tracking:** Observable through coordination in PR comments
+- **Collaboration:** Observable through teams citing dates when coordinating work
 
-### Information Quality
-- **Meaningful information:** Path data and filters provide actionable information for tracking progress
-- **Accurate dates:** Creation and modification dates correctly reflect when paths became available and changed
-- **Useful filters:** Time-based filter windows (1 day, 7 days) align with writing patterns and tracking needs
-- **Reliable validation status:** Status accurately reflects which paths have been reviewed
+### Information Quality (Testable)
+- **Meaningful information:** Path data and filters provide actionable information for tracking progress (verify filters work correctly)
+- **Accurate dates:** Creation and modification dates correctly reflect when paths became available and changed (verify against git history)
+- **Useful filters:** Time-based filter windows (1 day, 7 days) correctly identify paths within those timeframes
+- **Reliable validation status:** Status accurately reflects which paths have been reviewed (verify against validation cache)
 
 ### Qualitative Indicators
 - Writers use filters to answer "what did I write today/this week?" questions
@@ -273,7 +277,7 @@ AllPaths provides a consistent browsing interface showing all story paths with d
 
 ## Technical Requirements
 
-These requirements define WHAT the system must do (not HOW to implement it).
+**Note:** This section describes WHAT the system must do from a user-facing perspective. Implementation details (HOW the system achieves this) are documented in architecture specs.
 
 ### Path Display Requirements
 The system displays all paths with complete metadata:
@@ -322,6 +326,13 @@ Changes preserve existing functionality:
 - Validation modes (new-only, modified, all) work as before
 - Date fields already present in cache
 - No breaking changes to existing workflows
+
+**For Implementation Details:**
+See architecture documentation for:
+- How dates are calculated from git history
+- How filtering is implemented (client-side vs server-side)
+- How validation cache is structured and accessed
+- Build process integration approach
 
 ---
 

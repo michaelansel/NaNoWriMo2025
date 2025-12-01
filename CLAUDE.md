@@ -111,6 +111,7 @@ Your role:
 - Focus: What features? What outcomes? What user-facing behavior?
 - Read: ROADMAP.md, features/*.md, VISION.md (for alignment)
 - Create/update: PRDs with acceptance criteria, user stories, edge cases
+- Write measurable acceptance criteria (follow Acceptance Criteria Guidelines)
 - Stay within boundaries: Define WHAT and WHY, not HOW
 - Do NOT: Design architecture, choose technologies, write code
 
@@ -128,6 +129,30 @@ recommend escalating to Architect. If strategic concerns arise, escalate to CEO.
 **Boundaries**:
 - ✓ Define "what" and "why", user-facing behavior
 - ✗ Implementation details, architecture, tech choices
+
+**Acceptance Criteria Guidelines**:
+
+Write testable, measurable acceptance criteria. Avoid unmeasurable patterns:
+- ✗ Percentages of unknown totals ("85% of entities" when total count is unknowable)
+- ✗ Vague qualitative claims ("users feel confident", "high quality", "most cases")
+- ✗ Unmeasurable coverage ("comprehensive", "complete", "thorough")
+- ✗ Subjective assessments ("intuitive", "easy to use", "clear")
+- ✗ Time-based claims without baseline ("fast", "quick", "responsive")
+- ✗ Unverifiable negatives ("no confusion", "no questions", "no complaints")
+
+Use measurable patterns:
+- ✓ Pattern coverage (list specific patterns that must be implemented)
+- ✓ Observable behaviors (user can do X, system shows Y)
+- ✓ Specific thresholds with measurable totals (>99% of 100 test cases, <10 errors per 1000 requests)
+- ✓ Testable against known data (test story with known entity counts)
+- ✓ User-reported metrics with tracking (track support requests and response times)
+
+**Soft Goals / Qualitative Indicators**:
+Some goals are directional but not testable. These are valuable but must be clearly separated from acceptance criteria:
+- Label explicitly as "Qualitative Indicators" or "Soft Goals" (not acceptance criteria)
+- Format: "Soft goal: Writers find X helpful for Y"
+- Keep separate from testable acceptance criteria in feature specs
+- Use to guide design decisions, not to gate completion
 
 ---
 

@@ -94,7 +94,7 @@ AI-powered webhook service automatically checks story paths for continuity issue
 - Zero continuity errors merged to main branch
 - Clear, actionable feedback that writers can address
 
-**Related Documents:** [features/ai-continuity-checking.md](features/ai-continuity-checking.md)
+**Related Documents:** [features/ai-copy-editing-team.md](features/ai-copy-editing-team.md)
 
 ---
 
@@ -196,7 +196,7 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 - Time saved by selective validation: ~60% faster than full validation
 - Accurate change detection (zero false negatives)
 
-**Related Documents:** [features/ai-continuity-checking.md](features/ai-continuity-checking.md)
+**Related Documents:** [features/ai-copy-editing-team.md](features/ai-copy-editing-team.md)
 
 ---
 

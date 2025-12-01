@@ -34,7 +34,7 @@ Each role has specific documentation artifacts that capture their perspective an
 **Documents:**
 - **[ROADMAP.md](ROADMAP.md)** - Feature roadmap, releases, and timelines
 - **[features/](features/)** - Product requirement documents (PRDs) for each feature
-  - `ai-continuity-checking.md`
+  - `ai-copy-editing-team.md`
   - `allpaths-categorization.md`
   - `automated-build-deploy.md`
   - `automated-resource-tracking.md`
@@ -219,7 +219,7 @@ Each concern has one authoritative document. Cross-reference, don't duplicate.
 
 **Example:**
 - Validation cache architecture → `architecture/002-validation-cache.md`
-- AI continuity checking feature → `features/ai-continuity-checking.md`
+- AI Copy Editing Team feature → `features/ai-copy-editing-team.md`
 - Operational setup → `services/README.md` (references the above)
 
 ---
