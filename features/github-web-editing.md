@@ -56,7 +56,7 @@
 - No command line required
 - No software installation required
 - Clear, visual workflow using familiar web interface
-- Error messages are writer-friendly, not technical
+- Error messages describe the problem and solution in plain language (no Git jargon or stack traces)
 - CONTRIBUTING.md written for writers, not developers
 
 ---
@@ -74,7 +74,8 @@
 - **Daily contributions:** Multiple contributions per day during NaNoWriMo
 - **Edit frequency:** Writers make quick edits and fixes without hesitation
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writer feedback: "I didn't need to install anything!"
 - No questions about setup or installation in GitHub issues
 - Writers focus discussions on story, not tooling

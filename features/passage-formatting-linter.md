@@ -92,7 +92,8 @@
 - **Fix idempotency:** Running linter twice produces identical results
 - **Build time impact:** Linting adds <5 seconds to build
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writer feedback: "I don't think about formatting anymore"
 - No questions about spacing or formatting conventions in PRs
 - Reviewers focus comments on story content, not formatting

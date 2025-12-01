@@ -522,14 +522,15 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - System prioritizes recall over precision (include borderline entities rather than miss clear ones)
 - False positive rate acceptable (borderline entities included for completeness)
 
-**Quality Indicators:**
-- Fact distribution balanced (not 95% one type)
-- 100% of facts have evidence citations
-- Evidence trails complete (all sources cited)
-- Deduplication reduces redundancy 30-50%
-- Contradictions flagged (not hidden)
+**Quality Indicators (Testable):**
+- Fact distribution balanced: No single fact type exceeds 70% of total facts (testable by counting fact types)
+- 100% of facts have evidence citations (testable by validation script)
+- Evidence trails complete: All sources cited (testable against passage list)
+- Deduplication reduces redundancy 30-50% (measurable: compare raw facts to deduplicated facts)
+- Contradictions flagged (not hidden) (testable: verify conflict detection works)
 
-**Qualitative Metrics:**
+**Qualitative Indicators:**
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writers report Story Bible is useful for maintaining consistency
 - New collaborators find Story Bible helpful for onboarding
 - Team uses Story Bible terms in discussion ("is this a constant or variable?")

@@ -92,11 +92,12 @@
 - **Preview usage:** Percentage of PRs tested before merge
 - **Conflict resolution time:** When conflicts occur, time to resolve
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writer feedback: "I can contribute anytime without worrying about conflicts"
-- No writers blocked waiting for others
+- Writers work independently without blocking each other
 - No lost work due to conflicts
-- Clear understanding of branching workflow
+- Writers understand branching workflow clearly
 
 ---
 

@@ -199,7 +199,7 @@ Your story has been built successfully!
 ### First-Time Visitor
 **Scenario:** Someone discovers the project via GitHub Pages URL
 **Expected Behavior:** Immediately clear that this is an interactive story; "Play" is obvious
-**Acceptance Criteria:** Landing page communicates purpose within 3 seconds of viewing
+**Acceptance Criteria:** Landing page includes prominent "Play" call-to-action and story description visible without scrolling
 
 ### Direct Format Access
 **Scenario:** User has bookmarked a specific format URL (e.g., proofread.html)
@@ -214,8 +214,9 @@ Your story has been built successfully!
 - Landing page loads in <1 second (static HTML, no dependencies)
 - All 6 format links functional on landing page
 
-**Qualitative:**
-- First-time visitors understand "this is a story to play" within 3 seconds
+**Qualitative Indicators:**
+These are directional goals we cannot directly measure but inform our design decisions:
+- First-time visitors find the "Play" button immediately and understand the page purpose
 - Writers can find any output format from landing page without hunting
 - PR reviewers access all previews through one entry point
 

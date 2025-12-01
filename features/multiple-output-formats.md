@@ -86,14 +86,15 @@
 - **Maintenance burden:** Zero manual format maintenance
 
 ### Secondary Metrics
-- **Proofreading efficiency:** Linear format makes editing faster
-- **Structure clarity:** Graph format reveals structure issues
 - **Testing coverage:** Players test all formats before merge
 - **Validation thoroughness:** All paths checked for continuity
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
+- Linear format makes editing and proofreading easier
+- Graph format reveals structure issues clearly
 - Writer feedback: "I use Paperthin for proofreading every day"
-- No confusion about which format to use for which task
+- Writers intuitively know which format to use for each task
 - No inconsistencies between formats (single source of truth works)
 
 ---

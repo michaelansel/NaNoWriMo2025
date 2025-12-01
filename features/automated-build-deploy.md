@@ -80,7 +80,7 @@
 ## Success Metrics
 
 ### Primary Metrics
-- **Build success rate:** >99% (nearly all builds succeed)
+- **Build success rate:** >99% of builds succeed
 - **Build speed:** <2 minutes from push to preview artifact
 - **Deploy speed:** <2 minutes from merge to live
 - **Total time commit to live:** <2 minutes (goal achieved)
@@ -92,7 +92,8 @@
 - **Comment accuracy:** Build stats match actual output
 - **Preview usage:** PRs tested before merge
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writer feedback: "Changes go live instantly!"
 - No complaints about slow builds or deployments
 - No confusion about how to test changes

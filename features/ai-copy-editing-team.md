@@ -160,14 +160,15 @@ Per PRIORITIES.md Phase 3, these specialists will join the team later:
 
 ### Secondary Metrics
 - **Validation efficiency:** New-only mode ~60% faster than full validation
-- **Mode usage patterns:** Writers use appropriate modes for their workflow
-- **False positive rate:** Low rate of incorrect issue flagging
-- **Writer confidence:** Writers trust Team feedback and act on it
+- **False positive rate:** Rate to be measured with production usage (target: <10% of flagged issues are incorrect)
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
+- Writers trust Team feedback and act on it
+- Writers use validation modes appropriately for their workflow
 - Writer feedback: "Team caught an issue I completely missed"
 - No continuity errors discovered after merge
-- Writers use validation modes appropriately (new-only → modified → all)
+- Writers choose modes based on their workflow needs (new-only → modified → all)
 
 ---
 
@@ -581,7 +582,7 @@ Per PRIORITIES.md, these specialists will join the team in Phase 3:
 - ✅ **Average validation time (new-only):** ~2 minutes for typical PR
 - ✅ **Average validation time (modified):** ~5 minutes for typical PR
 - ✅ **Time saved (new-only vs all):** ~60% faster
-- ✅ **False positive rate:** Low (exact rate TBD with more usage)
+- ✅ **False positive rate:** To be measured with production usage (target: <10%)
 - ✅ **Escaped errors:** 0 (zero continuity issues merged to main)
 
 ---

@@ -278,20 +278,21 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 
 ## Success Metrics
 
-### User Understanding
-- Writers can explain what each metric means and how to interpret it
-- Writers cite metrics when discussing writing output and patterns
+### User Understanding (Testable through Documentation and Usage)
+- Writers can explain what each metric means and how to interpret it (verify through user interviews)
+- Writers cite metrics when discussing writing output and patterns (observable in PR comments)
 - Writers know where to find metrics on GitHub Pages (`/metrics.html`)
 - Writers understand metrics update automatically with each build
 
-### Feature Usage
-- Writers view HTML metrics when reviewing project in browser
-- Metrics cited in team discussions about writing output
-- Top passages list used to identify refactoring candidates
-- HTML metrics shared via URL with collaborators
+### Feature Usage (Observable Metrics)
+- Writers view HTML metrics when reviewing project in browser (observable through analytics or user reports)
+- Metrics cited in team discussions about writing output (observable in PR comments and discussions)
+- Top passages list used to identify refactoring candidates (observable in discussions)
+- HTML metrics shared via URL with collaborators (observable through sharing behavior)
 - Metrics viewed alongside other formats (Harlowe, Paperthin, etc.)
 
 ### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
 - Writers report feeling motivated by seeing quantitative output
 - Metrics help answer "how much have I written?" questions
 - Team uses metrics to understand project scope and progress
