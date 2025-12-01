@@ -191,6 +191,40 @@ When facing decisions, principles form a hierarchy:
 
 **Principle conflicts:** When principles conflict, Writers First wins. Fast Feedback beats Perfection. Transparency beats Simplicity.
 
+## Strategic Decisions
+
+These are key architectural and interface decisions locked in to guide implementation:
+
+### GitHub PRs as Primary Interface
+
+**Decision:** GitHub pull requests are the primary and default interface for all writer interactions with the story pipeline.
+
+**What this means:**
+- Writers commit changes via GitHub web interface
+- Writers trigger validation via PR comments (`/extract-story-bible`, `/check-continuity`)
+- Writers see results in PR comments and GitHub Pages artifacts
+- Writers never need to install tools or run commands locally
+
+**CLI as Developer Tool:**
+- CLI commands (`make metrics`, `make build`) exist for developers working on the pipeline
+- CLI is an escape hatch for advanced users who prefer local workflows
+- CLI is NOT documented in writer-facing guides (CONTRIBUTING.md, features/)
+- CLI is NOT a supported workflow for story contributions
+
+**Why:**
+- Aligns with Vision: "Zero-barrier contribution - Edit in a web browser, no installation required"
+- Aligns with Priority 1: "Author can contribute a new passage in under 5 minutes (web UI only)"
+- Aligns with Principle 1: "Web-based contribution beats feature-rich local tooling"
+- Aligns with Principle 7: Web is the smart default, CLI is the escape hatch
+
+**Implications:**
+- Feature specs describe PR-based workflows only
+- Documentation assumes GitHub web interface
+- Error messages guide writers to PR comment commands, not CLI
+- Testing focuses on PR automation experience
+
+---
+
 ## Non-Principles (What We Don't Value)
 
 To clarify what we stand for, here's what we explicitly don't prioritize:

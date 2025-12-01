@@ -17,13 +17,12 @@ Writers creating branching narratives need a canonical reference that captures e
 - **Zero Action State:** Shows what happens to each character if the player does nothing
 - **Evidence-based:** Every fact cites source passages by name (verifiable in your source files)
 - **Deduplication:** Merges duplicate facts while preserving all evidence citations
-- **Two formats:** Human-readable HTML and machine-readable JSON
+- **Published to GitHub Pages:** Automatically generated HTML after each build
 - **Post-build artifact:** Generated automatically, never blocks deployment
 
 **What This Feature Does:**
 - Extracts and displays Story Bible after each build
 - Human-readable HTML for authors on GitHub Pages
-- Machine-readable JSON for AI integration
 - NOT blocking CI—purely informational/additive
 
 ---
@@ -134,20 +133,6 @@ Writers creating branching narratives need a canonical reference that captures e
 - Similar facts from different passages are combined when appropriate
 - Contradictory facts are kept separate and flagged
 - Can still verify evidence by searching for passage names in source files
-
----
-
-### Story 7: AI Integration
-**As a** developer integrating AI continuity checking
-**I want** machine-readable Story Bible data
-**So that** AI can validate new content against established canon
-
-**Acceptance Criteria:**
-- Story Bible exported as JSON format
-- Structured data: constants, variables, character states, world rules
-- Each fact includes evidence (source passages)
-- JSON schema documented for AI integration
-- Can be consumed by AI validation tools
 
 ---
 
@@ -302,24 +287,18 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ---
 
-### Output Formats
+### Output Format
 
-**1. story-bible.html (Human-Readable)**
-- Published to GitHub Pages
+**story-bible.html:**
+- Published to GitHub Pages automatically after each build
 - Organized sections: World Constants, Characters, Locations, Items, Variables
 - Each fact shows evidence (passage names)
 - Visual distinction between constants and variables
 - "Zero action state" for each character
 - Conflicts flagged prominently
 
-**2. story-bible.json (Machine-Readable)**
-- Structured data for AI integration
-- Schema includes: constants, variables, character_states, evidence, metadata
-- Valid JSON format
-- Documented schema for validation tools
-
 **When Generated:**
-- After successful build (`make build`, `make deploy`)
+- Automatically after each build when you push or merge changes
 - Not in critical path (build succeeds even if Story Bible generation fails)
 - Graceful degradation: missing Story Bible doesn't block deployment
 
@@ -343,7 +322,7 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 
 **Subsequent builds:**
 1. Build reads cached extraction results
-2. Renders HTML and JSON (fast, no AI needed)
+2. Renders HTML (fast, no AI needed)
 3. Published to GitHub Pages automatically
 
 **When story changes:**
@@ -535,7 +514,6 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 ### Core Functionality
 - [ ] Story Bible generated as post-build artifact
 - [ ] HTML format published to GitHub Pages as `/story-bible.html`
-- [ ] JSON format generated as `story-bible.json`
 - [ ] Extracts constants, variables, and character states
 - [ ] Each fact includes evidence (passage names from source)
 - [ ] Clear distinction between constants and variables
@@ -565,7 +543,7 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - [ ] Can search for passage names in source files (e.g., ":: Academy Entrance")
 
 ### Build Integration
-- [ ] Integrated into `make build` and `make deploy`
+- [ ] Integrated into automated build pipeline
 - [ ] Cache-first approach (build reads cache, doesn't extract)
 - [ ] Graceful degradation if cache missing (placeholder generated)
 - [ ] Build succeeds even if Story Bible generation fails
@@ -585,13 +563,7 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - [ ] Visual distinction between constants and variables
 - [ ] Conflicts flagged prominently
 - [ ] Accessible on any device with browser
-
-### JSON Output
-- [ ] Machine-readable structured data
-- [ ] Schema documented and versioned
-- [ ] Valid JSON format (no parse errors)
-- [ ] Includes: constants, variables, character_states, evidence, meta
-- [ ] Can be consumed by AI tools
+- [ ] Published to GitHub Pages automatically after each build
 
 ---
 

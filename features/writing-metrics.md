@@ -8,20 +8,22 @@
 
 ## Executive Summary
 
-Writers need quantitative insights into their writing output and patterns. This feature provides metrics in two formats: a command-line interface for quick checks during writing, and an HTML build format for persistent viewing and sharing.
+Writers need quantitative insights into their writing output and patterns. This feature provides an HTML metrics page automatically generated with each build and published to GitHub Pages alongside other story formats.
 
 **Key Capabilities:**
 - Calculate total word counts across the entire story
 - Compute per-passage and per-file statistics (min/mean/median/max word counts)
 - Show word count distributions (bucketed ranges)
-- Filter metrics by file prefix (e.g., only KEB files, only mansel files, or all)
 - Identify longest passages and files
+- View metrics on any device with a browser
 
-**Dual Output Formats:**
-- **CLI**: Quick on-demand metrics for active writing sessions (`make metrics`)
-- **HTML**: Persistent metrics view generated on every build, published to GitHub Pages alongside other story formats (Harlowe, Paperthin, DotGraph, AllPaths)
+**Output Format:**
+- **HTML**: Persistent metrics view generated automatically on every build
+- Published to GitHub Pages at `/metrics.html`
+- Always up-to-date with the latest build
+- No special tools needed—just view in your browser
 
-This tool helps writers answer questions like "How much have I written?" and "What's my typical passage length?" both during active writing (CLI) and when reviewing the project in a browser (HTML).
+This tool helps writers answer questions like "How much have I written?" and "What's my typical passage length?" when reviewing the project in a browser.
 
 **Timing Context:**
 - **Ideally available:** Throughout November for understanding writing output and patterns
@@ -91,18 +93,18 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
-### Need 3: Filter by Author or Content Type
+### Need 3: Understand Collaborative Contributions
 **Context:** Multi-author collaborative project
 
-**User Goal:** See metrics for specific authors or story sections
+**User Goal:** See overall project metrics and understand the story's scope
 
 **Questions Writers Need Answered:**
-- How many words did each author contribute?
-- What are the statistics for just my files (e.g., KEB-* files)?
-- How do different authors' writing patterns compare?
-- What's the breakdown between different story branches?
+- How much content exists in the story overall?
+- What are the typical passage and file lengths across the project?
+- How is content distributed across the story?
+- What's the overall structure and scale?
 
-**Why This Matters:** In collaborative projects, authors need to track individual contributions, ensure balanced participation, and understand how different authors' styles compare.
+**Why This Matters:** In collaborative projects, authors need to understand the project's overall scope and structure.
 
 ---
 
@@ -121,18 +123,18 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
-### Need 5: View Metrics in Browser
+### Need 5: Access Metrics Anywhere
 **Context:** Reviewing project in browser, sharing metrics with collaborators
 
 **User Goal:** See persistent metrics alongside other story outputs
 
 **Questions Writers Need Answered:**
-- What are the current metrics without running CLI commands?
+- What are the current metrics as of the latest build?
 - Can I share metrics with collaborators via a URL?
 - Can I view metrics on any device with a browser?
 - Are metrics always up-to-date with the latest build?
 
-**Why This Matters:** HTML output makes metrics accessible without command-line access, enables sharing via GitHub Pages, and provides a persistent view that updates automatically with each build. This aligns with the other build formats (Harlowe, Paperthin, DotGraph, AllPaths) that provide different views of the story.
+**Why This Matters:** HTML output makes metrics accessible from any device with a browser, enables sharing via GitHub Pages, and provides a persistent view that updates automatically with each build. This aligns with the other build formats (Harlowe, Paperthin, DotGraph, AllPaths) that provide different views of the story.
 
 ---
 
@@ -180,19 +182,6 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
-### Story 4: Filter by Prefix
-**As a** collaborating author
-**I want** to filter metrics by file prefix (e.g., only KEB files)
-**So that** I can see statistics for specific authors or story sections
-
-**Acceptance Criteria:**
-- `--include` flag filters to specific prefixes (e.g., `--include KEB`)
-- `--exclude` flag excludes specific prefixes (e.g., `--exclude mansel`)
-- Multiple prefixes can be specified (comma-separated or multiple flags)
-- Filtered results show totals and statistics for matching files only
-- Clear indication of what filter is applied
-- Default: include all story files (no filter)
-
 ---
 
 ### Story 5: View Word Count Distribution
@@ -223,17 +212,16 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
-### Story 7: View Metrics in Browser
+### Story 7: View Metrics on GitHub Pages
 **As a** writer reviewing the project online
 **I want** to view writing metrics in my browser
-**So that** I can see current statistics without using command-line tools
+**So that** I can see current statistics from any device
 
 **Acceptance Criteria:**
 - HTML file generated on every build (alongside Harlowe, Paperthin, DotGraph, AllPaths)
-- Accessible via GitHub Pages at a consistent URL
+- Accessible via GitHub Pages at `/metrics.html`
 - Shows all metric sections: word count summary, passage statistics, file statistics, distribution, top passages
 - Updates automatically with each build (reflects current story state)
-- No CLI access required to view metrics
 - Basic, readable HTML format (similar to Paperthin format simplicity)
 - Can be viewed on any device with a browser
 - Published alongside other build formats in the same GitHub Pages structure
@@ -242,28 +230,9 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ## Feature Behavior
 
-### Command Interface
-
-**Command:** `make metrics` or `npm run metrics`
-
-**Options:**
-- `--include PREFIX` - Only include files matching prefix (e.g., `--include KEB`)
-- `--exclude PREFIX` - Exclude files matching prefix (e.g., `--exclude mansel`)
-- `--top N` - Show top N longest passages (default: 5)
-- `--help` - Display usage information
-
-**Output Sections:**
-1. **Word Count Summary** - Total word count, files analyzed, passage count
-2. **Passage Statistics** - Count, min/mean/median/max word counts per passage
-3. **File Statistics** - Count, min/mean/median/max word counts per file
-4. **Distribution** - Passage and file counts by word count ranges
-5. **Top Passages** - Longest passages with names and counts
-
----
-
 ### HTML Output Format
 
-**Generated:** On every build via `make build` or `make deploy`
+**Generated:** Automatically on every build when you push or merge changes
 
 **Published:** To GitHub Pages alongside other formats:
 - `/index.html` - Harlowe playable story
@@ -279,16 +248,16 @@ This is an **active-writing tool** that serves writers during different phases:
 4. **Distribution** - Passage and file counts by word count ranges (table or visual representation)
 5. **Top Passages** - Longest passages with names and counts
 
-**Filtering in HTML:**
-- HTML shows metrics for ALL story files (no filtering in HTML view)
-- Users needing filtered metrics use CLI with `--include` or `--exclude` flags
-- HTML provides comprehensive overview; CLI provides flexible analysis
+**Comprehensive View:**
+- HTML shows metrics for ALL story files
+- Provides complete overview of the entire project
+- No filtering needed—see everything at a glance
 
 **Format Characteristics:**
 - Basic, readable HTML (similar to Paperthin's simplicity)
 - No complex interactivity required (static display)
 - Clean formatting for easy reading
-- Shows same information as CLI output
+- Comprehensive metrics and statistics
 - Updates automatically on every build
 
 ---
@@ -319,78 +288,28 @@ This is an **active-writing tool** that serves writers during different phases:
 
 ---
 
-### Output Format
-
-**Human-readable text format:**
-- Clear section headers
-- Aligned columns for statistics tables
-- Distribution shown as ASCII bar charts or tables
-- Top passages listed with clear formatting
-
-**Example output structure:**
-```
-Writing Metrics & Statistics
-============================
-
-Word Count Summary:
-  Total Words: 22,589
-  Files Analyzed: 31 story files
-  Passages: 54 total
-
-Passage Statistics:
-  Min:     7 words
-  Mean:    418.3 words
-  Median:  296.5 words
-  Max:     1,644 words
-
-File Statistics:
-  Min:     224 words (Start.twee)
-  Mean:    670.4 words
-  Median:  672.0 words
-  Max:     1,490 words (KEB-251126.twee)
-
-Word Count Distribution (Passages):
-  0-100:     5 passages
-  101-300:   23 passages
-  301-500:   15 passages
-  501-1000:  7 passages
-  1000+:     4 passages
-
-Top 5 Longest Passages:
-  1. Passage Name (1,644 words) - KEB-251120.twee
-  2. Another Passage (1,200 words) - KEB-251125.twee
-  ...
-```
-
----
-
 ## Success Metrics
 
 ### User Understanding
 - Writers can explain what each metric means and how to interpret it
 - Writers cite metrics when discussing writing output and patterns
-- Writers use filters correctly to analyze specific content (CLI)
-- Writers know where to find metrics HTML on GitHub Pages
+- Writers know where to find metrics on GitHub Pages (`/metrics.html`)
+- Writers understand metrics update automatically with each build
 
 ### Feature Usage
-- Writers run CLI metrics regularly (weekly or more) during active writing for quick checks
 - Writers view HTML metrics when reviewing project in browser
 - Metrics cited in team discussions about writing output
-- Filters used to compare author contributions (CLI)
 - Top passages list used to identify refactoring candidates
 - HTML metrics shared via URL with collaborators
-
-### Format Usage
-- **CLI**: Used for on-demand analysis during active writing sessions
-- **HTML**: Used for reviewing project state, sharing with collaborators, viewing on mobile devices
+- Metrics viewed alongside other formats (Harlowe, Paperthin, etc.)
 
 ### Qualitative Indicators
 - Writers report feeling motivated by seeing quantitative output
-- Metrics help answer "how much have I written?" questions instantly
-- Team uses metrics to ensure balanced participation
+- Metrics help answer "how much have I written?" questions
+- Team uses metrics to understand project scope and progress
 - Post-NaNoWriMo retrospectives reference these metrics
-- HTML format makes metrics accessible to non-technical collaborators
-- Metrics viewed alongside other formats (Harlowe, Paperthin, etc.) for comprehensive project review
+- HTML format makes metrics accessible from any device
+- Metrics viewed alongside other formats for comprehensive project review
 
 ---
 
@@ -400,11 +319,9 @@ Top 5 Longest Passages:
 **Scenario:** No story files exist yet
 
 **Behavior:**
-- CLI reports 0 words, 0 passages, 0 files
 - HTML shows 0 words, 0 passages, 0 files
 - No statistics shown (cannot compute min/max with no data)
 - Clear message: "No story files found"
-- CLI exits gracefully without errors
 - HTML still generated (shows empty state, not missing file)
 
 ---
@@ -419,15 +336,6 @@ Top 5 Longest Passages:
 - Median is well-defined for single value
 
 ---
-
-### All Files Filtered Out
-**Scenario:** Filter excludes all files (e.g., `--include NOTEXIST`)
-
-**Behavior:**
-- Command reports 0 words, 0 passages, 0 files after filtering
-- Clear message: "No files match filter: --include NOTEXIST"
-- Suggestion: "Try removing filters or using different criteria"
-- Exits gracefully
 
 ---
 
@@ -460,7 +368,6 @@ Top 5 Longest Passages:
 - Build reports error clearly
 - Build continues (doesn't block other formats)
 - Missing metrics.html on GitHub Pages
-- CLI still works (independent of HTML generation)
 - Error logged for debugging
 - Graceful degradation: other formats still published
 
@@ -494,24 +401,13 @@ Top 5 Longest Passages:
 
 ---
 
-### Filter Confusion
-**Risk:** Writers may not understand how `--include` and `--exclude` interact
-
-**Mitigation:**
-- Clear help text explaining filter behavior
-- Examples in documentation
-- Clear output showing what filter was applied
-- Simple semantics: include first, then exclude
-
-**Monitoring:** Track user questions about filter behavior
-
 ---
 
 ### Build Integration Complexity
 **Risk:** Adding HTML generation to build process may slow builds or introduce failures
 
 **Mitigation:**
-- Metrics generation should be fast (simple text processing, same as CLI)
+- Metrics generation should be fast (simple text processing)
 - HTML generation is simple template rendering
 - Build continues if metrics generation fails (graceful degradation)
 - Test build integration thoroughly
@@ -524,19 +420,12 @@ Top 5 Longest Passages:
 ## Acceptance Criteria Summary
 
 ### Core Functionality
-- [ ] Command calculates total word count across all story files
+- [ ] Metrics calculate total word count across all story files
 - [ ] Word count excludes special files (StoryData, StoryTitle, StoryStyles)
 - [ ] Word count excludes Harlowe syntax (macros, links, HTML)
 - [ ] Passage statistics computed: count, min, mean, median, max
 - [ ] File statistics computed: count, min, mean, median, max
 - [ ] Distribution shows passage and file counts by word count ranges
-
-### CLI Output
-- [ ] Human-readable text format in CLI
-- [ ] Clear section headers and labels
-- [ ] Statistics properly aligned and formatted
-- [ ] Distribution easy to interpret
-- [ ] Top passages list shows passage names and word counts
 
 ### HTML Output
 - [ ] HTML file generated on every build
@@ -544,36 +433,27 @@ Top 5 Longest Passages:
 - [ ] Shows all metric sections (summary, statistics, distribution, top passages)
 - [ ] Updates automatically with each build
 - [ ] Basic, readable HTML format
-- [ ] No CLI access required to view
 - [ ] Accessible on any device with a browser
-- [ ] Shows metrics for all story files (no filtering in HTML)
-
-### Filtering (CLI Only)
-- [ ] `--include` flag filters files by prefix
-- [ ] `--exclude` flag filters files by prefix
-- [ ] Filters can be combined
-- [ ] Clear indication of active filters in output
-- [ ] Default behavior: include all story files
+- [ ] Shows metrics for all story files
+- [ ] Clear section headers and labels
+- [ ] Statistics properly formatted and easy to read
 
 ### Data Accuracy
 - [ ] Word counts match manual verification for sample passages
 - [ ] Statistics computed correctly (verified against known datasets)
-- [ ] Filters apply correctly (CLI)
 - [ ] Edge cases handled gracefully (empty repo, single passage, etc.)
-- [ ] HTML shows same data as CLI (when no filters applied)
 
 ### Build Integration
-- [ ] Integrated into `make build` and `make deploy`
+- [ ] Integrated into automated build pipeline
 - [ ] HTML generated alongside Harlowe, Paperthin, DotGraph, AllPaths
 - [ ] Build fails gracefully if metrics generation fails
 - [ ] Clear build output showing metrics generation
 
 ### Documentation
-- [ ] Usage examples in README or documentation
 - [ ] Clear explanation of word counting rules
-- [ ] Filter behavior documented (CLI)
 - [ ] HTML format documented
-- [ ] Integration with existing tooling (make/npm)
+- [ ] URL location documented (`/metrics.html`)
+- [ ] Metric sections and statistics explained
 
 ---
 
