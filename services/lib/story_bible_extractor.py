@@ -628,49 +628,75 @@ def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'increm
     """
     Identify which passages need fact extraction based on cache and mode.
 
-    Now extracts from allpaths.txt using passage-based approach (each passage once).
+    Supports two extraction modes:
+    1. NEW: allpaths.txt with passage-based approach (preferred, deduplicates)
+    2. LEGACY: path-*.txt files (fallback for backward compatibility)
 
     Args:
         cache: Story Bible cache dict
-        metadata_dir: Directory containing allpaths.txt and allpaths-passage-mapping.json
+        metadata_dir: Directory containing allpaths-metadata files
         mode: 'incremental' (only new/changed) or 'full' (all passages)
 
     Returns:
-        List of (passage_id, passage_name, passage_content) tuples to process
+        List of (passage_id, passage_file, passage_content) tuples to process
     """
     passages_to_process = []
 
-    # Load AllPaths output
+    # Try NEW passage-based format first (allpaths.txt + mapping)
     allpaths_file = metadata_dir / "allpaths.txt"
-    if not allpaths_file.exists():
-        logging.error(f"AllPaths output not found: {allpaths_file}")
-        return passages_to_process
-
-    # Load passage mapping
     mapping_file = metadata_dir / "allpaths-passage-mapping.json"
-    if not mapping_file.exists():
-        logging.error(f"Passage mapping not found: {mapping_file}")
-        return passages_to_process
 
-    try:
-        with open(allpaths_file, 'r') as f:
-            allpaths_content = f.read()
+    if allpaths_file.exists() and mapping_file.exists():
+        # NEW FORMAT: Parse individual passages from allpaths.txt
+        logging.info("Using new passage-based extraction format")
+        try:
+            with open(allpaths_file, 'r') as f:
+                allpaths_content = f.read()
 
-        with open(mapping_file, 'r') as f:
-            mapping = json.load(f)
+            with open(mapping_file, 'r') as f:
+                mapping = json.load(f)
 
-        logging.info(f"Loaded AllPaths output ({len(allpaths_content)} chars) and mapping ({len(mapping)} entries)")
-    except Exception as e:
-        logging.error(f"Failed to load AllPaths files: {e}")
-        return passages_to_process
+            logging.info(f"Loaded AllPaths output ({len(allpaths_content)} chars) and mapping ({len(mapping)} entries)")
 
-    # Parse passages from AllPaths output
-    passages = parse_passages_from_allpaths(allpaths_content, mapping)
+            # Parse passages from AllPaths output
+            passages = parse_passages_from_allpaths(allpaths_content, mapping)
 
-    # Filter based on mode and cache
-    for passage in passages:
-        passage_id = passage["passage_id"]
-        passage_content = passage["content"]
+            # Filter based on mode and cache
+            for passage in passages:
+                passage_id = passage["passage_id"]
+                passage_content = passage["content"]
+                content_hash = hashlib.md5(passage_content.encode()).hexdigest()
+
+                # Check cache for this passage
+                cached_extraction = cache.get('passage_extractions', {}).get(passage_id)
+
+                if mode == 'full':
+                    # Force re-extraction regardless of cache
+                    passages_to_process.append((passage_id, passage_id, passage_content))
+                elif mode == 'incremental':
+                    # Only extract if new or changed
+                    if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
+                        passages_to_process.append((passage_id, passage_id, passage_content))
+
+            logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode})")
+            return passages_to_process
+
+        except Exception as e:
+            logging.error(f"Failed to load AllPaths files: {e}, falling back to legacy format")
+
+    # LEGACY FORMAT: Iterate over path-*.txt files (fallback)
+    logging.info("Using legacy path-based extraction format (path-*.txt files)")
+
+    for passage_file in metadata_dir.glob("*.txt"):
+        # Skip allpaths.txt if it exists but failed to parse
+        if passage_file.name == "allpaths.txt":
+            continue
+
+        # Get passage identifier from filename
+        passage_id = passage_file.stem  # filename without extension
+
+        # Read passage content
+        passage_content = passage_file.read_text()
         content_hash = hashlib.md5(passage_content.encode()).hexdigest()
 
         # Check cache for this passage
@@ -678,11 +704,11 @@ def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'increm
 
         if mode == 'full':
             # Force re-extraction regardless of cache
-            passages_to_process.append((passage_id, passage_id, passage_content))
+            passages_to_process.append((passage_id, passage_file, passage_content))
         elif mode == 'incremental':
             # Only extract if new or changed
             if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
-                passages_to_process.append((passage_id, passage_id, passage_content))
+                passages_to_process.append((passage_id, passage_file, passage_content))
 
-    logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode})")
+    logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode}, legacy format)")
     return passages_to_process
