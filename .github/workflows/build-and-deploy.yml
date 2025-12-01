@@ -93,16 +93,21 @@ jobs:
         run: |
           tweego src -o dist/graph.html -f dotgraph-2
 
-      - name: Fetch base branch for PR categorization
+      - name: Fetch base branch and calculate merge base for PR categorization
         if: github.event_name == 'pull_request'
         run: |
           # Fetch the base branch so git comparisons work for path categorization
           git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-          echo "Fetched base branch: origin/${{ github.base_ref }}"
+          # Calculate merge base to isolate PR changes from concurrent main changes
+          MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
+          echo "Base branch: origin/${{ github.base_ref }}"
+          echo "Merge base: $MERGE_BASE"
+          echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
 
       - name: Build AllPaths version (AI continuity checking)
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_MERGE_BASE: ${{ env.GITHUB_MERGE_BASE }}
         run: |
           chmod +x scripts/build-allpaths.sh
           ./scripts/build-allpaths.sh
