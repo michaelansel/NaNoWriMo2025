@@ -19,138 +19,23 @@ OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
 OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 120  # 2 minutes per passage
 
-# AI prompt for entity-first extraction
-EXTRACTION_PROMPT = """=== SECTION 1: ROLE & CONTEXT ===
+# AI prompt for entity-first extraction (simplified for reliability)
+EXTRACTION_PROMPT = """Extract ALL named entities from this story passage.
 
-You are extracting ALL named ENTITIES from an interactive fiction story passage.
+IMPORTANT - Extract EVERY:
+- Character name (e.g., "Jerrick", "Miss Rosie", "Javlyn")
+- Titles with names as ONE entity (e.g., "Miss Rosie" not just "Rosie")
+- Possessive mentions (e.g., "Miss Rosie's beef stew" -> extract "Miss Rosie")
+- Location name (e.g., "cave", "village", "Academy")
+- Item name (e.g., "lantern", "beef stew", "hammer")
 
-Your task: Extract entities FIRST (characters, locations, items), then associate facts with those entities.
+Respond with ONLY valid JSON (no markdown):
+{{"entities": [{{"name": "Name", "type": "character|location|item"}}]}}
 
-CRITICAL UNDERSTANDING:
-- STEP 1: Extract EVERY named entity (100% detection is the goal)
-- STEP 2: Associate facts with those entities
-- Dialogue mentions count: "when Marcie was with us" → Extract "Marcie"
-- Possessive mentions count: "Miss Rosie's beef stew" → Extract "Miss Rosie" AND "beef stew"
-- Indirect mentions count: "Josie fell out of a tree" → Extract "Josie"
-- When in doubt, EXTRACT IT (better to over-extract than miss entities)
-
-=== SECTION 2: ENTITY TYPES TO EXTRACT ===
-
-STEP 1: ENTITY EXTRACTION (CRITICAL - Do this first)
-
-Scan the passage for ALL named entities. Extract EVERY proper noun, named item, location, and character.
-
-Types of entities to extract:
-
-1. **CHARACTERS** (people, beings):
-   - Proper names: Javlyn, Terence, Marcie, Miss Rosie, Josie
-   - Titles + names: "Miss Rosie" (extract as single entity with title)
-   - Mentioned in dialogue: "when Marcie was with us"
-   - Possessive form: "Rosie's beef stew" → Extract "Miss Rosie"
-   - Indirect mention: "Josie fell out of a tree" → Extract "Josie"
-   - Pronouns with clear antecedents: Track back to named character
-
-2. **LOCATIONS** (places):
-   - Named places: Academy, village, city, cave, passageway
-   - Geographic features: mountain, coast, forest
-   - Buildings: inn, temple, entrance
-   - Extract even if mentioned once
-
-3. **ITEMS/OBJECTS** (things):
-   - Named items: lantern, jerkin, belt, beef stew, artifact
-   - Unique objects: "the lantern" (if it's THE specific one)
-   - Food: "Miss Rosie's famous beef stew" → Extract "beef stew"
-   - Tools, weapons, magical items
-
-4. **ORGANIZATIONS/GROUPS**:
-   - Named groups: "the village", "our group"
-   - Collective pronouns: "we", "us" → Resolve to group if possible
-   - Institutions: "the Academy" (when referring to organization)
-
-5. **CONCEPTS/ABILITIES** (if named):
-   - Named abilities: "workings", "luck working", "light working"
-   - Magic terms specific to this story
-
-NORMALIZATION RULES:
-- Strip possessives: "Rosie's" → "Rosie"
-- Preserve titles: "Miss Rosie" (NOT just "Rosie")
-- Case-insensitive: "Marcie" = "marcie"
-- Resolve pronouns: "she" → Track to named entity if clear
-
-STEP 2: FACT ASSOCIATION (After entities extracted)
-
-For each entity extracted in Step 1, extract:
-- Identity facts (if available): "Javlyn is a student"
-- Mentions: ALL passages where entity appears
-- Context: How entity is mentioned (dialogue, narrative, possessive, etc.)
-- Relationships: Entity X associated with entity Y
-- Minimal info acceptable: Even if only "Marcie was mentioned"
-
-=== SECTION 3: OUTPUT FORMAT ===
-
-Respond with ONLY valid JSON (no markdown, no code blocks):
-
-{{
-  "entities": {{
-    "characters": [
-      {{
-        "name": "Marcie",
-        "title": null,
-        "mentions": [
-          {{
-            "context": "dialogue|narrative|possessive|internal_thought",
-            "quote": "when Marcie was with us"
-          }}
-        ],
-        "facts": [
-          "Was previously with the group",
-          "Left or lost (implied by 'was with us')"
-        ]
-      }}
-    ],
-    "locations": [
-      {{
-        "name": "cave",
-        "mentions": [
-          {{
-            "context": "narrative",
-            "quote": "the cave entrance"
-          }}
-        ],
-        "facts": ["Has an entrance"]
-      }}
-    ],
-    "items": [
-      {{
-        "name": "beef stew",
-        "mentions": [
-          {{
-            "context": "possessive",
-            "quote": "Miss Rosie's famous beef stew"
-          }}
-        ],
-        "facts": ["Associated with Miss Rosie", "Described as famous"]
-      }}
-    ],
-    "organizations": [],
-    "concepts": []
-  }}
-}}
-
-CRITICAL RULES:
-- Extract EVERY named entity, even if only mentioned once
-- Dialogue mentions count (don't skip "when Marcie was with us")
-- Possessive mentions count (don't skip "Miss Rosie's beef stew")
-- Indirect mentions count (don't skip "Josie fell out of a tree")
-- When in doubt, EXTRACT IT (better to over-extract than miss entities)
-
-Your goal: 100% entity detection. Nothing named in the story should be missed.
-
-=== SECTION 4: PASSAGE TEXT ===
-
+PASSAGE:
 {passage_text}
 
-BEGIN EXTRACTION (JSON only):
+JSON:
 """
 
 
@@ -304,59 +189,124 @@ def parse_json_from_response(text: str) -> Dict:
     """
     Extract JSON object from AI response that may contain extra text.
 
-    Looks for { } pattern and attempts to parse. Returns empty facts
-    if parsing fails (resilient to malformed LLM output).
+    Handles multiple LLM output formats:
+    1. Clean JSON
+    2. JSON wrapped in ```json...``` markdown code blocks
+    3. Flat entity list format ({"entities": [{"name": "X", "type": "character"}]})
+    4. Nested entity format ({"entities": {"characters": [...]}})
 
     Args:
         text: Raw AI response text
 
     Returns:
-        Parsed JSON object, or {"facts": []} if parsing fails
+        Parsed JSON object in normalized entity format, or {"facts": []} if parsing fails
     """
+    import re
+
     if not text:
         return {"facts": []}
 
+    # Strip markdown code blocks if present
+    if '```' in text:
+        # Extract content between ```json and ``` (or just ``` and ```)
+        match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', text)
+        if match:
+            text = match.group(1)
+
     # Try parsing entire response first
+    parsed = None
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
     except json.JSONDecodeError:
         pass
 
-    # Find JSON object boundaries
-    start = text.find('{')
-    end = text.rfind('}')
+    if not parsed:
+        # Find JSON object boundaries
+        start = text.find('{')
+        end = text.rfind('}')
 
-    if start == -1 or end == -1:
+        if start == -1 or end == -1:
+            return {"facts": []}
+
+        json_text = text[start:end+1]
+
+        # Try direct parse
+        try:
+            parsed = json.loads(json_text)
+        except json.JSONDecodeError:
+            pass
+
+        if not parsed:
+            # Try fixing common JSON errors from LLMs
+            # 1. Remove trailing commas before } or ]
+            fixed = re.sub(r',(\s*[}\]])', r'\1', json_text)
+            try:
+                parsed = json.loads(fixed)
+            except json.JSONDecodeError:
+                pass
+
+        if not parsed:
+            # 2. Try fixing unescaped quotes in strings (common LLM error)
+            try:
+                fixed = json_text.replace('\n', ' ').replace('\r', '')
+                parsed = json.loads(fixed)
+            except json.JSONDecodeError:
+                pass
+
+    if not parsed:
+        # Give up - return empty facts rather than crashing
         return {"facts": []}
 
-    json_text = text[start:end+1]
+    # Normalize entity format: convert flat list to nested dict
+    # LLM sometimes returns: {"entities": [{"name": "X", "type": "character"}, ...]}
+    # We need: {"entities": {"characters": [...], "locations": [...], ...}}
+    if 'entities' in parsed and isinstance(parsed['entities'], list):
+        flat_entities = parsed['entities']
+        nested_entities = {
+            'characters': [],
+            'locations': [],
+            'items': [],
+            'organizations': [],
+            'concepts': []
+        }
 
-    # Try direct parse
-    try:
-        return json.loads(json_text)
-    except json.JSONDecodeError:
-        pass
+        # Type mapping (normalize various type names)
+        type_map = {
+            'character': 'characters',
+            'person': 'characters',
+            'people': 'characters',
+            'location': 'locations',
+            'place': 'locations',
+            'item': 'items',
+            'object': 'items',
+            'thing': 'items',
+            'weapon': 'items',
+            'tool': 'items',
+            'food': 'items',
+            'organization': 'organizations',
+            'group': 'organizations',
+            'concept': 'concepts',
+            'ability': 'concepts',
+            'weather': 'concepts',  # Map weather to concepts
+        }
 
-    # Try fixing common JSON errors from LLMs
-    # 1. Remove trailing commas before } or ]
-    import re
-    fixed = re.sub(r',(\s*[}\]])', r'\1', json_text)
-    try:
-        return json.loads(fixed)
-    except json.JSONDecodeError:
-        pass
+        for entity in flat_entities:
+            entity_type = entity.get('type', '').lower()
+            target_key = type_map.get(entity_type)
 
-    # 2. Try fixing unescaped quotes in strings (common LLM error)
-    # This is a heuristic - replace \" with escaped version
-    try:
-        # More aggressive cleanup
-        fixed = json_text.replace('\n', ' ').replace('\r', '')
-        return json.loads(fixed)
-    except json.JSONDecodeError:
-        pass
+            if target_key:
+                # Convert to expected format with name, mentions, facts
+                normalized_entity = {
+                    'name': entity.get('name', ''),
+                    'title': entity.get('title'),
+                    'mentions': entity.get('mentions', []),
+                    'facts': entity.get('facts', [])
+                }
+                nested_entities[target_key].append(normalized_entity)
 
-    # Give up - return empty facts rather than crashing
-    return {"facts": []}
+        parsed['entities'] = nested_entities
+
+    return parsed
 
 
 def run_summarization(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str, float]:

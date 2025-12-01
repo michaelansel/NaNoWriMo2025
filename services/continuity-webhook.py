@@ -1558,30 +1558,46 @@ _Progress updates will be posted as each passage completes._
                         if 'passage_extractions' not in cache:
                             cache['passage_extractions'] = {}
 
+                        # Handle new entity-first extraction format
+                        # extracted_facts is now a dict with 'entities' and 'facts' keys
+                        entities = extracted_facts.get('entities', {})
+                        facts_list = extracted_facts.get('facts', [])
+
                         cache['passage_extractions'][passage_id] = {
                             'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
                             'extracted_at': datetime.now().isoformat(),
-                            'facts': extracted_facts,
+                            'entities': entities,
+                            'facts': facts_list,
                             'chunks_processed': chunks_processed,
                             'passage_name': passage_id,
                             'passage_length': len(passage_content)
                         }
 
-                        # Post progress
-                        fact_count = len(extracted_facts)
-                        preview_facts = extracted_facts[:3] if extracted_facts else []
-                        preview_text = '\n'.join(f"- {f.get('fact', 'N/A')}" for f in preview_facts)
-                        more_text = f"\n- ... and {fact_count - 3} more" if fact_count > 3 else ""
+                        # Post progress with entity counts
+                        char_count = len(entities.get('characters', []))
+                        loc_count = len(entities.get('locations', []))
+                        item_count = len(entities.get('items', []))
+
+                        # Build entity preview
+                        char_names = [c.get('name', 'Unknown') for c in entities.get('characters', [])[:5]]
+                        loc_names = [l.get('name', 'Unknown') for l in entities.get('locations', [])[:3]]
+
+                        preview_parts = []
+                        if char_names:
+                            preview_parts.append(f"**Characters:** {', '.join(char_names)}")
+                        if loc_names:
+                            preview_parts.append(f"**Locations:** {', '.join(loc_names)}")
+                        preview_text = '\n'.join(preview_parts) if preview_parts else "No entities found"
 
                         post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
 
 **Passage:** `{passage_id}`
-**Facts extracted:** {fact_count}
+**Entities found:** {char_count} characters, {loc_count} locations, {item_count} items
 
 <details>
-<summary>Preview facts</summary>
+<summary>Preview entities</summary>
 
-{preview_text}{more_text}
+{preview_text}
 
 </details>
 """)

@@ -273,6 +273,160 @@ def extract_all_characters_from_fact(fact_text: str) -> List[str]:
     return names
 
 
+def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
+    """
+    Aggregate entities from entity-first extractions.
+
+    This function handles the new entity-first extraction format where each
+    passage extraction contains an 'entities' dict with characters, locations,
+    items, organizations, and concepts.
+
+    Args:
+        per_passage_extractions: Dict of passage_id -> extraction data
+
+    Returns:
+        Dict with aggregated entities:
+        {
+            'characters': {name: {identity: [...], mentions: [...], passages: [...]}},
+            'locations': {name: {facts: [...], mentions: [...], passages: [...]}},
+            'items': {name: {facts: [...], mentions: [...], passages: [...]}}
+        }
+    """
+    # Initialize aggregated structure
+    characters = {}  # name -> {identity: [], mentions: [], passages: []}
+    locations = {}   # name -> {facts: [], mentions: [], passages: []}
+    items = {}       # name -> {facts: [], mentions: [], passages: []}
+
+    for passage_id, extraction in per_passage_extractions.items():
+        entities = extraction.get('entities', {})
+
+        # Process characters
+        for char in entities.get('characters', []):
+            name = char.get('name', '').strip()
+            if not name:
+                continue
+
+            # Normalize name (strip possessives, preserve titles)
+            normalized = normalize_name(name)
+
+            if normalized not in characters:
+                characters[normalized] = {
+                    'identity': [],
+                    'mentions': [],
+                    'passages': []
+                }
+
+            # Add passage to list
+            if passage_id not in characters[normalized]['passages']:
+                characters[normalized]['passages'].append(passage_id)
+
+            # Add facts as identity
+            for fact in char.get('facts', []):
+                fact_text = fact.strip() if isinstance(fact, str) else str(fact)
+                if fact_text and fact_text not in characters[normalized]['identity']:
+                    characters[normalized]['identity'].append(fact_text)
+
+            # Add mentions
+            for mention in char.get('mentions', []):
+                quote = mention.get('quote', '')
+                if quote and quote not in [m.get('quote') for m in characters[normalized]['mentions']]:
+                    characters[normalized]['mentions'].append({
+                        'quote': quote,
+                        'context': mention.get('context', 'narrative'),
+                        'passage': passage_id
+                    })
+
+        # Process locations
+        for loc in entities.get('locations', []):
+            name = loc.get('name', '').strip()
+            if not name:
+                continue
+
+            normalized = normalize_name(name)
+
+            if normalized not in locations:
+                locations[normalized] = {
+                    'facts': [],
+                    'mentions': [],
+                    'passages': []
+                }
+
+            if passage_id not in locations[normalized]['passages']:
+                locations[normalized]['passages'].append(passage_id)
+
+            for fact in loc.get('facts', []):
+                fact_text = fact.strip() if isinstance(fact, str) else str(fact)
+                if fact_text and fact_text not in locations[normalized]['facts']:
+                    locations[normalized]['facts'].append(fact_text)
+
+            for mention in loc.get('mentions', []):
+                quote = mention.get('quote', '')
+                if quote and quote not in [m.get('quote') for m in locations[normalized]['mentions']]:
+                    locations[normalized]['mentions'].append({
+                        'quote': quote,
+                        'context': mention.get('context', 'narrative'),
+                        'passage': passage_id
+                    })
+
+        # Process items
+        for item in entities.get('items', []):
+            name = item.get('name', '').strip()
+            if not name:
+                continue
+
+            normalized = normalize_name(name)
+
+            if normalized not in items:
+                items[normalized] = {
+                    'facts': [],
+                    'mentions': [],
+                    'passages': []
+                }
+
+            if passage_id not in items[normalized]['passages']:
+                items[normalized]['passages'].append(passage_id)
+
+            for fact in item.get('facts', []):
+                fact_text = fact.strip() if isinstance(fact, str) else str(fact)
+                if fact_text and fact_text not in items[normalized]['facts']:
+                    items[normalized]['facts'].append(fact_text)
+
+            for mention in item.get('mentions', []):
+                quote = mention.get('quote', '')
+                if quote and quote not in [m.get('quote') for m in items[normalized]['mentions']]:
+                    items[normalized]['mentions'].append({
+                        'quote': quote,
+                        'context': mention.get('context', 'narrative'),
+                        'passage': passage_id
+                    })
+
+    return {
+        'characters': characters,
+        'locations': locations,
+        'items': items
+    }
+
+
+def normalize_name(name: str) -> str:
+    """
+    Normalize an entity name for deduplication.
+
+    - Strip possessives ('s, ')
+    - Preserve titles (Miss, Mr, etc.)
+    - Title case
+    """
+    # Strip possessives
+    if name.endswith("'s"):
+        name = name[:-2]
+    elif name.endswith("'"):
+        name = name[:-1]
+
+    # Title case
+    name = name.strip().title()
+
+    return name
+
+
 def aggregate_facts_deterministically(per_passage_extractions: Dict) -> Dict[str, List[Dict]]:
     """
     Aggregate facts from per-passage extractions deterministically.
@@ -747,11 +901,9 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
     """
     Aggregate and deduplicate facts from per-passage extractions.
 
-    NEW ARCHITECTURE (lossless):
-    1. Deterministically aggregate all facts (exact duplicates only)
-    2. Use AI ONLY for name normalization (punctuation/possessive variants)
-    3. Group facts by type and character
-    4. Never drop facts - preserve all unique extractions
+    Supports two extraction formats:
+    1. Entity-first format (new): extractions have 'entities' dict with characters, locations, items
+    2. Fact-based format (legacy): extractions have 'facts' list with typed fact objects
 
     Args:
         per_passage_extractions: Dict of passage_id -> extraction data
@@ -766,61 +918,171 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
         merged_extractions = merge_chunk_facts(per_passage_extractions)
 
         if not merged_extractions:
-            logging.warning("No facts to summarize")
+            logging.warning("No extractions to summarize")
             return (None, "failed")
 
-        logging.info(f"Aggregating facts deterministically (lossless)...")
+        # Detect extraction format by checking first extraction
+        first_extraction = next(iter(merged_extractions.values()), {})
+        has_entities = 'entities' in first_extraction and first_extraction.get('entities')
+        has_facts = 'facts' in first_extraction and first_extraction.get('facts')
 
-        # Step 1: Aggregate facts deterministically
-        # This preserves ALL unique facts, only merging exact duplicates
-        aggregated = aggregate_facts_deterministically(merged_extractions)
-
-        total_facts = sum(len(facts) for facts in aggregated.values())
-        logging.info(f"  → {total_facts} unique facts after deduplication")
-
-        # Step 2: Extract character facts for name normalization
-        character_facts = aggregated.get('character_identity', [])
-
-        # Step 3: Use AI to normalize entity names (punctuation/possessive only)
-        name_mapping = {}
-        if character_facts:
-            logging.info(f"Normalizing character names ({len(character_facts)} character facts)...")
-            name_mapping = normalize_entity_names(character_facts)
-            if name_mapping:
-                logging.info(f"  → Normalized {len(name_mapping)} name variants")
-
-        # Step 4: Group character facts by character (with normalization)
-        characters = group_facts_by_character(character_facts, name_mapping)
-
-        # Step 5: Build final structure
-        result = {
-            'constants': {
-                'world_rules': aggregated.get('world_rule', []),
-                'setting': aggregated.get('setting', []),
-                'timeline': aggregated.get('timeline', [])
-            },
-            'characters': characters,
-            'variables': {
-                'events': [],
-                'outcomes': aggregated.get('variables', [])
-            },
-            'conflicts': []  # No AI-based conflict detection in deterministic mode
-        }
-
-        logging.info("Aggregation successful (lossless)")
-        logging.info(f"  World rules: {len(result['constants']['world_rules'])}")
-        logging.info(f"  Setting: {len(result['constants']['setting'])}")
-        logging.info(f"  Timeline: {len(result['constants']['timeline'])}")
-        logging.info(f"  Characters: {len(characters)}")
-        logging.info(f"  Variables: {len(result['variables']['outcomes'])}")
-
-        return (result, "success")
+        if has_entities:
+            # NEW ENTITY-FIRST FORMAT
+            logging.info("Detected entity-first extraction format")
+            return summarize_from_entities(merged_extractions)
+        elif has_facts:
+            # LEGACY FACT-BASED FORMAT
+            logging.info("Detected legacy fact-based extraction format")
+            return summarize_from_facts(merged_extractions)
+        else:
+            logging.warning("No entities or facts found in extractions")
+            return (None, "failed")
 
     except Exception as e:
         logging.error(f"Unexpected error during aggregation: {e}")
         import traceback
         traceback.print_exc()
         return (None, "failed")
+
+
+def summarize_from_entities(merged_extractions: Dict) -> Tuple[Optional[Dict], str]:
+    """
+    Aggregate from entity-first extraction format.
+
+    This is the new lossless aggregation that directly processes entities
+    (characters, locations, items) without AI filtering.
+    """
+    logging.info("Aggregating entities deterministically (lossless)...")
+
+    # Aggregate all entities across passages
+    aggregated = aggregate_entities_from_extractions(merged_extractions)
+
+    char_count = len(aggregated.get('characters', {}))
+    loc_count = len(aggregated.get('locations', {}))
+    item_count = len(aggregated.get('items', {}))
+
+    logging.info(f"  → {char_count} characters, {loc_count} locations, {item_count} items")
+
+    # Build final structure
+    # Convert characters dict to expected format
+    characters = {}
+    for name, data in aggregated.get('characters', {}).items():
+        characters[name] = {
+            'identity': data.get('identity', []),
+            'zero_action_state': [],  # Not extracted in entity format
+            'variables': [],  # Not extracted in entity format
+            'passages': data.get('passages', []),
+            'mentions': data.get('mentions', [])
+        }
+
+    # Convert locations to setting facts
+    setting_facts = []
+    for name, data in aggregated.get('locations', {}).items():
+        for fact in data.get('facts', []):
+            setting_facts.append({
+                'fact': f"{name}: {fact}",
+                'type': 'setting',
+                'evidence': data.get('mentions', [])[:3],  # Limit evidence
+                'passages': data.get('passages', [])
+            })
+        # Also add a basic "exists" fact if no facts
+        if not data.get('facts'):
+            setting_facts.append({
+                'fact': f"Location: {name}",
+                'type': 'setting',
+                'evidence': data.get('mentions', [])[:3],
+                'passages': data.get('passages', [])
+            })
+
+    # Convert items to setting facts (or separate category)
+    for name, data in aggregated.get('items', {}).items():
+        for fact in data.get('facts', []):
+            setting_facts.append({
+                'fact': f"{name}: {fact}",
+                'type': 'setting',
+                'evidence': data.get('mentions', [])[:3],
+                'passages': data.get('passages', [])
+            })
+        if not data.get('facts'):
+            setting_facts.append({
+                'fact': f"Item: {name}",
+                'type': 'setting',
+                'evidence': data.get('mentions', [])[:3],
+                'passages': data.get('passages', [])
+            })
+
+    result = {
+        'constants': {
+            'world_rules': [],
+            'setting': setting_facts,
+            'timeline': []
+        },
+        'characters': characters,
+        'variables': {
+            'events': [],
+            'outcomes': []
+        },
+        'conflicts': []
+    }
+
+    logging.info("Entity aggregation successful (lossless)")
+    logging.info(f"  Characters: {len(characters)}")
+    logging.info(f"  Setting facts: {len(setting_facts)}")
+
+    return (result, "success")
+
+
+def summarize_from_facts(merged_extractions: Dict) -> Tuple[Optional[Dict], str]:
+    """
+    Aggregate from legacy fact-based extraction format.
+
+    This is the original lossless aggregation that processes typed facts.
+    """
+    logging.info("Aggregating facts deterministically (lossless)...")
+
+    # Aggregate facts deterministically
+    aggregated = aggregate_facts_deterministically(merged_extractions)
+
+    total_facts = sum(len(facts) for facts in aggregated.values())
+    logging.info(f"  → {total_facts} unique facts after deduplication")
+
+    # Extract character facts for name normalization
+    character_facts = aggregated.get('character_identity', [])
+
+    # Use AI to normalize entity names (punctuation/possessive only)
+    name_mapping = {}
+    if character_facts:
+        logging.info(f"Normalizing character names ({len(character_facts)} character facts)...")
+        name_mapping = normalize_entity_names(character_facts)
+        if name_mapping:
+            logging.info(f"  → Normalized {len(name_mapping)} name variants")
+
+    # Group character facts by character (with normalization)
+    characters = group_facts_by_character(character_facts, name_mapping)
+
+    # Build final structure
+    result = {
+        'constants': {
+            'world_rules': aggregated.get('world_rule', []),
+            'setting': aggregated.get('setting', []),
+            'timeline': aggregated.get('timeline', [])
+        },
+        'characters': characters,
+        'variables': {
+            'events': [],
+            'outcomes': aggregated.get('variables', [])
+        },
+        'conflicts': []
+    }
+
+    logging.info("Fact aggregation successful (lossless)")
+    logging.info(f"  World rules: {len(result['constants']['world_rules'])}")
+    logging.info(f"  Setting: {len(result['constants']['setting'])}")
+    logging.info(f"  Timeline: {len(result['constants']['timeline'])}")
+    logging.info(f"  Characters: {len(characters)}")
+    logging.info(f"  Variables: {len(result['variables']['outcomes'])}")
+
+    return (result, "success")
 
 
 def main():
