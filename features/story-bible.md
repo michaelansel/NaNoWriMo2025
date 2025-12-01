@@ -2,7 +2,7 @@
 
 **Status:** In Progress
 **Owner:** Product Manager
-**Priority:** Medium (Phase 1: Informational Tool)
+**Priority:** Medium
 **Target:** December 2025 (Post-NaNoWriMo refinement phase)
 
 ---
@@ -20,18 +20,11 @@ Writers creating branching narratives need a canonical reference that captures e
 - **Two formats:** Human-readable HTML and machine-readable JSON
 - **Post-build artifact:** Generated automatically, never blocks deployment
 
-**Two-Phase Approach:**
-
-**Phase 1 (Immediate - Informational):**
-- Extract and display Story Bible after each build
+**What This Feature Does:**
+- Extracts and displays Story Bible after each build
 - Human-readable HTML for authors on GitHub Pages
-- Machine-readable JSON for future AI integration
+- Machine-readable JSON for AI integration
 - NOT blocking CI—purely informational/additive
-
-**Phase 2 (Future - Validation):**
-- Integrate validation into existing AI Continuity Checking
-- Flag contradictions of constants in PR comments
-- Still informational, not blocking merges
 
 ---
 
@@ -144,7 +137,7 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ---
 
-### Story 7: AI Integration (Phase 2)
+### Story 7: AI Integration
 **As a** developer integrating AI continuity checking
 **I want** machine-readable Story Bible data
 **So that** AI can validate new content against established canon
@@ -154,7 +147,7 @@ Writers creating branching narratives need a canonical reference that captures e
 - Structured data: constants, variables, character states, world rules
 - Each fact includes evidence (source passages)
 - JSON schema documented for AI integration
-- Can be consumed by AI validation tools (Phase 2)
+- Can be consumed by AI validation tools
 
 ---
 
@@ -320,7 +313,7 @@ Writers creating branching narratives need a canonical reference that captures e
 - Conflicts flagged prominently
 
 **2. story-bible.json (Machine-Readable)**
-- Structured data for AI integration (Phase 2)
+- Structured data for AI integration
 - Schema includes: constants, variables, character_states, evidence, metadata
 - Valid JSON format
 - Documented schema for validation tools
@@ -436,7 +429,7 @@ Writers creating branching narratives need a canonical reference that captures e
 - Story Bible regenerates on every build
 - Shows current constants based on current passages
 - Git history preserves previous versions if you need to check
-- Phase 2: Validation will flag when new content contradicts previous constants
+- Future consideration: Validation could flag when new content contradicts previous constants
 
 ---
 
@@ -456,7 +449,7 @@ Writers creating branching narratives need a canonical reference that captures e
 **User Experience:**
 - Story Bible may flag as contradiction
 - You can note: "Intentional mystery—character identity revealed later"
-- Phase 2: Can mark intentional mysteries to suppress warnings
+- Future consideration: Could mark intentional mysteries to suppress warnings
 
 ---
 
@@ -496,7 +489,7 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ## Success Metrics
 
-**Primary Metrics (Phase 1):**
+**Primary Metrics:**
 - Story Bible generated successfully on every build
 - HTML accessible on GitHub Pages
 - JSON format valid and parseable
@@ -516,14 +509,14 @@ Writers creating branching narratives need a canonical reference that captures e
 - Deduplication reduces redundancy 30-50%
 - Contradictions flagged (not hidden)
 
-**Qualitative (Phase 1):**
+**Qualitative Metrics:**
 - Writers report Story Bible is useful for maintaining consistency
 - New collaborators find Story Bible helpful for onboarding
 - Team uses Story Bible terms in discussion ("is this a constant or variable?")
 - AI assistants use Story Bible for context
 - No surprises when searching for entities ("Why isn't X in here?")
 
-**Phase 2 (Future):**
+**Future Considerations:**
 - Validation runs automatically on PRs
 - Contradictions flagged before merge
 - False positive rate acceptable
@@ -592,7 +585,7 @@ Writers creating branching narratives need a canonical reference that captures e
 - [ ] Schema documented and versioned
 - [ ] Valid JSON format (no parse errors)
 - [ ] Includes: constants, variables, character_states, evidence, meta
-- [ ] Can be consumed by AI tools (Phase 2)
+- [ ] Can be consumed by AI tools
 
 ---
 
@@ -615,15 +608,14 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ## Timeline and Prioritization
 
-**Phase 1: Informational Tool**
-- **Target:** December 2025 (Post-NaNoWriMo refinement phase)
-- **Priority:** Medium
-- **Why December:** Story Bible more valuable after story reaches substantial size
+**Target:** December 2025 (Post-NaNoWriMo refinement phase)
+**Priority:** Medium
+**Rationale:** Story Bible becomes more valuable after story reaches substantial size
 
-**Phase 2: CI Validation**
-- **Target:** TBD (After Phase 1 learning)
-- **Priority:** Low (validate concept first)
-- **Dependencies:** Phase 1 working well, clear need identified
+**Future Enhancements (Not In Scope):**
+- Advanced validation integration with CI
+- Custom validation rules beyond basic extraction
+- Timeline depends on user feedback and demonstrated need
 
 ---
 

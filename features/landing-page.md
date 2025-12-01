@@ -104,12 +104,12 @@ Each output link must include:
 
 **Must:**
 - Be a static HTML file (no build step for the landing page itself)
-- Live at `dist/index.html` OR `dist/landing.html` with index.html redirecting to it
-  - **Decision needed:** Should landing page replace current index.html (playable story)?
-  - **Recommendation:** Keep index.html as playable story (primary use case), create separate `landing.html` that gets renamed to `index.html` in dist during build
-  - **Alternative:** Landing page becomes index.html, playable story becomes play.html
+- Live at `dist/index.html` with playable story moving to `dist/play.html`
+  - **Product Decision (PM Authority):** Landing page WILL replace index.html as the default entry point
+  - **Rationale:** Landing page makes "Play" the first thing users see, which aligns with "play in a place of prominence." Moving playable story to play.html is a small cost for better UX.
+  - **Impact:** Existing index.html (Harlowe playable story) becomes play.html; landing page becomes new index.html
 
-**Note for Architect:** This is a UX/product decision about default entry point. Technical implementation is Architect's domain.
+**Note for Architect:** The product decision is made (landing page replaces index.html). Technical implementation details (build process, file copying/renaming, HTML structure) are Architect's domain.
 
 ### Documentation Cleanup
 
@@ -235,14 +235,11 @@ Your story has been built successfully!
 
 ## Handoff to Architect
 
-**Product Decision Required:** Should landing page replace index.html or be a separate file?
-
-**PM Recommendation:** Landing page should replace index.html (Option A) - the landing page makes "Play" the first thing users see, which aligns with "play in a place of prominence." Moving playable story to play.html is a small cost for better UX.
+**Product Decision (Finalized):** Landing page will replace index.html as the default entry point. Playable story (current index.html) moves to play.html.
 
 **Design Decisions for Architect:**
-- File structure and naming conventions (index.html vs landing.html, where playable story lives)
 - HTML template approach (hand-written vs generated)
-- Build process integration (if needed)
+- Build process integration (how to rename index.html → play.html and create new index.html)
 - Responsive layout approach
 - Error handling for missing outputs (e.g., story-bible.html optional failure)
 

@@ -108,6 +108,42 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 
 ---
 
+## Acceptance Criteria Summary
+
+**Core Functionality:**
+- [ ] AI validation runs automatically on every PR
+- [ ] Results posted within minutes of PR workflow completion
+- [ ] Clear, actionable feedback with specific quotes from passages
+- [ ] Severity categorization (none/minor/major/critical)
+- [ ] Issue location information (passage IDs) provided
+- [ ] Three validation modes available (new-only/modified/all)
+- [ ] Content-based change detection accurately categorizes paths
+
+**Path Approval Workflow:**
+- [ ] Writers can approve paths with `/approve-path` command
+- [ ] Approved paths skipped in future validations
+- [ ] Validation cache updated automatically on approval
+- [ ] Approved paths re-checked only if content changes
+- [ ] Path approval requires repository collaborator permissions
+
+**Error Handling:**
+- [ ] Service downtime does not block PR merges (validation is informational)
+- [ ] Clear error messages for AI service failures
+- [ ] Retry logic for transient failures
+- [ ] Graceful handling of very long paths (context window limits)
+- [ ] Concurrent PR validations handled without interference
+
+**Story Bible Integration:**
+- [ ] Continuity checking loads Story Bible cache (if exists)
+- [ ] Validates new content against established constants (world rules, character identities, timeline facts)
+- [ ] Reports Story Bible violations in same PR comment as path issues
+- [ ] Clear distinction between "path consistency issues" and "world consistency issues"
+- [ ] Works gracefully if Story Bible doesn't exist yet (skips Story Bible validation, posts note)
+- [ ] Story Bible violations categorized by severity (critical/major/minor)
+- [ ] Single PR comment combines both validation types with separate sections
+
+---
+
 ## How It Works
 
 ---
