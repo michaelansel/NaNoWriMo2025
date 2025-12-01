@@ -284,17 +284,34 @@ def aggregate_facts_deterministically(per_passage_extractions: Dict) -> Dict[str
                 existing_evidence = existing_fact.get('evidence', [])
                 new_evidence = fact.get('evidence', [])
 
+                # Normalize evidence to lists (may be string or list)
+                if isinstance(existing_evidence, str):
+                    existing_evidence = [{'quote': existing_evidence}]
+                if isinstance(new_evidence, str):
+                    new_evidence = [{'quote': new_evidence}]
+                if not isinstance(existing_evidence, list):
+                    existing_evidence = []
+                if not isinstance(new_evidence, list):
+                    new_evidence = []
+
                 # Combine evidence lists
                 combined_evidence = existing_evidence + new_evidence
                 existing_fact['evidence'] = combined_evidence
             else:
                 # New unique fact - store it
+                evidence = fact.get('evidence', [])
+                # Normalize evidence to list
+                if isinstance(evidence, str):
+                    evidence = [{'quote': evidence}]
+                if not isinstance(evidence, list):
+                    evidence = []
+
                 fact_map[key] = {
                     'fact': fact_text,
                     'type': fact_type,
                     'category': category,
                     'confidence': fact.get('confidence', 'medium'),
-                    'evidence': fact.get('evidence', [])
+                    'evidence': evidence
                 }
 
     # Second pass: group by fact type
