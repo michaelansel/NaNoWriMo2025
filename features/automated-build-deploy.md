@@ -124,6 +124,7 @@ These are directional goals we cannot directly measure but inform our design dec
 - Your changes are built automatically
 - Preview artifacts ready to download within 2 minutes
 - PR comment shows build stats (file sizes, path counts) and download link
+- All 6 output formats included in preview
 - Resources file updates and commits automatically
 - You can test locally before merging
 - Nothing deploys to production yet

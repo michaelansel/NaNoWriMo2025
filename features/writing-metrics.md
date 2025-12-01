@@ -4,6 +4,8 @@
 **Owner:** Product Manager
 **Priority:** HIGH
 
+> **Note:** This is the detailed feature specification for the Metrics output format, one of six formats listed in [Multiple Output Formats](multiple-output-formats.md). See that document for a high-level overview of all output formats. This document provides full acceptance criteria, user stories, and detailed requirements for the Metrics format.
+
 ---
 
 ## Executive Summary

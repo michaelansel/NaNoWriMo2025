@@ -5,6 +5,8 @@
 **Priority:** HIGH
 **Target:** Active (December 2025)
 
+> **Note:** This is the detailed feature specification for the Story Bible output format, one of six formats listed in [Multiple Output Formats](multiple-output-formats.md). See that document for a high-level overview of all output formats. This document provides full acceptance criteria, user stories, and detailed requirements for the Story Bible format.
+
 ---
 
 ## Executive Summary

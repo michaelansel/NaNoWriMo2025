@@ -3,6 +3,9 @@
 **Status:** ✅ Active Feature
 **Owner:** Product Manager
 **Priority:** Core Feature
+**Feature Type:** Sub-feature extending AllPaths format
+
+> **Note:** This feature extends the AllPaths format described in [Multiple Output Formats](multiple-output-formats.md). AllPaths is one of six output formats (Harlowe, Paperthin, DotGraph, AllPaths, Metrics, Story Bible) generated from the story source. This document details the progress tracking and browsing capabilities within the AllPaths format.
 
 ---
 

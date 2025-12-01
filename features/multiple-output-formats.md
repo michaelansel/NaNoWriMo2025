@@ -80,7 +80,7 @@
 ## Success Metrics
 
 ### Primary Metrics
-- **Build reliability:** All 4 formats build successfully on every commit
+- **Build reliability:** All 6 formats build successfully on every commit
 - **Build speed:** Total build time <2 minutes
 - **Format usage:** Each format used for its intended purpose
 - **Maintenance burden:** Zero manual format maintenance
@@ -101,7 +101,7 @@ These are directional goals we cannot directly measure but inform our design dec
 
 ## How It Works
 
-### The Four Formats
+### The Six Formats
 
 #### 1. Harlowe (Interactive Playable Story)
 **Purpose:** Player experience - how readers will play the story
@@ -196,6 +196,56 @@ These are directional goals we cannot directly measure but inform our design dec
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/allpaths.html`
 
 **Technical Note:** Implementation details (path enumeration algorithm, ID generation, cycle detection) are in architecture documentation.
+
+---
+
+#### 5. Metrics (Writing Statistics)
+**Purpose:** Quantitative writing statistics and progress tracking
+
+**What You Get:**
+- Total word count across the entire story
+- Aggregate passage statistics (min/mean/median/max word counts)
+- Aggregate file statistics (min/mean/median/max word counts per file)
+- Word count distributions (fixed ranges: 0-100, 101-300, 301-500, 501-1000, 1000+)
+- Top 5 longest passages for review
+- Accessible on any device with a browser
+
+**Use Cases:**
+- Understanding writing output and volume
+- Staying motivated with quantitative progress
+- Analyzing writing patterns and typical passage lengths
+- Identifying refactoring candidates (exceptionally long or short passages)
+- Tracking contributions in collaborative projects
+
+**Output:** `dist/metrics.html`
+**Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/metrics.html`
+
+**Detailed Feature Spec:** See [Writing Metrics](writing-metrics.md) for full acceptance criteria, user stories, and detailed requirements.
+
+---
+
+#### 6. Story Bible (World Consistency Reference)
+**Purpose:** Canonical reference for characters, locations, items, and world facts
+
+**What You Get:**
+- Complete entity detection (ALL named characters, locations, items)
+- Constants vs Variables distinction (facts always true vs player-determined)
+- Zero Action State (what happens if player does nothing)
+- Evidence-based (every fact cites source passages)
+- Deduplication (merged facts with preserved evidence)
+- Searchable entity database extracted from prose
+
+**Use Cases:**
+- Maintaining world consistency across branches
+- Onboarding new collaborators with established lore
+- Distinguishing canon from player-determined outcomes
+- Understanding character baselines before player intervention
+- Avoiding contradictions in collaborative writing
+
+**Output:** `dist/story-bible.html`
+**Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/story-bible.html`
+
+**Detailed Feature Spec:** See [Story Bible](story-bible.md) for full acceptance criteria, user stories, and detailed requirements.
 
 ---
 
@@ -361,9 +411,9 @@ Implementation details (how formats are generated, error handling, performance o
 
 ### Current Performance (as of Nov 22, 2025)
 - ✅ **Build success rate:** 100% (all formats build on every commit)
-- ✅ **Build speed:** <2 minutes for all 4 formats
+- ✅ **Build speed:** <2 minutes for all 6 formats
 - ✅ **Output quality:** All formats usable for intended purposes
-- ✅ **Format sizes:** Harlowe 51KB, Paperthin 42KB, DotGraph 38KB, AllPaths 165KB
+- ✅ **Format sizes:** Harlowe 51KB, Paperthin 42KB, DotGraph 38KB, AllPaths 165KB, Metrics ~20KB, Story Bible ~50KB
 - ✅ **Path count:** 11 paths enumerated successfully
 
 ### Format-Specific Metrics
@@ -376,12 +426,14 @@ Implementation details (how formats are generated, error handling, performance o
 
 ## Success Criteria Met
 
-- [x] All 4 formats build automatically on every commit
+- [x] All 6 formats build automatically on every commit
 - [x] Build completes in <2 minutes
 - [x] Single source of truth (no manual format maintenance)
 - [x] Each format optimized for specific use case
 - [x] Formats published to GitHub Pages for easy access
 - [x] AllPaths integrated with AI continuity checking
+- [x] Metrics provides quantitative writing insights
+- [x] Story Bible maintains world consistency reference
 - [x] No inconsistencies between formats
 - [x] Writers use appropriate format for each task
 
@@ -401,8 +453,9 @@ Implementation details (how formats are generated, error handling, performance o
 ### What Worked Well
 - **Single source, multiple views:** .twee files compile to all formats without issues
 - **Format specialization:** Each format excels at its specific purpose
-- **Fast builds:** All 4 formats in <2 minutes keeps feedback loop tight
+- **Fast builds:** All 6 formats in <2 minutes keeps feedback loop tight
 - **AllPaths innovation:** Random IDs prevent AI confusion from semantic passage names
+- **Comprehensive tooling:** Six distinct perspectives serve different writing and review needs
 
 ### What Could Be Better
 - **Format documentation:** Could better explain when to use each format
