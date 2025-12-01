@@ -353,5 +353,332 @@ class TestGroupFactsByCategory(unittest.TestCase):
         self.assertEqual(len(result['variables']), 1)
 
 
+# Import new functions for testing deterministic aggregation
+try:
+    from ai_summarizer import (
+        aggregate_facts_deterministically,
+        normalize_entity_names,
+        group_facts_by_character
+    )
+except ImportError:
+    aggregate_facts_deterministically = None
+    normalize_entity_names = None
+    group_facts_by_character = None
+
+
+@unittest.skipIf(aggregate_facts_deterministically is None, "New aggregation functions not available")
+class TestAggregatFactsDeterministically(unittest.TestCase):
+    """Test deterministic fact aggregation without lossy AI filtering."""
+
+    def test_preserves_all_unique_facts(self):
+        """Should preserve all facts with unique text."""
+        per_passage = {
+            'p1': {
+                'facts': [
+                    {'fact': 'Kian is a warrior', 'type': 'character_identity', 'evidence': [{'passage': 'p1', 'quote': 'quote1'}]},
+                    {'fact': 'Terence is a mage', 'type': 'character_identity', 'evidence': [{'passage': 'p1', 'quote': 'quote2'}]}
+                ]
+            },
+            'p2': {
+                'facts': [
+                    {'fact': 'Kian carries a sword', 'type': 'character_identity', 'evidence': [{'passage': 'p2', 'quote': 'quote3'}]},
+                    {'fact': 'Magic requires training', 'type': 'world_rule', 'evidence': [{'passage': 'p2', 'quote': 'quote4'}]}
+                ]
+            }
+        }
+
+        result = aggregate_facts_deterministically(per_passage)
+
+        # Should have all 4 unique facts
+        all_facts = []
+        for category_facts in result.values():
+            all_facts.extend(category_facts)
+
+        self.assertEqual(len(all_facts), 4)
+        fact_texts = [f['fact'] for f in all_facts]
+        self.assertIn('Kian is a warrior', fact_texts)
+        self.assertIn('Terence is a mage', fact_texts)
+        self.assertIn('Kian carries a sword', fact_texts)
+        self.assertIn('Magic requires training', fact_texts)
+
+    def test_merges_exact_duplicate_facts(self):
+        """Should merge facts with identical text and combine evidence."""
+        per_passage = {
+            'p1': {
+                'facts': [
+                    {'fact': 'Magic exists', 'type': 'world_rule', 'evidence': [{'passage': 'p1', 'quote': 'quote1'}]}
+                ]
+            },
+            'p2': {
+                'facts': [
+                    {'fact': 'Magic exists', 'type': 'world_rule', 'evidence': [{'passage': 'p2', 'quote': 'quote2'}]}
+                ]
+            }
+        }
+
+        result = aggregate_facts_deterministically(per_passage)
+
+        # Should have 1 fact with combined evidence
+        world_rules = result.get('world_rule', [])
+        self.assertEqual(len(world_rules), 1)
+        self.assertEqual(world_rules[0]['fact'], 'Magic exists')
+        self.assertEqual(len(world_rules[0]['evidence']), 2)
+
+    def test_keeps_similar_but_different_facts(self):
+        """Should NOT merge similar facts that aren't identical."""
+        per_passage = {
+            'p1': {
+                'facts': [
+                    {'fact': 'Kian is a warrior', 'type': 'character_identity', 'evidence': [{'passage': 'p1', 'quote': 'quote1'}]},
+                    {'fact': 'Kian is a skilled warrior', 'type': 'character_identity', 'evidence': [{'passage': 'p1', 'quote': 'quote2'}]}
+                ]
+            }
+        }
+
+        result = aggregate_facts_deterministically(per_passage)
+
+        # Should keep both - they're different facts
+        char_facts = result.get('character_identity', [])
+        self.assertEqual(len(char_facts), 2)
+
+    def test_groups_by_fact_type(self):
+        """Should group aggregated facts by type."""
+        per_passage = {
+            'p1': {
+                'facts': [
+                    {'fact': 'Magic exists', 'type': 'world_rule', 'evidence': [{'passage': 'p1', 'quote': 'q1'}]},
+                    {'fact': 'City is coastal', 'type': 'setting', 'evidence': [{'passage': 'p1', 'quote': 'q2'}]},
+                    {'fact': 'Kian is a warrior', 'type': 'character_identity', 'evidence': [{'passage': 'p1', 'quote': 'q3'}]}
+                ]
+            }
+        }
+
+        result = aggregate_facts_deterministically(per_passage)
+
+        # Should have separate groups
+        self.assertIn('world_rule', result)
+        self.assertIn('setting', result)
+        self.assertIn('character_identity', result)
+        self.assertEqual(len(result['world_rule']), 1)
+        self.assertEqual(len(result['setting']), 1)
+        self.assertEqual(len(result['character_identity']), 1)
+
+
+@unittest.skipIf(normalize_entity_names is None, "Name normalization function not available")
+class TestNormalizeEntityNames(unittest.TestCase):
+    """Test AI-based entity name normalization (punctuation/variant cleanup only)."""
+
+    @patch('ai_summarizer.requests.post')
+    def test_normalizes_punctuation_artifacts(self, mock_post):
+        """Should normalize 'Danita,' to 'Danita' via AI."""
+        # Mock AI response
+        mock_post.return_value.json.return_value = {
+            'response': json.dumps({
+                'name_mappings': [
+                    {'variants': ['Danita,', 'Danita'], 'canonical': 'Danita'}
+                ]
+            })
+        }
+
+        facts = [
+            {'fact': 'Danita, is a student', 'type': 'character_identity'},
+            {'fact': 'Danita studies magic', 'type': 'character_identity'}
+        ]
+
+        result = normalize_entity_names(facts)
+
+        # Should map 'Danita,' -> 'Danita'
+        self.assertIn('Danita,', result)
+        self.assertEqual(result['Danita,'], 'Danita')
+
+    @patch('ai_summarizer.requests.post')
+    def test_normalizes_possessive_forms(self, mock_post):
+        """Should normalize "Javlyn's" to "Javlyn" via AI."""
+        mock_post.return_value.json.return_value = {
+            'response': json.dumps({
+                'name_mappings': [
+                    {'variants': ["Javlyn's", 'Javlyn'], 'canonical': 'Javlyn'}
+                ]
+            })
+        }
+
+        facts = [
+            {'fact': "Javlyn's magic is strong", 'type': 'character_identity'},
+            {'fact': 'Javlyn is a student', 'type': 'character_identity'}
+        ]
+
+        result = normalize_entity_names(facts)
+
+        self.assertIn("Javlyn's", result)
+        self.assertEqual(result["Javlyn's"], 'Javlyn')
+
+    @patch('ai_summarizer.requests.post')
+    def test_returns_empty_for_no_variants(self, mock_post):
+        """Should return empty mapping when no variants found."""
+        mock_post.return_value.json.return_value = {
+            'response': json.dumps({'name_mappings': []})
+        }
+
+        facts = [
+            {'fact': 'Kian is a warrior', 'type': 'character_identity'}
+        ]
+
+        result = normalize_entity_names(facts)
+        self.assertEqual(len(result), 0)
+
+
+@unittest.skipIf(group_facts_by_character is None, "Character grouping function not available")
+class TestGroupFactsByCharacter(unittest.TestCase):
+    """Test grouping character facts by character name with name normalization."""
+
+    def test_groups_facts_by_character_name(self):
+        """Should group character facts by extracted name."""
+        facts = [
+            {'fact': 'Kian is a warrior', 'type': 'character_identity', 'category': 'constant'},
+            {'fact': 'Kian carries a sword', 'type': 'character_identity', 'category': 'constant'},
+            {'fact': 'Terence is a mage', 'type': 'character_identity', 'category': 'constant'}
+        ]
+
+        result = group_facts_by_character(facts, name_mapping={})
+
+        self.assertIn('Kian', result)
+        self.assertIn('Terence', result)
+        self.assertEqual(len(result['Kian']['identity']), 2)
+        self.assertEqual(len(result['Terence']['identity']), 1)
+
+    def test_applies_name_normalization(self):
+        """Should use name mapping to unify variants."""
+        facts = [
+            {'fact': 'Danita, is a student', 'type': 'character_identity', 'category': 'constant'},
+            {'fact': 'Danita studies magic', 'type': 'character_identity', 'category': 'constant'}
+        ]
+
+        name_mapping = {'Danita,': 'Danita'}
+
+        result = group_facts_by_character(facts, name_mapping)
+
+        # Should have single 'Danita' entry with both facts
+        self.assertIn('Danita', result)
+        self.assertEqual(len(result['Danita']['identity']), 2)
+        # Should NOT have 'Danita,' as a separate character
+        self.assertNotIn('Danita,', result)
+
+    def test_separates_by_category(self):
+        """Should separate identity, zero_action_state, and variables."""
+        facts = [
+            {'fact': 'Kian is a warrior', 'type': 'character_identity', 'category': 'constant'},
+            {'fact': 'Kian trains daily', 'type': 'character_identity', 'category': 'zero_action_state'},
+            {'fact': 'Kian masters swordplay', 'type': 'character_identity', 'category': 'variable'}
+        ]
+
+        result = group_facts_by_character(facts, name_mapping={})
+
+        self.assertEqual(len(result['Kian']['identity']), 1)
+        self.assertEqual(len(result['Kian']['zero_action_state']), 1)
+        self.assertEqual(len(result['Kian']['variables']), 1)
+
+
+@unittest.skipIf(aggregate_facts_deterministically is None, "Summarizer module not available")
+class TestIntegrationLosslessAggregation(unittest.TestCase):
+    """Integration test: verify all character facts are preserved through the full pipeline."""
+
+    def test_preserves_kian_and_terence_facts(self):
+        """
+        Regression test: Ensure characters mentioned in many passages (like Kian, Terence)
+        are NOT dropped during aggregation.
+        """
+        # Simulate per-passage extractions with Kian and Terence mentioned across passages
+        per_passage = {
+            'p1': {
+                'facts': [
+                    {'fact': 'Kian is a warrior', 'type': 'character_identity', 'category': 'constant',
+                     'evidence': [{'passage': 'p1', 'quote': 'Kian stood ready'}]},
+                    {'fact': 'Terence is a mage', 'type': 'character_identity', 'category': 'constant',
+                     'evidence': [{'passage': 'p1', 'quote': 'Terence studied magic'}]}
+                ]
+            },
+            'p2': {
+                'facts': [
+                    {'fact': 'Kian carries a sword', 'type': 'character_identity', 'category': 'constant',
+                     'evidence': [{'passage': 'p2', 'quote': 'His sword gleamed'}]},
+                    {'fact': 'Terence knows ancient spells', 'type': 'character_identity', 'category': 'constant',
+                     'evidence': [{'passage': 'p2', 'quote': 'Ancient knowledge'}]}
+                ]
+            },
+            'p3': {
+                'facts': [
+                    {'fact': 'Kian trained for years', 'type': 'character_identity', 'category': 'zero_action_state',
+                     'evidence': [{'passage': 'p3', 'quote': 'Years of training'}]},
+                ]
+            }
+        }
+
+        # Run through aggregation pipeline
+        from ai_summarizer import summarize_facts
+
+        result, status = summarize_facts(per_passage)
+
+        self.assertEqual(status, "success")
+        self.assertIsNotNone(result)
+
+        # Verify Kian appears in characters
+        characters = result.get('characters', {})
+        self.assertIn('Kian', characters)
+
+        # Verify Terence appears in characters
+        self.assertIn('Terence', characters)
+
+        # Verify Kian has all 3 facts (2 identity + 1 zero_action_state)
+        kian_facts = characters['Kian']
+        self.assertEqual(len(kian_facts['identity']), 2)
+        self.assertEqual(len(kian_facts['zero_action_state']), 1)
+
+        # Verify Terence has both facts
+        terence_facts = characters['Terence']
+        self.assertEqual(len(terence_facts['identity']), 2)
+
+        # Verify fact texts are preserved
+        kian_identity_texts = [f['fact'] for f in kian_facts['identity']]
+        self.assertIn('Kian is a warrior', kian_identity_texts)
+        self.assertIn('Kian carries a sword', kian_identity_texts)
+
+        terence_identity_texts = [f['fact'] for f in terence_facts['identity']]
+        self.assertIn('Terence is a mage', terence_identity_texts)
+        self.assertIn('Terence knows ancient spells', terence_identity_texts)
+
+    def test_deduplicates_exact_duplicates_only(self):
+        """Should merge exact duplicates but preserve unique facts."""
+        per_passage = {
+            'p1': {
+                'facts': [
+                    {'fact': 'Magic exists', 'type': 'world_rule', 'category': 'constant',
+                     'evidence': [{'passage': 'p1', 'quote': 'quote1'}]}
+                ]
+            },
+            'p2': {
+                'facts': [
+                    {'fact': 'Magic exists', 'type': 'world_rule', 'category': 'constant',
+                     'evidence': [{'passage': 'p2', 'quote': 'quote2'}]},
+                    {'fact': 'Magic requires training', 'type': 'world_rule', 'category': 'constant',
+                     'evidence': [{'passage': 'p2', 'quote': 'quote3'}]}
+                ]
+            }
+        }
+
+        from ai_summarizer import summarize_facts
+
+        result, status = summarize_facts(per_passage)
+
+        self.assertEqual(status, "success")
+
+        # Should have 2 unique world rules
+        world_rules = result['constants']['world_rules']
+        self.assertEqual(len(world_rules), 2)
+
+        # 'Magic exists' should have combined evidence from both passages
+        magic_exists = [f for f in world_rules if f['fact'] == 'Magic exists'][0]
+        self.assertEqual(len(magic_exists['evidence']), 2)
+
+
 if __name__ == '__main__':
     unittest.main()

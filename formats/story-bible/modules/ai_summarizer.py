@@ -235,9 +235,267 @@ def extract_character_from_fact(fact_text: str) -> str:
     skip_words = {'The', 'A', 'An'}
     for word in words:
         if word not in skip_words and word[0].isupper():
-            return word
+            # Strip trailing punctuation from name
+            return word.rstrip(',.;:!?\'\"')
 
     return "Unknown"
+
+
+def aggregate_facts_deterministically(per_passage_extractions: Dict) -> Dict[str, List[Dict]]:
+    """
+    Aggregate facts from per-passage extractions deterministically.
+
+    This function collects ALL unique facts without lossy AI filtering.
+    Only exact duplicates (same fact text) are merged by combining evidence.
+
+    Args:
+        per_passage_extractions: Dict of passage_id -> extraction data
+
+    Returns:
+        Dict mapping fact type to list of facts:
+        {
+            'world_rule': [...],
+            'setting': [...],
+            'timeline': [...],
+            'character_identity': [...],
+            'variables': [...]
+        }
+    """
+    # First pass: collect all facts with deduplication by exact text match
+    fact_map = {}  # fact_text -> fact dict with combined evidence
+
+    for passage_id, extraction in per_passage_extractions.items():
+        facts = extraction.get('facts', [])
+
+        for fact in facts:
+            fact_text = fact.get('fact', '').strip()
+            fact_type = fact.get('type', 'unknown')
+            category = fact.get('category', 'constant')
+
+            if not fact_text:
+                continue
+
+            # Create unique key from fact text
+            key = fact_text
+
+            if key in fact_map:
+                # Exact duplicate - merge evidence
+                existing_fact = fact_map[key]
+                existing_evidence = existing_fact.get('evidence', [])
+                new_evidence = fact.get('evidence', [])
+
+                # Combine evidence lists
+                combined_evidence = existing_evidence + new_evidence
+                existing_fact['evidence'] = combined_evidence
+            else:
+                # New unique fact - store it
+                fact_map[key] = {
+                    'fact': fact_text,
+                    'type': fact_type,
+                    'category': category,
+                    'confidence': fact.get('confidence', 'medium'),
+                    'evidence': fact.get('evidence', [])
+                }
+
+    # Second pass: group by fact type
+    grouped = {}
+
+    for fact in fact_map.values():
+        fact_type = fact.get('type', 'unknown')
+        category = fact.get('category', 'constant')
+
+        # Variables go into their own group regardless of type
+        if category == 'variable':
+            if 'variables' not in grouped:
+                grouped['variables'] = []
+            grouped['variables'].append(fact)
+        else:
+            # Constants group by type
+            if fact_type not in grouped:
+                grouped[fact_type] = []
+            grouped[fact_type].append(fact)
+
+    return grouped
+
+
+# AI prompt for name normalization
+NAME_NORMALIZATION_PROMPT = """=== ROLE ===
+
+You are identifying name variants that refer to the same entity.
+
+=== TASK ===
+
+Given a list of character names extracted from facts, identify which names are variants of the same entity.
+
+Focus ONLY on:
+- Punctuation artifacts: "Danita," vs "Danita"
+- Possessive forms: "Javlyn's" vs "Javlyn"
+- Capitalization variants: "kian" vs "Kian"
+- Common spelling variants
+
+Do NOT merge:
+- Different names that happen to be similar
+- Names that could be different people
+
+=== OUTPUT FORMAT ===
+
+Respond with ONLY valid JSON (no markdown, no code blocks):
+
+{{
+  "name_mappings": [
+    {{
+      "variants": ["Danita,", "Danita"],
+      "canonical": "Danita"
+    }},
+    {{
+      "variants": ["Javlyn's", "Javlyn"],
+      "canonical": "Javlyn"
+    }}
+  ]
+}}
+
+If no variants found, return: {{"name_mappings": []}}
+
+=== INPUT NAMES ===
+
+{names_json}
+
+BEGIN NORMALIZATION (JSON only):
+"""
+
+
+def normalize_entity_names(facts: List[Dict]) -> Dict[str, str]:
+    """
+    Use AI to identify name variants that should be unified.
+
+    This function asks AI to identify punctuation artifacts and possessive forms,
+    NOT to decide what facts to keep/drop.
+
+    Args:
+        facts: List of facts (typically character_identity facts)
+
+    Returns:
+        Dict mapping variant name -> canonical name
+        Example: {'Danita,': 'Danita', "Javlyn's": 'Javlyn'}
+    """
+    # Extract all character names from facts
+    names = set()
+    for fact in facts:
+        fact_text = fact.get('fact', '')
+        # Simple extraction: capitalized words
+        words = fact_text.split()
+        for word in words:
+            if word and word[0].isupper():
+                cleaned = word.rstrip(',.;:!?\'\"')
+                if cleaned:
+                    names.add(cleaned)
+
+    if not names:
+        return {}
+
+    try:
+        # Format names as JSON for prompt
+        names_json = json.dumps(list(names), indent=2)
+
+        # Build AI prompt
+        prompt = NAME_NORMALIZATION_PROMPT.format(names_json=names_json)
+
+        # Call Ollama API
+        logging.info(f"Normalizing {len(names)} entity names...")
+
+        response = requests.post(
+            OLLAMA_API_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.1,  # Low temperature for consistency
+                    "num_predict": 2000
+                },
+                "think": "low"
+            },
+            timeout=OLLAMA_TIMEOUT
+        )
+
+        response.raise_for_status()
+        result = response.json()
+
+        # Parse response
+        raw_response = result.get('response', '')
+        parsed = parse_json_from_response(raw_response)
+
+        # Build mapping
+        name_mapping = {}
+        mappings = parsed.get('name_mappings', [])
+
+        for mapping in mappings:
+            variants = mapping.get('variants', [])
+            canonical = mapping.get('canonical', '')
+
+            if not canonical or not variants:
+                continue
+
+            # Map each variant to canonical
+            for variant in variants:
+                if variant != canonical:
+                    name_mapping[variant] = canonical
+
+        logging.info(f"  → Found {len(name_mapping)} name variants")
+        return name_mapping
+
+    except Exception as e:
+        logging.warning(f"Name normalization failed: {e}")
+        return {}
+
+
+def group_facts_by_character(facts: List[Dict], name_mapping: Dict[str, str]) -> Dict[str, Dict]:
+    """
+    Group character facts by character name, applying name normalization.
+
+    Args:
+        facts: List of character_identity facts
+        name_mapping: Dict mapping variant names to canonical names
+
+    Returns:
+        Dict mapping character name to facts organized by category:
+        {
+            'Kian': {
+                'identity': [...],
+                'zero_action_state': [...],
+                'variables': [...]
+            }
+        }
+    """
+    characters = {}
+
+    for fact in facts:
+        # Extract character name
+        fact_text = fact.get('fact', '')
+        char_name = extract_character_from_fact(fact_text)
+
+        # Apply name normalization
+        char_name = name_mapping.get(char_name, char_name)
+
+        # Initialize character entry if needed
+        if char_name not in characters:
+            characters[char_name] = {
+                'identity': [],
+                'zero_action_state': [],
+                'variables': []
+            }
+
+        # Route to appropriate sub-category
+        category = fact.get('category', 'constant')
+
+        if category == 'variable':
+            characters[char_name]['variables'].append(fact)
+        elif category == 'zero_action_state':
+            characters[char_name]['zero_action_state'].append(fact)
+        else:
+            characters[char_name]['identity'].append(fact)
+
+    return characters
 
 
 def group_facts_by_category(all_facts: List[Dict]) -> Dict[str, List[Dict]]:
@@ -428,11 +686,13 @@ def summarize_category(facts: List[Dict], category_name: str) -> Tuple[Optional[
 
 def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]:
     """
-    Deduplicate and merge facts from per-passage extractions using AI.
+    Aggregate and deduplicate facts from per-passage extractions.
 
-    Uses category-based chunking to avoid Ollama context truncation:
-    - Summarizes each category separately (smaller context per call)
-    - Combines results into unified structure
+    NEW ARCHITECTURE (lossless):
+    1. Deterministically aggregate all facts (exact duplicates only)
+    2. Use AI ONLY for name normalization (punctuation/possessive variants)
+    3. Group facts by type and character
+    4. Never drop facts - preserve all unique extractions
 
     Args:
         per_passage_extractions: Dict of passage_id -> extraction data
@@ -446,108 +706,61 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
         # Pre-process: Merge facts from chunks of same passage
         merged_extractions = merge_chunk_facts(per_passage_extractions)
 
-        # Build input for AI
-        all_facts = build_summarization_input(merged_extractions)
-
-        if not all_facts:
+        if not merged_extractions:
             logging.warning("No facts to summarize")
             return (None, "failed")
 
-        logging.info(f"Summarizing {len(all_facts)} facts using category chunking...")
+        logging.info(f"Aggregating facts deterministically (lossless)...")
 
-        # Group facts by category
-        fact_groups = group_facts_by_category(all_facts)
+        # Step 1: Aggregate facts deterministically
+        # This preserves ALL unique facts, only merging exact duplicates
+        aggregated = aggregate_facts_deterministically(merged_extractions)
 
-        # Summarize each category separately
-        summarized_world_rules = []
-        summarized_setting = []
-        summarized_timeline = []
-        summarized_characters = {}
-        summarized_variables = []
-        all_conflicts = []
+        total_facts = sum(len(facts) for facts in aggregated.values())
+        logging.info(f"  → {total_facts} unique facts after deduplication")
 
-        for category_name, facts in fact_groups.items():
-            logging.info(f"Processing category: {category_name} ({len(facts)} facts)")
+        # Step 2: Extract character facts for name normalization
+        character_facts = aggregated.get('character_identity', [])
 
-            summarized_facts, conflicts = summarize_category(facts, category_name)
+        # Step 3: Use AI to normalize entity names (punctuation/possessive only)
+        name_mapping = {}
+        if character_facts:
+            logging.info(f"Normalizing character names ({len(character_facts)} character facts)...")
+            name_mapping = normalize_entity_names(character_facts)
+            if name_mapping:
+                logging.info(f"  → Normalized {len(name_mapping)} name variants")
 
-            if summarized_facts is None:
-                logging.error(f"Failed to summarize {category_name}")
-                return (None, "failed")
+        # Step 4: Group character facts by character (with normalization)
+        characters = group_facts_by_character(character_facts, name_mapping)
 
-            # Add conflicts
-            all_conflicts.extend(conflicts)
-
-            # Route summarized facts to appropriate structure
-            if category_name == 'world_rule':
-                summarized_world_rules = summarized_facts
-            elif category_name == 'setting':
-                summarized_setting = summarized_facts
-            elif category_name == 'timeline':
-                summarized_timeline = summarized_facts
-            elif category_name == 'character_identity':
-                # Group character facts by character name
-                for fact in summarized_facts:
-                    # Extract character name from fact
-                    char_name = extract_character_from_fact(fact.get('fact', ''))
-                    category = fact.get('category', 'constant')
-
-                    if char_name not in summarized_characters:
-                        summarized_characters[char_name] = {
-                            'identity': [],
-                            'zero_action_state': [],
-                            'variables': []
-                        }
-
-                    # Route to appropriate sub-category
-                    if category == 'variable':
-                        summarized_characters[char_name]['variables'].append(fact)
-                    elif category == 'zero_action_state':
-                        summarized_characters[char_name]['zero_action_state'].append(fact)
-                    else:
-                        summarized_characters[char_name]['identity'].append(fact)
-            elif category_name == 'variables':
-                summarized_variables = summarized_facts
-
-        # Build final structure
+        # Step 5: Build final structure
         result = {
             'constants': {
-                'world_rules': summarized_world_rules,
-                'setting': summarized_setting,
-                'timeline': summarized_timeline
+                'world_rules': aggregated.get('world_rule', []),
+                'setting': aggregated.get('setting', []),
+                'timeline': aggregated.get('timeline', [])
             },
-            'characters': summarized_characters,
+            'characters': characters,
             'variables': {
                 'events': [],
-                'outcomes': summarized_variables
+                'outcomes': aggregated.get('variables', [])
             },
-            'conflicts': all_conflicts
+            'conflicts': []  # No AI-based conflict detection in deterministic mode
         }
 
-        logging.info("Summarization successful")
-        logging.info(f"  World rules: {len(summarized_world_rules)}")
-        logging.info(f"  Setting: {len(summarized_setting)}")
-        logging.info(f"  Timeline: {len(summarized_timeline)}")
-        logging.info(f"  Characters: {len(summarized_characters)}")
-        logging.info(f"  Variables: {len(summarized_variables)}")
-        logging.info(f"  Conflicts: {len(all_conflicts)}")
+        logging.info("Aggregation successful (lossless)")
+        logging.info(f"  World rules: {len(result['constants']['world_rules'])}")
+        logging.info(f"  Setting: {len(result['constants']['setting'])}")
+        logging.info(f"  Timeline: {len(result['constants']['timeline'])}")
+        logging.info(f"  Characters: {len(characters)}")
+        logging.info(f"  Variables: {len(result['variables']['outcomes'])}")
 
         return (result, "success")
 
-    except requests.Timeout:
-        logging.error("Summarization timeout (exceeded 300 seconds)")
-        return (None, "failed")
-
-    except requests.RequestException as e:
-        logging.error(f"Ollama API error during summarization: {e}")
-        return (None, "failed")
-
-    except json.JSONDecodeError as e:
-        logging.error(f"Failed to parse summarization response as JSON: {e}")
-        return (None, "failed")
-
     except Exception as e:
-        logging.error(f"Unexpected error during summarization: {e}")
+        logging.error(f"Unexpected error during aggregation: {e}")
+        import traceback
+        traceback.print_exc()
         return (None, "failed")
 
 
