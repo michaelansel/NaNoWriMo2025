@@ -117,22 +117,28 @@
 
 ---
 
-### What Happens During Build
+### What You Experience
 
-**For Pull Requests:**
-- All 4 output formats generated (Harlowe, Paperthin, DotGraph, AllPaths)
-- Preview artifact uploaded for download
-- PR comment posted with build stats and download link
-- Resources file updated and committed back to PR branch
-- No deployment to production (preview only)
+**When You Open a Pull Request:**
+- Your changes are built automatically
+- Preview artifacts ready to download within 2 minutes
+- PR comment shows build stats (file sizes, path counts) and download link
+- Resources file updates and commits automatically
+- You can test locally before merging
+- Nothing deploys to production yet
 
-**For Main Branch:**
-- All 4 output formats generated
-- Deployed to GitHub Pages automatically
-- Live site updated within 2 minutes
-- Available at https://michaelansel.github.io/NaNoWriMo2025/
+**When You Merge to Main:**
+- Changes build automatically
+- Live site updates within 2 minutes
+- All formats published to GitHub Pages
+- Available immediately at https://michaelansel.github.io/NaNoWriMo2025/
+- No manual deployment steps needed
 
-See [architecture/automated-build-deploy.md](../architecture/automated-build-deploy.md) for technical design.
+**Build Timing Guarantee:**
+All builds complete in under 2 minutes from push to preview/deployment.
+
+**Implementation Details:**
+See architecture documentation for build process, tooling, and technical design.
 
 ---
 

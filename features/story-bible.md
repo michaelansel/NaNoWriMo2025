@@ -2,8 +2,8 @@
 
 **Status:** In Progress
 **Owner:** Product Manager
-**Priority:** Medium
-**Target:** December 2025 (Post-NaNoWriMo refinement phase)
+**Priority:** HIGH
+**Target:** Active (December 2025)
 
 ---
 
@@ -399,22 +399,33 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 ### Edge Case 6: Summarization Fails
 **Scenario:** AI summarization encounters error after successful extraction
 
-**User Experience:**
-- Story Bible still appears (falls back to per-passage view)
-- Message: "Showing per-passage view (summarization pending)"
-- More duplication than unified view, but all facts present
-- You can still use Story Bible while issue is resolved
+**What You See:**
+- Story Bible displays successfully with per-passage organization (not unified)
+- Header message: "Showing per-passage view (summarization pending)"
+- Facts appear under each passage heading (some duplication across passages)
+- All extracted information is visible
+
+**What You Can Do:**
+- Read facts by passage to find information you need
+- Search page (Ctrl+F) to find specific characters or facts
+- Wait for summarization to retry on next build
+- Report persistent failures to team
 
 ---
 
 ### Edge Case 7: Constants Change Over Time
 **Scenario:** You revise world-building (e.g., change magic system)
 
-**User Experience:**
-- Story Bible regenerates on every build
-- Shows current constants based on current passages
-- Git history preserves previous versions if you need to check
-- Future consideration: Validation could flag when new content contradicts previous constants
+**What You See:**
+- Story Bible updates to reflect your latest changes after each build
+- Current constants shown based on all current passages
+- No historical comparison shown in Story Bible itself
+
+**What You Can Do:**
+- Review updated Story Bible to verify changes took effect
+- Check git history to see previous versions if needed
+- Update related passages to maintain consistency with new constants
+- Future: System may flag new content that contradicts established constants
 
 ---
 
@@ -478,14 +489,15 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - Story Bible generated successfully on every build
 - HTML accessible on GitHub Pages
 - JSON format valid and parseable
-- 90%+ character coverage (captures expected characters)
+- All named characters extracted (verified by searching source files for character names)
 - Authors reference Story Bible when writing new content
 
 **Character Detection:**
-- ALL named characters captured (including Marcie, Miss Rosie, Josie)
-- Zero missed dialogue mentions
-- Zero missed possessive mentions
-- 100% entity detection goal
+- Captures all named characters (those with proper names like "Marcie", "Miss Rosie", "Josie")
+- Includes characters mentioned only in dialogue ("when Marcie was with us")
+- Includes characters in possessive form ("Miss Rosie's beef stew")
+- Includes characters in indirect references ("Josie fell out of a tree")
+- Target: 100% of named entities extracted from prose
 
 **Quality Indicators:**
 - Fact distribution balanced (not 95% one type)
@@ -550,10 +562,10 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - [ ] Does NOT block deployment
 
 ### Extraction Quality
-- [ ] 90%+ character coverage of expected characters
-- [ ] 95%+ extraction success rate
-- [ ] Fact distribution balanced (no type exceeds 70%)
-- [ ] Failed passages NOT cached (automatic retry)
+- [ ] All named characters extracted (test by searching source files for character names and verifying they appear in Story Bible)
+- [ ] Extraction succeeds for all passages (failed passages not cached and automatically retry next time)
+- [ ] Fact distribution balanced (no single fact type exceeds 70% of total facts)
+- [ ] Failed passages NOT cached (automatic retry on next extraction)
 - [ ] Summarization falls back to per-passage view if it fails
 
 ### HTML Output
@@ -586,9 +598,9 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 
 ## Timeline and Prioritization
 
-**Target:** December 2025 (Post-NaNoWriMo refinement phase)
-**Priority:** Medium
-**Rationale:** Story Bible becomes more valuable after story reaches substantial size
+**Target:** Active (December 2025)
+**Priority:** HIGH
+**Rationale:** Story Bible provides essential reference for maintaining consistency in branching narratives
 
 **Future Enhancements (Not In Scope):**
 - Advanced validation integration with CI

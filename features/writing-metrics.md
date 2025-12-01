@@ -1,6 +1,6 @@
 # Feature PRD: Writing Metrics & Statistics
 
-**Status:** Planned
+**Status:** Active
 **Owner:** Product Manager
 **Priority:** HIGH
 
@@ -25,39 +25,16 @@ Writers need quantitative insights into their writing output and patterns. This 
 
 This tool helps writers answer questions like "How much have I written?" and "What's my typical passage length?" when reviewing the project in a browser.
 
-**Timing Context:**
-- **Ideally available:** Throughout November for understanding writing output and patterns
-- **Foundation for:** December retrospective analysis of writing patterns and evolution
-
----
-
-## Phase Applicability
-
-This is an **active-writing tool** that serves writers during different phases:
-
-### During Active Writing (November 2025)
-**Primary Use:** Understanding writing output and patterns
-- Check total word count and writing volume
-- Stay motivated by seeing quantitative output
-- Understand typical passage lengths while writing
-- Analyze writing patterns in real-time
-
-### After Active Writing (Late November/Early December)
-**Primary Use:** Final metrics and contribution analysis
-- Analyze individual author contributions
-- Identify longest passages for potential refactoring
-- Understand final story structure and distribution
-
-### Foundation for Retrospectives (December 2025+)
-**Secondary Use:** Input data for advanced analytics
-- Provides baseline metrics for trend analysis
-- Word count data feeds into timeline visualizations
-- Passage statistics inform pattern analysis
-- File distribution data supports evolution tracking
+**Use Cases:**
+- **Understanding writing output:** Check total word count and writing volume
+- **Staying motivated:** See quantitative progress toward goals
+- **Analyzing patterns:** Understand typical passage lengths and writing distribution
+- **Identifying refactoring candidates:** Find exceptionally long or short passages
+- **Tracking contributions:** View overall project metrics in collaborative projects
 
 **Relationship to Other Features:**
-- **Complementary to AllPaths Progress Tracking:** AllPaths focuses on path-level tracking (how many paths created/modified), while Writing Metrics focuses on word-level tracking (how many words written, passage lengths)
-- **Different from Post-NaNoWriMo Retrospective Tools:** This provides basic metrics during active writing; retrospective tools will add advanced trend analysis, timelines, and pattern evolution over time
+- **Complementary to AllPaths Progress Tracking:** AllPaths tracks path-level progress (paths created/modified), while Writing Metrics tracks word-level progress (words written, passage lengths)
+- **Foundation for advanced analytics:** Provides baseline metrics that could feed into retrospective analysis tools
 
 ---
 

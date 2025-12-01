@@ -126,12 +126,11 @@
 #### 2. Paperthin (Linear Proofreading)
 **Purpose:** Editing and review - clean prose for proofreading
 
-**Format Details:**
-- Linear text presentation
-- Minimal formatting and distractions
-- All passages in order
-- No interactive elements
-- Clean reading experience
+**What You Get:**
+- Linear text presentation (all passages in reading order)
+- Clean prose without interactive elements or game mechanics
+- Minimal formatting for distraction-free reading
+- Easy-to-read format for editing and review
 
 **Use Cases:**
 - Proofreading for grammar and style
@@ -142,17 +141,19 @@
 **Output:** `dist/proofread.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/proofread.html`
 
+**Technical Note:** Implementation details (how linear text is generated) are in architecture documentation.
+
 ---
 
 #### 3. DotGraph (Story Structure Visualization)
 **Purpose:** Understanding - visual map of story branches
 
-**Format Details:**
-- Interactive graph visualization
-- Nodes represent passages
-- Edges represent links/choices
-- Zoom, pan, and click to explore
-- Shows story structure at a glance
+**What You Get:**
+- Interactive graph showing story structure
+- Visual nodes (passages) and edges (choices/links)
+- Zoom, pan, and click to explore the graph
+- Story branching visible at a glance
+- Identify dead ends, loops, and connection patterns
 
 **Use Cases:**
 - Visualizing branching structure
@@ -163,23 +164,27 @@
 **Output:** `dist/graph.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/graph.html`
 
+**Technical Note:** Implementation details (graph generation library, rendering approach) are in architecture documentation.
+
 ---
 
 #### 4. AllPaths (Enumerated Paths for AI Validation)
 **Purpose:** Validation - all possible paths for continuity checking
 
-**Format Details:**
-- Depth-first search finds all paths from start to end
-- Each path as individual text file
-- Two versions: clean (prose only) and metadata (with headers)
-- Random passage IDs prevent AI confusion
-- Path tracking with unique IDs and fingerprints
+**What You Get:**
+- All possible paths from story start to any ending
+- Each path as complete player journey (start to finish)
+- Web interface for browsing all paths
+- Text files for AI validation (clean prose and metadata versions)
+- Tracking of which paths are new vs. modified
+- Unique IDs for each path
 
 **Use Cases:**
 - AI continuity checking
 - Exhaustive story validation
 - Tracking which paths are new vs. modified
 - Browsing all possible player journeys
+- Verifying story completeness
 
 **Outputs:**
 - `dist/allpaths.html` - Browse all paths in web interface
@@ -188,6 +193,8 @@
 - `allpaths-validation-status.json` - Validation cache
 
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/allpaths.html`
+
+**Technical Note:** Implementation details (path enumeration algorithm, ID generation, cycle detection) are in architecture documentation.
 
 ---
 
@@ -285,19 +292,20 @@
 ### Edge Case 6: AllPaths Cycles
 **Scenario:** Story has loops (passage links back to earlier passage)
 
-**Current Behavior:**
-- AllPaths uses cycle detection (max_cycles=1)
-- Terminates path on first revisit
-- Prevents infinite loops
+**What You See:**
+- AllPaths terminates path when it revisits a passage
+- Each path shown once through the loop (no infinite repetition)
+- Prevents exponential explosion of paths
 
-**Desired Behavior:**
-- Document cycle handling behavior
-- Allow configuring max_cycles if needed
-- Prevent exponential path growth
+**What You Can Do:**
+- Review how loops are represented in AllPaths
+- Verify loop behavior matches your story design
+- If you need different cycle handling, discuss with team
 
-**Status:** Working as intended - cycles handled correctly
+**Status:** Working as intended - cycles handled to prevent infinite loops
 
-See [architecture/multiple-output-formats.md](../architecture/multiple-output-formats.md) for technical design.
+**For All Edge Cases:**
+Implementation details (how formats are generated, error handling, performance optimization) are documented in architecture specs.
 
 ---
 

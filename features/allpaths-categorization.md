@@ -273,7 +273,7 @@ AllPaths provides a consistent browsing interface showing all story paths with d
 
 ## Technical Requirements
 
-These requirements define WHAT the system must do (not HOW to implement it).
+**Note:** This section describes WHAT the system must do from a user-facing perspective. Implementation details (HOW the system achieves this) are documented in architecture specs.
 
 ### Path Display Requirements
 The system displays all paths with complete metadata:
@@ -322,6 +322,13 @@ Changes preserve existing functionality:
 - Validation modes (new-only, modified, all) work as before
 - Date fields already present in cache
 - No breaking changes to existing workflows
+
+**For Implementation Details:**
+See architecture documentation for:
+- How dates are calculated from git history
+- How filtering is implemented (client-side vs server-side)
+- How validation cache is structured and accessed
+- Build process integration approach
 
 ---
 

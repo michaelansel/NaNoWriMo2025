@@ -100,16 +100,23 @@ Each output link must include:
 - Consistent spacing and typography
 - Mobile-friendly layout
 
-### File Location
+### File Location and Entry Point
 
-**Must:**
-- Be a static HTML file (no build step for the landing page itself)
-- Live at `dist/index.html` with playable story moving to `dist/play.html`
-  - **Product Decision (PM Authority):** Landing page WILL replace index.html as the default entry point
-  - **Rationale:** Landing page makes "Play" the first thing users see, which aligns with "play in a place of prominence." Moving playable story to play.html is a small cost for better UX.
-  - **Impact:** Existing index.html (Harlowe playable story) becomes play.html; landing page becomes new index.html
+**Product Decision (Finalized):**
+Landing page replaces index.html as the default entry point. Playable story (current index.html) moves to play.html.
 
-**Note for Architect:** The product decision is made (landing page replaces index.html). Technical implementation details (build process, file copying/renaming, HTML structure) are Architect's domain.
+**Rationale:**
+- Landing page makes "Play" the most prominent action (aligns with "readers first")
+- Single entry point for all output formats reduces friction
+- Moving playable story to play.html is a small cost for significantly better UX
+- First-time visitors immediately understand "this is a story to play"
+
+**Impact on existing URLs:**
+- `index.html`: Landing page (NEW - what users see first)
+- `play.html`: Harlowe playable story (MOVED from index.html)
+- All other format URLs unchanged (proofread.html, graph.html, etc.)
+
+**Implementation note:** Technical details (build process, file naming, HTML structure) are documented in architecture specs.
 
 ### Documentation Cleanup
 
@@ -235,15 +242,21 @@ Your story has been built successfully!
 
 ## Handoff to Architect
 
-**Product Decision (Finalized):** Landing page will replace index.html as the default entry point. Playable story (current index.html) moves to play.html.
+**What PM Has Decided (WHAT):**
+- Landing page becomes index.html (default entry point)
+- Playable story moves to play.html
+- Landing page content: 3 sections (Reader/Writer/Technical) with 6 format links
+- "Play" action featured prominently at top
+- Each format has name, description, and direct link
+- Mobile-friendly, static HTML
 
-**Design Decisions for Architect:**
+**What Architect Decides (HOW):**
 - HTML template approach (hand-written vs generated)
-- Build process integration (how to rename index.html → play.html and create new index.html)
-- Responsive layout approach
-- Error handling for missing outputs (e.g., story-bible.html optional failure)
+- Build process integration (file renaming, copying, generation)
+- Responsive layout implementation
+- Error handling for missing outputs
+- Source file location and organization
 
-**PM Preference Notes:**
-- Hand-written HTML preferred for simplicity (6 static links don't need generation)
-- Source should live in root or `src/landing/` (separate from story content)
-- If file missing, browser 404 is acceptable (no complex error handling needed)
+**PM Preferences (Not Requirements):**
+- Hand-written HTML preferred (6 static links don't need generation complexity)
+- If format file missing, browser 404 is acceptable (no complex error handling needed)

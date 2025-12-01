@@ -102,32 +102,26 @@
 
 ## How It Works
 
-### Branch-Based Workflow
+### How Multiple Writers Work Together
 
-```
-main (production branch)
-  ↓
-  ├─→ feature/forest-path (Writer A)
-  │     ↓ Work in isolation
-  │     ↓ Create passages
-  │     ↓ Test preview
-  │     ↓ AI validation
-  │     ↓ Merge to main
-  │     ↓
-  ├─→ feature/castle-path (Writer B)
-  │     ↓ Work in isolation
-  │     ↓ Create passages
-  │     ↓ Test preview
-  │     ↓ AI validation
-  │     ↓ Merge to main
-  │     ↓
-  └─→ fix/timeline-issue (Writer C)
-        ↓ Work in isolation
-        ↓ Fix passages
-        ↓ Test preview
-        ↓ AI validation
-        ↓ Merge to main
-```
+**The Core Pattern: Work in Isolation, Merge When Ready**
+
+Each writer works independently on their own branch:
+- **Writer A** adds a forest path in their branch
+- **Writer B** adds a castle path in their branch
+- **Writer C** fixes a timeline issue in their branch
+- **None block each other** - all work happens simultaneously
+- **Each tests their changes** before merging
+- **Main stays stable** - only tested, working changes merge in
+
+**Key Benefit:** Writers contribute daily without waiting for others to finish. Changes stay isolated until ready, preventing incomplete work from affecting teammates.
+
+**What This Looks Like:**
+- Create your branch from main (gives you a clean starting point)
+- Make your changes (add passages, fix issues, etc.)
+- Test your preview (verify changes work)
+- Merge when ready (changes go live quickly)
+- Others do the same in their branches (no blocking)
 
 ---
 
@@ -314,6 +308,8 @@ main (production branch)
 - Clear communication in PR discussions
 
 **Status:** Acceptable - requires coordination, documentation explains approach
+
+**Implementation Note:** Git branching model, merge strategies, and conflict resolution details are in architecture documentation.
 
 ---
 
