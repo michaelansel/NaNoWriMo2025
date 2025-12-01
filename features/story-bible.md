@@ -597,7 +597,7 @@ Writers creating branching narratives need a canonical reference that captures e
 - [PRINCIPLES.md](/home/user/NaNoWriMo2025/PRINCIPLES.md) - Core principles (transparency, multiple perspectives)
 
 **Related Features:**
-- [features/ai-continuity-checking.md](/home/user/NaNoWriMo2025/features/ai-continuity-checking.md) - AI validation feature (Phase 2 integration)
+- [features/ai-copy-editing-team.md](/home/user/NaNoWriMo2025/features/ai-copy-editing-team.md) - AI Copy Editing Team (World Fact Checker uses Story Bible)
 - [features/multiple-output-formats.md](/home/user/NaNoWriMo2025/features/multiple-output-formats.md) - Build artifact generation pattern
 
 **Implementation (For Architect/Developer):**

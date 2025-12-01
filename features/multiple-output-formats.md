@@ -381,7 +381,7 @@ See [architecture/multiple-output-formats.md](../architecture/multiple-output-fo
 ## Related Documents
 
 - [formats/allpaths/README.md](/home/user/NaNoWriMo2025/formats/allpaths/README.md) - AllPaths format documentation
-- [features/ai-continuity-checking.md](/home/user/NaNoWriMo2025/features/ai-continuity-checking.md) - AI validation using AllPaths
+- [features/ai-copy-editing-team.md](/home/user/NaNoWriMo2025/features/ai-copy-editing-team.md) - AI Copy Editing Team using AllPaths
 - [features/automated-build-deploy.md](/home/user/NaNoWriMo2025/features/automated-build-deploy.md) - Build automation
 - [PRINCIPLES.md](/home/user/NaNoWriMo2025/PRINCIPLES.md) - "Multiple Perspectives, Same Source" principle
 

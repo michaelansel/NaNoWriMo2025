@@ -332,7 +332,7 @@ curl -X POST http://localhost:5000/webhook \
 The continuity checker supports three validation modes to balance speed and thoroughness.
 
 **For detailed product requirements and technical architecture, see:**
-- [features/ai-continuity-checking.md](../features/ai-continuity-checking.md) - Product specification
+- [features/ai-copy-editing-team.md](../features/ai-copy-editing-team.md) - Product specification
 - [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) - Technical architecture and design decisions
 
 ### Quick Reference
@@ -524,7 +524,7 @@ Linter reformats 55 files (smart quotes, spacing). All paths through these files
 
 ### Edge Cases (Categorization)
 
-These edge cases relate to how paths are categorized. For general edge cases, see [features/ai-continuity-checking.md](../features/ai-continuity-checking.md#edge-cases).
+These edge cases relate to how paths are categorized. For general edge cases, see [features/ai-copy-editing-team.md](../features/ai-copy-editing-team.md#edge-cases).
 
 #### Unreachable Paths
 

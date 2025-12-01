@@ -439,7 +439,7 @@ See [architecture/collaborative-workflow.md](../architecture/collaborative-workf
 - [CONTRIBUTING.md](/home/user/NaNoWriMo2025/CONTRIBUTING.md) - Step-by-step collaboration guide
 - [features/automated-resource-tracking.md](/home/user/NaNoWriMo2025/features/automated-resource-tracking.md) - Passage name tracking
 - [features/automated-build-deploy.md](/home/user/NaNoWriMo2025/features/automated-build-deploy.md) - Preview artifacts
-- [features/ai-continuity-checking.md](/home/user/NaNoWriMo2025/features/ai-continuity-checking.md) - Automated validation
+- [features/ai-copy-editing-team.md](/home/user/NaNoWriMo2025/features/ai-copy-editing-team.md) - AI Copy Editing Team automated validation
 - [PRINCIPLES.md](/home/user/NaNoWriMo2025/PRINCIPLES.md) - "Automation Over Gatekeeping" principle
 
 ---

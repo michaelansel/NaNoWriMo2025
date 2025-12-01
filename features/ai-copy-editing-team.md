@@ -1,21 +1,84 @@
-# Feature PRD: AI Continuity Checking
+# Feature PRD: AI Copy Editing Team
 
 **Status:** Released ✅
 **Owner:** Product Manager
-**Last Updated:** 2025-11-22
+**Last Updated:** 2025-12-01
 
 ---
 
 ## Feature Overview
 
-AI Continuity Checking is a **validation feature** that automatically checks story paths for consistency issues. It determines which paths need validation based on what changed in a PR, then analyzes those paths and reports results in PR comments.
+The AI Copy Editing Team is a **validation feature** that automatically checks story paths for consistency issues. Think of it as a team of specialized editors, each with their own expertise, reviewing your story together.
+
+**How it works:**
+- Determines which paths need validation based on what changed in a PR
+- Each team member analyzes those paths from their specialty perspective
+- All team members report results together in a single PR comment
 
 **Relationship to AllPaths:**
 - **AllPaths HTML** is a separate browsing/tracking feature (see [allpaths-categorization.md](./allpaths-categorization.md))
 - AllPaths shows dates, filters, and validation status for progress tracking
-- Continuity checking uses internal git-based categories (NEW/MODIFIED/UNCHANGED) to determine what to validate
+- The Team uses internal git-based categories (NEW/MODIFIED/UNCHANGED) to determine what to validate
 - These internal categories don't appear in the AllPaths HTML
 - Validation results appear in PR comments, validation status appears as badges in HTML
+
+---
+
+## Meet the Team
+
+### Team Member #1: Continuity Checker
+
+**Specialty:** Path internal consistency
+
+**What they check:**
+- Character consistency (names, traits, relationships) within a single story path
+- Plot coherence (events flow logically)
+- Timeline accuracy (event sequences make sense)
+- Setting consistency (locations, rules)
+- Contradictions or plot holes within the path
+
+**What they provide:**
+- Severity rating (none/minor/major/critical)
+- Issue type (character/plot/timeline/setting/contradiction)
+- Description and location of issues
+- Specific quotes demonstrating problems
+
+---
+
+### Team Member #2: World Fact Checker
+
+**Specialty:** Validates against established canon in the Story Bible
+
+**What they check:**
+- World constants (setting, geography, world rules, magic systems)
+- Character identity constants (names, backgrounds, core traits, relationships)
+- Timeline facts (historical events before story start)
+
+**What they DON'T check:**
+- Plot events (those are variables, not constants)
+- Player choices and outcomes (path-specific)
+- Character fates (vary by path)
+
+**What they provide:**
+- Issue type (setting_constant, character_identity, timeline_fact)
+- Severity (critical/major/minor)
+- Established constant from Story Bible
+- Contradicting content from new passage
+- Evidence quotes from both sources
+- Suggested resolution actions
+
+**Note:** World Fact Checker only runs if the Story Bible cache exists. If missing, they sit this one out and suggest running `/extract-story-bible`.
+
+For complete Story Bible feature details, see [features/story-bible.md](./story-bible.md)
+
+---
+
+### Future Team Members (Deferred)
+
+Per PRIORITIES.md Phase 3, these specialists will join the team later:
+
+- **Grammar Editor:** Checks spelling, punctuation, grammar
+- **Style Editor:** Checks consistency in tone, voice, prose quality
 
 ---
 
@@ -40,7 +103,7 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 **So that** I can confidently add content without breaking existing story logic
 
 **Acceptance Criteria:**
-- AI checks all new paths automatically on every PR
+- Team checks all new paths automatically on every PR
 - Results posted within minutes of PR creation
 - Clear feedback on specific continuity issues
 - Issues categorized by severity (minor, major, critical)
@@ -50,11 +113,11 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 
 ### Story 2: Reviewer Approving PR
 **As a** reviewer checking another author's PR
-**I want** to see AI validation results before approving
+**I want** to see Team validation results before approving
 **So that** I can focus on creative feedback instead of hunting for continuity bugs
 
 **Acceptance Criteria:**
-- AI validation runs automatically on every PR
+- Team validation runs automatically on every PR
 - Results appear as PR comment
 - Can trust that technical continuity is checked
 - Can focus review on story quality and creative choices
@@ -62,12 +125,12 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 ---
 
 ### Story 3: Writer Fixing Issues
-**As a** writer addressing AI-flagged issues
+**As a** writer addressing Team-flagged issues
 **I want** to understand what's wrong and how to fix it
 **So that** I can resolve continuity problems quickly
 
 **Acceptance Criteria:**
-- AI explains specific issue clearly
+- Team explains specific issue clearly
 - Provides quotes from story showing the problem
 - Suggests severity level (helps prioritize fixes)
 - Can re-run validation after fixing to confirm resolution
@@ -75,7 +138,7 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 ---
 
 ### Story 4: Writer Approving Valid Paths
-**As a** writer who has reviewed AI feedback
+**As a** writer who has reviewed Team feedback
 **I want** to mark paths as validated so they're not re-checked
 **So that** future validations run faster and focus on new content
 
@@ -87,22 +150,35 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 
 ---
 
+### Story 5: Understanding Team Member Feedback
+**As a** writer reviewing validation results
+**I want** to know which team member flagged each issue
+**So that** I understand the nature of the problem (path consistency vs. world canon)
+
+**Acceptance Criteria:**
+- PR comments have separate sections for each team member
+- Clear headings show which team member found which issues
+- Can distinguish between "path internal issues" and "Story Bible violations"
+- Each section shows team member's specialty and what they checked
+
+---
+
 ## Success Metrics
 
 ### Primary Metrics
 - **Validation coverage:** 100% of PRs automatically validated
 - **Feedback speed:** Results posted within minutes of PR workflow completion
-- **Issue detection:** AI catches continuity errors before merge
+- **Issue detection:** Team catches continuity errors before merge
 - **Zero escaped errors:** No continuity issues merged to main branch
 
 ### Secondary Metrics
 - **Validation efficiency:** New-only mode ~60% faster than full validation
 - **Path approval rate:** Writers approve and dismiss issues regularly
 - **False positive rate:** Low rate of incorrect issue flagging
-- **Writer confidence:** Writers trust AI feedback and act on it
+- **Writer confidence:** Writers trust Team feedback and act on it
 
 ### Qualitative Metrics
-- Writer feedback: "AI caught an issue I completely missed"
+- Writer feedback: "Team caught an issue I completely missed"
 - No continuity errors discovered after merge
 - Writers use validation modes appropriately (new-only → modified → all)
 
@@ -111,7 +187,7 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 ## Acceptance Criteria Summary
 
 **Core Functionality:**
-- [ ] AI validation runs automatically on every PR
+- [ ] Team validation runs automatically on every PR
 - [ ] Results posted within minutes of PR workflow completion
 - [ ] Clear, actionable feedback with specific quotes from passages
 - [ ] Severity categorization (none/minor/major/critical)
@@ -133,14 +209,14 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 - [ ] Graceful handling of very long paths (context window limits)
 - [ ] Concurrent PR validations handled without interference
 
-**Story Bible Integration:**
-- [ ] Continuity checking loads Story Bible cache (if exists)
-- [ ] Validates new content against established constants (world rules, character identities, timeline facts)
-- [ ] Reports Story Bible violations in same PR comment as path issues
-- [ ] Clear distinction between "path consistency issues" and "world consistency issues"
-- [ ] Works gracefully if Story Bible doesn't exist yet (skips Story Bible validation, posts note)
-- [ ] Story Bible violations categorized by severity (critical/major/minor)
-- [ ] Single PR comment combines both validation types with separate sections
+**Team Member Integration:**
+- [ ] Continuity Checker validates path internal consistency
+- [ ] World Fact Checker loads Story Bible cache (if exists)
+- [ ] World Fact Checker validates new content against established constants
+- [ ] PR comments have separate sections per team member
+- [ ] Clear distinction between team member findings in PR comments
+- [ ] Works gracefully if Story Bible doesn't exist yet (World Fact Checker sits out)
+- [ ] Single PR comment combines all team member reports
 
 ---
 
@@ -148,16 +224,16 @@ AI Continuity Checking is a **validation feature** that automatically checks sto
 
 ---
 
-### How Continuity Checking Determines What to Validate
+### How the Team Determines What to Validate
 
-The continuity checker automatically categorizes paths as **NEW**, **MODIFIED**, or **UNCHANGED** based on whether the path existed before and what content changed. This determines which paths need validation in each mode.
+The Team automatically categorizes paths as **NEW**, **MODIFIED**, or **UNCHANGED** based on whether the path existed before and what content changed. This determines which paths need validation in each mode.
 
 **Quick summary:**
 - **NEW:** Route didn't exist before + contains novel prose → Always validated
 - **MODIFIED:** Route existed but content changed, OR new route without novel prose → Validated in `modified` mode
 - **UNCHANGED:** Route existed with no changes → Only validated in `all` mode
 
-**Don't worry about the technical details** - the checker figures out what needs validation automatically. Just choose the validation mode based on what you changed and how thorough you want the check to be.
+**Don't worry about the technical details** - the Team figures out what needs validation automatically. Just choose the validation mode based on what you changed and how thorough you want the check to be.
 
 For detailed explanation of the categorization logic (two-level tests, decision tables, examples of passage splits, linter reformats, and compound changes), see [Understanding Path Categorization](../services/README.md#understanding-path-categorization-detailed) in the services documentation.
 
@@ -167,7 +243,7 @@ For detailed explanation of the categorization logic (two-level tests, decision 
 
 Based on these internal categories, you can choose how thoroughly to validate:
 
-**Important:** These categories (NEW/MODIFIED/UNCHANGED) are used internally by the continuity checker to determine what to validate. They don't appear in the AllPaths HTML interface. The AllPaths HTML shows date-based filters (created/modified last day/week) and validation status (validated or not), which serve different purposes (progress tracking and quality monitoring).
+**Important:** These categories (NEW/MODIFIED/UNCHANGED) are used internally by the Team to determine what to validate. They don't appear in the AllPaths HTML interface. The AllPaths HTML shows date-based filters (created/modified last day/week) and validation status (validated or not), which serve different purposes (progress tracking and quality monitoring).
 
 ---
 
@@ -221,23 +297,6 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
 
 ---
 
-### What AI Checks
-
-**For each path, AI analyzes:**
-- Character consistency (names, traits, relationships)
-- Plot coherence (events flow logically)
-- Timeline accuracy (event sequences make sense)
-- Setting/world consistency (locations, rules)
-- Contradictions or plot holes
-
-**AI provides:**
-- Severity rating (none/minor/major/critical)
-- Issue type (character/plot/timeline/setting/contradiction)
-- Description and location of issues
-- Specific quotes demonstrating problems
-
----
-
 ### Where Validation Results Appear
 
 **Validation results are surfaced in two places:**
@@ -245,6 +304,7 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
 1. **PR Comments (Primary Interface)**
    - Detailed validation results posted as GitHub PR comments
    - Shows progress updates as paths are checked
+   - Organized by team member - each specialist has their own section
    - Lists issues found in each path with severity and quotes
    - Provides summary statistics (paths checked, issues found)
    - Writers can respond with `/approve-path` command
@@ -256,13 +316,13 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
    - "Validated" badge: Path has been reviewed and approved
    - "New" badge: Path has not yet been validated
 
-**Note:** The internal categorization (NEW/MODIFIED/UNCHANGED) is used by the checker to determine what to validate, but is not displayed in the HTML. The HTML shows validation status (validated or not) and date filters for progress tracking.
+**Note:** The internal categorization (NEW/MODIFIED/UNCHANGED) is used by the Team to determine what to validate, but is not displayed in the HTML. The HTML shows validation status (validated or not) and date filters for progress tracking.
 
 ---
 
 ### PR Comment Format
 
-**Validation results appear as GitHub PR comments with the following information:**
+**Validation results appear as GitHub PR comments with the following structure:**
 
 **Start of validation:**
 - Validation mode being used (new-only/modified/all)
@@ -270,6 +330,8 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
 - Explanation of which paths will be validated in this mode
 
 **For each validated path:**
+
+**Team Member #1: Continuity Checker**
 - Path ID and route description
 - Overall result (none/minor/major/critical)
 - Issues found with details:
@@ -278,18 +340,31 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
   - Description of the problem
   - Specific quotes from passages demonstrating the issue
   - Location information (passage IDs)
-- Instructions for approving the path
+
+**Team Member #2: World Fact Checker** (if Story Bible exists)
+- Story Bible load status (loaded, missing, or outdated)
+- Count of constants and characters validated against
+- Story Bible violations found (if any) with:
+  - Issue type (setting_constant, character_identity, timeline_fact)
+  - Severity (critical/major/minor)
+  - Established constant from Story Bible
+  - Contradicting content from new passage
+  - Evidence quotes from both sources
+  - Suggested resolution actions
+
+**Path approval instructions:**
+- How to approve the path if issues are acceptable
 
 **Validation complete:**
 - Summary statistics (paths validated, paths skipped)
-- Results breakdown by severity level
+- Results breakdown by severity level per team member
 - Next steps and recommendations
 
 ---
 
 ### Path Approval Workflow
 
-**Writer reviews AI feedback and replies:**
+**Writer reviews Team feedback and replies:**
 ```
 Timeline issue is acceptable for story flow.
 /approve-path a3f8b912
@@ -315,11 +390,11 @@ These paths won't be re-checked unless their content changes.
 
 ## Edge Cases
 
-### Edge Case 1: AI False Positives
-**Scenario:** AI flags issue that isn't actually a problem (e.g., intentional plot mystery)
+### Edge Case 1: Team False Positives
+**Scenario:** A team member flags issue that isn't actually a problem (e.g., intentional plot mystery)
 
 **Current Behavior:**
-- Issue appears in PR comment
+- Issue appears in team member's section of PR comment
 - Writer must evaluate and dismiss
 
 **Desired Behavior:**
@@ -365,18 +440,18 @@ These paths won't be re-checked unless their content changes.
 ---
 
 ### Edge Case 4: Ambiguous Issues
-**Scenario:** AI flags something that might or might not be an issue
+**Scenario:** A team member flags something that might or might not be an issue
 
 **Current Behavior:**
-- AI assigns severity based on analysis
+- Team member assigns severity based on analysis
 - Writer reviews and makes judgment call
 
 **Desired Behavior:**
-- AI explains reasoning clearly
+- Team member explains reasoning clearly
 - Provides quotes demonstrating issue
 - Writer makes final decision
 
-**Status:** Working as intended - AI provides information, writer decides
+**Status:** Working as intended - Team provides information, writer decides
 
 ---
 
@@ -389,7 +464,7 @@ These paths won't be re-checked unless their content changes.
 - Can see pattern across multiple path results
 
 **Desired Behavior:**
-- AI identifies same issue in multiple paths
+- Team identifies same issue in multiple paths
 - Writer fixes once, resolves for all affected paths
 - Cache invalidates all affected paths on content change
 
@@ -429,6 +504,23 @@ These paths won't be re-checked unless their content changes.
 
 **Status:** Working as intended - thread-based concurrency handles this
 
+---
+
+### Edge Case 8: Missing Story Bible
+**Scenario:** World Fact Checker can't find Story Bible cache
+
+**Current Behavior:**
+- World Fact Checker sits out this validation
+- PR comment shows informational note about missing Story Bible
+- Only Continuity Checker section appears
+
+**Desired Behavior:**
+- Graceful handling - validation still succeeds
+- Clear message that Story Bible validation was skipped
+- Suggestion to run `/extract-story-bible` to enable World Fact Checker
+
+**Status:** Working as intended - World Fact Checker is optional
+
 See [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) for technical design. For additional edge cases related to path categorization (unreachable paths, compound changes), see [services/README.md](../services/README.md#edge-cases-categorization).
 
 ---
@@ -438,7 +530,7 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 ### Risk 1: AI Model Quality Issues
 **Impact:** High - incorrect or missing issue detection
 **Mitigation:** Use well-tested model (gpt-oss:20b-fullcontext), iterate on prompts
-**Fallback:** Writers do manual review, treat AI as assistant not authority
+**Fallback:** Writers do manual review, treat Team as assistants not authority
 
 ---
 
@@ -457,7 +549,7 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 ---
 
 ### Risk 4: False Positives Erode Trust
-**Impact:** Medium - writers ignore AI if too many wrong flags
+**Impact:** Medium - writers ignore Team if too many wrong flags
 **Mitigation:** Iterate on prompt quality, make approval workflow easy
 **Fallback:** Writers can always approve and move on
 
@@ -478,6 +570,12 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 - **GitHub status checks:** Block merge on critical issues
   - **Why not:** Writers should make judgment call, not automatic blocks
 
+### Future Team Members (Phase 3)
+
+Per PRIORITIES.md, these specialists will join the team in Phase 3:
+- **Grammar Editor:** Spelling, punctuation, grammar checks
+- **Style Editor:** Tone, voice, prose quality consistency
+
 ---
 
 ## Metrics Dashboard
@@ -494,7 +592,7 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 
 ## Success Criteria Met
 
-- [x] AI validation runs automatically on every PR
+- [x] Team validation runs automatically on every PR
 - [x] Results posted within minutes of PR completion
 - [x] Clear, actionable feedback with specific quotes
 - [x] Severity categorization (none/minor/major/critical)
@@ -502,85 +600,8 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 - [x] Path approval workflow working
 - [x] Content-based change detection accurate
 - [x] Zero continuity errors merged to main
-
----
-
-## Story Bible Integration
-
-### Overview
-
-When continuity checking runs, it also validates paths against the Story Bible (if available) to ensure new content doesn't contradict established canon (world constants, character identities, timeline facts).
-
-**For complete Story Bible feature details, see [features/story-bible.md](./story-bible.md)**
-
----
-
-### User Stories
-
-**As a writer**, I want continuity checking to validate against established world facts, so that I don't contradict canon that's already been established.
-
-**As a reviewer**, I want a single report showing both path consistency and world consistency, so that I can see all continuity issues in one place.
-
-**Acceptance Criteria:**
-- [ ] Continuity checking loads Story Bible cache (if exists)
-- [ ] Validates new content against established constants (world rules, character identities, timeline facts)
-- [ ] Reports Story Bible violations in same PR comment as path issues
-- [ ] Clear distinction between "path consistency issues" and "world consistency issues"
-- [ ] Works gracefully if Story Bible doesn't exist yet (skips Story Bible validation, posts note)
-- [ ] Story Bible violations categorized by severity (critical/major/minor)
-- [ ] Single PR comment combines both validation types with separate sections
-
----
-
-### When It Runs
-
-Story Bible validation runs automatically whenever continuity checking runs:
-- On PR workflow completion (automatic)
-- When `/check-continuity` command is used (manual)
-- For all validation modes (new-only, modified, all)
-
-**Behavior:**
-- If Story Bible cache exists: Run both path validation AND Story Bible validation
-- If Story Bible cache missing: Skip Story Bible validation, post informational note
-
----
-
-### What Gets Validated
-
-**Story Bible validation checks new content against:**
-- World constants (setting, geography, world rules, magic systems)
-- Character identity constants (names, backgrounds, core traits, relationships)
-- Timeline facts (historical events before story start)
-
-**Does NOT check:**
-- Plot events (those are variables, not constants)
-- Player choices and outcomes (path-specific)
-- Character fates (vary by path)
-
-**For detailed categorization of constants vs variables, see [features/story-bible.md](./story-bible.md)**
-
----
-
-### Validation Results
-
-**PR comments include both validation types:**
-
-**Story Bible section shows:**
-- Story Bible load status (loaded, missing, or outdated)
-- Count of constants and characters validated against
-- Story Bible violations found (if any) with:
-  - Issue type (setting_constant, character_identity, timeline_fact)
-  - Severity (critical/major/minor)
-  - Established constant from Story Bible
-  - Contradicting content from new passage
-  - Evidence quotes from both sources
-  - Suggested resolution actions
-
-**Edge cases handled:**
-- Missing Story Bible: Validation skips gracefully, suggests running `/extract-story-bible`
-- Outdated Story Bible: Shows cache age, recommends update if old
-- Intentional constant changes: Writer can approve or use `/update-canon` (future)
-- False positives: Writer can approve path using existing `/approve-path` workflow
+- [x] PR comments organized by team member
+- [x] World Fact Checker integrates Story Bible validation
 
 ---
 
@@ -606,9 +627,10 @@ Story Bible validation runs automatically whenever continuity checking runs:
 - **Selective validation modes:** Fast feedback for daily work, thorough validation when needed
 - **Real-time progress updates:** Writers see results as paths complete, can start fixing while validation continues
 - **Approval workflow:** Easy to mark paths as validated and move on
+- **Team member organization:** Clear separation helps writers understand nature of each issue
 
 ### What Could Be Better
-- **Prompt tuning:** Could further improve AI accuracy with more examples
+- **Prompt tuning:** Could further improve Team accuracy with more examples
 - **Performance:** Could optimize for very large stories (100+ paths)
 - **Mode guidance:** Could better guide writers on which mode to use when
 
@@ -616,3 +638,4 @@ Story Bible validation runs automatically whenever continuity checking runs:
 - **Earlier planning:** Random IDs added later, could have designed upfront
 - **More prompt testing:** Could have tested more prompt variations before launching
 - **Performance benchmarks:** Could have established baseline performance metrics earlier
+- **Team metaphor from start:** Would have organized PR comments by specialty from day one
