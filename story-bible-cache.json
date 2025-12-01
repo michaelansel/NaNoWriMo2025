@@ -10081,6 +10081,22 @@
             ]
           },
           {
+            "fact": "Nivek's sword is an old, sharp sword that Javlyn obtains during the quest.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+              },
+              {
+                "passage": "b80ec65da337",
+                "quote": "Standing carefully, Javlyn went back to the creature. It was weirdly proportioned and top heavy, with the torso and arms absurdly long and the legs much shorter. It had to be nearly twice her height in total though. Pushing it over, she retrieved Nivek's sword."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who seeks help to confront the monster",
             "type": "character_identity",
             "category": "constant",
@@ -10177,6 +10193,18 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well-maintained leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who attends weekly training sessions and wears a leather vest and thick jacket for protection",
             "type": "character_identity",
             "category": "constant",
@@ -10189,6 +10217,22 @@
               {
                 "passage": "c77aa3e62bb2",
                 "quote": "Javlyn had announced her plans this morning during the open training session..."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and swords",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males... well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed... Kian had a crossbow slung over his shoulder."
               }
             ]
           },
@@ -10237,6 +10281,18 @@
             ]
           },
           {
+            "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young woman who carries a borrowed sword and wears protective clothing.",
             "type": "character_identity",
             "category": "constant",
@@ -10261,6 +10317,34 @@
               {
                 "passage": "f85eca46c65d",
                 "quote": "\"Javlyn, it's a good thing you're trying to do here, but,\" he looked at her kindly, \"Should you?\" He shook his head slightly, \"It's not your responsibility. You're not the guard or sheriff."
+              }
+            ]
+          },
+          {
+            "fact": "Jerrick is an aging blacksmith who advises Javlyn to wait for the patrol.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "Jerrick, the aging blacksmith, sat her down for a talk."
+              },
+              {
+                "passage": "f85eca46c65d",
+                "quote": "\"Should you?\" He shook his head slightly, \"It's not your responsibility. You're not the guard or sheriff."
+              }
+            ]
+          },
+          {
+            "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
               }
             ]
           },
@@ -10341,6 +10425,22 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with better gear, including a shield, crossbow, and sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations"
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her"
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who attends weekly training sessions and is willing to investigate rumors.",
             "type": "character_identity",
             "category": "constant",
@@ -10401,6 +10501,34 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn"
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations. She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore"
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young adult who is responsible for doing her own laundry.",
             "type": "character_identity",
             "category": "constant",
@@ -10409,18 +10537,6 @@
               {
                 "passage": "60844ae759ad",
                 "quote": "As Javlyn gathered up the mass of clothes in preparation for the washing"
-              }
-            ]
-          },
-          {
-            "fact": "Javlyn’s mother is a recurring voice in her mind, warning her about the laundry.",
-            "type": "character_identity",
-            "category": "constant",
-            "confidence": "high",
-            "evidence": [
-              {
-                "passage": "60844ae759ad",
-                "quote": "Javlyn, you really shouldn't leave your laundry around until it starts to grow something foul inside of it"
               }
             ]
           },
@@ -10461,6 +10577,18 @@
               {
                 "passage": "316e561f9ddb",
                 "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              }
+            ]
+          },
+          {
+            "fact": "Nivek is a character associated with an old sword that Javlyn obtains.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
               }
             ]
           },
@@ -10617,17 +10745,6 @@
             ]
           },
           {
-            "fact": "The monster is a large creature, about twice Javlyn's height, that hunts humans.",
-            "type": "character_identity",
-            "category": "constant",
-            "confidence": "high",
-            "evidence": [
-              {
-                "quote": "\"Stretching out and standing tall at near twice her height, head nearing the top of the cavern.\" and \"The monster dropped whatever it was dragging and turned, seeking the light source.\""
-              }
-            ]
-          },
-          {
             "fact": "The man is a merchant, slightly taller than Javlyn, injured, and has a donkey.",
             "type": "character_identity",
             "category": "constant",
@@ -10635,6 +10752,18 @@
             "evidence": [
               {
                 "quote": "\"It was a man, and he had to be a couple inches taller than she was.\" and \"Down the road towards Furlsby, there was a donkey grazing off the path, laden with packs.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and ask for help finding caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
               }
             ]
           },
@@ -10651,6 +10780,22 @@
               {
                 "passage": "590400dece2b",
                 "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+              }
+            ]
+          },
+          {
+            "fact": "Eldon is a merchant who was attacked by the monster and is rescued by Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "06a29200cbbb",
+                "quote": "the merchant, bloody and still on the ground."
+              },
+              {
+                "passage": "06a29200cbbb",
+                "quote": "\"I thought I was going to die,\" a voice behind her said, and Javlyn startled and whirled. Standing there, blood down the side of his face, was the merchant previously down on the ground. Javlyn responded. \"Javlyn,\" she responded. She gave the monster another look, still dead on the floor, and then hastily wiped down the blade before sheathing it. \"I had heard rumors of a monster in the area, I'm sorry I couldn't get to it before it got you.\""
               }
             ]
           },
@@ -10691,6 +10836,22 @@
             ]
           },
           {
+            "fact": "Nivek's sword is found in the cave and is used by Javlyn during the encounter",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "the goal had been getting others to join her, but what she got was Nivek's old sword."
+              },
+              {
+                "passage": "7add1bb7167b",
+                "quote": "Blood coated Nivek's sword, and Javlyn stumbled back to avoid another swing of the creature's arm."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young villager who wears a leather vest and a thick jacket for protection.",
             "type": "character_identity",
             "category": "constant",
@@ -10699,6 +10860,38 @@
               {
                 "passage": "316e561f9ddb",
                 "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. ... She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          },
+          {
+            "fact": "Jerrick is an aging blacksmith who offers to accompany Javlyn on her quest.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "85e37f7ba808",
+                "quote": "Jerrick, the aging blacksmith, offered to come with."
+              },
+              {
+                "passage": "85e37f7ba808",
+                "quote": "\"Once the ground is dry,\" he grumbled, \"no need to go twisting our ankles over something that can wait another day or two.\""
               }
             ]
           },
@@ -10727,6 +10920,18 @@
               {
                 "passage": "7f7c85ddcbd9",
                 "quote": "Javlyn had announced her plans this morning during the open training session..."
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
               }
             ]
           },
@@ -10772,6 +10977,22 @@
               {
                 "passage": "6813b3985bf9",
                 "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
+              }
+            ]
+          },
+          {
+            "fact": "The group of travelers consists of Danita, Kian, and Terence, who are older than Javlyn and are better equipped for danger",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her."
               }
             ]
           },
@@ -10824,6 +11045,22 @@
             ]
           },
           {
+            "fact": "Nivek is a person who lent Javlyn a sword and encouraged her to fight the monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "0ed81c156c02",
+                "quote": "This was her moment to prove herself: that's why Nivek had lent her the sword after all."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "Sure you can use it, he had said, \"it's not in the best shape, but it could use some action.\""
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who is attempting to investigate the rumored monster in the mushroom cave.",
             "type": "character_identity",
             "category": "constant",
@@ -10840,6 +11077,22 @@
               {
                 "passage": "c77aa3e62bb2",
                 "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              },
+              {
+                "passage": "ed5b5e389e61",
+                "quote": "Danita shook her head, \"The only cave we saw was right around the corner and that was empty.\""
               }
             ]
           },
@@ -10908,6 +11161,22 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young adult living in the village, likely a resident of the main house.",
             "type": "character_identity",
             "category": "constant",
@@ -10932,6 +11201,18 @@
             ]
           },
           {
+            "fact": "Three travelers (Danita, Kian, Terence) arrive after the monster attack and offer to help Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "ac90be98137d",
+                "quote": "\"I'm Danita, this is my brother Kian,\" she gestured to the man with the crossbow, \"and Terence.\""
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young villager who has previously performed village workings",
             "type": "character_identity",
             "category": "constant",
@@ -10940,6 +11221,18 @@
               {
                 "passage": "0ed81c156c02",
                 "quote": "Javlyn had announced her plans this morning during the open training session... \"Yea, yes. Yes I have, with the village\""
+              }
+            ]
+          },
+          {
+            "fact": "Nivek lent Javlyn an old sword to help her fight the monster",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "Nivek had lent her the sword after all"
               }
             ]
           },
@@ -10968,6 +11261,22 @@
               {
                 "passage": "828d29263bc6",
                 "quote": "Javlyn followed. She watched as Terence pulled out a lantern and easily lit it, before handing it off to Kian who shrugged a little, \"Probably won't be of much aid depending on how tight the cave is.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are better equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
               }
             ]
           },
@@ -11134,14 +11443,28 @@
             ]
           },
           {
-            "fact": "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
+            "fact": "If the player does nothing, Javlyn will leave the cavern after exploring and return to the village.",
             "type": "character_identity",
             "category": "zero_action_state",
             "confidence": "high",
             "evidence": [
               {
-                "passage": "140d0d873a3e",
-                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
+                "quote": "\\\"Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing.\\\""
+              }
+            ]
+          },
+          {
+            "fact": "If Javlyn does nothing, the monster will likely kill the man.",
+            "type": "character_identity",
+            "category": "zero_action_state",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "quote": "implied by monster hunting humans and no rescue"
+              },
+              {
+                "passage": "56a194085bbd",
+                "quote": "The monster had been hunting humans before she didn't have time to think about it."
               }
             ]
           },
@@ -11160,6 +11483,17 @@
                 "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
               }
             ]
+          },
+          {
+            "fact": "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud.",
+            "type": "character_identity",
+            "category": "zero_action_state",
+            "confidence": "high",
+            "evidence": [
+              {
+                "quote": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing. ... It might not have turned out how she expected, but it still felt worthwhile to have gone."
+              }
+            ]
           }
         ],
         "variables": []
@@ -11167,7 +11501,35 @@
       "Nivek": {
         "identity": [
           {
-            "fact": "Nivek's sword is an old, sharp sword that Javlyn obtains during the quest.",
+            "fact": "Javlyn has a borrowed sword that was previously owned by Nivek",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+              }
+            ]
+          },
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who carries a sword that once belonged to Nivek",
             "type": "character_identity",
             "category": "constant",
             "confidence": "high",
@@ -11177,8 +11539,8 @@
                 "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
               },
               {
-                "passage": "b80ec65da337",
-                "quote": "Standing carefully, Javlyn went back to the creature. It was weirdly proportioned and top heavy, with the torso and arms absurdly long and the legs much shorter. It had to be nearly twice her height in total though. Pushing it over, she retrieved Nivek's sword."
+                "passage": "e524e5bec136",
+                "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
               }
             ]
           },
@@ -11195,18 +11557,14 @@
             ]
           },
           {
-            "fact": "Nivek's sword is found in the cave and is used by Javlyn during the encounter",
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
             "type": "character_identity",
             "category": "constant",
             "confidence": "high",
             "evidence": [
               {
-                "passage": "7e35fe311599",
-                "quote": "the goal had been getting others to join her, but what she got was Nivek's old sword."
-              },
-              {
-                "passage": "7add1bb7167b",
-                "quote": "Blood coated Nivek's sword, and Javlyn stumbled back to avoid another swing of the creature's arm."
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
               }
             ]
           },
@@ -11285,6 +11643,22 @@
             ]
           },
           {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
             "fact": "Jerrick is the village blacksmith and former soldier",
             "type": "character_identity",
             "category": "constant",
@@ -11341,6 +11715,18 @@
             ]
           },
           {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          },
+          {
             "fact": "Jerrick is the village blacksmith who believes in Javlyn’s story",
             "type": "character_identity",
             "category": "constant",
@@ -11387,6 +11773,18 @@
             ]
           },
           {
+            "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              }
+            ]
+          },
+          {
             "fact": "Danita carries a heavy shield, Kian carries a crossbow, and Terence carries a sword",
             "type": "character_identity",
             "category": "constant",
@@ -11395,6 +11793,18 @@
               {
                 "passage": "828d29263bc6",
                 "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
               }
             ]
           },
@@ -11566,8 +11976,36 @@
         "zero_action_state": [],
         "variables": []
       },
-      "Three": {
+      "Kian": {
         "identity": [
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well-maintained leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and swords",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males... well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed... Kian had a crossbow slung over his shoulder."
+              }
+            ]
+          },
           {
             "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
             "type": "character_identity",
@@ -11581,23 +12019,17 @@
             ]
           },
           {
-            "fact": "Three travelers (Danita, Kian, Terence) arrive after the monster attack and offer to help Javlyn.",
+            "fact": "Danita carries a heavy shield, Kian carries a crossbow, and Terence carries a sword",
             "type": "character_identity",
             "category": "constant",
             "confidence": "high",
             "evidence": [
               {
-                "passage": "ac90be98137d",
-                "quote": "\"I'm Danita, this is my brother Kian,\" she gestured to the man with the crossbow, \"and Terence.\""
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
               }
             ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": []
-      },
-      "Terence": {
-        "identity": [
+          },
           {
             "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
             "type": "character_identity",
@@ -11607,6 +12039,122 @@
               {
                 "passage": "f85eca46c65d",
                 "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with better gear, including a shield, crossbow, and sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations"
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn"
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations. She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who seek help finding caves and are willing to stay at Javlyn's family's barn if offered.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              },
+              {
+                "passage": "1305b376a3a6",
+                "quote": "If you're serious, you can stay in my family's barn for free"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and ask for help finding caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. ... She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who are well-equipped for dangerous situations and are seeking help to find caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The group of travelers consists of Danita, Kian, and Terence, who are older than Javlyn and are better equipped for danger",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her."
               }
             ]
           },
@@ -11627,6 +12175,320 @@
               {
                 "passage": "0ed81c156c02",
                 "quote": "\"From the rumors we heard, this thing has been doing a number on the locals, so let's not take any chances. You can save your luck for the card tables, Kian.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              },
+              {
+                "passage": "ed5b5e389e61",
+                "quote": "Danita shook her head, \"The only cave we saw was right around the corner and that was empty.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence."
+              }
+            ]
+          },
+          {
+            "fact": "Three travelers (Danita, Kian, Terence) arrive after the monster attack and offer to help Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "ac90be98137d",
+                "quote": "\"I'm Danita, this is my brother Kian,\" she gestured to the man with the crossbow, \"and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are better equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Terence": {
+        "identity": [
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well-maintained leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and swords",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males... well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed... Kian had a crossbow slung over his shoulder."
+              }
+            ]
+          },
+          {
+            "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              }
+            ]
+          },
+          {
+            "fact": "Danita carries a heavy shield, Kian carries a crossbow, and Terence carries a sword",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with better gear, including a shield, crossbow, and sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations"
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn"
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations. She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who seek help finding caves and are willing to stay at Javlyn's family's barn if offered.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              },
+              {
+                "passage": "1305b376a3a6",
+                "quote": "If you're serious, you can stay in my family's barn for free"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and ask for help finding caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. ... She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who are well-equipped for dangerous situations and are seeking help to find caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The group of travelers consists of Danita, Kian, and Terence, who are older than Javlyn and are better equipped for danger",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers consist of a female storyteller and two male companions, one of whom is named Terence and the other Kian.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "0ed81c156c02",
+                "quote": "The group was composed of a female and two males, with one of the males clearly engrossed in a story."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "\"Alright, the cave should be coming up here soon. 'Around the hillside and after boulder', which has got to be what we just saw back there."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "\"From the rumors we heard, this thing has been doing a number on the locals, so let's not take any chances. You can save your luck for the card tables, Kian.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              },
+              {
+                "passage": "ed5b5e389e61",
+                "quote": "Danita shook her head, \"The only cave we saw was right around the corner and that was empty.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are better equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
               }
             ]
           }
@@ -11673,6 +12535,29 @@
             ]
           },
           {
+            "fact": "Javlyn’s mother is a recurring voice in her mind, warning her about the laundry.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "60844ae759ad",
+                "quote": "Javlyn, you really shouldn't leave your laundry around until it starts to grow something foul inside of it"
+              }
+            ]
+          },
+          {
+            "fact": "The monster is a large creature, about twice Javlyn's height, that hunts humans.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "quote": "\"Stretching out and standing tall at near twice her height, head nearing the top of the cavern.\" and \"The monster dropped whatever it was dragging and turned, seeking the light source.\""
+              }
+            ]
+          },
+          {
             "fact": "The monster is described as a tall, gangly creature with dark red skin, a snout, and horns.",
             "type": "character_identity",
             "category": "constant",
@@ -11697,10 +12582,159 @@
             ]
           }
         ],
-        "zero_action_state": [],
+        "zero_action_state": [
+          {
+            "fact": "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
+            "type": "character_identity",
+            "category": "zero_action_state",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "140d0d873a3e",
+                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
+              }
+            ]
+          }
+        ],
         "variables": []
       },
       "Jeramee": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Salie": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Avery": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Jessie": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Maureen": {
         "identity": [
           {
             "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
@@ -11770,49 +12804,6 @@
           }
         ],
         "zero_action_state": [],
-        "variables": []
-      },
-      "If": {
-        "identity": [],
-        "zero_action_state": [
-          {
-            "fact": "If the player does nothing, Javlyn will leave the cavern after exploring and return to the village.",
-            "type": "character_identity",
-            "category": "zero_action_state",
-            "confidence": "high",
-            "evidence": [
-              {
-                "quote": "\\\"Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing.\\\""
-              }
-            ]
-          },
-          {
-            "fact": "If Javlyn does nothing, the monster will likely kill the man.",
-            "type": "character_identity",
-            "category": "zero_action_state",
-            "confidence": "medium",
-            "evidence": [
-              {
-                "quote": "implied by monster hunting humans and no rescue"
-              },
-              {
-                "passage": "56a194085bbd",
-                "quote": "The monster had been hunting humans before she didn't have time to think about it."
-              }
-            ]
-          },
-          {
-            "fact": "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud.",
-            "type": "character_identity",
-            "category": "zero_action_state",
-            "confidence": "high",
-            "evidence": [
-              {
-                "quote": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing. ... It might not have turned out how she expected, but it still felt worthwhile to have gone."
-              }
-            ]
-          }
-        ],
         "variables": []
       },
       "Sikshusiks": {
@@ -19923,7 +20914,7 @@
     }
   },
   "meta": {
-    "last_extracted": "2025-12-01T01:34:38.878092",
+    "last_extracted": "2025-12-01T01:37:58.038098",
     "total_passages_extracted": 65,
     "total_facts": 242
   },
@@ -22556,6 +23547,22 @@
             ]
           },
           {
+            "fact": "Nivek's sword is an old, sharp sword that Javlyn obtains during the quest.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+              },
+              {
+                "passage": "b80ec65da337",
+                "quote": "Standing carefully, Javlyn went back to the creature. It was weirdly proportioned and top heavy, with the torso and arms absurdly long and the legs much shorter. It had to be nearly twice her height in total though. Pushing it over, she retrieved Nivek's sword."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who seeks help to confront the monster",
             "type": "character_identity",
             "category": "constant",
@@ -22652,6 +23659,18 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well-maintained leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who attends weekly training sessions and wears a leather vest and thick jacket for protection",
             "type": "character_identity",
             "category": "constant",
@@ -22664,6 +23683,22 @@
               {
                 "passage": "c77aa3e62bb2",
                 "quote": "Javlyn had announced her plans this morning during the open training session..."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and swords",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males... well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed... Kian had a crossbow slung over his shoulder."
               }
             ]
           },
@@ -22712,6 +23747,18 @@
             ]
           },
           {
+            "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young woman who carries a borrowed sword and wears protective clothing.",
             "type": "character_identity",
             "category": "constant",
@@ -22736,6 +23783,34 @@
               {
                 "passage": "f85eca46c65d",
                 "quote": "\"Javlyn, it's a good thing you're trying to do here, but,\" he looked at her kindly, \"Should you?\" He shook his head slightly, \"It's not your responsibility. You're not the guard or sheriff."
+              }
+            ]
+          },
+          {
+            "fact": "Jerrick is an aging blacksmith who advises Javlyn to wait for the patrol.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "Jerrick, the aging blacksmith, sat her down for a talk."
+              },
+              {
+                "passage": "f85eca46c65d",
+                "quote": "\"Should you?\" He shook his head slightly, \"It's not your responsibility. You're not the guard or sheriff."
+              }
+            ]
+          },
+          {
+            "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
               }
             ]
           },
@@ -22816,6 +23891,22 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with better gear, including a shield, crossbow, and sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations"
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her"
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who attends weekly training sessions and is willing to investigate rumors.",
             "type": "character_identity",
             "category": "constant",
@@ -22876,6 +23967,34 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn"
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations. She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore"
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young adult who is responsible for doing her own laundry.",
             "type": "character_identity",
             "category": "constant",
@@ -22884,18 +24003,6 @@
               {
                 "passage": "60844ae759ad",
                 "quote": "As Javlyn gathered up the mass of clothes in preparation for the washing"
-              }
-            ]
-          },
-          {
-            "fact": "Javlyn’s mother is a recurring voice in her mind, warning her about the laundry.",
-            "type": "character_identity",
-            "category": "constant",
-            "confidence": "high",
-            "evidence": [
-              {
-                "passage": "60844ae759ad",
-                "quote": "Javlyn, you really shouldn't leave your laundry around until it starts to grow something foul inside of it"
               }
             ]
           },
@@ -22936,6 +24043,18 @@
               {
                 "passage": "316e561f9ddb",
                 "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              }
+            ]
+          },
+          {
+            "fact": "Nivek is a character associated with an old sword that Javlyn obtains.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
               }
             ]
           },
@@ -23092,17 +24211,6 @@
             ]
           },
           {
-            "fact": "The monster is a large creature, about twice Javlyn's height, that hunts humans.",
-            "type": "character_identity",
-            "category": "constant",
-            "confidence": "high",
-            "evidence": [
-              {
-                "quote": "\"Stretching out and standing tall at near twice her height, head nearing the top of the cavern.\" and \"The monster dropped whatever it was dragging and turned, seeking the light source.\""
-              }
-            ]
-          },
-          {
             "fact": "The man is a merchant, slightly taller than Javlyn, injured, and has a donkey.",
             "type": "character_identity",
             "category": "constant",
@@ -23110,6 +24218,18 @@
             "evidence": [
               {
                 "quote": "\"It was a man, and he had to be a couple inches taller than she was.\" and \"Down the road towards Furlsby, there was a donkey grazing off the path, laden with packs.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and ask for help finding caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
               }
             ]
           },
@@ -23126,6 +24246,22 @@
               {
                 "passage": "590400dece2b",
                 "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+              }
+            ]
+          },
+          {
+            "fact": "Eldon is a merchant who was attacked by the monster and is rescued by Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "06a29200cbbb",
+                "quote": "the merchant, bloody and still on the ground."
+              },
+              {
+                "passage": "06a29200cbbb",
+                "quote": "\"I thought I was going to die,\" a voice behind her said, and Javlyn startled and whirled. Standing there, blood down the side of his face, was the merchant previously down on the ground. Javlyn responded. \"Javlyn,\" she responded. She gave the monster another look, still dead on the floor, and then hastily wiped down the blade before sheathing it. \"I had heard rumors of a monster in the area, I'm sorry I couldn't get to it before it got you.\""
               }
             ]
           },
@@ -23166,6 +24302,22 @@
             ]
           },
           {
+            "fact": "Nivek's sword is found in the cave and is used by Javlyn during the encounter",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "the goal had been getting others to join her, but what she got was Nivek's old sword."
+              },
+              {
+                "passage": "7add1bb7167b",
+                "quote": "Blood coated Nivek's sword, and Javlyn stumbled back to avoid another swing of the creature's arm."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young villager who wears a leather vest and a thick jacket for protection.",
             "type": "character_identity",
             "category": "constant",
@@ -23174,6 +24326,38 @@
               {
                 "passage": "316e561f9ddb",
                 "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. ... She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          },
+          {
+            "fact": "Jerrick is an aging blacksmith who offers to accompany Javlyn on her quest.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "85e37f7ba808",
+                "quote": "Jerrick, the aging blacksmith, offered to come with."
+              },
+              {
+                "passage": "85e37f7ba808",
+                "quote": "\"Once the ground is dry,\" he grumbled, \"no need to go twisting our ankles over something that can wait another day or two.\""
               }
             ]
           },
@@ -23202,6 +24386,18 @@
               {
                 "passage": "7f7c85ddcbd9",
                 "quote": "Javlyn had announced her plans this morning during the open training session..."
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
               }
             ]
           },
@@ -23247,6 +24443,22 @@
               {
                 "passage": "6813b3985bf9",
                 "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
+              }
+            ]
+          },
+          {
+            "fact": "The group of travelers consists of Danita, Kian, and Terence, who are older than Javlyn and are better equipped for danger",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her."
               }
             ]
           },
@@ -23299,6 +24511,22 @@
             ]
           },
           {
+            "fact": "Nivek is a person who lent Javlyn a sword and encouraged her to fight the monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "0ed81c156c02",
+                "quote": "This was her moment to prove herself: that's why Nivek had lent her the sword after all."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "Sure you can use it, he had said, \"it's not in the best shape, but it could use some action.\""
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a villager who is attempting to investigate the rumored monster in the mushroom cave.",
             "type": "character_identity",
             "category": "constant",
@@ -23315,6 +24543,22 @@
               {
                 "passage": "c77aa3e62bb2",
                 "quote": "Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week and on any day saw a good amount of people show up."
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              },
+              {
+                "passage": "ed5b5e389e61",
+                "quote": "Danita shook her head, \"The only cave we saw was right around the corner and that was empty.\""
               }
             ]
           },
@@ -23383,6 +24627,22 @@
             ]
           },
           {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence."
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young adult living in the village, likely a resident of the main house.",
             "type": "character_identity",
             "category": "constant",
@@ -23407,6 +24667,18 @@
             ]
           },
           {
+            "fact": "Three travelers (Danita, Kian, Terence) arrive after the monster attack and offer to help Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "ac90be98137d",
+                "quote": "\"I'm Danita, this is my brother Kian,\" she gestured to the man with the crossbow, \"and Terence.\""
+              }
+            ]
+          },
+          {
             "fact": "Javlyn is a young villager who has previously performed village workings",
             "type": "character_identity",
             "category": "constant",
@@ -23415,6 +24687,18 @@
               {
                 "passage": "0ed81c156c02",
                 "quote": "Javlyn had announced her plans this morning during the open training session... \"Yea, yes. Yes I have, with the village\""
+              }
+            ]
+          },
+          {
+            "fact": "Nivek lent Javlyn an old sword to help her fight the monster",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "Nivek had lent her the sword after all"
               }
             ]
           },
@@ -23443,6 +24727,22 @@
               {
                 "passage": "828d29263bc6",
                 "quote": "Javlyn followed. She watched as Terence pulled out a lantern and easily lit it, before handing it off to Kian who shrugged a little, \"Probably won't be of much aid depending on how tight the cave is.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are better equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
               }
             ]
           },
@@ -23609,14 +24909,28 @@
             ]
           },
           {
-            "fact": "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
+            "fact": "If the player does nothing, Javlyn will leave the cavern after exploring and return to the village.",
             "type": "character_identity",
             "category": "zero_action_state",
             "confidence": "high",
             "evidence": [
               {
-                "passage": "140d0d873a3e",
-                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
+                "quote": "\\\"Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing.\\\""
+              }
+            ]
+          },
+          {
+            "fact": "If Javlyn does nothing, the monster will likely kill the man.",
+            "type": "character_identity",
+            "category": "zero_action_state",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "quote": "implied by monster hunting humans and no rescue"
+              },
+              {
+                "passage": "56a194085bbd",
+                "quote": "The monster had been hunting humans before she didn't have time to think about it."
               }
             ]
           },
@@ -23635,6 +24949,17 @@
                 "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
               }
             ]
+          },
+          {
+            "fact": "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud.",
+            "type": "character_identity",
+            "category": "zero_action_state",
+            "confidence": "high",
+            "evidence": [
+              {
+                "quote": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing. ... It might not have turned out how she expected, but it still felt worthwhile to have gone."
+              }
+            ]
           }
         ],
         "variables": []
@@ -23642,7 +24967,35 @@
       "Nivek": {
         "identity": [
           {
-            "fact": "Nivek's sword is an old, sharp sword that Javlyn obtains during the quest.",
+            "fact": "Javlyn has a borrowed sword that was previously owned by Nivek",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+              }
+            ]
+          },
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who carries a sword that once belonged to Nivek",
             "type": "character_identity",
             "category": "constant",
             "confidence": "high",
@@ -23652,8 +25005,8 @@
                 "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
               },
               {
-                "passage": "b80ec65da337",
-                "quote": "Standing carefully, Javlyn went back to the creature. It was weirdly proportioned and top heavy, with the torso and arms absurdly long and the legs much shorter. It had to be nearly twice her height in total though. Pushing it over, she retrieved Nivek's sword."
+                "passage": "e524e5bec136",
+                "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
               }
             ]
           },
@@ -23670,18 +25023,14 @@
             ]
           },
           {
-            "fact": "Nivek's sword is found in the cave and is used by Javlyn during the encounter",
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
             "type": "character_identity",
             "category": "constant",
             "confidence": "high",
             "evidence": [
               {
-                "passage": "7e35fe311599",
-                "quote": "the goal had been getting others to join her, but what she got was Nivek's old sword."
-              },
-              {
-                "passage": "7add1bb7167b",
-                "quote": "Blood coated Nivek's sword, and Javlyn stumbled back to avoid another swing of the creature's arm."
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
               }
             ]
           },
@@ -23760,6 +25109,22 @@
             ]
           },
           {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
             "fact": "Jerrick is the village blacksmith and former soldier",
             "type": "character_identity",
             "category": "constant",
@@ -23816,6 +25181,18 @@
             ]
           },
           {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          },
+          {
             "fact": "Jerrick is the village blacksmith who believes in Javlyn’s story",
             "type": "character_identity",
             "category": "constant",
@@ -23862,6 +25239,18 @@
             ]
           },
           {
+            "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              }
+            ]
+          },
+          {
             "fact": "Danita carries a heavy shield, Kian carries a crossbow, and Terence carries a sword",
             "type": "character_identity",
             "category": "constant",
@@ -23870,6 +25259,18 @@
               {
                 "passage": "828d29263bc6",
                 "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
               }
             ]
           },
@@ -24041,8 +25442,36 @@
         "zero_action_state": [],
         "variables": []
       },
-      "Three": {
+      "Kian": {
         "identity": [
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well-maintained leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and swords",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males... well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed... Kian had a crossbow slung over his shoulder."
+              }
+            ]
+          },
           {
             "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
             "type": "character_identity",
@@ -24056,23 +25485,17 @@
             ]
           },
           {
-            "fact": "Three travelers (Danita, Kian, Terence) arrive after the monster attack and offer to help Javlyn.",
+            "fact": "Danita carries a heavy shield, Kian carries a crossbow, and Terence carries a sword",
             "type": "character_identity",
             "category": "constant",
             "confidence": "high",
             "evidence": [
               {
-                "passage": "ac90be98137d",
-                "quote": "\"I'm Danita, this is my brother Kian,\" she gestured to the man with the crossbow, \"and Terence.\""
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
               }
             ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": []
-      },
-      "Terence": {
-        "identity": [
+          },
           {
             "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
             "type": "character_identity",
@@ -24082,6 +25505,122 @@
               {
                 "passage": "f85eca46c65d",
                 "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with better gear, including a shield, crossbow, and sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations"
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn"
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations. She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who seek help finding caves and are willing to stay at Javlyn's family's barn if offered.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              },
+              {
+                "passage": "1305b376a3a6",
+                "quote": "If you're serious, you can stay in my family's barn for free"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and ask for help finding caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. ... She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who are well-equipped for dangerous situations and are seeking help to find caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The group of travelers consists of Danita, Kian, and Terence, who are older than Javlyn and are better equipped for danger",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her."
               }
             ]
           },
@@ -24102,6 +25641,320 @@
               {
                 "passage": "0ed81c156c02",
                 "quote": "\"From the rumors we heard, this thing has been doing a number on the locals, so let's not take any chances. You can save your luck for the card tables, Kian.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              },
+              {
+                "passage": "ed5b5e389e61",
+                "quote": "Danita shook her head, \"The only cave we saw was right around the corner and that was empty.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence."
+              }
+            ]
+          },
+          {
+            "fact": "Three travelers (Danita, Kian, Terence) arrive after the monster attack and offer to help Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "ac90be98137d",
+                "quote": "\"I'm Danita, this is my brother Kian,\" she gestured to the man with the crossbow, \"and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are better equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Terence": {
+        "identity": [
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well-maintained leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and swords",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males... well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed... Kian had a crossbow slung over his shoulder."
+              }
+            ]
+          },
+          {
+            "fact": "Three travelers named Danita, Kian, and Terence meet Javlyn at the path",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              }
+            ]
+          },
+          {
+            "fact": "Danita carries a heavy shield, Kian carries a crossbow, and Terence carries a sword",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "Terence, Kian, and Danita are three individuals who confront the monster and later meet Javlyn.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "f85eca46c65d",
+                "quote": "The tallest and broadest ignored the monster, coming straight to Javlyn. He was older, she realized, and she recognized his voice when he spoke as the one who shouted earlier. \"I'm Terence, and that's Kian and Danita with me.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with better gear, including a shield, crossbow, and sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations"
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn"
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed"
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations. She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who seek help finding caves and are willing to stay at Javlyn's family's barn if offered.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence"
+              },
+              {
+                "passage": "1305b376a3a6",
+                "quote": "If you're serious, you can stay in my family's barn for free"
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and ask for help finding caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. ... She spared a moment to be thankful she wore a coat over her own leather vest, shy over how inadequate it seemed in comparison to the well cared but worn leather armor and thick cloaks they wore."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who are well-equipped for dangerous situations and are seeking help to find caves.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              }
+            ]
+          },
+          {
+            "fact": "The group of travelers consists of Danita, Kian, and Terence, who are older than Javlyn and are better equipped for danger",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers consist of a female storyteller and two male companions, one of whom is named Terence and the other Kian.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "0ed81c156c02",
+                "quote": "The group was composed of a female and two males, with one of the males clearly engrossed in a story."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "\"Alright, the cave should be coming up here soon. 'Around the hillside and after boulder', which has got to be what we just saw back there."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "\"From the rumors we heard, this thing has been doing a number on the locals, so let's not take any chances. You can save your luck for the card tables, Kian.\""
+              }
+            ]
+          },
+          {
+            "fact": "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "The group was composed of a female and two males, and the female greeted Javlyn, stopping once they were within reasonable talking distance, her two companions beside her. \"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
+              },
+              {
+                "passage": "ed5b5e389e61",
+                "quote": "Danita shook her head, \"The only cave we saw was right around the corner and that was empty.\""
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "872119a696dd",
+                "quote": "I am Danita, and with me is Kian and Terence."
+              }
+            ]
+          },
+          {
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn and are better equipped with armor, a shield, a crossbow, and a sword.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "872119a696dd",
+                "quote": "They seemed a cheerful bunch, chattering back and forth. And, as they neared, Javlyn noticed much better geared for potentially dangerous situations."
+              },
+              {
+                "passage": "828d29263bc6",
+                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
               }
             ]
           }
@@ -24148,6 +26001,29 @@
             ]
           },
           {
+            "fact": "Javlyn’s mother is a recurring voice in her mind, warning her about the laundry.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "60844ae759ad",
+                "quote": "Javlyn, you really shouldn't leave your laundry around until it starts to grow something foul inside of it"
+              }
+            ]
+          },
+          {
+            "fact": "The monster is a large creature, about twice Javlyn's height, that hunts humans.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "quote": "\"Stretching out and standing tall at near twice her height, head nearing the top of the cavern.\" and \"The monster dropped whatever it was dragging and turned, seeking the light source.\""
+              }
+            ]
+          },
+          {
             "fact": "The monster is described as a tall, gangly creature with dark red skin, a snout, and horns.",
             "type": "character_identity",
             "category": "constant",
@@ -24172,10 +26048,159 @@
             ]
           }
         ],
-        "zero_action_state": [],
+        "zero_action_state": [
+          {
+            "fact": "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
+            "type": "character_identity",
+            "category": "zero_action_state",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "140d0d873a3e",
+                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
+              }
+            ]
+          }
+        ],
         "variables": []
       },
       "Jeramee": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Salie": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Avery": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Jessie": {
+        "identity": [
+          {
+            "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "medium",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Thirteen people"
+              },
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "Jeramee had said... Nivek and Salie... Jerrick... Avery... Jessie... Maureen"
+              }
+            ]
+          },
+          {
+            "fact": "Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen are villagers who join Javlyn on the expedition.",
+            "type": "character_identity",
+            "category": "constant",
+            "confidence": "high",
+            "evidence": [
+              {
+                "passage": "7f7c85ddcbd9",
+                "quote": "When she had tried to sound people out previously, most seemed indifferent..."
+              }
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Maureen": {
         "identity": [
           {
             "fact": "The group consists of at least thirteen people, including Jeramee, Nivek, Salie, Jerrick, Avery, Jessie, and Maureen",
@@ -24245,49 +26270,6 @@
           }
         ],
         "zero_action_state": [],
-        "variables": []
-      },
-      "If": {
-        "identity": [],
-        "zero_action_state": [
-          {
-            "fact": "If the player does nothing, Javlyn will leave the cavern after exploring and return to the village.",
-            "type": "character_identity",
-            "category": "zero_action_state",
-            "confidence": "high",
-            "evidence": [
-              {
-                "quote": "\\\"Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing.\\\""
-              }
-            ]
-          },
-          {
-            "fact": "If Javlyn does nothing, the monster will likely kill the man.",
-            "type": "character_identity",
-            "category": "zero_action_state",
-            "confidence": "medium",
-            "evidence": [
-              {
-                "quote": "implied by monster hunting humans and no rescue"
-              },
-              {
-                "passage": "56a194085bbd",
-                "quote": "The monster had been hunting humans before she didn't have time to think about it."
-              }
-            ]
-          },
-          {
-            "fact": "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud.",
-            "type": "character_identity",
-            "category": "zero_action_state",
-            "confidence": "high",
-            "evidence": [
-              {
-                "quote": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing. ... It might not have turned out how she expected, but it still felt worthwhile to have gone."
-              }
-            ]
-          }
-        ],
         "variables": []
       },
       "Sikshusiks": {
@@ -25193,21 +27175,21 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 3.906614303588867,
+  "summarization_time_seconds": 4.22645378112793,
   "extraction_stats": {
     "total_passages": 65,
     "passages_with_facts": 61,
     "passages_with_no_facts": 4,
     "average_facts_per_passage": 6.92,
-    "character_coverage": 11,
+    "character_coverage": 14,
     "fact_distribution": {
       "world_rules": 95,
       "setting": 72,
       "timeline": 11,
-      "character_identity": 120,
+      "character_identity": 188,
       "variables": 64
     },
     "extraction_success_rate": 0.938,
-    "deduplication_effectiveness": 0.196
+    "deduplication_effectiveness": 0.044
   }
 }
