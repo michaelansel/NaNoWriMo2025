@@ -103,6 +103,12 @@ These are directional goals we cannot directly measure but inform our design dec
 
 ### The Six Formats
 
+**Organization:** Formats 1-3 are third-party tools we use (details inline). Formats 4-6 are custom features we built (linked to dedicated feature specs).
+
+---
+
+### Third-Party Formats (1-3)
+
 #### 1. Harlowe (Interactive Playable Story)
 **Purpose:** Player experience - how readers will play the story
 
@@ -169,33 +175,31 @@ These are directional goals we cannot directly measure but inform our design dec
 
 ---
 
-#### 4. AllPaths (Enumerated Paths for AI Validation)
-**Purpose:** Validation - all possible paths for continuity checking
+### Custom Formats (4-6)
+
+#### 4. AllPaths (allpaths.html)
+
+**Purpose:** Enumerate all possible paths through the story for validation and testing
 
 **What You Get:**
-- All possible paths from story start to any ending
-- Each path as complete player journey (start to finish)
-- Web interface for browsing all paths
-- Text files for AI validation (clean prose and metadata versions)
-- Tracking of which paths are new vs. modified
-- Unique IDs for each path
+- Every possible path through the story listed
+- Progress tracking with creation and modification dates
+- Filtering by recent activity (last day/week)
+- Validation status tracking (which paths have been checked)
+- Integration with AI continuity checking
+- Browsable web interface and text files for AI validation
 
 **Use Cases:**
 - AI continuity checking
 - Exhaustive story validation
 - Tracking which paths are new vs. modified
 - Browsing all possible player journeys
-- Verifying story completeness
+- Monitoring NaNoWriMo daily and weekly progress
 
-**Outputs:**
-- `dist/allpaths.html` - Browse all paths in web interface
-- `dist/allpaths-clean/*.txt` - Clean prose for deployment
-- `dist/allpaths-metadata/*.txt` - Metadata format for AI checking
-- `allpaths-validation-status.json` - Validation cache
-
+**Output:** `dist/allpaths.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/allpaths.html`
 
-**Technical Note:** Implementation details (path enumeration algorithm, ID generation, cycle detection) are in architecture documentation.
+**Detailed Feature Spec:** See [AllPaths Progress Tracking](allpaths-categorization.md) for full acceptance criteria and user stories.
 
 ---
 
