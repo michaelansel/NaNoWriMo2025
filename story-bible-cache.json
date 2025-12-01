@@ -7456,7 +7456,7 @@
     "constants": {
       "world_rules": [
         {
-          "fact": "The village experiences frequent, continuous rain, often lasting three days straight, with overcast clouds threatening more rain.",
+          "fact": "The village experiences frequent heavy rain, often lasting multiple days.",
           "evidence": [
             {
               "passage": "316e561f9ddb",
@@ -7475,188 +7475,26 @@
               "quote": "It had been raining solidly for over an hour by the time Danita called it"
             },
             {
-              "passage": "56a194085bbd",
-              "quote": "It had started to rain by the time she finished checking the man over."
+              "passage": "5b0ba41f",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            },
+            {
+              "passage": "5b0ba41f",
+              "quote": "the rain having oversaturated the ground"
             }
           ],
           "confidence": "high",
           "merged_from": [
             "The village experiences heavy rain during the story",
+            "The village experiences frequent rain during the story",
             "The village experiences frequent rain, often lasting multiple days.",
-            "The village experiences frequent rainstorms that can last several days.",
             "The village experiences heavy rain during the events described.",
-            "The village experiences heavy rain and overcast weather during the events described.",
-            "It is raining heavily during the events"
+            "The village experiences heavy rain and overcast weather during the initial scenes, affecting travel conditions.",
+            "The village experiences heavy rain and overcast weather during the events described."
           ]
         },
         {
-          "fact": "Javlyn enters the cave carrying a lantern in her left hand and a sword in her right hand.",
-          "evidence": [
-            {
-              "passage": "e524e5bec136",
-              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
-            },
-            {
-              "passage": "7e35fe311599",
-              "quote": "Javlyn stopped to light the lantern she had brought."
-            },
-            {
-              "passage": "56a194085bbd",
-              "quote": "She had a lantern."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "Javlyn enters the cave with a lantern and sword",
-            "Javlyn carries a lantern and a sword into the cave",
-            "The lantern provides light in the cave."
-          ]
-        },
-        {
-          "fact": "The cave entrance is narrow, with walls brushing the entrant’s shoulders, and is located on a cliffside leading to a larger chamber.",
-          "evidence": [
-            {
-              "passage": "e524e5bec136",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The cave entrance is narrow and the walls brush the entrant’s shoulders.",
-            "The cave entrance is a narrow opening that can be blocked by moving rocks.",
-            "The cave is located on a cliffside and has a narrow entrance that leads to a larger chamber."
-          ]
-        },
-        {
-          "fact": "The cave contains a large, horned creature with a long snout, two curved horns, wide shoulders, and a body roughly twice Javlyn’s height; it can fit through the narrow entrance and attacks travelers.",
+          "fact": "The cave contains a large, horned creature with a long snout, two curved horns, wide shoulders, nearly twice Javlyn's height, that can fit through the narrow entrance and attacks travelers; it can be defeated with a sword.",
           "evidence": [
             {
               "passage": "f295816555c0",
@@ -7664,108 +7502,64 @@
             },
             {
               "passage": "7add1bb7167b",
-              "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough Javlyn had no idea how the monster fit through the cave's entrance."
+              "quote": "The creature was weirdly proportioned and top heavy, with the torso and arms absurdly long and the legs much shorter. It had to be nearly twice her height in total."
             },
             {
               "passage": "7f7c85ddcbd9",
               "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough Javlyn had no idea how the monster fit through the cave's entrance."
             },
             {
-              "passage": "aaa3cfd95830",
-              "quote": "Near twice her height, and with //horns//?!"
+              "passage": "1305b376a3a6",
+              "quote": "A terrifyingly tall creature was charging them, coming from the cave entrance."
+            },
+            {
+              "passage": "1e2cf5431c2f",
+              "quote": "Terence was engaged with a terrifyingly tall creature with a long snout and horns on its head."
             },
             {
               "passage": "56a194085bbd",
               "quote": "The monster slid out of the tight tunnel and then seemed to grow. Stretching out and standing tall at near twice her height, head nearing the top of the cavern."
             },
             {
-              "passage": "0ed81c156c02",
-              "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough"
+              "passage": "56a194085bbd",
+              "quote": "The monster was attacking."
             },
             {
-              "passage": "1e2cf5431c2f",
-              "quote": "Terence was engaged with a terrifyingly tall creature with a long snout and horns on its head."
+              "passage": "56a194085bbd",
+              "quote": "She struck out with the sword twice, and had to duck under the creatures arm swipe."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "She swung the sword wildly, desperate, and was lucky when it connected across the monsters snout."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster in the cave is a tall creature with a long snout and horns, capable of attacking and being killed by a sword or a bolt.",
+            "The cave contains a creature with a long snout and two curved horns",
+            "The cave contains a creature that is larger than Javlyn and has a long snout with two curved horns.",
+            "The monster in the cave is a tall creature that can be killed with a single blow to the eye.",
             "The monster in the cave has a long snout, two curved horns, and wide shoulders.",
             "The monster in the cave has a long snout, two curved horns, and wide shoulders, and it attacks the travelers.",
+            "The monster in the cave is a large, horned creature with a long snout and a body twice Javlyn's height",
             "The monster in the cave is described as tall with a long snout and horns, and it attacks Terence.",
             "The monster in the cave is a tall creature with a long snout and horns, capable of attacking and being killed by a sword or a bolt."
           ]
         },
         {
-          "fact": "The monster is killed by Javlyn during the encounter, leaving the cave dark as the lantern burns out.",
+          "fact": "Javlyn enters the cave carrying a lantern and a sword.",
           "evidence": [
             {
-              "passage": "7add1bb7167b",
-              "quote": "The creature twitched occasionally, but made no movement for further action. It was dead."
-            },
-            {
-              "passage": "7add1bb7167b",
-              "quote": "The lantern toppled to the ground, the fire sputtered as the oil spilled, until it died, leaving the cavern dark."
+              "passage": "e524e5bec136",
+              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The creature is killed by Javlyn during the encounter",
-            "The monster is dead after Javlyn defeats it, leaving the cave dark due to the lantern burning out"
+            "Javlyn enters the cave with a lantern and sword"
           ]
         },
         {
-          "fact": "Javlyn finds a metal dagger with a small hoop handle in the cave floor after defeating the monster.",
-          "evidence": [
-            {
-              "passage": "70b5e9082ab6",
-              "quote": "She was able to feel enough to know it was something man-made."
-            },
-            {
-              "passage": "ee7ec3ffe7b6",
-              "quote": "Her fingers had caught a small hoop at the end of what felt like the handle of a dagger."
-            },
-            {
-              "passage": "6f951461b5cb",
-              "quote": "She was able to feel enough to know it was something man-made. She caught a small hoop at the end of a dagger."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "After the fight, Javlyn finds a metal dagger in the cave floor",
-            "Javlyn can find a small hoop at the end of a dagger in a hidden passage behind the monster",
-            "The bag found in the cave contains a single message tube."
-          ]
-        },
-        {
-          "fact": "The world has a magic system where \"workings\" can be applied to items to trigger effects such as ice or other elemental effects, and light workings are possible but risky for beginners.",
-          "evidence": [
-            {
-              "passage": "f28c48cb13cc",
-              "quote": "Ice workings, Terence said ignoring Danita, \"are typically applied to items, like my sword or Danita's shield, and have a trigger on them.\""
-            },
-            {
-              "passage": "f28c48cb13cc",
-              "quote": "\"This is not something a beginner can just do.\""
-            },
-            {
-              "passage": "6813b3985bf9",
-              "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
-            },
-            {
-              "passage": "6813b3985bf9",
-              "quote": "Light is hard to do. We haven't done it successfully since we had Marcie and only then if everything was in our favor."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The world has a magic system where \"workings\" can be applied to items to trigger effects, such as ice enchantments",
-            "The world has a magic system that includes light workings performed by practitioners.",
-            "The world has a lantern for light."
-          ]
-        },
-        {
-          "fact": "The world has a lantern that can be lit by the player to provide illumination in dark environments.",
+          "fact": "Lanterns can be lit by the player and provide illumination in dark environments.",
           "evidence": [
             {
               "passage": "e524e5bec136",
@@ -7778,34 +7572,90 @@
           ],
           "confidence": "high",
           "merged_from": [
-            "Lanterns can be lit by the player and provide illumination in dark environments.",
-            "Lanterns can be used to light caves."
+            "Lanterns can be lit by the player and provide illumination in dark environments."
           ]
         },
         {
-          "fact": "The world has a sword that can be used to fight monsters, and Javlyn uses Nivek’s sword to defeat the cave monster.",
+          "fact": "The world has a magic system where 'workings' can be applied to items to trigger effects, including light and protection.",
           "evidence": [
             {
-              "passage": "56a194085bbd",
-              "quote": "Javlyn had Nivek's sword."
+              "passage": "f28c48cb13cc",
+              "quote": "Ice workings, Terence said ignoring Danita, \"are typically applied to items, like my sword or Danita's shield, and have a trigger on them.\""
             },
             {
-              "passage": "06a29200cbbb",
-              "quote": "She drew Nivek's sword and attacked. ... A thrown rock hit the monster, distracting it enough that Javlyn finally delivered a killing blow."
+              "passage": "f28c48cb13cc",
+              "quote": "This is not something a beginner can just do.\""
             },
             {
-              "passage": "56a194085bbd",
-              "quote": "The monster can be fought with a sword."
+              "passage": "6813b3985bf9",
+              "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
+            },
+            {
+              "passage": "6813b3985bf9",
+              "quote": "Light is hard to do. We haven't done it successfully since we had Marcie and only then if everything was in our favor."
+            },
+            {
+              "passage": "516ff1e73f55",
+              "quote": "The magical light each of them shone with was brighter than a single lantern could ever hope to be."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The world has a sword that can be used to fight monsters.",
-            "The monster can be defeated by using Nivek's sword."
+            "The world has a magic system that includes light workings performed by practitioners.",
+            "The world has a magic system where \"workings\" can be applied to items to trigger effects, such as ice enchantments",
+            "The world has a magic system that includes 'workings' that can be applied to items, such as ice work on a sword or shield."
           ]
         },
         {
-          "fact": "The monster hunts humans, can drag victims, and can be attacked and killed by a sword or a bolt.",
+          "fact": "The cave contains mushrooms and bones.",
+          "evidence": [
+            {
+              "passage": "64574862",
+              "quote": "\"Mushrooms grew in the creases and water trickled along the floor\" and \"In one corner of the cave, Javlyn found a pile of bones and rags.\""
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "The cave contains mushrooms and bones."
+          ]
+        },
+        {
+          "fact": "The bag found in the cave contains a single message tube.",
+          "evidence": [
+            {
+              "passage": "9ddaf143",
+              "quote": "There was only a single item inside - a message tube."
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "The bag found in the cave contains a single message tube."
+          ]
+        },
+        {
+          "fact": "Sikshusiks is a blue, spearmint-like creature that can speak in a simple, childlike language and has sharp teeth.",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "\"Me Sikshusiks\""
+            },
+            {
+              "passage": "60844ae759ad",
+              "quote": "\"A spearmint. A spearmint sikshusiks! Me scape. Me hide. You find me!\""
+            },
+            {
+              "passage": "ac90be98137d",
+              "quote": "The creature opened its mouth and took a big bite out of the apple. As it did, Javlyn saw dozens of sharp, pointy teeth."
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "A blue, spearmint‑like creature named Sikshusiks appears in Javlyn’s laundry pile and can speak in a simple, childlike language.",
+            "Sikshusiks can speak and has sharp teeth."
+          ]
+        },
+        {
+          "fact": "The world has monsters that hunt humans.",
           "evidence": [
             {
               "passage": "56a194085bbd",
@@ -7813,30 +7663,19 @@
             },
             {
               "passage": "56a194085bbd",
-              "quote": "It sounded like it was dragging something, though it was hard to tell."
-            },
-            {
-              "passage": "56a194085bbd",
-              "quote": "The monster was attacking."
-            },
-            {
-              "passage": "56a194085bbd",
-              "quote": "She struck out with the sword twice, and had to duck under the creatures arm swipe."
+              "quote": "The monster dropped whatever it was dragging and turned, seeking the light source."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster can be fought with a sword.",
-            "The monster can be defeated by using Nivek's sword.",
-            "The monster can drag victims.",
-            "The monster can attack humans."
+            "The world has monsters that hunt humans."
           ]
         },
         {
-          "fact": "The village has a patrol that will arrive in two to three weeks to handle threats.",
+          "fact": "The village patrol will arrive in two to three weeks to handle threats.",
           "evidence": [
             {
-              "passage": "f85eca46c65d",
+              "passage": "eee8ae1d",
               "quote": "We've got a patrol coming through in two to three weeks. Let them do their job and handle it."
             }
           ],
@@ -7846,43 +7685,20 @@
           ]
         },
         {
-          "fact": "The travelers are seeking a cave rumored to contain a monster, and rumors suggest a monster is moving into the mushroom cave.",
+          "fact": "The travelers are seeking a cave rumored to contain a monster.",
           "evidence": [
             {
-              "passage": "872119a696dd",
+              "passage": "76119710",
               "quote": "We're heard some rather nasty rumors in the area and was hoping you could help us find any nearby caves?"
             },
             {
-              "passage": "828d29263bc6",
+              "passage": "76119710",
               "quote": "There's supposed to be a monster in it"
-            },
-            {
-              "passage": "316e561f9ddb",
-              "quote": "...about that \"monster moving into the mushroom cave\" rumor that had been floating around the village."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The travelers are seeking a cave rumored to contain a monster.",
-            "A monster rumored to be moving into the mushroom cave is present in the cave"
-          ]
-        },
-        {
-          "fact": "The cave contains mushrooms and bones, and the environment includes wet, muddy ground due to rain.",
-          "evidence": [
-            {
-              "passage": "5b0ba41f",
-              "quote": "Mushrooms grew in the creases and water trickled along the floor, pooling in puddles here and there."
-            },
-            {
-              "passage": "5b0ba41f",
-              "quote": "The ground stuck to her boots, making each step harder than it had to be."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "Mushrooms grow in the creases of caves.",
-            "Rain makes the ground muddy and difficult to traverse."
+            "The travelers are seeking a cave rumored to contain a monster."
           ]
         }
       ],
@@ -7900,35 +7716,63 @@
             },
             {
               "passage": "c77aa3e62bb2",
-              "quote": "\"The cliffside the cave was a part of came into sight\""
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
             },
             {
-              "passage": "590400dece2b",
-              "quote": "\"Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore.\""
+              "passage": "b27c97e6",
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
             },
             {
-              "passage": "a6122a65eaa6",
-              "quote": "\"What is weighing on your mind today?\""
-            },
-            {
-              "passage": "bcb12871",
+              "passage": "3da38df7",
               "quote": "\"the \\\"monster moving into the mushroom cave\\\" rumor that had been floating around the village.\""
             },
             {
-              "passage": "bcb12871",
+              "passage": "8a4503a3",
               "quote": "\"the \\\"monster moving into the mushroom cave\\\" rumor that had been floating around the village.\""
+            },
+            {
+              "passage": "0d807122",
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
+            },
+            {
+              "passage": "9ddaf143",
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
             }
           ],
           "confidence": "high",
           "merged_from": [
             "The village is located near a cliffside that contains a mushroom cave.",
             "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a mushroom cave on a cliffside",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave"
+          ]
+        },
+        {
+          "fact": "A rumor circulates in the village that a monster is moving into the mushroom cave.",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "\"the \\\"monster moving into the mushroom cave\\\" rumor that had been floating around the village.\""
+            },
+            {
+              "passage": "10509d96f912",
+              "quote": "\"Monster in a cave nabbing people,\""
+            },
+            {
+              "passage": "b3914421",
+              "quote": "\"the \\u201cmonster moving into the mushroom cave\\u201d rumor that had been floating around the village.\""
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "The village has a rumor about a monster moving into the mushroom cave.",
+            "The village has a rumor about a monster moving into the mushroom cave.",
+            "The village has a rumor about a monster moving into the mushroom cave."
           ]
         },
         {
@@ -7939,11 +7783,7 @@
               "quote": "\"open training session, which most of the villagers tried to attend at least once a week\""
             },
             {
-              "passage": "c77aa3e62bb2",
-              "quote": "\"Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week\""
-            },
-            {
-              "passage": "316e561f9ddb",
+              "passage": "a1ede5be",
               "quote": "\"Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week\""
             },
             {
@@ -7955,12 +7795,11 @@
           "merged_from": [
             "The village has an open training session where villagers gather weekly",
             "The village has an open training session where villagers gather weekly",
-            "The village has an open training session where villagers gather weekly",
             "The village has an open training session where villagers gather weekly"
           ]
         },
         {
-          "fact": "It rains heavily during the story, with the ground muddy and the sky overcast.",
+          "fact": "The village experiences frequent rain, overcast skies, and muddy ground during the story.",
           "evidence": [
             {
               "passage": "316e561f9ddb",
@@ -7977,37 +7816,22 @@
           ],
           "confidence": "high",
           "merged_from": [
-            "The story takes place in a village with a nearby cave that has a mushroom cave rumor",
-            "The story takes place in a village with a nearby cave that has a mushroom cave rumor",
-            "The story takes place in a village with a nearby cave that has a mushroom cave rumor"
+            "The story takes place in a village with a nearby mushroom cave that is rumored to house a monster.",
+            "The story takes place in a village with a nearby mushroom cave that is rumored to house a monster.",
+            "The story takes place in a village with a nearby mushroom cave that is rumored to house a monster."
           ]
         },
         {
-          "fact": "The cave is a mushroom cave located on a cliffside near the village.",
+          "fact": "The cave entrance is on a cliffside, narrow, and leads to a large chamber that is dark, damp, and contains mushrooms, water puddles, a pile of bones and rags.",
           "evidence": [
-            {
-              "passage": "7e35fe311599",
-              "quote": "\"The cave's entrance was just around the corner\""
-            },
-            {
-              "passage": "c77aa3e62bb2",
-              "quote": "\"The cliffside the cave was a part of came into sight\""
-            },
             {
               "passage": "e524e5bec136",
-              "quote": "\"The cave entrance came into sight and still nothing seemed out of place.\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The cave is called the mushroom cave and is located just around the corner from the cliffside",
-            "The cave is a mushroom cave",
-            "The cave is a mushroom cave"
-          ]
-        },
-        {
-          "fact": "The cave contains mushrooms, water puddles, a pile of bones and rags, and is dark and damp.",
-          "evidence": [
+              "quote": "\"The entry way was narrow and the walls brushed her shoulders on either side, but she wasn't forced to turn sideways.\""
+            },
+            {
+              "passage": "b80ec65da337",
+              "quote": "\"Near the bone pile was mushrooms, which she hoped was what the creature had been eating\""
+            },
             {
               "passage": "ed25f0952148",
               "quote": "\"Mushrooms grew in the creases and water trickled along the floor, pooling in puddles here and there.\""
@@ -8018,23 +7842,18 @@
             },
             {
               "passage": "56a194085bbd",
-              "quote": "\"In one corner of the cave, Javlyn found a pile of bones and rags.\""
-            },
-            {
-              "passage": "56a194085bbd",
               "quote": "\"It was dark, with nothing but her lantern providing light and the tunnel in preventing any natural light from making it in.\""
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The cave contains mushrooms, water puddles, and a pile of bones and rags, but no monster is found.",
-            "The cave contains mushrooms, water pools, and a pile of bones and rags in one corner",
-            "The cave contains mushrooms, water pools, and a pile of bones and rags in one corner",
-            "The cave contains mushrooms, water pools, and a pile of bones and rags in one corner"
+            "The cave entrance is located on a cliffside near the village.",
+            "The cave entrance is located on a cliffside near the village.",
+            "The cave entrance is located on a cliffside near the village."
           ]
         },
         {
-          "fact": "The village is near a coast.",
+          "fact": "The village is located near a coast.",
           "evidence": [
             {
               "passage": "a6122a65eaa6",
@@ -8047,46 +7866,28 @@
           ],
           "confidence": "medium",
           "merged_from": [
-            "The village is located near a coast",
-            "The village is located near a coast",
-            "The village is located near a coast"
+            "The village is located near a coast.",
+            "The village is located near a coast."
           ]
         },
         {
           "fact": "The village has a butcher shop located on the far side of town.",
           "evidence": [
             {
-              "passage": "ac90be98137d",
+              "passage": "c45079ab",
               "quote": "\"The butcher was on the far side of town\""
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The village has a butcher shop located on the far side of town"
+            "The village has a butcher shop located on the far side of town."
           ]
         },
         {
-          "fact": "Javlyn is currently in her bedroom when the story begins.",
+          "fact": "The village has an inn where villagers and travelers gather.",
           "evidence": [
             {
-              "passage": "60844ae759ad",
-              "quote": "\"As she walked into her room\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "Javlyn is currently in her bedroom when the story begins."
-          ]
-        },
-        {
-          "fact": "The village has a nearby inn where villagers gather.",
-          "evidence": [
-            {
-              "passage": "a6122a65eaa6",
-              "quote": "\"What is weighing on your mind today?\""
-            },
-            {
-              "passage": "60844ae759ad",
+              "passage": "c45079ab",
               "quote": "\"...with her friends at the inn.\""
             }
           ],
@@ -8096,50 +7897,24 @@
           ]
         },
         {
-          "fact": "Travelers seek a cave rumored to contain a monster.",
+          "fact": "Travelers in the village discuss the rumored monster and decide to investigate the cave together.",
           "evidence": [
+            {
+              "passage": "85e37f7ba808",
+              "quote": "\"The village had just left their sight when they passed three travelers. They were older, and looked weary.\""
+            },
             {
               "passage": "872119a696dd",
               "quote": "\"We're heard some rather nasty rumors in the area and was hoping you could help us find any nearby caves?\""
-            },
-            {
-              "passage": "828d29263bc6",
-              "quote": "\"The mushroom cave, just around the corner,\""
             }
           ],
-          "confidence": "high",
+          "confidence": "medium",
           "merged_from": [
-            "The travelers are seeking a cave rumored to contain a monster"
+            "Javlyn encounters a group of weary travelers who discuss the rumored monster and decide to investigate together."
           ]
         },
         {
-          "fact": "The world has a donkey used by merchants.",
-          "evidence": [
-            {
-              "passage": "56a194085bbd",
-              "quote": "\"Down the road towards Furlsby, there was a donkey grazing off the path, laden with packs.\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The world has a donkey used by merchants."
-          ]
-        },
-        {
-          "fact": "The world has a cave with a monster.",
-          "evidence": [
-            {
-              "passage": "56a194085bbd",
-              "quote": "\"The monster dropped whatever it was dragging and turned, seeking the light source.\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The world has a cave with a monster."
-          ]
-        },
-        {
-          "fact": "The village is near a pond called Relti Pond.",
+          "fact": "The village is located near a pond called Relti Pond, close to the mushroom cave.",
           "evidence": [
             {
               "passage": "85e37f7ba808",
@@ -8152,21 +7927,18 @@
           ],
           "confidence": "high",
           "merged_from": [
-            "The village is located near a mushroom cave and a pond called Relti Pond."
+            "The village is located near a cliffside that contains a mushroom cave.",
+            "The village is located near a cliffside that contains a mushroom cave."
           ]
         }
       ],
       "timeline": [
         {
-          "fact": "Rumor about a monster moving into the mushroom cave had been circulating in the village before the story begins, prompting villagers to forage elsewhere for mushrooms.",
+          "fact": "Rumor about a monster moving into the mushroom cave had been floating around the village before the story begins.",
           "evidence": [
             {
               "passage": "path-5b0ba41f",
-              "quote": "Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore."
-            },
-            {
-              "passage": "path-5b0ba41f",
-              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+              "quote": "\"There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village.\""
             },
             {
               "passage": "path-5d3a5143",
@@ -8174,7 +7946,7 @@
             },
             {
               "passage": "path-64574862",
-              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor."
+              "quote": "\"There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor.\""
             },
             {
               "passage": "path-e6519ac7",
@@ -8188,13 +7960,39 @@
           "confidence": "high",
           "merged_from": [
             "Before the story, a rumor about a monster moving into the mushroom cave had been floating around the village.",
-            "Before the story, villagers had started foraging elsewhere for mushrooms due to the rumor.",
             "The rumor of a monster moving into the mushroom cave has been circulating in the village before the story begins.",
-            "Before the story, the village had rumors about the monster."
+            "Before the story, the village had rumors about the monster.",
+            "Rumor about a monster moving into the mushroom cave had been floating around the village."
           ]
         },
         {
-          "fact": "If the player does nothing, Javlyn will still enter the cave alone, encounter the monster, and ultimately flee after it is killed, returning to the village.",
+          "fact": "Before the story, villagers had started foraging elsewhere for mushrooms due to the rumor.",
+          "evidence": [
+            {
+              "passage": "path-5b0ba41f",
+              "quote": "\"Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore.\""
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "Before the story, villagers had started foraging elsewhere for mushrooms due to the rumor."
+          ]
+        },
+        {
+          "fact": "Javlyn eventually exits the cave and returns to the village.",
+          "evidence": [
+            {
+              "passage": "path-b76ef736",
+              "quote": "She eventually found the tunnel out. She stood and felt almost comforted by how the small tunnel was barely enough for her shoulders to fit through as she made her way through it."
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "Javlyn eventually exits the cave and returns to the village"
+          ]
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will still enter the cave alone and encounter the monster.",
           "evidence": [
             {
               "passage": "path-fa4f3c15",
@@ -8203,11 +8001,46 @@
             {
               "passage": "path-fa4f3c15",
               "quote": "Hunched over the ground on the far side of the cavern was… something."
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "If the player does nothing, Javlyn will still enter the cave alone and encounter the monster"
+          ]
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will remain in her village and continue attending training sessions.",
+          "evidence": [
+            {
+              "passage": "path-f656b2b5",
+              "quote": "What is weighing on your mind today?"
             },
+            {
+              "passage": "path-f656b2b5",
+              "quote": "It had rained three days straight..."
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "If the player does nothing, Javlyn will remain in her village and continue attending training sessions"
+          ]
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will still proceed to the cave and encounter the monster, ultimately fleeing after it is killed.",
+          "evidence": [
             {
               "passage": "path-c9bab50f",
               "quote": "Javlyn fled the cave. The monster was dead through no effort of her own and she never should have entered the cave."
-            },
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "If the player does nothing, Javlyn will still proceed to the cave and encounter the monster, ultimately fleeing after it is killed."
+          ]
+        },
+        {
+          "fact": "If the player takes no action, Javlyn will eventually leave the cave and return home.",
+          "evidence": [
             {
               "passage": "path-4f31c2e5",
               "quote": "She whispered, before turning around and starting the long trip out. She'd come back to see where the boat would lead, but after being better prepared."
@@ -8215,35 +8048,8 @@
           ],
           "confidence": "medium",
           "merged_from": [
-            "If the player does nothing, Javlyn will still enter the cave alone and encounter the monster",
-            "If the player does nothing, Javlyn will still proceed to the cave and encounter the monster, ultimately fleeing after it is killed."
+            "If the player takes no action, Javlyn will eventually leave the cave and return home"
           ]
-        },
-        {
-          "fact": "If the player does nothing, Javlyn will remain in her village and continue attending training sessions.",
-          "evidence": [
-            {
-              "passage": "a6122a65eaa6",
-              "quote": "What is weighing on your mind today?"
-            },
-            {
-              "passage": "316e561f9ddb",
-              "quote": "It had rained three days straight..."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": []
-        },
-        {
-          "fact": "After confronting the monster, the group plans to celebrate at the tavern.",
-          "evidence": [
-            {
-              "passage": "path-79f40830",
-              "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": []
         },
         {
           "fact": "If Javlyn does nothing, the monster will likely kill the man.",
@@ -8254,7 +8060,22 @@
             }
           ],
           "confidence": "medium",
-          "merged_from": []
+          "merged_from": [
+            "If Javlyn does nothing, the monster will likely kill the man."
+          ]
+        },
+        {
+          "fact": "After confronting the monster, the group plans to celebrate at the tavern.",
+          "evidence": [
+            {
+              "passage": "path-79f40830",
+              "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "After confronting the monster, the group plans to celebrate at the tavern."
+          ]
         }
       ]
     },
@@ -8262,31 +8083,12 @@
       "Javlyn": {
         "identity": [
           {
-            "fact": "Javlyn is a young female villager who wears a leather vest and a thick jacket for protection, attends weekly training sessions, and is capable of performing light magical workings.",
+            "fact": "Javlyn is a young female villager who wears a leather vest and a thick jacket for protection, carries a borrowed sword that once belonged to Nivek, and carries a lantern.",
             "evidence": [
               {
                 "passage": "316e561f9ddb",
                 "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
               },
-              {
-                "passage": "c77aa3e62bb2",
-                "quote": "Javlyn had announced her plans this morning during the open training session..."
-              },
-              {
-                "passage": "6813b3985bf9",
-                "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
-              }
-            ],
-            "confidence": "high",
-            "merged_from": [
-              "Javlyn is a villager who wears a leather vest and a thick jacket for protection",
-              "Javlyn is a villager who attends weekly training sessions",
-              "Javlyn is a villager who is capable of performing magic workings."
-            ]
-          },
-          {
-            "fact": "Javlyn carries a borrowed sword that is Nivek's old sword and a lantern into the cave.",
-            "evidence": [
               {
                 "passage": "590400dece2b",
                 "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
@@ -8302,34 +8104,168 @@
             ],
             "confidence": "high",
             "merged_from": [
+              "Javlyn is a villager who is physically capable of carrying a sword and lantern",
+              "Javlyn has a borrowed sword and a lantern",
               "Javlyn is a villager who carries a borrowed sword and a lantern",
-              "Javlyn carries a borrowed sword and a lantern into the cave",
-              "Javlyn carries a lantern and Nivek's old sword into the cave",
-              "Javlyn carries a borrowed sword, which is Nivek's old sword, and a lantern."
+              "Javlyn is a villager who carries a borrowed sword and a lantern, and she is capable of performing magic workings",
+              "Javlyn is a villager who carries a borrowed sword and a lantern, and she is willing to enter the cave to investigate rumors of a monster."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who attends weekly training sessions at the open training area.",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              },
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who attends training sessions and has a borrowed sword and a lantern",
+              "Javlyn is a villager who attends open training sessions",
+              "Javlyn is a villager who participates in open training sessions",
+              "Javlyn is a villager who participates in open training sessions and carries a borrowed sword and a lantern"
+            ]
+          },
+          {
+            "fact": "Javlyn is a novice or inexperienced fighter who has performed village-level magical workings, especially light-based.",
+            "evidence": [
+              {
+                "passage": "f28c48cb13cc",
+                "quote": "She was good at workings, but usually they were well defined and with obvious outcomes - cleanse the well, give the harvest a boost, light a festival."
+              },
+              {
+                "passage": "6813b3985bf9",
+                "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
+              }
+            ],
+            "confidence": "medium",
+            "merged_from": [
+              "Javlyn is a skilled working practitioner, experienced with village-level workings but not combat-focused",
+              "Javlyn has experience with magical workings, particularly light",
+              "Javlyn is a novice or inexperienced fighter who has a lantern and a sword."
+            ]
+          },
+          {
+            "fact": "Javlyn is the protagonist who decides whether to seek help or act alone in confronting the rumored monster in the mushroom cave.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              },
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is the protagonist who decides whether to seek help or act alone",
+              "Javlyn is a villager who is determined to investigate the rumored monster in the cave."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who is concerned about a rumored monster in the mushroom cave and is willing to investigate it.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              },
+              {
+                "passage": "590400dece2b",
+                "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+              },
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who is concerned about a rumored monster in the mushroom cave.",
+              "Javlyn is a villager who is attempting to investigate the rumored monster in the mushroom cave."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who wears a leather vest and a thick jacket for protection and carries a lantern and a sword into the cave.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              },
+              {
+                "passage": "e524e5bec136",
+                "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who carries a lantern and a sword when she enters the cave.",
+              "Javlyn carries a lantern and Nivek's old sword into the cave."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who is physically capable of carrying a sword and lantern, and she is a novice fighter.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              },
+              {
+                "passage": "590400dece2b",
+                "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who is physically capable of carrying a sword and lantern",
+              "Javlyn is a villager who carries a borrowed sword and a lantern"
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who is responsible for doing her own laundry and has a mother who admonishes her about it.",
+            "evidence": [
+              {
+                "passage": "60844ae759ad",
+                "quote": "As Javlyn gathered up the mass of clothes in preparation for the washing"
+              },
+              {
+                "passage": "60844ae759ad",
+                "quote": "Javlyn, you really shouldn't leave your laundry around until it starts to grow something foul inside of it"
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a young adult who is responsible for doing her own laundry.",
+              "Javlyn’s mother is a recurring voice in her mind, warning her about the laundry."
             ]
           }
         ],
         "zero_action_state": [],
         "variables": []
       },
-      "Nivek": {
+      "Javlyn's": {
         "identity": [
           {
-            "fact": "Nivek lent Javlyn his old sword to help her fight the monster.",
+            "fact": "Javlyn's default action if the player does nothing is to leave the cave and return home, often disappointed but proud.",
             "evidence": [
               {
-                "passage": "7e35fe311599",
-                "quote": "Nivek had lent her the sword after all"
+                "passage": "140d0d873a3e",
+                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
               },
               {
-                "passage": "0ed81c156c02",
-                "quote": "This was her moment to prove herself: that's why Nivek had lent her the sword after all."
+                "passage": "5d3a5143",
+                "quote": "Javlyn left the cavern. There was a bit of disappointment in finding nothing."
               }
             ],
             "confidence": "high",
             "merged_from": [
-              "Nivek lent Javlyn an old sword to help her fight the monster",
-              "Nivek is a person who lent Javlyn a sword and encouraged her to fight the monster."
+              "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
+              "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud."
             ]
           }
         ],
@@ -8339,7 +8275,7 @@
       "Jerrick": {
         "identity": [
           {
-            "fact": "Jerrick is the village blacksmith, an aging former soldier, who offers to accompany Javlyn on her quest.",
+            "fact": "Jerrick is the village blacksmith, an aging former soldier who believes in Javlyn's story and may accompany her.",
             "evidence": [
               {
                 "passage": "92b597d232f8",
@@ -8357,8 +8293,9 @@
             "confidence": "high",
             "merged_from": [
               "The village has a blacksmith named Jerrick",
-              "Jerrick is an aging blacksmith who offers to accompany Javlyn on her quest",
-              "Jerrick is the village blacksmith and former soldier"
+              "Jerrick is an aging blacksmith who offers to accompany Javlyn on her quest.",
+              "Jerrick is the village blacksmith and former soldier",
+              "Jerrick is the village blacksmith who believes in Javlyn’s story"
             ]
           }
         ],
@@ -8368,7 +8305,7 @@
       "Danita,": {
         "identity": [
           {
-            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, better equipped with armor, a shield, a crossbow, and a sword, and they meet her on the road to offer help.",
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, better equipped with armor, a shield, a crossbow, and a sword, and they are seeking a cave rumored to house a monster.",
             "evidence": [
               {
                 "passage": "872119a696dd",
@@ -8376,18 +8313,42 @@
               },
               {
                 "passage": "828d29263bc6",
-                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+                "quote": "Danita had a heavy shield but left her own sword sheathed."
               },
               {
-                "passage": "0ed81c156c02",
-                "quote": "The group was composed of a female and two males, with one of the males clearly engrossed in a story."
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
               }
             ],
             "confidence": "high",
             "merged_from": [
               "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
-              "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
-              "The travelers consist of a female storyteller and two male companions, one of whom is named Terence and the other Kian."
+              "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+              "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster."
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Nivek": {
+        "identity": [
+          {
+            "fact": "Nivek is a character associated with an old sword that Javlyn obtains during the quest.",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "This was her moment to prove herself: that's why Nivek had lent her the sword after all."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Nivek is a character associated with an old sword that Javlyn obtains.",
+              "Nivek lent Javlyn an old sword to help her fight the monster"
             ]
           }
         ],
@@ -8397,49 +8358,64 @@
       "Unknown": {
         "identity": [
           {
-            "fact": "The monster in the cave is a non-human, horned, mushroom‑eating being, tall and gangly, with a snout and horns, and it is non‑aggressive.",
+            "fact": "The creature in the cave is a non‑human, horned, mushroom‑eating being that is non‑aggressive, with a long snout, two curved horns, and can hold a mushroom.",
             "evidence": [
               {
                 "passage": "548c467dc379",
                 "quote": "The creature stood and turned to face Javlyn, head cocked slightly to the side watching."
               },
               {
-                "passage": "06a29200cbbb",
-                "quote": "a creature of dark red skin, tall and gangly, with a snout and horns."
-              },
-              {
                 "passage": "548c467dc379",
-                "quote": "The creature took a step forward, and Javlyn took a step back."
+                "quote": "It held up the hand with the mushroom."
               }
             ],
             "confidence": "high",
             "merged_from": [
               "The creature in the cave is a non‑human, horned, mushroom‑eating being that is non‑aggressive.",
-              "The monster is described as a tall, gangly creature with dark red skin, a snout, and horns."
+              "The creature in the cave has a long snout, two curved horns, and is capable of holding a mushroom."
             ]
           }
         ],
         "zero_action_state": [],
         "variables": []
       },
-      "If": {
+      "Eldon": {
         "identity": [
           {
-            "fact": "If the player does nothing, Javlyn will leave the cavern after exploring and return home, disappointed but proud.",
+            "fact": "Eldon is a merchant who was injured by the monster and is rescued by Javlyn.",
             "evidence": [
               {
-                "passage": "140d0d873a3e",
-                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
+                "passage": "06a29200cbbb",
+                "quote": "the merchant, bloody and still on the ground."
               },
               {
-                "passage": "5d3a5143",
-                "quote": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing."
+                "passage": "06a29200cbbb",
+                "quote": "\"I thought I was going to die,\" a voice behind her said, and Javlyn startled and whirled."
               }
             ],
             "confidence": "high",
             "merged_from": [
-              "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
-              "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud."
+              "Eldon is a merchant who was injured by the monster and is carrying a donkey.",
+              "Eldon is a merchant who was attacked by the monster and is rescued by Javlyn."
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Sikshusiks": {
+        "identity": [
+          {
+            "fact": "A blue, spearmint-like creature named Sikshusiks appears in Javlyn's laundry pile.",
+            "evidence": [
+              {
+                "passage": "60844ae759ad",
+                "quote": "a small blue creature the size of a companion dog...\"Me Sikshusiks\""
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "A blue, spearmint-like creature named Sikshusiks appears in Javlyn's laundry pile."
             ]
           }
         ],
@@ -8451,11 +8427,11 @@
       "events": [],
       "outcomes": [
         {
-          "fact": "The village is located near a cliffside that contains a mushroom cave rumored to house a monster.",
+          "fact": "The story takes place in a village near a cliffside that contains a mushroom cave rumored to house a monster.",
           "evidence": [
             {
               "passage": "316e561f9ddb",
-              "quote": "the \"monster moving into the mushroom cave\" rumor that had been floating around the village."
+              "quote": "\"the \"monster moving into the mushroom cave\" rumor that had been floating around the village.\""
             },
             {
               "passage": "7e35fe311599",
@@ -8463,18 +8439,34 @@
             },
             {
               "passage": "c77aa3e62bb2",
-              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+              "quote": "The village had just left their sight when they passed three travelers. They were older, and looked weary."
             }
           ],
           "confidence": "high",
           "merged_from": [
             "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster"
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave"
           ]
         },
         {
-          "fact": "If the player takes no action, Javlyn will still enter the cave and encounter the monster.",
+          "fact": "If the player takes no action, Javlyn will still enter the mushroom cave, encounter the monster, and attempt to escape or fight it.",
           "evidence": [
             {
               "passage": "e524e5bec136",
@@ -8482,49 +8474,45 @@
             },
             {
               "passage": "f295816555c0",
+              "quote": "Attack the monster"
+            },
+            {
+              "passage": "f295816555c0",
               "quote": "Hunched over the ground on the far side of the cavern was… something."
             },
             {
-              "passage": "e524e5bec136",
-              "quote": "Javlyn entered the cave."
+              "passage": "f295816555c0",
+              "quote": "She broke free from her stupor, turned and fled."
             },
             {
-              "passage": "e524e5bec136",
-              "quote": "Javlyn entered the cave."
+              "passage": "f295816555c0",
+              "quote": "Attack the monster"
             }
           ],
           "confidence": "high",
           "merged_from": [
             "If the player takes no action, Javlyn will still enter the cave and encounter the monster.",
             "If the player does nothing, Javlyn will still enter the cave and encounter the monster.",
-            "If the player does nothing, Javlyn will still enter the cave and encounter the monster."
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but she will likely leave the cave alone",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not be able to defeat it alone",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers"
           ]
         },
         {
-          "fact": "If the player takes no action, Javlyn will still go to the cave and encounter the monster, then leave it on the road or return home.",
-          "evidence": [
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
-            },
-            {
-              "passage": "6f951461b5cb",
-              "quote": "Another time, perhaps. Javlyn left, fitting through the entrance tunnel and coming out to rain. She stood in the protected entrance for a moment, just watching."
-            },
-            {
-              "passage": "032aee74fa11",
-              "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain. She stood in the protected entrance for a moment, just watching."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "If the player does nothing, Javlyn will still go to the cave and encounter the monster, then leave it on the road or return home.",
-            "If the player does nothing, the group will still go to the cave, encounter the monster, and leave it on the road",
-            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home"
-          ]
-        },
-        {
-          "fact": "If the player chooses to continue the quest, Javlyn will go to the cave and may fight the monster, possibly killing it and retrieving Nivek's sword.",
+          "fact": "If the player chooses to continue the quest, Javlyn will go to the cave and may fight the monster, potentially killing it and retrieving Nivek's sword.",
           "evidence": [
             {
               "passage": "590400dece2b",
@@ -8532,22 +8520,41 @@
             },
             {
               "passage": "f295816555c0",
-              "quote": "\"Attack the monster\""
+              "quote": "Attack the monster"
             },
             {
               "passage": "b80ec65da337",
               "quote": "She retrieved Nivek's sword."
+            },
+            {
+              "passage": "06a29200cbbb",
+              "quote": "She drew Nivek's sword and attacked."
             }
           ],
           "confidence": "high",
           "merged_from": [
             "If the player chooses to continue the quest, Javlyn will go to the cave.",
-            "If the player chooses to continue the quest, Javlyn will go to the cave and may fight the monster, possibly killing it and retrieving Nivek's sword."
+            "If the player chooses to continue the quest, Javlyn will go to the cave.",
+            "If the player chooses to continue the quest, Javlyn will go to the cave.",
+            "If the player chooses to continue the quest, Javlyn will go to the cave.",
+            "If the player chooses to continue the quest, Javlyn will go to the cave."
           ]
         },
         {
-          "fact": "If the player chooses to recruit the travelers (Kian, Danita, Terence), they will accompany Javlyn into the cave and help fight the monster.",
+          "fact": "If the player chooses to join the travelers (Kian, Danita, Terence), they will accompany Javlyn into the cave and help fight the monster.",
           "evidence": [
+            {
+              "passage": "b2c778e6418d",
+              "quote": "Join them"
+            },
+            {
+              "passage": "b2c778e6418d",
+              "quote": "Danita motioned her over, \"If you plan to come in with us-\""
+            },
+            {
+              "passage": "b2c778e6418d",
+              "quote": "\"At the back of the line,\" Kian said."
+            },
             {
               "passage": "195754277a03",
               "quote": "There was a group of three individuals. Older. Two men, one woman."
@@ -8555,21 +8562,18 @@
             {
               "passage": "195754277a03",
               "quote": "Kian, Danita, Terence"
-            },
-            {
-              "passage": "b2c778e6418d",
-              "quote": "\"Join them\""
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "If the player chooses to recruit the travelers, they will accompany Javlyn into the cave and attempt to perform an ice working on Terence's sword.",
-            "If the player chooses to invite the travelers (Danita, Kian, Terence) to join her after the encounter, she will do so and they will discuss magical workings together.",
+            "If the player chooses to invite the travelers (Danita, Kian, Terence) to join her after the encounter, they will accompany Javlyn and help defeat the creature.",
+            "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight.",
+            "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight.",
             "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight."
           ]
         },
         {
-          "fact": "If the player chooses to recruit Jerrick, the aging blacksmith, he will accompany Javlyn into the cave and help defeat the monster.",
+          "fact": "If the player chooses to recruit villagers (e.g., Jerrick), they may join Javlyn in the cave and help defeat the monster.",
           "evidence": [
             {
               "passage": "85e37f7ba808",
@@ -8577,18 +8581,27 @@
             },
             {
               "passage": "b90cd2593cff",
-              "quote": "Jerrick charged towards the creature, hammer held high"
+              "quote": "They entered the cave and before Javlyn truly felt ready, they had reached the cavern."
+            },
+            {
+              "passage": "92b597d232f8",
+              "quote": "Only Jerrick, the aging blacksmith was able to overcome such a chasm and bring himself to believe that there was truth to Javlyn's tale."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "If the player chooses to recruit Jerrick, the monster can be killed by a coordinated attack",
-            "If the player chooses to continue the quest, Javlyn will confront the monster, rescue the merchant, and survive with minor injuries."
+            "If the player chooses to recruit the villagers, they may join Javlyn and Jerrick in the cave",
+            "If the player chooses to recruit the villagers, they may join Javlyn and Jerrick in the cave",
+            "If the player chooses to recruit the villagers, they may join Javlyn and Jerrick in the cave"
           ]
         },
         {
-          "fact": "If the player chooses to help the travelers, Javlyn can apply an ice-working to Terence's sword, potentially weakening the monster.",
+          "fact": "If the player chooses to apply an ice working to Terence's sword, the sword gains a cold effect that can help against the monster.",
           "evidence": [
+            {
+              "passage": "f28c48cb13cc",
+              "quote": "We can only apply it to Terence's sword"
+            },
             {
               "passage": "f28c48cb13cc",
               "quote": "When the item hits something with force, or something hits it, the working springs with the effect you want."
@@ -8601,33 +8614,37 @@
           "confidence": "medium",
           "merged_from": [
             "If the player chooses to let Terence enter the cave with the enchanted sword, the cave becomes an ice cave and the creature inside may be weakened.",
-            "If the player chooses to help the travelers, Javlyn can attempt to apply an ice-working to Terence's sword to protect against the cave monster."
+            "If the player chooses to let Terence enter the cave with the enchanted sword, the cave becomes an ice cave and the creature inside may be weakened."
           ]
         },
         {
-          "fact": "If the player chooses to join the travelers, Javlyn will be positioned at the back of the group during the cave encounter.",
+          "fact": "If the player chooses to bring food to Sikshusiks, the creature will follow and may become friendly.",
           "evidence": [
             {
-              "passage": "516ff1e73f55",
-              "quote": "The lanterns were left outside the cave, and Javlyn was carefully kept at the back of the party"
+              "passage": "ac90be98137d",
+              "quote": "\"Me go with you!\""
             },
             {
-              "passage": "b2c778e6418d",
-              "quote": "\"At the back of the line,\" Kian said."
+              "passage": "ac90be98137d",
+              "quote": "The blue creature looked back at Javlyn, sitting on the monsters chest and mouth red with blood"
             }
           ],
           "confidence": "medium",
           "merged_from": [
-            "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight.",
-            "If the player chooses to join the travelers, Javlyn will be positioned at the back of the group during the cave encounter."
+            "If Javlyn chooses to bring food, Sikshusiks will follow her.",
+            "If the player chooses to bring food, Sikshusiks will follow her."
           ]
         },
         {
-          "fact": "If the player chooses to leave the creature alone, it may eventually leave the house or cause trouble, but this outcome is not explicitly described in the provided passages.",
+          "fact": "If the player chooses to leave the creature alone, it may remain in the house or cause trouble later.",
           "evidence": [
             {
               "passage": "7eca772baf60",
               "quote": "The creature thought for a moment and then slowly nodded. It climbed up onto the laundry pile"
+            },
+            {
+              "passage": "7eca772baf60",
+              "quote": "It would be a permanent presence in her house."
             }
           ],
           "confidence": "low",
@@ -8636,127 +8653,75 @@
           ]
         },
         {
-          "fact": "If the player chooses to give the creature food, it will eat it and show a willingness to stay, indicating a potential for a friendly relationship.",
+          "fact": "If the player takes no action, Javlyn will leave the cave after defeating the monster and return home through the rain.",
           "evidence": [
             {
-              "passage": "7eca772baf60",
-              "quote": "The creature visibly salivated while nodding vigorously, resulting in it slinging drool across the laundry pile."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player chooses to give the creature food, it will eat it and show a willingness to stay, indicating a potential for a friendly relationship."
-          ]
-        },
-        {
-          "fact": "If the player chooses to bring food, Sikshusiks will follow her.",
-          "evidence": [
-            {
-              "passage": "ac90be98137d",
-              "quote": "\"Me go with you!\""
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player chooses to bring food, Sikshusiks will follow her."
-          ]
-        },
-        {
-          "fact": "If the player chooses to help the man, the man will survive.",
-          "evidence": [
-            {
-              "passage": "56a194085bbd",
-              "quote": "She said slowly, 'My name is Javlyn... and I'm going to help you get out of here.'"
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player chooses to help the man, the man will survive."
-          ]
-        },
-        {
-          "fact": "The village contains a mushroom cave that is rumored to be inhabited by a monster.",
-          "evidence": [
-            {
-              "passage": "316e561f9ddb",
-              "quote": "the \"monster moving into the mushroom cave\" rumor that had been floating around the village."
+              "passage": "032aee74fa11",
+              "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain."
             },
             {
-              "passage": "7e35fe311599",
-              "quote": "The cave's entrance was just around the corner."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The village has a mushroom cave that is rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster"
-          ]
-        },
-        {
-          "fact": "The monster is described as having dark red skin, tall and gangly body, a snout and horns.",
-          "evidence": [
+              "passage": "6f951461b5cb",
+              "quote": "Another time, perhaps. Javlyn left, fitting through the entrance tunnel and coming out to rain."
+            },
             {
-              "passage": "06a29200cbbb",
-              "quote": "It connected with a creature of dark red skin, tall and gangly, with a snout and horns."
+              "passage": "a2ee6099",
+              "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster is described as having dark red skin, tall and gangly body, a snout and horns."
+            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home",
+            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home",
+            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home"
           ]
         }
       ]
     },
     "conflicts": [
       {
-        "description": "Contradictory outcomes for whether Javlyn continues to the cave when the player takes no action.",
+        "description": "Conflicting outcomes for whether Javlyn will leave the cave after defeating the monster.",
         "facts": [
           {
-            "fact": "If the player takes no action, Javlyn will still go to the cave and encounter the monster, then leave it on the road or return home.",
+            "fact": "If the player takes no action, Javlyn will leave the cave after defeating the monster and return home through the rain.",
             "evidence": [
               {
-                "passage": "7f7c85ddcbd9",
-                "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
+                "passage": "032aee74fa11",
+                "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain."
               }
-            ],
-            "confidence": "high"
+            ]
           },
           {
-            "fact": "If the player takes no action, Javlyn will still enter the cave and encounter the monster, but she may not engage in combat.",
+            "fact": "If the player takes no action, Javlyn will remain in the cave and fight the monster, but not leave.",
             "evidence": [
               {
                 "passage": "f295816555c0",
-                "quote": "\"Attack the monster\""
+                "quote": "Attack the monster"
               }
-            ],
-            "confidence": "medium"
+            ]
           }
         ],
         "severity": "major"
       },
       {
-        "description": "Contradictory statements about whether the monster is defeated or remains.",
+        "description": "Conflicting statements about whether the traveler group joins Javlyn.",
         "facts": [
           {
-            "fact": "The monster is defeated or subdued by the group, leaving it lying on the road.",
+            "fact": "If the player chooses to join the travelers, they will accompany Javlyn into the cave and help fight the monster.",
             "evidence": [
               {
-                "passage": "7f8c85ddcbd9",
-                "quote": "Javlyn stopped, panting from the rush, \"That,\" Javlyn stopped, panting from the rush, \"was quick.\""
+                "passage": "b2c778e6418d",
+                "quote": "Join them"
               }
-            ],
-            "confidence": "high"
+            ]
           },
           {
-            "fact": "If the player takes no action, Javlyn will still encounter the monster and will be forced to flee the cave.",
+            "fact": "If the player does nothing, Javlyn will still enter the cave and the travelers will not join her.",
             "evidence": [
               {
-                "passage": "195754277a03",
-                "quote": "There was a group of three individuals. Older. Two men, one woman."
+                "passage": "b2c778e6418d",
+                "quote": "Quietly, Javlyn lit her own lantern. Watching unsure as the three gathered in a circle."
               }
-            ],
-            "confidence": "medium"
+            ]
           }
         ],
         "severity": "major"
@@ -15969,15 +15934,15 @@
     }
   },
   "meta": {
-    "last_extracted": "2025-12-01T00:01:17.499619",
+    "last_extracted": "2025-12-01T00:12:01.106121",
     "total_passages_extracted": 65,
-    "total_facts": 45
+    "total_facts": 39
   },
   "summarized_facts": {
     "constants": {
       "world_rules": [
         {
-          "fact": "The village experiences frequent, continuous rain, often lasting three days straight, with overcast clouds threatening more rain.",
+          "fact": "The village experiences frequent heavy rain, often lasting multiple days.",
           "evidence": [
             {
               "passage": "316e561f9ddb",
@@ -15996,188 +15961,26 @@
               "quote": "It had been raining solidly for over an hour by the time Danita called it"
             },
             {
-              "passage": "56a194085bbd",
-              "quote": "It had started to rain by the time she finished checking the man over."
+              "passage": "5b0ba41f",
+              "quote": "It had rained three days straight and the dark overcast clouds threatened to drop more rain."
+            },
+            {
+              "passage": "5b0ba41f",
+              "quote": "the rain having oversaturated the ground"
             }
           ],
           "confidence": "high",
           "merged_from": [
             "The village experiences heavy rain during the story",
+            "The village experiences frequent rain during the story",
             "The village experiences frequent rain, often lasting multiple days.",
-            "The village experiences frequent rainstorms that can last several days.",
             "The village experiences heavy rain during the events described.",
-            "The village experiences heavy rain and overcast weather during the events described.",
-            "It is raining heavily during the events"
+            "The village experiences heavy rain and overcast weather during the initial scenes, affecting travel conditions.",
+            "The village experiences heavy rain and overcast weather during the events described."
           ]
         },
         {
-          "fact": "Javlyn enters the cave carrying a lantern in her left hand and a sword in her right hand.",
-          "evidence": [
-            {
-              "passage": "e524e5bec136",
-              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
-            },
-            {
-              "passage": "7e35fe311599",
-              "quote": "Javlyn stopped to light the lantern she had brought."
-            },
-            {
-              "passage": "56a194085bbd",
-              "quote": "She had a lantern."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "Javlyn enters the cave with a lantern and sword",
-            "Javlyn carries a lantern and a sword into the cave",
-            "The lantern provides light in the cave."
-          ]
-        },
-        {
-          "fact": "The cave entrance is narrow, with walls brushing the entrant’s shoulders, and is located on a cliffside leading to a larger chamber.",
-          "evidence": [
-            {
-              "passage": "e524e5bec136",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            },
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "The entry way was narrow and the walls brushed her shoulders on either side."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The cave entrance is narrow and the walls brush the entrant’s shoulders.",
-            "The cave entrance is a narrow opening that can be blocked by moving rocks.",
-            "The cave is located on a cliffside and has a narrow entrance that leads to a larger chamber."
-          ]
-        },
-        {
-          "fact": "The cave contains a large, horned creature with a long snout, two curved horns, wide shoulders, and a body roughly twice Javlyn’s height; it can fit through the narrow entrance and attacks travelers.",
+          "fact": "The cave contains a large, horned creature with a long snout, two curved horns, wide shoulders, nearly twice Javlyn's height, that can fit through the narrow entrance and attacks travelers; it can be defeated with a sword.",
           "evidence": [
             {
               "passage": "f295816555c0",
@@ -16185,108 +15988,64 @@
             },
             {
               "passage": "7add1bb7167b",
-              "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough Javlyn had no idea how the monster fit through the cave's entrance."
+              "quote": "The creature was weirdly proportioned and top heavy, with the torso and arms absurdly long and the legs much shorter. It had to be nearly twice her height in total."
             },
             {
               "passage": "7f7c85ddcbd9",
               "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough Javlyn had no idea how the monster fit through the cave's entrance."
             },
             {
-              "passage": "aaa3cfd95830",
-              "quote": "Near twice her height, and with //horns//?!"
+              "passage": "1305b376a3a6",
+              "quote": "A terrifyingly tall creature was charging them, coming from the cave entrance."
+            },
+            {
+              "passage": "1e2cf5431c2f",
+              "quote": "Terence was engaged with a terrifyingly tall creature with a long snout and horns on its head."
             },
             {
               "passage": "56a194085bbd",
               "quote": "The monster slid out of the tight tunnel and then seemed to grow. Stretching out and standing tall at near twice her height, head nearing the top of the cavern."
             },
             {
-              "passage": "0ed81c156c02",
-              "quote": "The face had a long snout with two curved horns. The shoulders were wide, wide enough"
+              "passage": "56a194085bbd",
+              "quote": "The monster was attacking."
             },
             {
-              "passage": "1e2cf5431c2f",
-              "quote": "Terence was engaged with a terrifyingly tall creature with a long snout and horns on its head."
+              "passage": "56a194085bbd",
+              "quote": "She struck out with the sword twice, and had to duck under the creatures arm swipe."
+            },
+            {
+              "passage": "56a194085bbd",
+              "quote": "She swung the sword wildly, desperate, and was lucky when it connected across the monsters snout."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster in the cave is a tall creature with a long snout and horns, capable of attacking and being killed by a sword or a bolt.",
+            "The cave contains a creature with a long snout and two curved horns",
+            "The cave contains a creature that is larger than Javlyn and has a long snout with two curved horns.",
+            "The monster in the cave is a tall creature that can be killed with a single blow to the eye.",
             "The monster in the cave has a long snout, two curved horns, and wide shoulders.",
             "The monster in the cave has a long snout, two curved horns, and wide shoulders, and it attacks the travelers.",
+            "The monster in the cave is a large, horned creature with a long snout and a body twice Javlyn's height",
             "The monster in the cave is described as tall with a long snout and horns, and it attacks Terence.",
             "The monster in the cave is a tall creature with a long snout and horns, capable of attacking and being killed by a sword or a bolt."
           ]
         },
         {
-          "fact": "The monster is killed by Javlyn during the encounter, leaving the cave dark as the lantern burns out.",
+          "fact": "Javlyn enters the cave carrying a lantern and a sword.",
           "evidence": [
             {
-              "passage": "7add1bb7167b",
-              "quote": "The creature twitched occasionally, but made no movement for further action. It was dead."
-            },
-            {
-              "passage": "7add1bb7167b",
-              "quote": "The lantern toppled to the ground, the fire sputtered as the oil spilled, until it died, leaving the cavern dark."
+              "passage": "e524e5bec136",
+              "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The creature is killed by Javlyn during the encounter",
-            "The monster is dead after Javlyn defeats it, leaving the cave dark due to the lantern burning out"
+            "Javlyn enters the cave with a lantern and sword"
           ]
         },
         {
-          "fact": "Javlyn finds a metal dagger with a small hoop handle in the cave floor after defeating the monster.",
-          "evidence": [
-            {
-              "passage": "70b5e9082ab6",
-              "quote": "She was able to feel enough to know it was something man-made."
-            },
-            {
-              "passage": "ee7ec3ffe7b6",
-              "quote": "Her fingers had caught a small hoop at the end of what felt like the handle of a dagger."
-            },
-            {
-              "passage": "6f951461b5cb",
-              "quote": "She was able to feel enough to know it was something man-made. She caught a small hoop at the end of a dagger."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "After the fight, Javlyn finds a metal dagger in the cave floor",
-            "Javlyn can find a small hoop at the end of a dagger in a hidden passage behind the monster",
-            "The bag found in the cave contains a single message tube."
-          ]
-        },
-        {
-          "fact": "The world has a magic system where \"workings\" can be applied to items to trigger effects such as ice or other elemental effects, and light workings are possible but risky for beginners.",
-          "evidence": [
-            {
-              "passage": "f28c48cb13cc",
-              "quote": "Ice workings, Terence said ignoring Danita, \"are typically applied to items, like my sword or Danita's shield, and have a trigger on them.\""
-            },
-            {
-              "passage": "f28c48cb13cc",
-              "quote": "\"This is not something a beginner can just do.\""
-            },
-            {
-              "passage": "6813b3985bf9",
-              "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
-            },
-            {
-              "passage": "6813b3985bf9",
-              "quote": "Light is hard to do. We haven't done it successfully since we had Marcie and only then if everything was in our favor."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The world has a magic system where \"workings\" can be applied to items to trigger effects, such as ice enchantments",
-            "The world has a magic system that includes light workings performed by practitioners.",
-            "The world has a lantern for light."
-          ]
-        },
-        {
-          "fact": "The world has a lantern that can be lit by the player to provide illumination in dark environments.",
+          "fact": "Lanterns can be lit by the player and provide illumination in dark environments.",
           "evidence": [
             {
               "passage": "e524e5bec136",
@@ -16299,34 +16058,90 @@
           ],
           "confidence": "high",
           "merged_from": [
-            "Lanterns can be lit by the player and provide illumination in dark environments.",
-            "Lanterns can be used to light caves."
+            "Lanterns can be lit by the player and provide illumination in dark environments."
           ]
         },
         {
-          "fact": "The world has a sword that can be used to fight monsters, and Javlyn uses Nivek’s sword to defeat the cave monster.",
+          "fact": "The world has a magic system where 'workings' can be applied to items to trigger effects, including light and protection.",
           "evidence": [
             {
-              "passage": "56a194085bbd",
-              "quote": "Javlyn had Nivek's sword."
+              "passage": "f28c48cb13cc",
+              "quote": "Ice workings, Terence said ignoring Danita, \"are typically applied to items, like my sword or Danita's shield, and have a trigger on them.\""
             },
             {
-              "passage": "06a29200cbbb",
-              "quote": "She drew Nivek's sword and attacked. ... A thrown rock hit the monster, distracting it enough that Javlyn finally delivered a killing blow."
+              "passage": "f28c48cb13cc",
+              "quote": "This is not something a beginner can just do.\""
             },
             {
-              "passage": "56a194085bbd",
-              "quote": "The monster can be fought with a sword."
+              "passage": "6813b3985bf9",
+              "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
+            },
+            {
+              "passage": "6813b3985bf9",
+              "quote": "Light is hard to do. We haven't done it successfully since we had Marcie and only then if everything was in our favor."
+            },
+            {
+              "passage": "516ff1e73f55",
+              "quote": "The magical light each of them shone with was brighter than a single lantern could ever hope to be."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The world has a sword that can be used to fight monsters.",
-            "The monster can be defeated by using Nivek's sword."
+            "The world has a magic system that includes light workings performed by practitioners.",
+            "The world has a magic system where \"workings\" can be applied to items to trigger effects, such as ice enchantments",
+            "The world has a magic system that includes 'workings' that can be applied to items, such as ice work on a sword or shield."
           ]
         },
         {
-          "fact": "The monster hunts humans, can drag victims, and can be attacked and killed by a sword or a bolt.",
+          "fact": "The cave contains mushrooms and bones.",
+          "evidence": [
+            {
+              "passage": "64574862",
+              "quote": "\"Mushrooms grew in the creases and water trickled along the floor\" and \"In one corner of the cave, Javlyn found a pile of bones and rags.\""
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "The cave contains mushrooms and bones."
+          ]
+        },
+        {
+          "fact": "The bag found in the cave contains a single message tube.",
+          "evidence": [
+            {
+              "passage": "9ddaf143",
+              "quote": "There was only a single item inside - a message tube."
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "The bag found in the cave contains a single message tube."
+          ]
+        },
+        {
+          "fact": "Sikshusiks is a blue, spearmint-like creature that can speak in a simple, childlike language and has sharp teeth.",
+          "evidence": [
+            {
+              "passage": "60844ae759ad",
+              "quote": "\"Me Sikshusiks\""
+            },
+            {
+              "passage": "60844ae759ad",
+              "quote": "\"A spearmint. A spearmint sikshusiks! Me scape. Me hide. You find me!\""
+            },
+            {
+              "passage": "ac90be98137d",
+              "quote": "The creature opened its mouth and took a big bite out of the apple. As it did, Javlyn saw dozens of sharp, pointy teeth."
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "A blue, spearmint‑like creature named Sikshusiks appears in Javlyn’s laundry pile and can speak in a simple, childlike language.",
+            "Sikshusiks can speak and has sharp teeth."
+          ]
+        },
+        {
+          "fact": "The world has monsters that hunt humans.",
           "evidence": [
             {
               "passage": "56a194085bbd",
@@ -16334,30 +16149,19 @@
             },
             {
               "passage": "56a194085bbd",
-              "quote": "It sounded like it was dragging something, though it was hard to tell."
-            },
-            {
-              "passage": "56a194085bbd",
-              "quote": "The monster was attacking."
-            },
-            {
-              "passage": "56a194085bbd",
-              "quote": "She struck out with the sword twice, and had to duck under the creatures arm swipe."
+              "quote": "The monster dropped whatever it was dragging and turned, seeking the light source."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster can be fought with a sword.",
-            "The monster can be defeated by using Nivek's sword.",
-            "The monster can drag victims.",
-            "The monster can attack humans."
+            "The world has monsters that hunt humans."
           ]
         },
         {
-          "fact": "The village has a patrol that will arrive in two to three weeks to handle threats.",
+          "fact": "The village patrol will arrive in two to three weeks to handle threats.",
           "evidence": [
             {
-              "passage": "f85eca46c65d",
+              "passage": "eee8ae1d",
               "quote": "We've got a patrol coming through in two to three weeks. Let them do their job and handle it."
             }
           ],
@@ -16367,43 +16171,20 @@
           ]
         },
         {
-          "fact": "The travelers are seeking a cave rumored to contain a monster, and rumors suggest a monster is moving into the mushroom cave.",
+          "fact": "The travelers are seeking a cave rumored to contain a monster.",
           "evidence": [
             {
-              "passage": "872119a696dd",
+              "passage": "76119710",
               "quote": "We're heard some rather nasty rumors in the area and was hoping you could help us find any nearby caves?"
             },
             {
-              "passage": "828d29263bc6",
+              "passage": "76119710",
               "quote": "There's supposed to be a monster in it"
-            },
-            {
-              "passage": "316e561f9ddb",
-              "quote": "...about that \"monster moving into the mushroom cave\" rumor that had been floating around the village."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The travelers are seeking a cave rumored to contain a monster.",
-            "A monster rumored to be moving into the mushroom cave is present in the cave"
-          ]
-        },
-        {
-          "fact": "The cave contains mushrooms and bones, and the environment includes wet, muddy ground due to rain.",
-          "evidence": [
-            {
-              "passage": "5b0ba41f",
-              "quote": "Mushrooms grew in the creases and water trickled along the floor, pooling in puddles here and there."
-            },
-            {
-              "passage": "5b0ba41f",
-              "quote": "The ground stuck to her boots, making each step harder than it had to be."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "Mushrooms grow in the creases of caves.",
-            "Rain makes the ground muddy and difficult to traverse."
+            "The travelers are seeking a cave rumored to contain a monster."
           ]
         }
       ],
@@ -16421,35 +16202,63 @@
             },
             {
               "passage": "c77aa3e62bb2",
-              "quote": "\"The cliffside the cave was a part of came into sight\""
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
             },
             {
-              "passage": "590400dece2b",
-              "quote": "\"Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore.\""
+              "passage": "b27c97e6",
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
             },
             {
-              "passage": "a6122a65eaa6",
-              "quote": "\"What is weighing on your mind today?\""
-            },
-            {
-              "passage": "bcb12871",
+              "passage": "3da38df7",
               "quote": "\"the \\\"monster moving into the mushroom cave\\\" rumor that had been floating around the village.\""
             },
             {
-              "passage": "bcb12871",
+              "passage": "8a4503a3",
               "quote": "\"the \\\"monster moving into the mushroom cave\\\" rumor that had been floating around the village.\""
+            },
+            {
+              "passage": "0d807122",
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
+            },
+            {
+              "passage": "9ddaf143",
+              "quote": "\"The cliffside the cave was a part of came into sight and Javlyn stopped.\""
             }
           ],
           "confidence": "high",
           "merged_from": [
             "The village is located near a cliffside that contains a mushroom cave.",
             "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a mushroom cave on a cliffside",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave",
             "The village is located near a cliffside that contains a mushroom cave"
+          ]
+        },
+        {
+          "fact": "A rumor circulates in the village that a monster is moving into the mushroom cave.",
+          "evidence": [
+            {
+              "passage": "316e561f9ddb",
+              "quote": "\"the \\\"monster moving into the mushroom cave\\\" rumor that had been floating around the village.\""
+            },
+            {
+              "passage": "10509d96f912",
+              "quote": "\"Monster in a cave nabbing people,\""
+            },
+            {
+              "passage": "b3914421",
+              "quote": "\"the \\u201cmonster moving into the mushroom cave\\u201d rumor that had been floating around the village.\""
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "The village has a rumor about a monster moving into the mushroom cave.",
+            "The village has a rumor about a monster moving into the mushroom cave.",
+            "The village has a rumor about a monster moving into the mushroom cave."
           ]
         },
         {
@@ -16460,11 +16269,7 @@
               "quote": "\"open training session, which most of the villagers tried to attend at least once a week\""
             },
             {
-              "passage": "c77aa3e62bb2",
-              "quote": "\"Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week\""
-            },
-            {
-              "passage": "316e561f9ddb",
+              "passage": "a1ede5be",
               "quote": "\"Javlyn had announced her plans this morning during the open training session, which most of the villagers tried to attend at least once a week\""
             },
             {
@@ -16476,12 +16281,11 @@
           "merged_from": [
             "The village has an open training session where villagers gather weekly",
             "The village has an open training session where villagers gather weekly",
-            "The village has an open training session where villagers gather weekly",
             "The village has an open training session where villagers gather weekly"
           ]
         },
         {
-          "fact": "It rains heavily during the story, with the ground muddy and the sky overcast.",
+          "fact": "The village experiences frequent rain, overcast skies, and muddy ground during the story.",
           "evidence": [
             {
               "passage": "316e561f9ddb",
@@ -16498,37 +16302,22 @@
           ],
           "confidence": "high",
           "merged_from": [
-            "The story takes place in a village with a nearby cave that has a mushroom cave rumor",
-            "The story takes place in a village with a nearby cave that has a mushroom cave rumor",
-            "The story takes place in a village with a nearby cave that has a mushroom cave rumor"
+            "The story takes place in a village with a nearby mushroom cave that is rumored to house a monster.",
+            "The story takes place in a village with a nearby mushroom cave that is rumored to house a monster.",
+            "The story takes place in a village with a nearby mushroom cave that is rumored to house a monster."
           ]
         },
         {
-          "fact": "The cave is a mushroom cave located on a cliffside near the village.",
+          "fact": "The cave entrance is on a cliffside, narrow, and leads to a large chamber that is dark, damp, and contains mushrooms, water puddles, a pile of bones and rags.",
           "evidence": [
-            {
-              "passage": "7e35fe311599",
-              "quote": "\"The cave's entrance was just around the corner\""
-            },
-            {
-              "passage": "c77aa3e62bb2",
-              "quote": "\"The cliffside the cave was a part of came into sight\""
-            },
             {
               "passage": "e524e5bec136",
-              "quote": "\"The cave entrance came into sight and still nothing seemed out of place.\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The cave is called the mushroom cave and is located just around the corner from the cliffside",
-            "The cave is a mushroom cave",
-            "The cave is a mushroom cave"
-          ]
-        },
-        {
-          "fact": "The cave contains mushrooms, water puddles, a pile of bones and rags, and is dark and damp.",
-          "evidence": [
+              "quote": "\"The entry way was narrow and the walls brushed her shoulders on either side, but she wasn't forced to turn sideways.\""
+            },
+            {
+              "passage": "b80ec65da337",
+              "quote": "\"Near the bone pile was mushrooms, which she hoped was what the creature had been eating\""
+            },
             {
               "passage": "ed25f0952148",
               "quote": "\"Mushrooms grew in the creases and water trickled along the floor, pooling in puddles here and there.\""
@@ -16539,23 +16328,18 @@
             },
             {
               "passage": "56a194085bbd",
-              "quote": "\"In one corner of the cave, Javlyn found a pile of bones and rags.\""
-            },
-            {
-              "passage": "56a194085bbd",
               "quote": "\"It was dark, with nothing but her lantern providing light and the tunnel in preventing any natural light from making it in.\""
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The cave contains mushrooms, water puddles, and a pile of bones and rags, but no monster is found.",
-            "The cave contains mushrooms, water pools, and a pile of bones and rags in one corner",
-            "The cave contains mushrooms, water pools, and a pile of bones and rags in one corner",
-            "The cave contains mushrooms, water pools, and a pile of bones and rags in one corner"
+            "The cave entrance is located on a cliffside near the village.",
+            "The cave entrance is located on a cliffside near the village.",
+            "The cave entrance is located on a cliffside near the village."
           ]
         },
         {
-          "fact": "The village is near a coast.",
+          "fact": "The village is located near a coast.",
           "evidence": [
             {
               "passage": "a6122a65eaa6",
@@ -16568,46 +16352,28 @@
           ],
           "confidence": "medium",
           "merged_from": [
-            "The village is located near a coast",
-            "The village is located near a coast",
-            "The village is located near a coast"
+            "The village is located near a coast.",
+            "The village is located near a coast."
           ]
         },
         {
           "fact": "The village has a butcher shop located on the far side of town.",
           "evidence": [
             {
-              "passage": "ac90be98137d",
+              "passage": "c45079ab",
               "quote": "\"The butcher was on the far side of town\""
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The village has a butcher shop located on the far side of town"
+            "The village has a butcher shop located on the far side of town."
           ]
         },
         {
-          "fact": "Javlyn is currently in her bedroom when the story begins.",
+          "fact": "The village has an inn where villagers and travelers gather.",
           "evidence": [
             {
-              "passage": "60844ae759ad",
-              "quote": "\"As she walked into her room\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "Javlyn is currently in her bedroom when the story begins."
-          ]
-        },
-        {
-          "fact": "The village has a nearby inn where villagers gather.",
-          "evidence": [
-            {
-              "passage": "a6122a65eaa6",
-              "quote": "\"What is weighing on your mind today?\""
-            },
-            {
-              "passage": "60844ae759ad",
+              "passage": "c45079ab",
               "quote": "\"...with her friends at the inn.\""
             }
           ],
@@ -16617,50 +16383,24 @@
           ]
         },
         {
-          "fact": "Travelers seek a cave rumored to contain a monster.",
+          "fact": "Travelers in the village discuss the rumored monster and decide to investigate the cave together.",
           "evidence": [
+            {
+              "passage": "85e37f7ba808",
+              "quote": "\"The village had just left their sight when they passed three travelers. They were older, and looked weary.\""
+            },
             {
               "passage": "872119a696dd",
               "quote": "\"We're heard some rather nasty rumors in the area and was hoping you could help us find any nearby caves?\""
-            },
-            {
-              "passage": "828d29263bc6",
-              "quote": "\"The mushroom cave, just around the corner,\""
             }
           ],
-          "confidence": "high",
+          "confidence": "medium",
           "merged_from": [
-            "The travelers are seeking a cave rumored to contain a monster"
+            "Javlyn encounters a group of weary travelers who discuss the rumored monster and decide to investigate together."
           ]
         },
         {
-          "fact": "The world has a donkey used by merchants.",
-          "evidence": [
-            {
-              "passage": "56a194085bbd",
-              "quote": "\"Down the road towards Furlsby, there was a donkey grazing off the path, laden with packs.\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The world has a donkey used by merchants."
-          ]
-        },
-        {
-          "fact": "The world has a cave with a monster.",
-          "evidence": [
-            {
-              "passage": "56a194085bbd",
-              "quote": "\"The monster dropped whatever it was dragging and turned, seeking the light source.\""
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The world has a cave with a monster."
-          ]
-        },
-        {
-          "fact": "The village is near a pond called Relti Pond.",
+          "fact": "The village is located near a pond called Relti Pond, close to the mushroom cave.",
           "evidence": [
             {
               "passage": "85e37f7ba808",
@@ -16673,21 +16413,18 @@
           ],
           "confidence": "high",
           "merged_from": [
-            "The village is located near a mushroom cave and a pond called Relti Pond."
+            "The village is located near a cliffside that contains a mushroom cave.",
+            "The village is located near a cliffside that contains a mushroom cave."
           ]
         }
       ],
       "timeline": [
         {
-          "fact": "Rumor about a monster moving into the mushroom cave had been circulating in the village before the story begins, prompting villagers to forage elsewhere for mushrooms.",
+          "fact": "Rumor about a monster moving into the mushroom cave had been floating around the village before the story begins.",
           "evidence": [
             {
               "passage": "path-5b0ba41f",
-              "quote": "Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore."
-            },
-            {
-              "passage": "path-5b0ba41f",
-              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village."
+              "quote": "\"There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor that had been floating around the village.\""
             },
             {
               "passage": "path-5d3a5143",
@@ -16695,7 +16432,7 @@
             },
             {
               "passage": "path-64574862",
-              "quote": "There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor."
+              "quote": "\"There were, perhaps, better days to decide it was time to do something about that 'monster moving into the mushroom cave' rumor.\""
             },
             {
               "passage": "path-e6519ac7",
@@ -16709,13 +16446,39 @@
           "confidence": "high",
           "merged_from": [
             "Before the story, a rumor about a monster moving into the mushroom cave had been floating around the village.",
-            "Before the story, villagers had started foraging elsewhere for mushrooms due to the rumor.",
             "The rumor of a monster moving into the mushroom cave has been circulating in the village before the story begins.",
-            "Before the story, the village had rumors about the monster."
+            "Before the story, the village had rumors about the monster.",
+            "Rumor about a monster moving into the mushroom cave had been floating around the village."
           ]
         },
         {
-          "fact": "If the player does nothing, Javlyn will still enter the cave alone, encounter the monster, and ultimately flee after it is killed, returning to the village.",
+          "fact": "Before the story, villagers had started foraging elsewhere for mushrooms due to the rumor.",
+          "evidence": [
+            {
+              "passage": "path-5b0ba41f",
+              "quote": "\"Villagers had already started foraging elsewhere for mushrooms, so no one was truly at danger anymore.\""
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "Before the story, villagers had started foraging elsewhere for mushrooms due to the rumor."
+          ]
+        },
+        {
+          "fact": "Javlyn eventually exits the cave and returns to the village.",
+          "evidence": [
+            {
+              "passage": "path-b76ef736",
+              "quote": "She eventually found the tunnel out. She stood and felt almost comforted by how the small tunnel was barely enough for her shoulders to fit through as she made her way through it."
+            }
+          ],
+          "confidence": "high",
+          "merged_from": [
+            "Javlyn eventually exits the cave and returns to the village"
+          ]
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will still enter the cave alone and encounter the monster.",
           "evidence": [
             {
               "passage": "path-fa4f3c15",
@@ -16724,11 +16487,46 @@
             {
               "passage": "path-fa4f3c15",
               "quote": "Hunched over the ground on the far side of the cavern was… something."
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "If the player does nothing, Javlyn will still enter the cave alone and encounter the monster"
+          ]
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will remain in her village and continue attending training sessions.",
+          "evidence": [
+            {
+              "passage": "path-f656b2b5",
+              "quote": "What is weighing on your mind today?"
             },
+            {
+              "passage": "path-f656b2b5",
+              "quote": "It had rained three days straight..."
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "If the player does nothing, Javlyn will remain in her village and continue attending training sessions"
+          ]
+        },
+        {
+          "fact": "If the player does nothing, Javlyn will still proceed to the cave and encounter the monster, ultimately fleeing after it is killed.",
+          "evidence": [
             {
               "passage": "path-c9bab50f",
               "quote": "Javlyn fled the cave. The monster was dead through no effort of her own and she never should have entered the cave."
-            },
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "If the player does nothing, Javlyn will still proceed to the cave and encounter the monster, ultimately fleeing after it is killed."
+          ]
+        },
+        {
+          "fact": "If the player takes no action, Javlyn will eventually leave the cave and return home.",
+          "evidence": [
             {
               "passage": "path-4f31c2e5",
               "quote": "She whispered, before turning around and starting the long trip out. She'd come back to see where the boat would lead, but after being better prepared."
@@ -16736,35 +16534,8 @@
           ],
           "confidence": "medium",
           "merged_from": [
-            "If the player does nothing, Javlyn will still enter the cave alone and encounter the monster",
-            "If the player does nothing, Javlyn will still proceed to the cave and encounter the monster, ultimately fleeing after it is killed."
+            "If the player takes no action, Javlyn will eventually leave the cave and return home"
           ]
-        },
-        {
-          "fact": "If the player does nothing, Javlyn will remain in her village and continue attending training sessions.",
-          "evidence": [
-            {
-              "passage": "a6122a65eaa6",
-              "quote": "What is weighing on your mind today?"
-            },
-            {
-              "passage": "316e561f9ddb",
-              "quote": "It had rained three days straight..."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": []
-        },
-        {
-          "fact": "After confronting the monster, the group plans to celebrate at the tavern.",
-          "evidence": [
-            {
-              "passage": "path-79f40830",
-              "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": []
         },
         {
           "fact": "If Javlyn does nothing, the monster will likely kill the man.",
@@ -16775,7 +16546,22 @@
             }
           ],
           "confidence": "medium",
-          "merged_from": []
+          "merged_from": [
+            "If Javlyn does nothing, the monster will likely kill the man."
+          ]
+        },
+        {
+          "fact": "After confronting the monster, the group plans to celebrate at the tavern.",
+          "evidence": [
+            {
+              "passage": "path-79f40830",
+              "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
+            }
+          ],
+          "confidence": "medium",
+          "merged_from": [
+            "After confronting the monster, the group plans to celebrate at the tavern."
+          ]
         }
       ]
     },
@@ -16783,31 +16569,12 @@
       "Javlyn": {
         "identity": [
           {
-            "fact": "Javlyn is a young female villager who wears a leather vest and a thick jacket for protection, attends weekly training sessions, and is capable of performing light magical workings.",
+            "fact": "Javlyn is a young female villager who wears a leather vest and a thick jacket for protection, carries a borrowed sword that once belonged to Nivek, and carries a lantern.",
             "evidence": [
               {
                 "passage": "316e561f9ddb",
                 "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
               },
-              {
-                "passage": "c77aa3e62bb2",
-                "quote": "Javlyn had announced her plans this morning during the open training session..."
-              },
-              {
-                "passage": "6813b3985bf9",
-                "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
-              }
-            ],
-            "confidence": "high",
-            "merged_from": [
-              "Javlyn is a villager who wears a leather vest and a thick jacket for protection",
-              "Javlyn is a villager who attends weekly training sessions",
-              "Javlyn is a villager who is capable of performing magic workings."
-            ]
-          },
-          {
-            "fact": "Javlyn carries a borrowed sword that is Nivek's old sword and a lantern into the cave.",
-            "evidence": [
               {
                 "passage": "590400dece2b",
                 "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
@@ -16823,34 +16590,168 @@
             ],
             "confidence": "high",
             "merged_from": [
+              "Javlyn is a villager who is physically capable of carrying a sword and lantern",
+              "Javlyn has a borrowed sword and a lantern",
               "Javlyn is a villager who carries a borrowed sword and a lantern",
-              "Javlyn carries a borrowed sword and a lantern into the cave",
-              "Javlyn carries a lantern and Nivek's old sword into the cave",
-              "Javlyn carries a borrowed sword, which is Nivek's old sword, and a lantern."
+              "Javlyn is a villager who carries a borrowed sword and a lantern, and she is capable of performing magic workings",
+              "Javlyn is a villager who carries a borrowed sword and a lantern, and she is willing to enter the cave to investigate rumors of a monster."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who attends weekly training sessions at the open training area.",
+            "evidence": [
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              },
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who attends training sessions and has a borrowed sword and a lantern",
+              "Javlyn is a villager who attends open training sessions",
+              "Javlyn is a villager who participates in open training sessions",
+              "Javlyn is a villager who participates in open training sessions and carries a borrowed sword and a lantern"
+            ]
+          },
+          {
+            "fact": "Javlyn is a novice or inexperienced fighter who has performed village-level magical workings, especially light-based.",
+            "evidence": [
+              {
+                "passage": "f28c48cb13cc",
+                "quote": "She was good at workings, but usually they were well defined and with obvious outcomes - cleanse the well, give the harvest a boost, light a festival."
+              },
+              {
+                "passage": "6813b3985bf9",
+                "quote": "Javlyn nodded confidently, she was good at workings and something like light is one she's done before."
+              }
+            ],
+            "confidence": "medium",
+            "merged_from": [
+              "Javlyn is a skilled working practitioner, experienced with village-level workings but not combat-focused",
+              "Javlyn has experience with magical workings, particularly light",
+              "Javlyn is a novice or inexperienced fighter who has a lantern and a sword."
+            ]
+          },
+          {
+            "fact": "Javlyn is the protagonist who decides whether to seek help or act alone in confronting the rumored monster in the mushroom cave.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              },
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is the protagonist who decides whether to seek help or act alone",
+              "Javlyn is a villager who is determined to investigate the rumored monster in the cave."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who is concerned about a rumored monster in the mushroom cave and is willing to investigate it.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              },
+              {
+                "passage": "590400dece2b",
+                "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+              },
+              {
+                "passage": "c77aa3e62bb2",
+                "quote": "Javlyn had announced her plans this morning during the open training session."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who is concerned about a rumored monster in the mushroom cave.",
+              "Javlyn is a villager who is attempting to investigate the rumored monster in the mushroom cave."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who wears a leather vest and a thick jacket for protection and carries a lantern and a sword into the cave.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              },
+              {
+                "passage": "e524e5bec136",
+                "quote": "Lantern in her left hand, sword in her right, Javlyn entered the cave."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who carries a lantern and a sword when she enters the cave.",
+              "Javlyn carries a lantern and Nivek's old sword into the cave."
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who is physically capable of carrying a sword and lantern, and she is a novice fighter.",
+            "evidence": [
+              {
+                "passage": "316e561f9ddb",
+                "quote": "Javlyn was bundled in two layers of pants and she wore a thick jacket over the leather vest she had donned for protection."
+              },
+              {
+                "passage": "590400dece2b",
+                "quote": "Javlyn sighed, standing there in muddy boots and with a borrowed sword."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a villager who is physically capable of carrying a sword and lantern",
+              "Javlyn is a villager who carries a borrowed sword and a lantern"
+            ]
+          },
+          {
+            "fact": "Javlyn is a villager who is responsible for doing her own laundry and has a mother who admonishes her about it.",
+            "evidence": [
+              {
+                "passage": "60844ae759ad",
+                "quote": "As Javlyn gathered up the mass of clothes in preparation for the washing"
+              },
+              {
+                "passage": "60844ae759ad",
+                "quote": "Javlyn, you really shouldn't leave your laundry around until it starts to grow something foul inside of it"
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Javlyn is a young adult who is responsible for doing her own laundry.",
+              "Javlyn’s mother is a recurring voice in her mind, warning her about the laundry."
             ]
           }
         ],
         "zero_action_state": [],
         "variables": []
       },
-      "Nivek": {
+      "Javlyn's": {
         "identity": [
           {
-            "fact": "Nivek lent Javlyn his old sword to help her fight the monster.",
+            "fact": "Javlyn's default action if the player does nothing is to leave the cave and return home, often disappointed but proud.",
             "evidence": [
               {
-                "passage": "7e35fe311599",
-                "quote": "Nivek had lent her the sword after all"
+                "passage": "140d0d873a3e",
+                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
               },
               {
-                "passage": "0ed81c156c02",
-                "quote": "This was her moment to prove herself: that's why Nivek had lent her the sword after all."
+                "passage": "5d3a5143",
+                "quote": "Javlyn left the cavern. There was a bit of disappointment in finding nothing."
               }
             ],
             "confidence": "high",
             "merged_from": [
-              "Nivek lent Javlyn an old sword to help her fight the monster",
-              "Nivek is a person who lent Javlyn a sword and encouraged her to fight the monster."
+              "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
+              "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud."
             ]
           }
         ],
@@ -16860,7 +16761,7 @@
       "Jerrick": {
         "identity": [
           {
-            "fact": "Jerrick is the village blacksmith, an aging former soldier, who offers to accompany Javlyn on her quest.",
+            "fact": "Jerrick is the village blacksmith, an aging former soldier who believes in Javlyn's story and may accompany her.",
             "evidence": [
               {
                 "passage": "92b597d232f8",
@@ -16878,8 +16779,9 @@
             "confidence": "high",
             "merged_from": [
               "The village has a blacksmith named Jerrick",
-              "Jerrick is an aging blacksmith who offers to accompany Javlyn on her quest",
-              "Jerrick is the village blacksmith and former soldier"
+              "Jerrick is an aging blacksmith who offers to accompany Javlyn on her quest.",
+              "Jerrick is the village blacksmith and former soldier",
+              "Jerrick is the village blacksmith who believes in Javlyn’s story"
             ]
           }
         ],
@@ -16889,7 +16791,7 @@
       "Danita,": {
         "identity": [
           {
-            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, better equipped with armor, a shield, a crossbow, and a sword, and they meet her on the road to offer help.",
+            "fact": "The travelers Danita, Kian, and Terence are older than Javlyn, better equipped with armor, a shield, a crossbow, and a sword, and they are seeking a cave rumored to house a monster.",
             "evidence": [
               {
                 "passage": "872119a696dd",
@@ -16897,18 +16799,42 @@
               },
               {
                 "passage": "828d29263bc6",
-                "quote": "Danita had a heavy shield but left her own sword sheathed, looking disgruntled at the entryway, \"This is pretty narrow, better hope it widens.\""
+                "quote": "Danita had a heavy shield but left her own sword sheathed."
               },
               {
-                "passage": "0ed81c156c02",
-                "quote": "The group was composed of a female and two males, with one of the males clearly engrossed in a story."
+                "passage": "872119a696dd",
+                "quote": "\"Well met on this rather dreary day! I am Danita, and with me is Kian and Terence.\""
               }
             ],
             "confidence": "high",
             "merged_from": [
               "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with armor, a shield, a crossbow, and a sword.",
-              "Danita, Kian, and Terence are travelers who meet Javlyn on the road and discuss the mushroom cave.",
-              "The travelers consist of a female storyteller and two male companions, one of whom is named Terence and the other Kian."
+              "The travelers Danita, Kian, and Terence are older than Javlyn and are equipped with a shield, a crossbow, and a sword respectively.",
+              "The travelers Danita, Kian, and Terence are older than Javlyn, wearing well‑cared leather armor and cloaks, and they are seeking a cave rumored to house a monster."
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Nivek": {
+        "identity": [
+          {
+            "fact": "Nivek is a character associated with an old sword that Javlyn obtains during the quest.",
+            "evidence": [
+              {
+                "passage": "7e35fe311599",
+                "quote": "The goal had been getting others to join her, but what she got was Nivek's old sword."
+              },
+              {
+                "passage": "0ed81c156c02",
+                "quote": "This was her moment to prove herself: that's why Nivek had lent her the sword after all."
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "Nivek is a character associated with an old sword that Javlyn obtains.",
+              "Nivek lent Javlyn an old sword to help her fight the monster"
             ]
           }
         ],
@@ -16918,49 +16844,64 @@
       "Unknown": {
         "identity": [
           {
-            "fact": "The monster in the cave is a non-human, horned, mushroom‑eating being, tall and gangly, with a snout and horns, and it is non‑aggressive.",
+            "fact": "The creature in the cave is a non‑human, horned, mushroom‑eating being that is non‑aggressive, with a long snout, two curved horns, and can hold a mushroom.",
             "evidence": [
               {
                 "passage": "548c467dc379",
                 "quote": "The creature stood and turned to face Javlyn, head cocked slightly to the side watching."
               },
               {
-                "passage": "06a29200cbbb",
-                "quote": "a creature of dark red skin, tall and gangly, with a snout and horns."
-              },
-              {
                 "passage": "548c467dc379",
-                "quote": "The creature took a step forward, and Javlyn took a step back."
+                "quote": "It held up the hand with the mushroom."
               }
             ],
             "confidence": "high",
             "merged_from": [
               "The creature in the cave is a non‑human, horned, mushroom‑eating being that is non‑aggressive.",
-              "The monster is described as a tall, gangly creature with dark red skin, a snout, and horns."
+              "The creature in the cave has a long snout, two curved horns, and is capable of holding a mushroom."
             ]
           }
         ],
         "zero_action_state": [],
         "variables": []
       },
-      "If": {
+      "Eldon": {
         "identity": [
           {
-            "fact": "If the player does nothing, Javlyn will leave the cavern after exploring and return home, disappointed but proud.",
+            "fact": "Eldon is a merchant who was injured by the monster and is rescued by Javlyn.",
             "evidence": [
               {
-                "passage": "140d0d873a3e",
-                "quote": "With a last glance at the overcast and dark sky ahead, Javlyn turned and started the walk back."
+                "passage": "06a29200cbbb",
+                "quote": "the merchant, bloody and still on the ground."
               },
               {
-                "passage": "5d3a5143",
-                "quote": "In one corner of the cave, Javlyn found a pile of bones and rags. ... Taking one last look around, Javlyn left the cavern. There was a bit of disappointment in finding nothing."
+                "passage": "06a29200cbbb",
+                "quote": "\"I thought I was going to die,\" a voice behind her said, and Javlyn startled and whirled."
               }
             ],
             "confidence": "high",
             "merged_from": [
-              "Javlyn’s default action if the player does nothing is to turn back from the cave and return home.",
-              "If the player does nothing, Javlyn will explore the cave alone, find nothing, and leave disappointed but proud."
+              "Eldon is a merchant who was injured by the monster and is carrying a donkey.",
+              "Eldon is a merchant who was attacked by the monster and is rescued by Javlyn."
+            ]
+          }
+        ],
+        "zero_action_state": [],
+        "variables": []
+      },
+      "Sikshusiks": {
+        "identity": [
+          {
+            "fact": "A blue, spearmint-like creature named Sikshusiks appears in Javlyn's laundry pile.",
+            "evidence": [
+              {
+                "passage": "60844ae759ad",
+                "quote": "a small blue creature the size of a companion dog...\"Me Sikshusiks\""
+              }
+            ],
+            "confidence": "high",
+            "merged_from": [
+              "A blue, spearmint-like creature named Sikshusiks appears in Javlyn's laundry pile."
             ]
           }
         ],
@@ -16972,11 +16913,11 @@
       "events": [],
       "outcomes": [
         {
-          "fact": "The village is located near a cliffside that contains a mushroom cave rumored to house a monster.",
+          "fact": "The story takes place in a village near a cliffside that contains a mushroom cave rumored to house a monster.",
           "evidence": [
             {
               "passage": "316e561f9ddb",
-              "quote": "the \"monster moving into the mushroom cave\" rumor that had been floating around the village."
+              "quote": "\"the \"monster moving into the mushroom cave\" rumor that had been floating around the village.\""
             },
             {
               "passage": "7e35fe311599",
@@ -16984,18 +16925,34 @@
             },
             {
               "passage": "c77aa3e62bb2",
-              "quote": "The cliffside the cave was a part of came into sight and Javlyn stopped."
+              "quote": "The village had just left their sight when they passed three travelers. They were older, and looked weary."
             }
           ],
           "confidence": "high",
           "merged_from": [
             "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster"
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave",
+            "The village is located near a cliffside that contains a mushroom cave"
           ]
         },
         {
-          "fact": "If the player takes no action, Javlyn will still enter the cave and encounter the monster.",
+          "fact": "If the player takes no action, Javlyn will still enter the mushroom cave, encounter the monster, and attempt to escape or fight it.",
           "evidence": [
             {
               "passage": "e524e5bec136",
@@ -17003,49 +16960,45 @@
             },
             {
               "passage": "f295816555c0",
+              "quote": "Attack the monster"
+            },
+            {
+              "passage": "f295816555c0",
               "quote": "Hunched over the ground on the far side of the cavern was… something."
             },
             {
-              "passage": "e524e5bec136",
-              "quote": "Javlyn entered the cave."
+              "passage": "f295816555c0",
+              "quote": "She broke free from her stupor, turned and fled."
             },
             {
-              "passage": "e524e5bec136",
-              "quote": "Javlyn entered the cave."
+              "passage": "f295816555c0",
+              "quote": "Attack the monster"
             }
           ],
           "confidence": "high",
           "merged_from": [
             "If the player takes no action, Javlyn will still enter the cave and encounter the monster.",
             "If the player does nothing, Javlyn will still enter the cave and encounter the monster.",
-            "If the player does nothing, Javlyn will still enter the cave and encounter the monster."
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but she will likely leave the cave alone",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not be able to defeat it alone",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers",
+            "If the player does nothing, Javlyn will still encounter the monster and attempt to escape, but will not receive help from villagers"
           ]
         },
         {
-          "fact": "If the player takes no action, Javlyn will still go to the cave and encounter the monster, then leave it on the road or return home.",
-          "evidence": [
-            {
-              "passage": "7f7c85ddcbd9",
-              "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
-            },
-            {
-              "passage": "6f951461b5cb",
-              "quote": "Another time, perhaps. Javlyn left, fitting through the entrance tunnel and coming out to rain. She stood in the protected entrance for a moment, just watching."
-            },
-            {
-              "passage": "032aee74fa11",
-              "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain. She stood in the protected entrance for a moment, just watching."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "If the player does nothing, Javlyn will still go to the cave and encounter the monster, then leave it on the road or return home.",
-            "If the player does nothing, the group will still go to the cave, encounter the monster, and leave it on the road",
-            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home"
-          ]
-        },
-        {
-          "fact": "If the player chooses to continue the quest, Javlyn will go to the cave and may fight the monster, possibly killing it and retrieving Nivek's sword.",
+          "fact": "If the player chooses to continue the quest, Javlyn will go to the cave and may fight the monster, potentially killing it and retrieving Nivek's sword.",
           "evidence": [
             {
               "passage": "590400dece2b",
@@ -17053,22 +17006,41 @@
             },
             {
               "passage": "f295816555c0",
-              "quote": "\"Attack the monster\""
+              "quote": "Attack the monster"
             },
             {
               "passage": "b80ec65da337",
               "quote": "She retrieved Nivek's sword."
+            },
+            {
+              "passage": "06a29200cbbb",
+              "quote": "She drew Nivek's sword and attacked."
             }
           ],
           "confidence": "high",
           "merged_from": [
             "If the player chooses to continue the quest, Javlyn will go to the cave.",
-            "If the player chooses to continue the quest, Javlyn will go to the cave and may fight the monster, possibly killing it and retrieving Nivek's sword."
+            "If the player chooses to continue the quest, Javlyn will go to the cave.",
+            "If the player chooses to continue the quest, Javlyn will go to the cave.",
+            "If the player chooses to continue the quest, Javlyn will go to the cave.",
+            "If the player chooses to continue the quest, Javlyn will go to the cave."
           ]
         },
         {
-          "fact": "If the player chooses to recruit the travelers (Kian, Danita, Terence), they will accompany Javlyn into the cave and help fight the monster.",
+          "fact": "If the player chooses to join the travelers (Kian, Danita, Terence), they will accompany Javlyn into the cave and help fight the monster.",
           "evidence": [
+            {
+              "passage": "b2c778e6418d",
+              "quote": "Join them"
+            },
+            {
+              "passage": "b2c778e6418d",
+              "quote": "Danita motioned her over, \"If you plan to come in with us-\""
+            },
+            {
+              "passage": "b2c778e6418d",
+              "quote": "\"At the back of the line,\" Kian said."
+            },
             {
               "passage": "195754277a03",
               "quote": "There was a group of three individuals. Older. Two men, one woman."
@@ -17076,21 +17048,18 @@
             {
               "passage": "195754277a03",
               "quote": "Kian, Danita, Terence"
-            },
-            {
-              "passage": "b2c778e6418d",
-              "quote": "\"Join them\""
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "If the player chooses to recruit the travelers, they will accompany Javlyn into the cave and attempt to perform an ice working on Terence's sword.",
-            "If the player chooses to invite the travelers (Danita, Kian, Terence) to join her after the encounter, she will do so and they will discuss magical workings together.",
+            "If the player chooses to invite the travelers (Danita, Kian, Terence) to join her after the encounter, they will accompany Javlyn and help defeat the creature.",
+            "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight.",
+            "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight.",
             "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight."
           ]
         },
         {
-          "fact": "If the player chooses to recruit Jerrick, the aging blacksmith, he will accompany Javlyn into the cave and help defeat the monster.",
+          "fact": "If the player chooses to recruit villagers (e.g., Jerrick), they may join Javlyn in the cave and help defeat the monster.",
           "evidence": [
             {
               "passage": "85e37f7ba808",
@@ -17098,18 +17067,27 @@
             },
             {
               "passage": "b90cd2593cff",
-              "quote": "Jerrick charged towards the creature, hammer held high"
+              "quote": "They entered the cave and before Javlyn truly felt ready, they had reached the cavern."
+            },
+            {
+              "passage": "92b597d232f8",
+              "quote": "Only Jerrick, the aging blacksmith was able to overcome such a chasm and bring himself to believe that there was truth to Javlyn's tale."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "If the player chooses to recruit Jerrick, the monster can be killed by a coordinated attack",
-            "If the player chooses to continue the quest, Javlyn will confront the monster, rescue the merchant, and survive with minor injuries."
+            "If the player chooses to recruit the villagers, they may join Javlyn and Jerrick in the cave",
+            "If the player chooses to recruit the villagers, they may join Javlyn and Jerrick in the cave",
+            "If the player chooses to recruit the villagers, they may join Javlyn and Jerrick in the cave"
           ]
         },
         {
-          "fact": "If the player chooses to help the travelers, Javlyn can apply an ice-working to Terence's sword, potentially weakening the monster.",
+          "fact": "If the player chooses to apply an ice working to Terence's sword, the sword gains a cold effect that can help against the monster.",
           "evidence": [
+            {
+              "passage": "f28c48cb13cc",
+              "quote": "We can only apply it to Terence's sword"
+            },
             {
               "passage": "f28c48cb13cc",
               "quote": "When the item hits something with force, or something hits it, the working springs with the effect you want."
@@ -17122,33 +17100,37 @@
           "confidence": "medium",
           "merged_from": [
             "If the player chooses to let Terence enter the cave with the enchanted sword, the cave becomes an ice cave and the creature inside may be weakened.",
-            "If the player chooses to help the travelers, Javlyn can attempt to apply an ice-working to Terence's sword to protect against the cave monster."
+            "If the player chooses to let Terence enter the cave with the enchanted sword, the cave becomes an ice cave and the creature inside may be weakened."
           ]
         },
         {
-          "fact": "If the player chooses to join the travelers, Javlyn will be positioned at the back of the group during the cave encounter.",
+          "fact": "If the player chooses to bring food to Sikshusiks, the creature will follow and may become friendly.",
           "evidence": [
             {
-              "passage": "516ff1e73f55",
-              "quote": "The lanterns were left outside the cave, and Javlyn was carefully kept at the back of the party"
+              "passage": "ac90be98137d",
+              "quote": "\"Me go with you!\""
             },
             {
-              "passage": "b2c778e6418d",
-              "quote": "\"At the back of the line,\" Kian said."
+              "passage": "ac90be98137d",
+              "quote": "The blue creature looked back at Javlyn, sitting on the monsters chest and mouth red with blood"
             }
           ],
           "confidence": "medium",
           "merged_from": [
-            "If the player chooses to join the travelers, Javlyn will accompany them into the cave and participate in the fight.",
-            "If the player chooses to join the travelers, Javlyn will be positioned at the back of the group during the cave encounter."
+            "If Javlyn chooses to bring food, Sikshusiks will follow her.",
+            "If the player chooses to bring food, Sikshusiks will follow her."
           ]
         },
         {
-          "fact": "If the player chooses to leave the creature alone, it may eventually leave the house or cause trouble, but this outcome is not explicitly described in the provided passages.",
+          "fact": "If the player chooses to leave the creature alone, it may remain in the house or cause trouble later.",
           "evidence": [
             {
               "passage": "7eca772baf60",
               "quote": "The creature thought for a moment and then slowly nodded. It climbed up onto the laundry pile"
+            },
+            {
+              "passage": "7eca772baf60",
+              "quote": "It would be a permanent presence in her house."
             }
           ],
           "confidence": "low",
@@ -17157,127 +17139,75 @@
           ]
         },
         {
-          "fact": "If the player chooses to give the creature food, it will eat it and show a willingness to stay, indicating a potential for a friendly relationship.",
+          "fact": "If the player takes no action, Javlyn will leave the cave after defeating the monster and return home through the rain.",
           "evidence": [
             {
-              "passage": "7eca772baf60",
-              "quote": "The creature visibly salivated while nodding vigorously, resulting in it slinging drool across the laundry pile."
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player chooses to give the creature food, it will eat it and show a willingness to stay, indicating a potential for a friendly relationship."
-          ]
-        },
-        {
-          "fact": "If the player chooses to bring food, Sikshusiks will follow her.",
-          "evidence": [
-            {
-              "passage": "ac90be98137d",
-              "quote": "\"Me go with you!\""
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player chooses to bring food, Sikshusiks will follow her."
-          ]
-        },
-        {
-          "fact": "If the player chooses to help the man, the man will survive.",
-          "evidence": [
-            {
-              "passage": "56a194085bbd",
-              "quote": "She said slowly, 'My name is Javlyn... and I'm going to help you get out of here.'"
-            }
-          ],
-          "confidence": "medium",
-          "merged_from": [
-            "If the player chooses to help the man, the man will survive."
-          ]
-        },
-        {
-          "fact": "The village contains a mushroom cave that is rumored to be inhabited by a monster.",
-          "evidence": [
-            {
-              "passage": "316e561f9ddb",
-              "quote": "the \"monster moving into the mushroom cave\" rumor that had been floating around the village."
+              "passage": "032aee74fa11",
+              "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain."
             },
             {
-              "passage": "7e35fe311599",
-              "quote": "The cave's entrance was just around the corner."
-            }
-          ],
-          "confidence": "high",
-          "merged_from": [
-            "The village has a mushroom cave that is rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster",
-            "The village is located near a cliffside that contains a mushroom cave rumored to house a monster"
-          ]
-        },
-        {
-          "fact": "The monster is described as having dark red skin, tall and gangly body, a snout and horns.",
-          "evidence": [
+              "passage": "6f951461b5cb",
+              "quote": "Another time, perhaps. Javlyn left, fitting through the entrance tunnel and coming out to rain."
+            },
             {
-              "passage": "06a29200cbbb",
-              "quote": "It connected with a creature of dark red skin, tall and gangly, with a snout and horns."
+              "passage": "a2ee6099",
+              "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain."
             }
           ],
           "confidence": "high",
           "merged_from": [
-            "The monster is described as having dark red skin, tall and gangly body, a snout and horns."
+            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home",
+            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home",
+            "If the player does nothing, Javlyn will leave the cave after defeating the monster and return home"
           ]
         }
       ]
     },
     "conflicts": [
       {
-        "description": "Contradictory outcomes for whether Javlyn continues to the cave when the player takes no action.",
+        "description": "Conflicting outcomes for whether Javlyn will leave the cave after defeating the monster.",
         "facts": [
           {
-            "fact": "If the player takes no action, Javlyn will still go to the cave and encounter the monster, then leave it on the road or return home.",
+            "fact": "If the player takes no action, Javlyn will leave the cave after defeating the monster and return home through the rain.",
             "evidence": [
               {
-                "passage": "7f7c85ddcbd9",
-                "quote": "People joined her, moving the creature out of the way, and then the group headed back, making plans to celebrate at the tavern."
+                "passage": "032aee74fa11",
+                "quote": "Javlyn left, fitting through the entrance tunnel and coming out to rain."
               }
-            ],
-            "confidence": "high"
+            ]
           },
           {
-            "fact": "If the player takes no action, Javlyn will still enter the cave and encounter the monster, but she may not engage in combat.",
+            "fact": "If the player takes no action, Javlyn will remain in the cave and fight the monster, but not leave.",
             "evidence": [
               {
                 "passage": "f295816555c0",
-                "quote": "\"Attack the monster\""
+                "quote": "Attack the monster"
               }
-            ],
-            "confidence": "medium"
+            ]
           }
         ],
         "severity": "major"
       },
       {
-        "description": "Contradictory statements about whether the monster is defeated or remains.",
+        "description": "Conflicting statements about whether the traveler group joins Javlyn.",
         "facts": [
           {
-            "fact": "The monster is defeated or subdued by the group, leaving it lying on the road.",
+            "fact": "If the player chooses to join the travelers, they will accompany Javlyn into the cave and help fight the monster.",
             "evidence": [
               {
-                "passage": "7f8c85ddcbd9",
-                "quote": "Javlyn stopped, panting from the rush, \"That,\" Javlyn stopped, panting from the rush, \"was quick.\""
+                "passage": "b2c778e6418d",
+                "quote": "Join them"
               }
-            ],
-            "confidence": "high"
+            ]
           },
           {
-            "fact": "If the player takes no action, Javlyn will still encounter the monster and will be forced to flee the cave.",
+            "fact": "If the player does nothing, Javlyn will still enter the cave and the travelers will not join her.",
             "evidence": [
               {
-                "passage": "195754277a03",
-                "quote": "There was a group of three individuals. Older. Two men, one woman."
+                "passage": "b2c778e6418d",
+                "quote": "Quietly, Javlyn lit her own lantern. Watching unsure as the three gathered in a circle."
               }
-            ],
-            "confidence": "medium"
+            ]
           }
         ],
         "severity": "major"
@@ -17285,21 +17215,21 @@
     ]
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 215.91551995277405,
+  "summarization_time_seconds": 216.46704292297363,
   "extraction_stats": {
     "total_passages": 65,
     "passages_with_facts": 61,
     "passages_with_no_facts": 4,
     "average_facts_per_passage": 6.92,
-    "character_coverage": 6,
+    "character_coverage": 8,
     "fact_distribution": {
-      "world_rules": 13,
-      "setting": 13,
-      "timeline": 5,
-      "character_identity": 7,
-      "variables": 14
+      "world_rules": 11,
+      "setting": 10,
+      "timeline": 9,
+      "character_identity": 15,
+      "variables": 9
     },
     "extraction_success_rate": 0.938,
-    "deduplication_effectiveness": 0.884
+    "deduplication_effectiveness": 0.88
   }
 }
