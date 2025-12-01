@@ -200,7 +200,7 @@ Writers creating branching narratives need a canonical reference that captures e
 
 ### Complete Entity Detection
 
-**Goal:** Capture 100% of named entities in the story, regardless of how they're mentioned.
+**Goal:** Capture 85-90% of named entities in the story, regardless of how they're mentioned. This target reflects realistic AI capabilities for entity extraction while prioritizing high recall (better to include borderline entities than miss clear ones).
 
 **Detection includes:**
 
@@ -483,6 +483,27 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 
 ---
 
+### Edge Case 13: Missed Entity Detection
+**Scenario:** AI fails to detect a named character (within the 10-15% expected miss rate)
+
+**What You See:**
+- Story Bible doesn't list the character you know exists
+- Character appears in source files but not in Story Bible output
+
+**What You Can Do:**
+- Report missed entity via GitHub issue or PR comment
+- Development team can manually add to extraction results
+- Future extraction runs may catch previously missed entities as AI improves
+- Prioritize reporting characters with multiple mentions over single mentions
+
+**System Behavior:**
+- Extraction prioritizes recall over precision (better to include borderline entities)
+- 85-90% detection rate is realistic for AI-based entity extraction
+- Missed entities don't invalidate the usefulness of captured ones
+- Manual verification and additions remain available
+
+---
+
 ## Success Metrics
 
 **Primary Metrics:**
@@ -497,7 +518,9 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - Includes characters mentioned only in dialogue ("when Marcie was with us")
 - Includes characters in possessive form ("Miss Rosie's beef stew")
 - Includes characters in indirect references ("Josie fell out of a tree")
-- Target: 100% of named entities extracted from prose
+- Target: 85-90% of named entities extracted from prose
+- Missed entities can be reported and manually added if needed
+- System prioritizes recall over precision (include borderline entities rather than miss clear ones)
 
 **Quality Indicators:**
 - Fact distribution balanced (not 95% one type)
@@ -531,14 +554,16 @@ Use this webhook command (as a PR comment) to trigger Story Bible extraction and
 - [ ] Clear distinction between constants and variables
 - [ ] Zero action state documented for each character
 
-### Entity Detection (100% Goal)
-- [ ] ALL named characters captured (including dialogue-only, possessive, indirect)
+### Entity Detection (85-90% Target)
+- [ ] Named characters captured with 85-90% recall rate (including dialogue-only, possessive, indirect)
 - [ ] Characters in dialogue captured ("when Marcie was with us")
 - [ ] Characters in possessive form captured ("Miss Rosie's beef stew")
 - [ ] Characters in indirect references captured ("Josie fell out of a tree")
 - [ ] Titles preserved in names ("Miss Rosie", not "Rosie")
 - [ ] Minimal information acceptable (entities appear even if mentioned once)
 - [ ] Each entity shows ALL passages where mentioned (by passage name)
+- [ ] Missed entities can be reported and manually addressed
+- [ ] System prioritizes recall over precision (includes borderline cases)
 
 ### Deduplication
 - [ ] Identical facts merged with combined evidence

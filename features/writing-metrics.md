@@ -12,10 +12,17 @@ Writers need quantitative insights into their writing output and patterns. This 
 
 **Key Capabilities:**
 - Calculate total word counts across the entire story
-- Compute per-passage and per-file statistics (min/mean/median/max word counts)
-- Show word count distributions (bucketed ranges)
-- Identify longest passages and files
+- Compute aggregate passage statistics (min/mean/median/max word counts)
+- Compute aggregate file statistics (min/mean/median/max word counts per file)
+- Show word count distributions (fixed ranges: 0-100, 101-300, 301-500, 501-1000, 1000+)
+- Identify top 5 longest passages
 - View metrics on any device with a browser
+
+**Scope (MVP):**
+- Single aggregate view showing all files and passages
+- No per-author filtering or drill-down
+- No per-file detailed breakdowns
+- Simple, comprehensive overview of entire project
 
 **Output Format:**
 - **HTML**: Persistent metrics view generated automatically on every build
@@ -82,6 +89,8 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 - What's the overall structure and scale?
 
 **Why This Matters:** In collaborative projects, authors need to understand the project's overall scope and structure.
+
+**Scope (MVP):** Single aggregate view showing all files combined. No per-author filtering or individual author breakdowns. Writers see the project as a whole, not segmented by contributor.
 
 ---
 
@@ -167,11 +176,11 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 **So that** I can identify patterns and outliers
 
 **Acceptance Criteria:**
-- Distribution shows passage counts in meaningful ranges (e.g., 0-100, 101-300, 301-500, 501-1000, 1000+)
-- Distribution shows file counts in meaningful ranges
+- Distribution shows passage counts in fixed ranges: 0-100, 101-300, 301-500, 501-1000, 1000+
+- Distribution shows file counts in same ranges: 0-100, 101-300, 301-500, 501-1000, 1000+
 - Clear labels for each range
 - Counts are accurate
-- Ranges chosen to be useful for identifying structure issues
+- Ranges identify common structure patterns (short passages, medium passages, long passages, very long passages)
 
 ---
 
@@ -181,10 +190,10 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 **So that** I can identify candidates for splitting or refactoring
 
 **Acceptance Criteria:**
-- Command shows top N longest passages (default: top 5)
+- Shows top 5 longest passages (fixed, not configurable)
 - Each entry shows passage name, word count, and source file
 - Passages sorted by word count (descending)
-- Clear threshold indicator (e.g., "passages over 1000 words")
+- Clear heading: "Top 5 Longest Passages"
 - Helps identify outliers quickly
 
 ---
@@ -220,15 +229,17 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 
 **Content Sections:**
 1. **Word Count Summary** - Total word count, files analyzed, passage count
-2. **Passage Statistics** - Count, min/mean/median/max word counts per passage
-3. **File Statistics** - Count, min/mean/median/max word counts per file
-4. **Distribution** - Passage and file counts by word count ranges (table or visual representation)
-5. **Top Passages** - Longest passages with names and counts
+2. **Passage Statistics** - Count, min/mean/median/max word counts (aggregate across all passages)
+3. **File Statistics** - Count, min/mean/median/max word counts (aggregate across all files)
+4. **Distribution** - Passage and file counts by fixed word count ranges: 0-100, 101-300, 301-500, 501-1000, 1000+
+5. **Top 5 Passages** - Five longest passages with names, word counts, and source files
 
-**Comprehensive View:**
-- HTML shows metrics for ALL story files
+**Single Aggregate View (MVP):**
+- HTML shows metrics for ALL story files combined
 - Provides complete overview of the entire project
-- No filtering needed—see everything at a glance
+- No per-author filtering or drill-down UI
+- No per-file detailed views (only aggregate file statistics)
+- Simple, comprehensive view of project as a whole
 
 **Format Characteristics:**
 - Basic, readable HTML (similar to Paperthin's simplicity)
@@ -321,9 +332,9 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 
 **Behavior:**
 - Statistics accurately reflect actual word counts
-- Top passages list shows these outliers
-- Distribution may show custom bucket (e.g., "2000+", "5000+")
-- No artificial limits or truncation
+- Top 5 passages list shows these outliers
+- Distribution uses 1000+ bucket for all passages above 1000 words
+- No artificial limits or truncation in reported word counts
 
 ---
 
@@ -400,18 +411,19 @@ This tool helps writers answer questions like "How much have I written?" and "Wh
 - [ ] Metrics calculate total word count across all story files
 - [ ] Word count excludes special files (StoryData, StoryTitle, StoryStyles)
 - [ ] Word count excludes Harlowe syntax (macros, links, HTML)
-- [ ] Passage statistics computed: count, min, mean, median, max
-- [ ] File statistics computed: count, min, mean, median, max
-- [ ] Distribution shows passage and file counts by word count ranges
+- [ ] Passage statistics computed: count, min, mean, median, max (aggregate view)
+- [ ] File statistics computed: count, min, mean, median, max (aggregate view)
+- [ ] Distribution shows passage and file counts by fixed ranges: 0-100, 101-300, 301-500, 501-1000, 1000+
+- [ ] Top 5 longest passages displayed (fixed, not configurable)
 
 ### HTML Output
 - [ ] HTML file generated on every build
 - [ ] Published to GitHub Pages as `/metrics.html`
-- [ ] Shows all metric sections (summary, statistics, distribution, top passages)
+- [ ] Shows all metric sections (summary, statistics, distribution, top 5 passages)
 - [ ] Updates automatically with each build
 - [ ] Basic, readable HTML format
 - [ ] Accessible on any device with a browser
-- [ ] Shows metrics for all story files
+- [ ] Shows single aggregate view of all story files (no per-author or per-file drill-downs)
 - [ ] Clear section headers and labels
 - [ ] Statistics properly formatted and easy to read
 
