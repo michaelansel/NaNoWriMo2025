@@ -137,20 +137,7 @@ Per PRIORITIES.md Phase 3, these specialists will join the team later:
 
 ---
 
-### Story 4: Writer Approving Valid Paths
-**As a** writer who has reviewed Team feedback
-**I want** to mark paths as validated so they're not re-checked
-**So that** future validations run faster and focus on new content
-
-**Acceptance Criteria:**
-- Can approve paths with `/approve-path` command
-- Approved paths skipped in future validations
-- Validation cache updated automatically
-- Approved paths re-checked only if content changes
-
----
-
-### Story 5: Understanding Team Member Feedback
+### Story 4: Understanding Team Member Feedback
 **As a** writer reviewing validation results
 **I want** to know which team member flagged each issue
 **So that** I understand the nature of the problem (path consistency vs. world canon)
@@ -173,7 +160,7 @@ Per PRIORITIES.md Phase 3, these specialists will join the team later:
 
 ### Secondary Metrics
 - **Validation efficiency:** New-only mode ~60% faster than full validation
-- **Path approval rate:** Writers approve and dismiss issues regularly
+- **Mode usage patterns:** Writers use appropriate modes for their workflow
 - **False positive rate:** Low rate of incorrect issue flagging
 - **Writer confidence:** Writers trust Team feedback and act on it
 
@@ -194,13 +181,6 @@ Per PRIORITIES.md Phase 3, these specialists will join the team later:
 - [ ] Issue location information (passage IDs) provided
 - [ ] Three validation modes available (new-only/modified/all)
 - [ ] Content-based change detection accurately categorizes paths
-
-**Path Approval Workflow:**
-- [ ] Writers can approve paths with `/approve-path` command
-- [ ] Approved paths skipped in future validations
-- [ ] Validation cache updated automatically on approval
-- [ ] Approved paths re-checked only if content changes
-- [ ] Path approval requires repository collaborator permissions
 
 **Error Handling:**
 - [ ] Service downtime does not block PR merges (validation is informational)
@@ -228,9 +208,8 @@ Per PRIORITIES.md Phase 3, these specialists will join the team later:
 /check-continuity new-only     # Explicitly specify new-only mode
 /check-continuity modified     # Validate NEW + MODIFIED paths
 /check-continuity all          # Validate everything (full audit)
-/approve-path <path-id>        # Mark path as validated
 ```
-Use these webhook commands (as PR comments) to trigger Team validation or approve paths.
+Use these webhook commands (as PR comments) to trigger Team validation.
 
 ---
 
@@ -339,16 +318,15 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
    - Organized by team member - each specialist has their own section
    - Lists issues found in each path with severity and quotes
    - Provides summary statistics (paths checked, issues found)
-   - Writers can respond with `/approve-path` command
 
 2. **Validation Cache (Status Tracking)**
    - Validation status stored in `allpaths-validation-status.json`
-   - Tracks which paths have been validated
+   - Tracks which paths have been validated in each PR
    - Status displayed in AllPaths HTML as badges
-   - "Validated" badge: Path has been reviewed and approved
-   - "New" badge: Path has not yet been validated
+   - Paths automatically marked as validated after Team review
+   - Cache invalidates when content changes (content-based fingerprinting)
 
-**Note:** The internal categorization (NEW/MODIFIED/UNCHANGED) is used by the Team to determine what to validate, but is not displayed in the HTML. The HTML shows validation status (validated or not) and date filters for progress tracking.
+**Note:** The internal categorization (NEW/MODIFIED/UNCHANGED) is used by the Team to determine what to validate, but is not displayed in the HTML. The HTML shows validation status and date filters for progress tracking.
 
 ---
 
@@ -384,9 +362,6 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
   - Evidence quotes from both sources
   - Suggested resolution actions
 
-**Path approval instructions:**
-- How to approve the path if issues are acceptable
-
 **Validation complete:**
 - Summary statistics (paths validated, paths skipped)
 - Results breakdown by severity level per team member
@@ -394,29 +369,17 @@ Eventually you want those MODIFIED paths checked. Even though the routes existed
 
 ---
 
-### Path Approval Workflow
+## Design Decisions
 
-**Writer reviews Team feedback and replies:**
-```
-Timeline issue is acceptable for story flow.
-/approve-path a3f8b912
-```
+### Why No Manual Path Approval?
 
-**Service responds:**
-1. Verifies writer is repository collaborator
-2. Downloads validation cache from PR artifacts
-3. Marks path as validated
-4. Commits updated cache to PR branch
-5. Posts confirmation:
+The validation modes (new-only/modified/all) already handle incremental checking automatically:
+- **Content-based change detection** means unchanged paths aren't re-validated
+- If you want to re-check specific paths, use `modified` mode (checks changed content)
+- If you need full audit, use `all` mode
+- No manual approval workflow needed - the system automatically tracks what needs validation based on content changes
 
-```markdown
-✅ Successfully validated 1 path(s) by @username
-
-**Approved paths:**
-- `a3f8b912` (Start → Continue on → Cave → Victory)
-
-These paths won't be re-checked unless their content changes.
-```
+This keeps the workflow simple: write content, run validation in the appropriate mode, fix issues. No additional approval step required.
 
 ---
 
@@ -427,14 +390,15 @@ These paths won't be re-checked unless their content changes.
 
 **Current Behavior:**
 - Issue appears in team member's section of PR comment
-- Writer must evaluate and dismiss
+- Writer evaluates and makes judgment call
 
 **Desired Behavior:**
-- Writer can approve path with `/approve-path` to skip future checks
-- Can add comment explaining why issue is acceptable
-- Path marked as validated in cache
+- Writer reviews feedback and decides whether to act
+- If issue is acceptable (intentional mystery, artistic choice), writer can proceed without changes
+- Team provides information, writer makes final decision
+- Path won't be re-checked unless content changes (handled by validation modes automatically)
 
-**Status:** Handled by approval workflow
+**Status:** Working as intended - Team is advisory, not blocking
 
 ---
 
@@ -582,8 +546,8 @@ See [architecture/002-validation-cache.md](../architecture/002-validation-cache.
 
 ### Risk 4: False Positives Erode Trust
 **Impact:** Medium - writers ignore Team if too many wrong flags
-**Mitigation:** Iterate on prompt quality, make approval workflow easy
-**Fallback:** Writers can always approve and move on
+**Mitigation:** Iterate on prompt quality, keep feedback actionable and accurate
+**Fallback:** Team is advisory only - writers make final decisions
 
 ---
 
@@ -629,7 +593,6 @@ Per PRIORITIES.md, these specialists will join the team in Phase 3:
 - [x] Clear, actionable feedback with specific quotes
 - [x] Severity categorization (none/minor/major/critical)
 - [x] Three validation modes (new-only/modified/all)
-- [x] Path approval workflow working
 - [x] Content-based change detection accurate
 - [x] Zero continuity errors merged to main
 - [x] PR comments organized by team member
@@ -658,7 +621,7 @@ Per PRIORITIES.md, these specialists will join the team in Phase 3:
 - **Random passage IDs:** Dramatically improved AI accuracy
 - **Selective validation modes:** Fast feedback for daily work, thorough validation when needed
 - **Real-time progress updates:** Writers see results as paths complete, can start fixing while validation continues
-- **Approval workflow:** Easy to mark paths as validated and move on
+- **Automatic cache invalidation:** Content-based change detection means paths are re-validated only when needed
 - **Team member organization:** Clear separation helps writers understand nature of each issue
 
 ### What Could Be Better
