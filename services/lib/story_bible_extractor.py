@@ -624,6 +624,112 @@ def parse_passages_from_allpaths(allpaths_content: str, mapping: Dict[str, str])
     return passages
 
 
+def load_passages_from_core_library(metadata_dir: Path) -> Optional[List[Dict]]:
+    """
+    Load passages from core library artifacts (passages_deduplicated.json).
+
+    This is the PRIMARY passage loading method. Falls back to AllPaths format
+    if core library artifacts are not available.
+
+    Args:
+        metadata_dir: Directory containing passages_deduplicated.json
+
+    Returns:
+        List of passages in format:
+        [
+          {
+            "passage_id": "Start",
+            "content": "Passage text...",
+            "content_hash": "abc123..."
+          }
+        ]
+        Returns None if core library artifacts not available (triggers fallback).
+
+    Raises:
+        No exceptions - returns None on any error to allow fallback
+    """
+    try:
+        # Look for core library artifact in metadata_dir
+        artifacts_file = metadata_dir / "passages_deduplicated.json"
+
+        if not artifacts_file.exists():
+            logging.info("Core library artifacts not found, will fall back to AllPaths format")
+            return None
+
+        logging.info(f"Found core library artifacts at {artifacts_file}")
+
+        # Load and parse JSON
+        with open(artifacts_file, 'r') as f:
+            data = json.load(f)
+
+        # Extract passages
+        passages = []
+        for passage in data.get('passages', []):
+            passages.append({
+                'passage_id': passage['name'],
+                'content': passage['content'],
+                'content_hash': passage['content_hash'],
+                'source': 'core_library'
+            })
+
+        logging.info(f"Loaded {len(passages)} passages from core library")
+        return passages
+
+    except json.JSONDecodeError as e:
+        logging.warning(f"Invalid JSON in core library artifacts: {e}, falling back to AllPaths")
+        return None
+    except Exception as e:
+        logging.warning(f"Error loading core library artifacts: {e}, falling back to AllPaths")
+        return None
+
+
+def get_passages_to_extract_v2(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:
+    """
+    Identify which passages need fact extraction based on cache and mode.
+
+    NEW VERSION: Prioritizes core library artifacts, falls back to AllPaths.
+
+    Args:
+        cache: Story Bible cache dict
+        metadata_dir: Directory containing core library artifacts or allpaths-metadata files
+        mode: 'incremental' (only new/changed) or 'full' (all passages)
+
+    Returns:
+        List of (passage_id, passage_file, passage_content) tuples to process
+    """
+    passages_to_process = []
+
+    # PRIMARY: Try core library artifacts first
+    passages = load_passages_from_core_library(metadata_dir)
+
+    if passages:
+        # SUCCESS: Use core library artifacts
+        logging.info("Using core library passages for extraction")
+
+        for passage in passages:
+            passage_id = passage['passage_id']
+            passage_content = passage['content']
+            content_hash = passage['content_hash']
+
+            # Check cache for this passage
+            cached_extraction = cache.get('passage_extractions', {}).get(passage_id)
+
+            if mode == 'full':
+                # Force re-extraction regardless of cache
+                passages_to_process.append((passage_id, passage_id, passage_content))
+            elif mode == 'incremental':
+                # Only extract if new or changed
+                if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
+                    passages_to_process.append((passage_id, passage_id, passage_content))
+
+        logging.info(f"Selected {len(passages_to_process)} passages for extraction from core library (mode: {mode})")
+        return passages_to_process
+
+    # FALLBACK: Use existing AllPaths-based loading
+    logging.info("Core library not available, using AllPaths fallback")
+    return get_passages_to_extract(cache, metadata_dir, mode)
+
+
 def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:
     """
     Identify which passages need fact extraction based on cache and mode.

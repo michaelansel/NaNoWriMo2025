@@ -977,5 +977,134 @@ Paragraph 2.
         self.assertNotIn("\n\n\n", content)
 
 
+class TestLoadFromCoreLibrary(unittest.TestCase):
+    """Test loading passages from core library artifacts (passages_deduplicated.json)."""
+
+    def test_loads_from_core_library_when_available(self):
+        """Should load passages from passages_deduplicated.json when available."""
+        import tempfile
+        import os
+
+        # Create temp directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create core library artifact
+            core_artifacts = {
+                "passages": [
+                    {
+                        "name": "Start",
+                        "content": "Welcome to the story...",
+                        "content_hash": "abc123"
+                    },
+                    {
+                        "name": "Middle",
+                        "content": "The story continues...",
+                        "content_hash": "def456"
+                    }
+                ]
+            }
+
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            with open(artifacts_file, 'w') as f:
+                json.dump(core_artifacts, f)
+
+            # Import the function we'll test
+            from story_bible_extractor import load_passages_from_core_library
+
+            # Load passages
+            passages = load_passages_from_core_library(temp_path)
+
+            # Verify
+            self.assertEqual(len(passages), 2)
+            self.assertEqual(passages[0]["passage_id"], "Start")
+            self.assertEqual(passages[0]["content"], "Welcome to the story...")
+            self.assertEqual(passages[1]["passage_id"], "Middle")
+            self.assertEqual(passages[1]["content"], "The story continues...")
+
+    def test_falls_back_to_allpaths_when_core_library_missing(self):
+        """Should fall back to AllPaths format when core library not available."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create AllPaths files (no core library)
+            allpaths_file = temp_path / "allpaths.txt"
+            allpaths_file.write_text("""
+[PASSAGE: 74657374]
+:: test
+Test content
+""")
+
+            mapping_file = temp_path / "allpaths-passage-mapping.json"
+            with open(mapping_file, 'w') as f:
+                json.dump({"74657374": "test"}, f)
+
+            # Import function
+            from story_bible_extractor import load_passages_from_core_library
+
+            # Should return None (indicating fallback needed)
+            passages = load_passages_from_core_library(temp_path)
+
+            self.assertIsNone(passages)
+
+    def test_returns_none_when_json_invalid(self):
+        """Should return None when passages_deduplicated.json is invalid."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create invalid JSON file
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            artifacts_file.write_text("{ invalid json }")
+
+            from story_bible_extractor import load_passages_from_core_library
+
+            passages = load_passages_from_core_library(temp_path)
+
+            self.assertIsNone(passages)
+
+    def test_deduplicates_passages_by_content_hash(self):
+        """Should use content_hash to identify unchanged passages from cache."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create core library artifact
+            core_artifacts = {
+                "passages": [
+                    {
+                        "name": "Start",
+                        "content": "Welcome to the story...",
+                        "content_hash": "abc123"
+                    }
+                ]
+            }
+
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            with open(artifacts_file, 'w') as f:
+                json.dump(core_artifacts, f)
+
+            # Create cache with same content_hash
+            cache = {
+                'passage_extractions': {
+                    'Start': {
+                        'content_hash': 'abc123',  # Same hash = unchanged
+                        'entities': {'characters': ['TestChar']}
+                    }
+                }
+            }
+
+            from story_bible_extractor import get_passages_to_extract_v2
+
+            # Should return empty list (passage unchanged)
+            passages = get_passages_to_extract_v2(cache, temp_path, mode='incremental')
+
+            self.assertEqual(len(passages), 0)
+
+
 if __name__ == '__main__':
     unittest.main()

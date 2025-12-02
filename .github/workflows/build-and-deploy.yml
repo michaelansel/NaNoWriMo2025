@@ -135,6 +135,7 @@ jobs:
           name: story-preview
           path: |
             dist/
+            lib/artifacts/
             allpaths-validation-status.json
           retention-days: 30
 

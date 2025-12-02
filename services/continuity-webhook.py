@@ -1431,7 +1431,7 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
         extract_facts_from_passage,
         extract_facts_from_passage_with_chunking,
         categorize_all_facts,
-        get_passages_to_extract,
+        get_passages_to_extract_v2,
         run_summarization,
         calculate_metrics
     )
@@ -1516,8 +1516,17 @@ Running AI summarization to deduplicate and merge facts...
                     post_pr_comment(pr_number, "⚠️ No allpaths-metadata found in artifacts. Please ensure the build completed successfully.")
                     return
 
-                # Identify passages to extract
-                passages_to_extract = get_passages_to_extract(cache, metadata_dir, mode)
+                # Copy core library artifacts to metadata_dir if available
+                core_artifacts_source = tmpdir_path / "lib" / "artifacts" / "passages_deduplicated.json"
+                if core_artifacts_source.exists():
+                    import shutil
+                    app.logger.info(f"[Story Bible] Copying core library artifacts to metadata directory")
+                    shutil.copy(core_artifacts_source, metadata_dir / "passages_deduplicated.json")
+                else:
+                    app.logger.info(f"[Story Bible] Core library artifacts not found, will use AllPaths fallback")
+
+                # Identify passages to extract (using new version with core library support)
+                passages_to_extract = get_passages_to_extract_v2(cache, metadata_dir, mode)
 
                 if not passages_to_extract:
                     post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
