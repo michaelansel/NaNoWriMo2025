@@ -18,8 +18,7 @@ from story_bible_extractor import (
     parse_json_from_response,
     categorize_all_facts,
     extract_character_name,
-    chunk_passage,
-    parse_passages_from_allpaths
+    chunk_passage
 )
 
 # Add formats/story-bible/modules to path for ai_summarizer tests
@@ -789,194 +788,6 @@ class TestEntityExtraction(unittest.TestCase):
         self.assertEqual(characters[0]['mentions'][0]['context'], 'narrative')
 
 
-class TestParsePassagesFromAllpaths(unittest.TestCase):
-    """Test parsing passages from AllPaths output."""
-
-    def test_parses_single_passage(self):
-        """Should parse single passage with hex ID translation."""
-        allpaths_content = """
-[PATH 1/1]
-
-========================================
-[PASSAGE: 6c6f636b65642d726f6f6d]
-========================================
-
-:: locked-room
-You try the door. Locked.
-
-[[Try to pick the lock|lockpicking]]
-"""
-        mapping = {
-            "6c6f636b65642d726f6f6d": "locked-room"
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "locked-room")
-        self.assertEqual(result[0]["hex_id"], "6c6f636b65642d726f6f6d")
-        self.assertIn(":: locked-room", result[0]["content"])
-        self.assertNotIn("====", result[0]["content"])  # Separators removed
-
-    def test_deduplicates_passages(self):
-        """Should process each passage only once even if appears in multiple paths."""
-        allpaths_content = """
-[PATH 1/2]
-[PASSAGE: 68616c6c776179]
-:: hallway
-You are in a hallway.
-
-[PATH 2/2]
-[PASSAGE: 68616c6c776179]
-:: hallway
-You are in a hallway.
-"""
-        mapping = {
-            "68616c6c776179": "hallway"
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        # Should only return one passage (deduplicated)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "hallway")
-
-    def test_parses_multiple_passages(self):
-        """Should parse multiple different passages."""
-        allpaths_content = """
-[PASSAGE: 68616c6c776179]
-:: hallway
-You are in a hallway.
-
-[PASSAGE: 6c6f636b65642d726f6f6d]
-:: locked-room
-The door is locked.
-"""
-        mapping = {
-            "68616c6c776179": "hallway",
-            "6c6f636b65642d726f6f6d": "locked-room"
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 2)
-        passage_ids = {p["passage_id"] for p in result}
-        self.assertEqual(passage_ids, {"hallway", "locked-room"})
-
-    def test_skips_unmapped_hex_ids(self):
-        """Should skip passages with hex IDs not in mapping."""
-        allpaths_content = """
-[PASSAGE: 68616c6c776179]
-:: hallway
-Content here.
-
-[PASSAGE: 756e6b6e6f776e]
-:: unknown
-This should be skipped.
-"""
-        mapping = {
-            "68616c6c776179": "hallway"
-            # "756e6b6e6f776e" not in mapping
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "hallway")
-
-    def test_strips_separator_lines(self):
-        """Should remove separator lines (=== markers)."""
-        allpaths_content = """
-========================================
-[PASSAGE: 74657374]
-========================================
-
-:: test
-Content here.
-
-========================================
-"""
-        mapping = {"74657374": "test"}
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        content = result[0]["content"]
-        self.assertNotIn("====", content)
-        self.assertIn(":: test", content)
-        self.assertIn("Content here.", content)
-
-    def test_skips_empty_passages(self):
-        """Should skip passages with empty content after cleaning."""
-        allpaths_content = """
-[PASSAGE: 656d707479]
-========================================
-
-[PASSAGE: 76616c6964]
-:: valid
-Real content.
-"""
-        mapping = {
-            "656d707479": "empty",
-            "76616c6964": "valid"
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        # Should only have 'valid' passage
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "valid")
-
-    def test_handles_empty_allpaths_content(self):
-        """Should handle empty AllPaths content gracefully."""
-        result = parse_passages_from_allpaths("", {})
-        self.assertEqual(len(result), 0)
-
-    def test_preserves_passage_content_structure(self):
-        """Should preserve passage content including Twee markup."""
-        allpaths_content = """
-[PASSAGE: 74657374]
-:: test-passage
-You see a door.
-
-<<if $hasKey>>
-[[Unlock door|next]]
-<<else>>
-The door is locked.
-<</if>>
-"""
-        mapping = {"74657374": "test-passage"}
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        content = result[0]["content"]
-        self.assertIn(":: test-passage", content)
-        self.assertIn("<<if $hasKey>>", content)
-        self.assertIn("[[Unlock door|next]]", content)
-
-    def test_cleans_excessive_blank_lines(self):
-        """Should reduce multiple consecutive blank lines to double newline."""
-        allpaths_content = """
-[PASSAGE: 74657374]
-:: test
-
-
-Paragraph 1.
-
-
-
-Paragraph 2.
-"""
-        mapping = {"74657374": "test"}
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        content = result[0]["content"]
-        # Should not have 3+ consecutive newlines
-        self.assertNotIn("\n\n\n", content)
-
-
 class TestLoadFromCoreLibrary(unittest.TestCase):
     """Test loading passages from core library artifacts (passages_deduplicated.json)."""
 
@@ -1022,29 +833,18 @@ class TestLoadFromCoreLibrary(unittest.TestCase):
             self.assertEqual(passages[1]["passage_id"], "Middle")
             self.assertEqual(passages[1]["content"], "The story continues...")
 
-    def test_falls_back_to_allpaths_when_core_library_missing(self):
-        """Should fall back to AllPaths format when core library not available."""
+    def test_returns_none_when_core_library_missing(self):
+        """Should return None when core library artifacts not found."""
         import tempfile
 
         with tempfile.TemporaryDirectory() as temp_dir:
             temp_path = Path(temp_dir)
 
-            # Create AllPaths files (no core library)
-            allpaths_file = temp_path / "allpaths.txt"
-            allpaths_file.write_text("""
-[PASSAGE: 74657374]
-:: test
-Test content
-""")
+            # No core library artifacts created - directory is empty
 
-            mapping_file = temp_path / "allpaths-passage-mapping.json"
-            with open(mapping_file, 'w') as f:
-                json.dump({"74657374": "test"}, f)
-
-            # Import function
             from story_bible_extractor import load_passages_from_core_library
 
-            # Should return None (indicating fallback needed)
+            # Should return None when artifacts missing
             passages = load_passages_from_core_library(temp_path)
 
             self.assertIsNone(passages)

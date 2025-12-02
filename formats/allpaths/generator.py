@@ -458,22 +458,24 @@ def main() -> None:
     print(f"Loaded validation cache with {len(validation_cache)} entries", file=sys.stderr)
 
     # Determine git base ref for comparison
-    # Priority order:
-    # 1. GITHUB_MERGE_BASE (PR context with proper isolation) - preferred
-    # 2. origin/GITHUB_BASE_REF (PR context fallback) - may include concurrent main changes
-    # 3. HEAD (local development) - detects uncommitted changes
+    # Two explicit contexts - no automatic fallback:
+    # 1. PR context: GITHUB_MERGE_BASE must be set (workflow calculates it)
+    # 2. Local context: Use HEAD (no env vars set)
     merge_base = os.getenv('GITHUB_MERGE_BASE')
+    github_base_ref = os.getenv('GITHUB_BASE_REF')
+
     if merge_base:
-        # GitHub Actions PR context - use merge base for proper scope isolation
+        # PR context with proper merge base - use it for accurate categorization
         base_ref = merge_base
-        print(f"Using git base ref: {base_ref} (merge base - isolates PR changes)", file=sys.stderr)
-    elif os.getenv('GITHUB_BASE_REF'):
-        # Fallback to origin/base_branch if merge base not available
-        base_ref = f"origin/{os.getenv('GITHUB_BASE_REF')}"
-        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF - may include concurrent main changes)", file=sys.stderr)
-        print(f"[WARN] GITHUB_MERGE_BASE not set, categorization may include changes from main", file=sys.stderr)
+        print(f"Using git base ref: {base_ref} (PR merge base)", file=sys.stderr)
+    elif github_base_ref:
+        # PR context but merge base not calculated - this is a workflow error
+        print(f"[ERROR] GITHUB_BASE_REF is set ({github_base_ref}) but GITHUB_MERGE_BASE is not.", file=sys.stderr)
+        print(f"[ERROR] The GitHub Actions workflow must calculate merge base for accurate categorization.", file=sys.stderr)
+        print(f"[ERROR] Add: MERGE_BASE=$(git merge-base HEAD origin/$GITHUB_BASE_REF)", file=sys.stderr)
+        sys.exit(1)
     else:
-        # Local context - use HEAD to detect uncommitted changes
+        # Local development context - use HEAD to detect uncommitted changes
         base_ref = 'HEAD'
         print(f"Using git base ref: {base_ref} (local development)", file=sys.stderr)
 
