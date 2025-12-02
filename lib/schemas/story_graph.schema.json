@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanowrimo2025.example.com/schemas/story_graph.json",
+  "title": "Story Graph",
+  "description": "Complete story structure with passages, links, and metadata",
+  "type": "object",
+  "required": ["passages", "start_passage", "metadata"],
+  "properties": {
+    "passages": {
+      "type": "object",
+      "description": "Map of passage names to passage data",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "required": ["content", "links"],
+          "properties": {
+            "content": {
+              "type": "string",
+              "description": "Raw passage content with Twee markup"
+            },
+            "links": {
+              "type": "array",
+              "description": "List of passage names this passage links to",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "start_passage": {
+      "type": "string",
+      "description": "Name of the starting passage"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Story metadata from Tweego HTML",
+      "required": ["story_title", "ifid", "format", "format_version"],
+      "properties": {
+        "story_title": {
+          "type": "string",
+          "description": "Title of the story"
+        },
+        "ifid": {
+          "type": "string",
+          "description": "Interactive Fiction ID"
+        },
+        "format": {
+          "type": "string",
+          "description": "Story format (e.g., Harlowe)"
+        },
+        "format_version": {
+          "type": "string",
+          "description": "Story format version"
+        }
+      }
+    }
+  }
+}

@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Interactive fiction project for NaNoWriMo 2025",
   "scripts": {
-    "build": "npm run build:main && npm run build:proofread && npm run build:allpaths && npm run build:metrics && npm run build:story-bible",
+    "build": "npm run build:core && npm run build:main && npm run build:proofread && npm run build:allpaths && npm run build:metrics && npm run build:story-bible",
+    "build:core": "./scripts/build-core.sh",
     "build:main": "tweego src -o dist/index.html --format=harlowe-3.3.9",
     "build:proofread": "tweego src -o dist/proofread.html --format=paperthin-1.0.0",
     "build:allpaths": "./scripts/build-allpaths.sh",
