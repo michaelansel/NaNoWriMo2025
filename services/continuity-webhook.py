@@ -51,6 +51,13 @@ from story_bible_validator import (
     merge_validation_results
 )
 
+# Import shared state for cross-worker coordination (supports multiple gunicorn workers)
+from shared_state import (
+    get_shared_state,
+    FileCancellationEvent,
+    JobInfo
+)
+
 # Configuration (from environment variables)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
@@ -598,12 +605,26 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
         artifacts_url: URL to fetch workflow artifacts
         mode: Validation mode ('new-only', 'modified', 'all')
     """
-    cancel_event = threading.Event()
+    # Use file-based cancellation event for cross-worker support
+    cancel_event = FileCancellationEvent(workflow_id)
 
     try:
         app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number} with mode={mode}")
 
-        # Track this job
+        # Register job with shared state (for cross-worker coordination)
+        shared_state = get_shared_state()
+        job_info = JobInfo(
+            workflow_id=workflow_id,
+            pr_number=pr_number,
+            operation_type='continuity',
+            status='initializing',
+            start_time=time.time()
+        )
+        existing_job = shared_state.register_job(job_info)
+        if existing_job:
+            app.logger.info(f"[Background] Found existing job {existing_job} for PR #{pr_number}, will be cancelled")
+
+        # Also track locally for this worker (for progress updates and status endpoint)
         with metrics_lock:
             active_jobs[workflow_id] = {
                 "pr_number": pr_number,
@@ -954,7 +975,10 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
             app.logger.info(f"[Background] Successfully posted continuity check results to PR #{pr_number}")
 
-            # Mark job as complete
+            # Mark job as complete (shared state for cross-worker coordination)
+            shared_state.complete_job(workflow_id, 'completed')
+
+            # Also update local state
             with metrics_lock:
                 if workflow_id in active_jobs:
                     job_info = active_jobs.pop(workflow_id)
@@ -974,18 +998,22 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
     except Exception as e:
         app.logger.error(f"[Background] Error processing webhook: {e}", exc_info=True)
 
-        # Mark job as failed
+        # Mark job as failed/cancelled (shared state for cross-worker coordination)
+        final_status = "cancelled" if "Job cancelled" in str(e) else "failed"
+        shared_state.complete_job(workflow_id, final_status)
+
+        # Also update local state
         with metrics_lock:
             if workflow_id in active_jobs:
                 job_info = active_jobs.pop(workflow_id)
-                job_info["status"] = "failed" if "Job cancelled" not in str(e) else "cancelled"
+                job_info["status"] = final_status
                 job_info["error"] = str(e)
                 job_info["end_time"] = datetime.now()
                 job_info["duration_seconds"] = (job_info["end_time"] - job_info["start_time"]).total_seconds()
                 job_history.append(job_info)
                 if len(job_history) > 50:
                     job_history.pop(0)
-                if "Job cancelled" not in str(e):
+                if final_status == "failed":
                     metrics["total_jobs_failed"] += 1
 
             # Clean up PR tracking if this is still the active job for this PR
@@ -1069,25 +1097,29 @@ def handle_workflow_webhook(payload):
     # Cancel any existing jobs for this PR (both continuity check and Story Bible extraction)
     # WHY: New commits supersede old ones, so stop processing outdated code
     # This prevents wasted AI computation and confusing duplicate comments
-    with metrics_lock:
-        # Cancel existing continuity check for this PR
-        if pr_number in pr_active_continuity_jobs:
-            old_workflow_id = pr_active_continuity_jobs[pr_number]
-            if old_workflow_id in active_jobs:
-                app.logger.info(f"Cancelling existing continuity check (workflow {old_workflow_id}) for PR #{pr_number}")
-                cancel_event = active_jobs[old_workflow_id].get("cancel_event")
+    # NOTE: Uses shared state for cross-worker cancellation (multiple gunicorn workers)
+    shared_state = get_shared_state()
+
+    # Cancel existing continuity check for this PR (works across all workers)
+    old_continuity_id = shared_state.cancel_existing_job(pr_number, 'continuity')
+    if old_continuity_id:
+        app.logger.info(f"Signaled cancellation for continuity check (workflow {old_continuity_id}) for PR #{pr_number}")
+        # Also cancel local in-memory state if this worker happens to have it
+        with metrics_lock:
+            if old_continuity_id in active_jobs:
+                cancel_event = active_jobs[old_continuity_id].get("cancel_event")
                 if cancel_event:
-                    # Signal cancellation - checked in process_webhook_async loop
                     cancel_event.set()
 
-        # Cancel existing Story Bible extraction for this PR
-        if pr_number in pr_active_extraction_jobs:
-            old_extraction_id = pr_active_extraction_jobs[pr_number]
+    # Cancel existing Story Bible extraction for this PR (works across all workers)
+    old_extraction_id = shared_state.cancel_existing_job(pr_number, 'extraction')
+    if old_extraction_id:
+        app.logger.info(f"Signaled cancellation for Story Bible extraction ({old_extraction_id}) for PR #{pr_number}")
+        # Also cancel local in-memory state if this worker happens to have it
+        with metrics_lock:
             if old_extraction_id in active_jobs:
-                app.logger.info(f"Cancelling existing Story Bible extraction ({old_extraction_id}) for PR #{pr_number}")
                 cancel_event = active_jobs[old_extraction_id].get("cancel_event")
                 if cancel_event:
-                    # Signal cancellation - checked in process_story_bible_extraction_async
                     cancel_event.set()
 
     # Spawn background thread to process webhook
@@ -1221,12 +1253,9 @@ def handle_check_continuity_command(payload):
 
     # Cancel any existing checks for this PR (manual command supersedes auto-validation)
     # This prevents parallel runs and ensures the user's manual request takes priority
-    with metrics_lock:
-        if pr_number in pr_active_continuity_jobs:
-            existing_workflow_id = pr_active_continuity_jobs[pr_number]
-            if existing_workflow_id in active_jobs:
-                app.logger.info(f"Manual command: cancelling existing auto-validation (workflow {existing_workflow_id}) for PR #{pr_number}")
-                active_jobs[existing_workflow_id]['cancel_event'].set()
+    old_workflow_id = shared_state.cancel_existing_job(pr_number, 'continuity')
+    if old_workflow_id:
+        app.logger.info(f"Manual command: cancelled existing auto-validation (workflow {old_workflow_id}) for PR #{pr_number}")
 
     # Spawn background thread for processing using the existing process_webhook_async
     workflow_id = f"manual-{pr_number}-{int(time.time())}"
@@ -1333,11 +1362,11 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
         artifacts_url: URL to download artifacts (None for summarize mode)
         username: GitHub username who triggered the command
         mode: One of 'incremental', 'full', or 'summarize'
-        cancel_event: Optional threading.Event for cancellation support
+        cancel_event: Optional threading.Event for cancellation support (deprecated, ignored)
     """
-    # Create cancel event if not provided
-    if cancel_event is None:
-        cancel_event = threading.Event()
+    # Use file-based cancellation event for cross-worker support
+    cancel_event = FileCancellationEvent(workflow_id)
+
     # Import the extractor module
     import sys
     from pathlib import Path
@@ -1354,7 +1383,20 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
     try:
         app.logger.info(f"[Story Bible] Processing extraction for PR #{pr_number} with mode={mode}")
 
-        # Track this job
+        # Register job with shared state (for cross-worker coordination)
+        shared_state = get_shared_state()
+        job_info = JobInfo(
+            workflow_id=workflow_id,
+            pr_number=pr_number,
+            operation_type='extraction',
+            status='initializing',
+            start_time=time.time()
+        )
+        existing_job = shared_state.register_job(job_info)
+        if existing_job:
+            app.logger.info(f"[Story Bible] Found existing job {existing_job} for PR #{pr_number}, will be cancelled")
+
+        # Also track locally for this worker
         with metrics_lock:
             active_jobs[workflow_id] = {
                 "pr_number": pr_number,
@@ -1406,6 +1448,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     active_jobs.pop(workflow_id, None)
                 if pr_active_extraction_jobs.get(pr_number) == workflow_id:
                     pr_active_extraction_jobs.pop(pr_number, None)
+            # Mark job as cancelled (shared state for cross-worker coordination)
+            shared_state.complete_job(workflow_id, 'cancelled')
             return
 
         # Load cache from PR branch (if exists)
@@ -1519,6 +1563,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                             active_jobs.pop(workflow_id, None)
                         if pr_active_extraction_jobs.get(pr_number) == workflow_id:
                             pr_active_extraction_jobs.pop(pr_number, None)
+                    # Mark job as cancelled (shared state for cross-worker coordination)
+                    shared_state.complete_job(workflow_id, 'cancelled')
                     return
 
                 # Extract facts from each passage
@@ -1541,6 +1587,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                 active_jobs.pop(workflow_id, None)
                             if pr_active_extraction_jobs.get(pr_number) == workflow_id:
                                 pr_active_extraction_jobs.pop(pr_number, None)
+                        # Mark job as cancelled (shared state for cross-worker coordination)
+                        shared_state.complete_job(workflow_id, 'cancelled')
                         return
 
                     app.logger.info(f"[Story Bible] Extracting passage {idx}/{total_passages}: {passage_id}")
@@ -1628,6 +1676,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     active_jobs.pop(workflow_id, None)
                 if pr_active_extraction_jobs.get(pr_number) == workflow_id:
                     pr_active_extraction_jobs.pop(pr_number, None)
+            # Mark job as cancelled (shared state for cross-worker coordination)
+            shared_state.complete_job(workflow_id, 'cancelled')
             return
 
         # Stage 2.5: Run AI summarization/deduplication
@@ -1771,6 +1821,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
             # Clean up PR tracking if this is still the active extraction for this PR
             if pr_active_extraction_jobs.get(pr_number) == workflow_id:
                 pr_active_extraction_jobs.pop(pr_number, None)
+        # Mark job as complete (shared state for cross-worker coordination)
+        shared_state.complete_job(workflow_id, 'completed')
 
     except Exception as e:
         app.logger.error(f"[Story Bible] Error during extraction: {e}", exc_info=True)
@@ -1783,6 +1835,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
             # Clean up PR tracking if this is still the active extraction for this PR
             if pr_active_extraction_jobs.get(pr_number) == workflow_id:
                 pr_active_extraction_jobs.pop(pr_number, None)
+        # Mark job as failed (shared state for cross-worker coordination)
+        shared_state.complete_job(workflow_id, 'failed')
 
 
 def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
