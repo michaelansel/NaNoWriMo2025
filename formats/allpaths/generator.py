@@ -209,7 +209,6 @@ def update_validation_cache_with_paths(validation_cache: Dict, all_paths: List[L
             validation_cache[path_hash] = {
                 'route': ' → '.join(path),
                 'first_seen': datetime.now().isoformat(),
-                'validated': False,
                 'commit_date': commit_date,
                 'created_date': creation_date,
                 'category': category,
@@ -619,7 +618,6 @@ def main() -> None:
 
             # Get categorization data
             category = path_categories.get(path_id, 'new')
-            validated = validation_cache.get(path_id, {}).get('validated', False)
             first_seen = validation_cache.get(path_id, {}).get('first_seen', datetime.now().isoformat())
 
             categorized_path = {
@@ -633,7 +631,6 @@ def main() -> None:
                     'passage_to_file': passage_to_file_for_path
                 },
                 'category': category,
-                'validated': validated,
                 'first_seen': first_seen
             }
             categorized_paths.append(categorized_path)

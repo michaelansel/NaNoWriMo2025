@@ -530,8 +530,6 @@ def update_cache_with_results(cache: Dict, path_id: str, route: List[str], resul
         }
 
     # Update validation info
-    cache[path_id]["validated"] = True
-    cache[path_id]["validated_at"] = datetime.now().isoformat()
     cache[path_id]["has_issues"] = result.get("has_issues", False)
     cache[path_id]["severity"] = result.get("severity", "none")
     cache[path_id]["summary"] = result.get("summary", "")
