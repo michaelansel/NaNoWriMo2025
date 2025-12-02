@@ -10,7 +10,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from statistics import mean, median
 
 
