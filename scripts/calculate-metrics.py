@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Writing Metrics & Statistics Calculator
-Analyzes Twee source files to compute word count statistics.
+Analyzes story from core library artifacts to compute word count statistics.
+Now reads from story_graph.json instead of parsing Twee files directly.
 """
 
 import re
@@ -265,6 +266,64 @@ def generate_distribution(values: List[int]) -> Dict[str, int]:
 # METRICS COMPUTATION
 # =============================================================================
 
+def calculate_metrics_from_story_graph(
+    story_graph: Dict,
+    top_n: int = 5
+) -> Dict:
+    """
+    Calculate writing metrics from story_graph.json.
+
+    Args:
+        story_graph: Story graph dict from core library
+        top_n: Number of top passages to include
+
+    Returns:
+        Dict containing all metrics
+    """
+    if not story_graph.get('passages'):
+        return {
+            'error': 'No passages found in story graph',
+            'total_words': 0,
+            'file_count': 0,
+            'passage_count': 0,
+        }
+
+    # Extract passages and calculate word counts
+    all_passages = []
+    for name, passage_data in story_graph['passages'].items():
+        content = passage_data['content']
+        passage = Passage(name, content)
+        all_passages.append(passage)
+
+    # Calculate statistics
+    total_words = sum(p.word_count for p in all_passages)
+    passage_word_counts = [p.word_count for p in all_passages]
+
+    passage_stats = calculate_statistics(passage_word_counts)
+
+    # Note: File stats not available from story_graph.json
+    # Would need passage_mapping.json to group by file
+    file_stats = {'min': 0, 'mean': 0.0, 'median': 0.0, 'max': 0}
+    file_distribution = {"0-100": 0, "101-300": 0, "301-500": 0, "501-1000": 0, "1000+": 0}
+
+    passage_distribution = generate_distribution(passage_word_counts)
+
+    # Find top N longest passages
+    top_passages = sorted(all_passages, key=lambda p: p.word_count, reverse=True)[:top_n]
+
+    return {
+        'total_words': total_words,
+        'file_count': 0,  # Not available from story_graph alone
+        'passage_count': len(all_passages),
+        'passage_stats': passage_stats,
+        'file_stats': file_stats,
+        'passage_distribution': passage_distribution,
+        'file_distribution': file_distribution,
+        'top_passages': [p.to_dict() for p in top_passages],
+        'files': [],  # Not available from story_graph alone
+    }
+
+
 def calculate_metrics(
     src_dir: Path,
     include: Optional[List[str]] = None,
@@ -272,17 +331,30 @@ def calculate_metrics(
     top_n: int = 5
 ) -> Dict:
     """
-    Calculate writing metrics for Twee files.
+    Calculate writing metrics (legacy interface for backward compatibility).
+
+    Attempts to load from story_graph.json first, falls back to Twee parsing.
 
     Args:
-        src_dir: Directory containing Twee files
-        include: List of filename prefixes to include
-        exclude: List of filename prefixes to exclude
+        src_dir: Directory containing Twee files (or project root for story_graph.json)
+        include: List of filename prefixes to include (ignored if using story_graph)
+        exclude: List of filename prefixes to exclude (ignored if using story_graph)
         top_n: Number of top passages to include
 
     Returns:
         Dict containing all metrics
     """
+    # Try to load from story_graph.json first (core library artifacts)
+    story_graph_path = src_dir.parent / 'lib' / 'artifacts' / 'story_graph.json'
+    if story_graph_path.exists():
+        print(f"Loading from core artifacts: {story_graph_path}", file=sys.stderr)
+        with open(story_graph_path, 'r', encoding='utf-8') as f:
+            story_graph = json.load(f)
+        return calculate_metrics_from_story_graph(story_graph, top_n)
+
+    # Fall back to parsing Twee files directly (legacy path)
+    print(f"Core artifacts not found, falling back to Twee parsing", file=sys.stderr)
+
     # Find all .twee files
     all_files = sorted(src_dir.glob('*.twee'))
 
