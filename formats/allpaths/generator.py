@@ -273,18 +273,17 @@ def main() -> None:
     """Main entry point for AllPaths generator.
 
     Implements a 5-stage pipeline:
-    - Stage 1: Parse HTML into story graph
+    - Stage 1: Load story_graph.json from core library
     - Stage 2: Generate all possible paths
     - Stage 3: Enrich paths with git metadata
     - Stage 4: Categorize paths (new/modified/unchanged)
     - Stage 5: Output generation (HTML, text files, cache)
 
     Usage:
-        generator.py <input.html> [output_dir] [--write-intermediate]
+        generator.py [output_dir] [--write-intermediate]
 
     Args:
-        input.html: Path to Tweego-compiled HTML file
-        output_dir: Optional directory for output files (default: current directory)
+        output_dir: Optional directory for output files (default: dist)
         --write-intermediate: Optional flag to write intermediate artifacts for debugging
 
     Outputs:
@@ -306,48 +305,64 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description='AllPaths Story Format Generator - Generate all possible story paths for AI continuity checking'
     )
-    parser.add_argument('input_file', type=Path, help='Path to Tweego-compiled HTML file')
-    parser.add_argument('output_dir', type=Path, nargs='?', default=Path('.'),
-                       help='Directory for output files (default: current directory)')
+    parser.add_argument('output_dir', type=Path, nargs='?', default=Path('dist'),
+                       help='Directory for output files (default: dist)')
     parser.add_argument('--write-intermediate', action='store_true', default=False,
                        help='Write intermediate artifacts to dist/allpaths-intermediate/ for debugging')
 
     args = parser.parse_args()
 
-    input_file = args.input_file
     output_dir = args.output_dir
     write_intermediate = args.write_intermediate
 
-    # Read input HTML
-    with open(input_file, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-
     # =========================================================================
-    # STAGE 1: PARSE
+    # STAGE 1: LOAD STORY GRAPH
     # =========================================================================
     print("\n" + "="*80, file=sys.stderr)
-    print("STAGE 1: PARSE - Extracting story structure from HTML", file=sys.stderr)
+    print("STAGE 1: LOAD - Reading story_graph.json from core library", file=sys.stderr)
     print("="*80, file=sys.stderr)
 
-    # Parse story structure from HTML
-    story_data, passages = parse_story_html(html_content)
-    print(f"Extracted {len(passages)} passages from story '{story_data['name']}'", file=sys.stderr)
+    # Load story_graph.json from core library artifacts
+    story_graph_path = output_dir.parent / 'lib' / 'artifacts' / 'story_graph.json'
+    if not story_graph_path.exists():
+        print(f"Error: Core artifact not found: {story_graph_path}", file=sys.stderr)
+        print(f"Run 'npm run build:core' first to generate core artifacts", file=sys.stderr)
+        sys.exit(1)
 
-    # Build graph representation
+    with open(story_graph_path, 'r', encoding='utf-8') as f:
+        story_graph = json.load(f)
+
+    print(f"Loaded story_graph.json with {len(story_graph['passages'])} passages", file=sys.stderr)
+
+    # Extract data from story_graph for compatibility with existing stages
+    start_passage = story_graph['start_passage']
+    metadata = story_graph['metadata']
+
+    # Convert story_graph passages to old format for compatibility
+    passages = {}
+    for name, passage_data in story_graph['passages'].items():
+        passages[name] = {
+            'pid': '',  # PID not needed from story_graph
+            'name': name,
+            'tags': [],  # Tags not in story_graph
+            'text': passage_data['content']
+        }
+
+    # Create story_data for compatibility
+    story_data = {
+        'name': metadata['story_title'],
+        'ifid': metadata['ifid'],
+        'start': '',  # Not needed, we have start_passage directly
+        'format': metadata['format'],
+        'format_version': metadata['format_version']
+    }
+
+    print(f"Story: {story_data['name']}", file=sys.stderr)
+    print(f"Start passage: {start_passage}", file=sys.stderr)
+
+    # Build graph representation (unchanged - still uses passages dict)
     graph = build_graph(passages)
     print(f"Built story graph with {len(graph)} nodes", file=sys.stderr)
-
-    # Find start passage
-    start_passage = None
-    for name, passage in passages.items():
-        if passage['pid'] == story_data['start']:
-            start_passage = name
-            break
-
-    if not start_passage:
-        start_passage = 'Start'
-
-    print(f"Start passage: {start_passage}", file=sys.stderr)
 
     # Write intermediate artifact if requested
     if write_intermediate:
