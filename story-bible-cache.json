@@ -2,7 +2,7 @@
   "passage_extractions": {
     "A rumor": {
       "content_hash": "7e4ba2d985875c3e",
-      "extracted_at": "2025-12-02T05:22:51.113947",
+      "extracted_at": "2025-12-02T05:24:06.113090",
       "entities": {
         "characters": [
           {
@@ -76,7 +76,7 @@
     },
     "Check the creature": {
       "content_hash": "81d55fd7309680c0",
-      "extracted_at": "2025-12-02T05:22:53.463462",
+      "extracted_at": "2025-12-02T05:24:52.640682",
       "entities": {
         "characters": [
           {
@@ -124,7 +124,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "blood",
+            "name": "creature's blood",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -142,7 +142,7 @@
     },
     "Collect snacks": {
       "content_hash": "5f9c62920760af62",
-      "extracted_at": "2025-12-02T05:22:56.446715",
+      "extracted_at": "2025-12-02T05:24:57.935551",
       "entities": {
         "characters": [
           {
@@ -152,25 +152,9 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "creature",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "locations": [
-          {
-            "name": "room",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
           {
             "name": "bed",
             "title": null,
@@ -180,7 +164,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "laundry pile",
+            "name": "room",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -189,14 +173,6 @@
           }
         ],
         "items": [
-          {
-            "name": "snacks",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
           {
             "name": "apple",
             "title": null,
@@ -214,15 +190,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "laundry",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "mountain lion cub",
+            "name": "laundry pile",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -240,7 +208,7 @@
     },
     "Complete the working": {
       "content_hash": "a65f4b5909cbe81f",
-      "extracted_at": "2025-12-02T05:23:10.575942",
+      "extracted_at": "2025-12-02T05:25:17.072343",
       "entities": {
         "characters": [
           {
@@ -294,6 +262,14 @@
         ],
         "locations": [
           {
+            "name": "village",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "cave",
             "title": null,
             "mentions": [],
@@ -302,7 +278,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "tunnel",
+            "name": "cave entrance",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -318,15 +294,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "village",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "home",
+            "name": "tunnel",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -335,6 +303,14 @@
           },
           {
             "name": "West",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "home",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -356,35 +332,11 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "cave entrance",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
           {
-            "name": "lantern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "shield",
+            "name": "creature",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -400,7 +352,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "wall",
+            "name": "shield",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -408,7 +360,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "beef stew",
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -426,7 +386,7 @@
     },
     "Continue on": {
       "content_hash": "94685a08dd576454",
-      "extracted_at": "2025-12-02T05:23:13.269144",
+      "extracted_at": "2025-12-02T05:25:23.647425",
       "entities": {
         "characters": [
           {
@@ -438,7 +398,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "villagers",
+            "name": "No one",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -456,16 +416,7 @@
             "_chunk_total": 1
           }
         ],
-        "items": [
-          {
-            "name": "open training session",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          }
-        ],
+        "items": [],
         "organizations": [],
         "concepts": []
       },
@@ -476,7 +427,7 @@
     },
     "Day 1 KEB": {
       "content_hash": "8a5a830a0e9f9039",
-      "extracted_at": "2025-12-02T05:23:15.228744",
+      "extracted_at": "2025-12-02T05:25:30.827421",
       "entities": {
         "characters": [],
         "locations": [
@@ -508,7 +459,7 @@
     },
     "Day 10 KEB": {
       "content_hash": "199a1840412c1c0b",
-      "extracted_at": "2025-12-02T05:23:18.946159",
+      "extracted_at": "2025-12-02T05:25:36.495174",
       "entities": {
         "characters": [
           {
@@ -554,30 +505,6 @@
             "_chunk_total": 1
           },
           {
-            "name": "floor",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "walls",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "room",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "Day 27 KEB",
             "title": null,
             "mentions": [],
@@ -612,6 +539,14 @@
             "_chunk_total": 1
           },
           {
+            "name": "water",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "puddles",
             "title": null,
             "mentions": [],
@@ -630,7 +565,7 @@
     },
     "Day 11 KEB": {
       "content_hash": "6a9b1d5bbae8cc4e",
-      "extracted_at": "2025-12-02T05:23:22.564126",
+      "extracted_at": "2025-12-02T05:25:42.120553",
       "entities": {
         "characters": [
           {
@@ -658,27 +593,11 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "cave entrance",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
           {
             "name": "bag",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "strap",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -702,6 +621,14 @@
             "_chunk_total": 1
           },
           {
+            "name": "jacket",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "sword",
             "title": null,
             "mentions": [],
@@ -710,7 +637,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "jacket",
+            "name": "rain",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -728,7 +655,7 @@
     },
     "Day 12 KEB": {
       "content_hash": "eed2f861d409d266",
-      "extracted_at": "2025-12-02T05:23:26.304523",
+      "extracted_at": "2025-12-02T05:25:49.789337",
       "entities": {
         "characters": [
           {
@@ -772,30 +699,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "area",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "snow drift",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "winter storm",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
@@ -814,6 +717,30 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "shield",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "ice workings",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -826,7 +753,7 @@
     },
     "Day 13 KEB": {
       "content_hash": "c9640b2bb3b0de1c",
-      "extracted_at": "2025-12-02T05:23:29.426129",
+      "extracted_at": "2025-12-02T05:25:54.811384",
       "entities": {
         "characters": [
           {
@@ -896,7 +823,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "next town",
+            "name": "town",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "road",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -924,11 +859,19 @@
     },
     "Day 14 KEB": {
       "content_hash": "adc562aa0f0b7065",
-      "extracted_at": "2025-12-02T05:23:42.637851",
+      "extracted_at": "2025-12-02T05:26:17.091568",
       "entities": {
         "characters": [
           {
             "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the creature",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -968,9 +911,33 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "cave's entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "items": [
+          {
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "lantern light",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
           {
             "name": "sword",
             "title": null,
@@ -994,22 +961,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "lantern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "lantern light",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -1022,7 +973,7 @@
     },
     "Day 15 KEB": {
       "content_hash": "d39bb14f68ff963e",
-      "extracted_at": "2025-12-02T05:23:55.077246",
+      "extracted_at": "2025-12-02T05:26:26.631209",
       "entities": {
         "characters": [
           {
@@ -1076,7 +1027,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cliff",
+            "name": "ledge",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1084,7 +1035,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cave entrance",
+            "name": "entrance",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1093,6 +1044,22 @@
           },
           {
             "name": "ground level",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cliff",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "rockslide",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1134,14 +1101,6 @@
             "_chunk_total": 1
           },
           {
-            "name": "rock",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "boulder",
             "title": null,
             "mentions": [],
@@ -1150,39 +1109,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "ledge",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "broken sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "broken blade",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "rain",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "rain drop",
+            "name": "rocks",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1191,6 +1118,14 @@
           },
           {
             "name": "sword handle",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "broken sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1208,7 +1143,7 @@
     },
     "Day 16 KEB": {
       "content_hash": "499a0c76dc41b526",
-      "extracted_at": "2025-12-02T05:23:59.261511",
+      "extracted_at": "2025-12-02T05:26:33.036545",
       "entities": {
         "characters": [
           {
@@ -1270,14 +1205,6 @@
             "_chunk_total": 1
           },
           {
-            "name": "road",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "main road",
             "title": null,
             "mentions": [],
@@ -1286,7 +1213,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "out of town",
+            "name": "road",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1304,14 +1231,6 @@
         ],
         "items": [
           {
-            "name": "the monster",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "sword",
             "title": null,
             "mentions": [],
@@ -1320,7 +1239,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "Nivek's sword",
+            "name": "bolt",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1338,7 +1257,7 @@
     },
     "Day 17 KEB": {
       "content_hash": "c481c12bb3ab7457",
-      "extracted_at": "2025-12-02T05:24:04.345259",
+      "extracted_at": "2025-12-02T05:26:41.659747",
       "entities": {
         "characters": [
           {
@@ -1392,7 +1311,7 @@
         ],
         "locations": [
           {
-            "name": "cave",
+            "name": "cave entrance",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1400,7 +1319,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cave entrance",
+            "name": "cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1496,22 +1415,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "bag",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "floor",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -1524,7 +1427,7 @@
     },
     "Day 18 KEB": {
       "content_hash": "232ab495a8986780",
-      "extracted_at": "2025-12-02T05:24:51.053511",
+      "extracted_at": "2025-12-02T05:26:59.700213",
       "entities": {
         "characters": [
           {
@@ -1602,6 +1505,14 @@
         ],
         "locations": [
           {
+            "name": "cliffside",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "cave",
             "title": null,
             "mentions": [],
@@ -1618,7 +1529,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cliffside",
+            "name": "cave entrance",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1626,7 +1537,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "entrance",
+            "name": "cave's entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cave's wall",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1643,14 +1562,6 @@
           },
           {
             "name": "tunnel",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "chamber",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1676,7 +1587,7 @@
         ],
         "items": [
           {
-            "name": "wooden practice sword",
+            "name": "wooden practice swords",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1684,7 +1595,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "wooden practice blade",
+            "name": "actual blade",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1706,6 +1617,38 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "wooden practice blade",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "blade",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "claws",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "jacket",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -1718,7 +1661,7 @@
     },
     "Day 19 KEB": {
       "content_hash": "6841f15b36befb84",
-      "extracted_at": "2025-12-02T05:24:55.601256",
+      "extracted_at": "2025-12-02T05:27:07.534992",
       "entities": {
         "characters": [
           {
@@ -1732,7 +1675,7 @@
         ],
         "locations": [
           {
-            "name": "river",
+            "name": "River",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1740,7 +1683,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "bank",
+            "name": "Bank",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1748,7 +1691,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "tavern",
+            "name": "Tavern",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1758,7 +1701,7 @@
         ],
         "items": [
           {
-            "name": "bed",
+            "name": "Bed",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1766,7 +1709,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "window",
+            "name": "Monster",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1774,7 +1717,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "working",
+            "name": "Laundry",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Window",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1792,7 +1743,7 @@
     },
     "Day 2 KEB": {
       "content_hash": "8254dac7f2a48d8e",
-      "extracted_at": "2025-12-02T05:25:00.158562",
+      "extracted_at": "2025-12-02T05:27:14.322510",
       "entities": {
         "characters": [
           {
@@ -1840,7 +1791,23 @@
             "_chunk_total": 1
           },
           {
-            "name": "Cloth object->Day 11 KEB",
+            "name": "cloth object",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Day 11 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "rock",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1858,7 +1825,7 @@
     },
     "Day 20 KEB": {
       "content_hash": "bda741427b8d3e54",
-      "extracted_at": "2025-12-02T05:25:20.393728",
+      "extracted_at": "2025-12-02T05:27:20.853200",
       "entities": {
         "characters": [
           {
@@ -1928,6 +1895,14 @@
             "_chunk_total": 1
           },
           {
+            "name": "entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "Furlsby",
             "title": null,
             "mentions": [],
@@ -1953,6 +1928,14 @@
           },
           {
             "name": "village",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "home",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -1984,6 +1967,14 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "monster",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -1996,11 +1987,27 @@
     },
     "Day 21 KEB": {
       "content_hash": "f7435eacd4d1234b",
-      "extracted_at": "2025-12-02T05:25:28.998863",
+      "extracted_at": "2025-12-02T05:27:38.917983",
       "entities": {
         "characters": [
           {
             "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the creature",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the monster",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2030,11 +2037,43 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "the male voice",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the women",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the travelers",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the blue creature",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "locations": [
           {
-            "name": "butcher's",
+            "name": "the butcher's",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2080,14 +2119,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "butcher's",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
@@ -2100,15 +2131,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "laundry",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "bed",
+            "name": "meat",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2117,6 +2140,22 @@
           },
           {
             "name": "apple",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "butcher",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "laundry",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2140,7 +2179,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "adventuring gear",
+            "name": "arm",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2148,7 +2187,23 @@
             "_chunk_total": 1
           },
           {
-            "name": "light packs",
+            "name": "blood",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "clothes",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "rooms",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2166,7 +2221,7 @@
     },
     "Day 22 KEB": {
       "content_hash": "de392894f307ff36",
-      "extracted_at": "2025-12-02T05:25:33.699230",
+      "extracted_at": "2025-12-02T05:27:43.055291",
       "entities": {
         "characters": [
           {
@@ -2194,35 +2249,11 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "pond",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "path",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
           {
             "name": "sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "jacket",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2238,47 +2269,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "arm",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "leg",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "creature",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "monster",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "horde",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "endurance training",
+            "name": "jacket",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2296,7 +2287,7 @@
     },
     "Day 23 KEB": {
       "content_hash": "a82ce17758e90548",
-      "extracted_at": "2025-12-02T05:25:39.963453",
+      "extracted_at": "2025-12-02T05:27:49.127431",
       "entities": {
         "characters": [
           {
@@ -2334,14 +2325,6 @@
         ],
         "locations": [
           {
-            "name": "cave",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "mushroom cave",
             "title": null,
             "mentions": [],
@@ -2350,7 +2333,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cavern",
+            "name": "cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2358,7 +2341,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "underbrush",
+            "name": "cavern",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2396,9 +2379,27 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "bone pile",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           },
           {
-            "name": "area",
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "mud",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2422,24 +2423,6 @@
             "_chunk_total": 1
           }
         ],
-        "items": [
-          {
-            "name": "bone pile",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "lantern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          }
-        ],
         "organizations": [],
         "concepts": []
       },
@@ -2450,7 +2433,7 @@
     },
     "Day 24 KEB": {
       "content_hash": "357763447b01c87f",
-      "extracted_at": "2025-12-02T05:25:46.658250",
+      "extracted_at": "2025-12-02T05:28:07.197322",
       "entities": {
         "characters": [
           {
@@ -2486,7 +2469,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "Javlyn's",
+            "name": "the knight",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2494,7 +2477,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "Danita's",
+            "name": "tavern keeper",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2504,7 +2487,7 @@
         ],
         "locations": [
           {
-            "name": "cave",
+            "name": "cave entrance",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2512,7 +2495,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cave entrance",
+            "name": "cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2544,15 +2527,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "barn",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "tavern",
+            "name": "my family's barn",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2586,6 +2561,14 @@
             "_chunk_total": 1
           },
           {
+            "name": "crossbow",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "pack",
             "title": null,
             "mentions": [],
@@ -2594,7 +2577,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "crossbow",
+            "name": "blade",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2624,14 +2607,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "walls",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -2644,7 +2619,7 @@
     },
     "Day 25 KEB": {
       "content_hash": "01f04a08492ee8f6",
-      "extracted_at": "2025-12-02T05:25:52.124452",
+      "extracted_at": "2025-12-02T05:28:10.711885",
       "entities": {
         "characters": [
           {
@@ -2690,14 +2665,6 @@
             "_chunk_total": 1
           },
           {
-            "name": "cave entrance",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "ice cave",
             "title": null,
             "mentions": [],
@@ -2722,6 +2689,14 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "blade",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -2734,7 +2709,7 @@
     },
     "Day 26 KEB": {
       "content_hash": "2af0001c7e2fcf97",
-      "extracted_at": "2025-12-02T05:25:58.909813",
+      "extracted_at": "2025-12-02T05:28:19.247246",
       "entities": {
         "characters": [
           {
@@ -2912,19 +2887,11 @@
     },
     "Day 27 KEB": {
       "content_hash": "e4e932ebe14c671c",
-      "extracted_at": "2025-12-02T05:26:22.940061",
+      "extracted_at": "2025-12-02T05:28:24.214596",
       "entities": {
         "characters": [
           {
             "name": "Javlyn",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "Nivek",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2940,7 +2907,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "donkey",
+            "name": "victim",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2974,7 +2941,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cliffside",
+            "name": "cavern",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -2988,25 +2955,25 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "cliffside",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "road",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "items": [
-          {
-            "name": "lantern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
           {
             "name": "Nivek's sword",
             "title": null,
@@ -3016,7 +2983,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "man’s shirt",
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "donkey",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3042,7 +3017,7 @@
     },
     "Day 28 KEB": {
       "content_hash": "9a7a80705ac83bea",
-      "extracted_at": "2025-12-02T05:26:29.841237",
+      "extracted_at": "2025-12-02T05:28:28.906981",
       "entities": {
         "characters": [
           {
@@ -3122,6 +3097,14 @@
             "_chunk_total": 1
           },
           {
+            "name": "blade",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "handkerchief",
             "title": null,
             "mentions": [],
@@ -3148,7 +3131,7 @@
     },
     "Day 29 KEB": {
       "content_hash": "2efca895c784f0ba",
-      "extracted_at": "2025-12-02T05:26:36.806451",
+      "extracted_at": "2025-12-02T05:28:32.492683",
       "entities": {
         "characters": [
           {
@@ -3162,14 +3145,6 @@
         ],
         "locations": [
           {
-            "name": "cave",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "cavern",
             "title": null,
             "mentions": [],
@@ -3178,55 +3153,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cavernous space",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "passage",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "ledge",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "wall",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "floor",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "ceiling",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "stream",
+            "name": "cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3242,7 +3169,31 @@
             "_chunk_total": 1
           },
           {
+            "name": "stream",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "path",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "bottom",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "space",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3253,6 +3204,38 @@
         "items": [
           {
             "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "belt",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "ledge",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "rock",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "water",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3274,30 +3257,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "rock",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "pebble",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "water",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -3310,7 +3269,7 @@
     },
     "Day 3 KEB": {
       "content_hash": "f378e92d1f5d0c7b",
-      "extracted_at": "2025-12-02T05:26:44.468596",
+      "extracted_at": "2025-12-02T05:28:37.142095",
       "entities": {
         "characters": [
           {
@@ -3323,6 +3282,14 @@
           },
           {
             "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Nivek",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3357,22 +3324,6 @@
           }
         ],
         "items": [
-          {
-            "name": "Nivek's sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "Javlyn's sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
           {
             "name": "hammer",
             "title": null,
@@ -3416,19 +3367,11 @@
     },
     "Day 30 KEB": {
       "content_hash": "d67820fc449926ad",
-      "extracted_at": "2025-12-02T05:27:04.289546",
+      "extracted_at": "2025-12-02T05:28:45.769596",
       "entities": {
         "characters": [
           {
             "name": "Javlyn",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "Alexis",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3444,6 +3387,14 @@
             "_chunk_total": 1
           },
           {
+            "name": "Jahnice",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "Eicher",
             "title": null,
             "mentions": [],
@@ -3452,7 +3403,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "Jerrick",
+            "name": "Alexis",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the mayor",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3468,31 +3427,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "mayor",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "national guard",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "monster",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "monsters",
+            "name": "Jerrick",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3518,7 +3453,31 @@
             "_chunk_total": 1
           },
           {
+            "name": "cavern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cave entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "wide open cavern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "narrowness of the cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3528,22 +3487,6 @@
         ],
         "items": [
           {
-            "name": "guard's lanterns",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "lantern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "horse",
             "title": null,
             "mentions": [],
@@ -3552,7 +3495,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "sword",
+            "name": "Nivek's old sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3592,7 +3535,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "shield",
+            "name": "swords",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3600,7 +3543,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "bow",
+            "name": "shields",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3608,7 +3551,23 @@
             "_chunk_total": 1
           },
           {
-            "name": "tree",
+            "name": "bows",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "lanterns",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3626,7 +3585,7 @@
     },
     "Day 4 KEB": {
       "content_hash": "fbb981d34279cc4b",
-      "extracted_at": "2025-12-02T05:27:10.857791",
+      "extracted_at": "2025-12-02T05:28:53.477458",
       "entities": {
         "characters": [
           {
@@ -3640,14 +3599,6 @@
         ],
         "locations": [
           {
-            "name": "cavern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "cave",
             "title": null,
             "mentions": [],
@@ -3656,47 +3607,15 @@
             "_chunk_total": 1
           },
           {
+            "name": "cavern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "entrance",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "room",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "floor",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "ceiling",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "ground",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "well worn path",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3714,7 +3633,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "oil",
+            "name": "creature",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3722,7 +3641,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "creature",
+            "name": "water",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "path",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3740,7 +3667,7 @@
     },
     "Day 5 KEB": {
       "content_hash": "fc0ca5d22b8ab07c",
-      "extracted_at": "2025-12-02T05:27:16.734478",
+      "extracted_at": "2025-12-02T05:28:57.605245",
       "entities": {
         "characters": [
           {
@@ -3846,7 +3773,7 @@
     },
     "Day 6 KEB": {
       "content_hash": "8e4ca128a6c19e48",
-      "extracted_at": "2025-12-02T05:27:34.229909",
+      "extracted_at": "2025-12-02T05:29:11.228016",
       "entities": {
         "characters": [
           {
@@ -3910,14 +3837,6 @@
         ],
         "items": [
           {
-            "name": "bandage",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "crossbow",
             "title": null,
             "mentions": [],
@@ -3942,7 +3861,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "path",
+            "name": "body",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -3960,7 +3879,7 @@
     },
     "Day 7 KEB": {
       "content_hash": "b6a4e2ef227f1955",
-      "extracted_at": "2025-12-02T05:27:41.328376",
+      "extracted_at": "2025-12-02T05:29:15.775878",
       "entities": {
         "characters": [
           {
@@ -3972,7 +3891,16 @@
             "_chunk_total": 1
           }
         ],
-        "locations": [],
+        "locations": [
+          {
+            "name": "Day 22 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
         "items": [
           {
             "name": "muddy boots",
@@ -3997,14 +3925,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "Day 22 KEB",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -4017,7 +3937,7 @@
     },
     "Day 8 KEB": {
       "content_hash": "243787b819e8e8b4",
-      "extracted_at": "2025-12-02T05:27:45.896818",
+      "extracted_at": "2025-12-02T05:29:21.677511",
       "entities": {
         "characters": [
           {
@@ -4097,6 +4017,22 @@
             "_chunk_total": 1
           },
           {
+            "name": "light",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "focus",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "sun",
             "title": null,
             "mentions": [],
@@ -4139,7 +4075,7 @@
     },
     "Day 9 KEB": {
       "content_hash": "3cfec586644012ec",
-      "extracted_at": "2025-12-02T05:27:51.128046",
+      "extracted_at": "2025-12-02T05:29:25.925679",
       "entities": {
         "characters": [
           {
@@ -4170,6 +4106,14 @@
           },
           {
             "name": "entrance tunnel",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sloped shelf",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -4213,7 +4157,7 @@
     },
     "Defense magic": {
       "content_hash": "d8b0492e77290d72",
-      "extracted_at": "2025-12-02T05:28:08.202859",
+      "extracted_at": "2025-12-02T05:29:30.662243",
       "entities": {
         "characters": [
           {
@@ -4233,7 +4177,16 @@
             "_chunk_total": 1
           }
         ],
-        "locations": [],
+        "locations": [
+          {
+            "name": "Day 24 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
         "items": [],
         "organizations": [],
         "concepts": []
@@ -4245,7 +4198,7 @@
     },
     "Do not investigate": {
       "content_hash": "c8597d50e222557f",
-      "extracted_at": "2025-12-02T05:28:14.835001",
+      "extracted_at": "2025-12-02T05:29:35.468585",
       "entities": {
         "characters": [
           {
@@ -4289,27 +4242,11 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "protected entrance",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
           {
-            "name": "sloped shelf",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "stalagmites",
+            "name": "blood",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -4327,7 +4264,7 @@
     },
     "Find the lantern": {
       "content_hash": "7f8beed3c94d3cd0",
-      "extracted_at": "2025-12-02T05:28:21.300391",
+      "extracted_at": "2025-12-02T05:29:40.603915",
       "entities": {
         "characters": [
           {
@@ -4358,6 +4295,14 @@
           },
           {
             "name": "cavern walls",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Day 4 KEB",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -4409,7 +4354,7 @@
     },
     "Flee": {
       "content_hash": "e6a4fd2389456eb3",
-      "extracted_at": "2025-12-02T05:28:25.893272",
+      "extracted_at": "2025-12-02T05:29:43.421973",
       "entities": {
         "characters": [
           {
@@ -4442,7 +4387,7 @@
     },
     "Footer": {
       "content_hash": "0951bf59a0d1021e",
-      "extracted_at": "2025-12-02T05:28:29.513880",
+      "extracted_at": "2025-12-02T05:29:46.717095",
       "entities": {
         "characters": [],
         "locations": [],
@@ -4457,7 +4402,7 @@
     },
     "Javlyn continued": {
       "content_hash": "019a151b6808a4a6",
-      "extracted_at": "2025-12-02T05:28:34.713701",
+      "extracted_at": "2025-12-02T05:30:11.047527",
       "entities": {
         "characters": [
           {
@@ -4487,7 +4432,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "chamber",
+            "name": "tunnel",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -4495,7 +4440,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "tunnel",
+            "name": "chamber",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -4547,7 +4492,7 @@
     },
     "Join them": {
       "content_hash": "ddfb1174e294a433",
-      "extracted_at": "2025-12-02T05:28:40.560787",
+      "extracted_at": "2025-12-02T05:30:16.537675",
       "entities": {
         "characters": [
           {
@@ -4628,7 +4573,7 @@
     },
     "Magic worked as intended": {
       "content_hash": "ff4b6adf1f9be730",
-      "extracted_at": "2025-12-02T05:28:50.092445",
+      "extracted_at": "2025-12-02T05:30:22.046055",
       "entities": {
         "characters": [
           {
@@ -4806,7 +4751,7 @@
     },
     "Metal object": {
       "content_hash": "35d701f1d8280ec1",
-      "extracted_at": "2025-12-02T05:28:55.159150",
+      "extracted_at": "2025-12-02T05:30:26.266083",
       "entities": {
         "characters": [
           {
@@ -4872,7 +4817,7 @@
     },
     "Mushroom cave": {
       "content_hash": "042da589fdb9fc8b",
-      "extracted_at": "2025-12-02T05:28:58.931115",
+      "extracted_at": "2025-12-02T05:30:32.064331",
       "entities": {
         "characters": [
           {
@@ -4921,7 +4866,7 @@
     },
     "No one": {
       "content_hash": "c518b18d945d9c25",
-      "extracted_at": "2025-12-02T05:29:13.205654",
+      "extracted_at": "2025-12-02T05:30:38.437541",
       "entities": {
         "characters": [
           {
@@ -4957,6 +4902,22 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "cave's entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "muddy path",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "items": [
@@ -4987,7 +4948,7 @@
     },
     "Re-enter the cave": {
       "content_hash": "4607a91d63bb9e63",
-      "extracted_at": "2025-12-02T05:29:18.724140",
+      "extracted_at": "2025-12-02T05:30:57.397748",
       "entities": {
         "characters": [
           {
@@ -5000,6 +4961,14 @@
           },
           {
             "name": "Jerrick",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Nivek",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5034,14 +5003,6 @@
           }
         ],
         "items": [
-          {
-            "name": "Nivek's sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
           {
             "name": "lantern",
             "title": null,
@@ -5117,7 +5078,7 @@
     },
     "Silence": {
       "content_hash": "75f8896757fea11e",
-      "extracted_at": "2025-12-02T05:29:23.644559",
+      "extracted_at": "2025-12-02T05:31:02.717407",
       "entities": {
         "characters": [
           {
@@ -5145,14 +5106,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "Day 29 KEB",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
@@ -5173,7 +5126,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "dirt",
+            "name": "Day 29 KEB",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5191,7 +5144,7 @@
     },
     "Someone joins Javlyn": {
       "content_hash": "a27dac74f3f95799",
-      "extracted_at": "2025-12-02T05:29:29.088736",
+      "extracted_at": "2025-12-02T05:31:07.147062",
       "entities": {
         "characters": [
           {
@@ -5235,27 +5188,11 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "ground",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "road",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
           {
-            "name": "packs",
+            "name": "two packs",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5281,7 +5218,7 @@
     },
     "Start": {
       "content_hash": "b424390d8ba4fe52",
-      "extracted_at": "2025-12-02T05:29:33.245364",
+      "extracted_at": "2025-12-02T05:31:11.033929",
       "entities": {
         "characters": [
           {
@@ -5293,10 +5230,9 @@
             "_chunk_total": 1
           }
         ],
-        "locations": [],
-        "items": [
+        "locations": [
           {
-            "name": "window",
+            "name": "Day 30 KEB",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5304,6 +5240,7 @@
             "_chunk_total": 1
           }
         ],
+        "items": [],
         "organizations": [],
         "concepts": []
       },
@@ -5314,7 +5251,7 @@
     },
     "Successfully escape": {
       "content_hash": "f3ed2b3b7faad2f1",
-      "extracted_at": "2025-12-02T05:29:38.027622",
+      "extracted_at": "2025-12-02T05:31:33.730615",
       "entities": {
         "characters": [
           {
@@ -5327,6 +5264,14 @@
           },
           {
             "name": "Jerrick",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Nivek",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5362,14 +5307,6 @@
         ],
         "items": [
           {
-            "name": "Nivek's sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "lantern",
             "title": null,
             "mentions": [],
@@ -5378,7 +5315,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "oil",
+            "name": "sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5387,6 +5324,14 @@
           },
           {
             "name": "hammer",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "oil",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5404,7 +5349,7 @@
     },
     "Turn back": {
       "content_hash": "c5ccfde3db014fd6",
-      "extracted_at": "2025-12-02T05:29:41.962246",
+      "extracted_at": "2025-12-02T05:31:36.148292",
       "entities": {
         "characters": [
           {
@@ -5432,9 +5377,27 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "Day 16 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           },
           {
-            "name": "sky",
+            "name": "door",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "rain",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5442,7 +5405,6 @@
             "_chunk_total": 1
           }
         ],
-        "items": [],
         "organizations": [],
         "concepts": []
       },
@@ -5453,7 +5415,7 @@
     },
     "What cave?": {
       "content_hash": "0cff664e2b6cddea",
-      "extracted_at": "2025-12-02T05:29:46.080558",
+      "extracted_at": "2025-12-02T05:31:39.050510",
       "entities": {
         "characters": [
           {
@@ -5505,30 +5467,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "corner",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "cave entrance",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "entryway",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
@@ -5575,7 +5513,7 @@
     },
     "immediate": {
       "content_hash": "79d6fa0c43edfe0c",
-      "extracted_at": "2025-12-02T05:30:08.850704",
+      "extracted_at": "2025-12-02T05:31:54.153317",
       "entities": {
         "characters": [
           {
@@ -5621,6 +5559,14 @@
         ],
         "locations": [
           {
+            "name": "West",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "cave",
             "title": null,
             "mentions": [],
@@ -5651,30 +5597,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "path",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "home",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "West",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
@@ -5688,14 +5610,6 @@
           },
           {
             "name": "lantern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "bolt",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5729,7 +5643,7 @@
     },
     "leave Jerrick behind": {
       "content_hash": "01a4c405da8f089d",
-      "extracted_at": "2025-12-02T05:30:12.934490",
+      "extracted_at": "2025-12-02T05:31:56.269449",
       "entities": {
         "characters": [
           {
@@ -5795,10 +5709,19 @@
     },
     "left the cavern": {
       "content_hash": "7346d8b1fc1b206a",
-      "extracted_at": "2025-12-02T05:30:17.689855",
+      "extracted_at": "2025-12-02T05:31:59.387639",
       "entities": {
         "characters": [],
-        "locations": [],
+        "locations": [
+          {
+            "name": "cave",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
         "items": [],
         "organizations": [],
         "concepts": []
@@ -5810,7 +5733,7 @@
     },
     "mansel-20251101": {
       "content_hash": "3e6e6177d70a7e9a",
-      "extracted_at": "2025-12-02T05:30:24.142903",
+      "extracted_at": "2025-12-02T05:32:02.783741",
       "entities": {
         "characters": [
           {
@@ -5820,17 +5743,17 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          }
-        ],
-        "locations": [
+          },
           {
-            "name": "cave",
+            "name": "Nivek",
             "title": null,
             "mentions": [],
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
+          }
+        ],
+        "locations": [
           {
             "name": "cave's entrance",
             "title": null,
@@ -5850,14 +5773,6 @@
         ],
         "items": [
           {
-            "name": "Nivek's old sword",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "lamp",
             "title": null,
             "mentions": [],
@@ -5867,6 +5782,14 @@
           },
           {
             "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -5884,7 +5807,7 @@
     },
     "mansel-20251102": {
       "content_hash": "936a87b1df474879",
-      "extracted_at": "2025-12-02T05:30:30.792385",
+      "extracted_at": "2025-12-02T05:32:06.941895",
       "entities": {
         "characters": [
           {
@@ -5922,14 +5845,6 @@
             "_chunk_total": 1
           },
           {
-            "name": "village",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
             "name": "passageway",
             "title": null,
             "mentions": [],
@@ -5946,7 +5861,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "rocky path",
+            "name": "village",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6012,7 +5927,15 @@
             "_chunk_total": 1
           },
           {
-            "name": "drug",
+            "name": "setting sun",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "beam",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6030,7 +5953,7 @@
     },
     "mansel-20251112": {
       "content_hash": "7603f21c5efd8dfc",
-      "extracted_at": "2025-12-02T05:30:36.193618",
+      "extracted_at": "2025-12-02T05:32:11.839360",
       "entities": {
         "characters": [
           {
@@ -6114,14 +6037,6 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
-          },
-          {
-            "name": "Day 21 KEB",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
           }
         ],
         "items": [
@@ -6142,7 +6057,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "shirts",
+            "name": "clothes",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6196,6 +6111,14 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "Day 21 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "organizations": [],
@@ -6208,7 +6131,7 @@
     },
     "mansel-20251114": {
       "content_hash": "0b95e1d2105dd617",
-      "extracted_at": "2025-12-02T05:30:54.430354",
+      "extracted_at": "2025-12-02T05:32:17.020913",
       "entities": {
         "characters": [
           {
@@ -6250,11 +6173,43 @@
             "facts": [],
             "_chunk_number": 1,
             "_chunk_total": 1
+          },
+          {
+            "name": "Marcie",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the woman",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the storyteller",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the monster",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
           }
         ],
         "locations": [
           {
-            "name": "cave",
+            "name": "the cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6262,7 +6217,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "cavern",
+            "name": "the mushroom cave",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6270,7 +6225,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "path",
+            "name": "the cavern",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6278,7 +6233,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "inn",
+            "name": "the village",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6286,7 +6241,47 @@
             "_chunk_total": 1
           },
           {
-            "name": "village",
+            "name": "the inn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the path",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the bushes",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the hillside",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the boulder",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the passage way",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6296,7 +6291,7 @@
         ],
         "items": [
           {
-            "name": "sword",
+            "name": "the lantern light",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6304,7 +6299,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "lantern",
+            "name": "the sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6312,7 +6307,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "lantern light",
+            "name": "Nivek's sword",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6320,7 +6315,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "needle",
+            "name": "the lantern",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6328,7 +6323,47 @@
             "_chunk_total": 1
           },
           {
-            "name": "shirt",
+            "name": "the well",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the card tables",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the card tables",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the card tables",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the card tables",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the card tables",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6346,7 +6381,7 @@
     },
     "one creature": {
       "content_hash": "f8a788a59fcb7f03",
-      "extracted_at": "2025-12-02T05:30:59.231085",
+      "extracted_at": "2025-12-02T05:32:19.733257",
       "entities": {
         "characters": [
           {
@@ -6361,14 +6396,6 @@
         "locations": [
           {
             "name": "cavern",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "ground",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6396,7 +6423,7 @@
     },
     "proactive attack": {
       "content_hash": "239a53c8be09bbce",
-      "extracted_at": "2025-12-02T05:31:05.068138",
+      "extracted_at": "2025-12-02T05:32:23.728914",
       "entities": {
         "characters": [
           {
@@ -6426,7 +6453,31 @@
             "_chunk_total": 1
           },
           {
+            "name": "cave's entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
             "name": "cavern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "corner",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "room",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6460,7 +6511,7 @@
             "_chunk_total": 1
           },
           {
-            "name": "stone floor",
+            "name": "oil",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6478,11 +6529,52 @@
     },
     "raining": {
       "content_hash": "8eb4cdd8f065da75",
-      "extracted_at": "2025-12-02T05:31:08.819330",
+      "extracted_at": "2025-12-02T05:32:27.067649",
       "entities": {
         "characters": [],
         "locations": [],
-        "items": [],
+        "items": [
+          {
+            "name": "A rumor",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "The laundry",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "mansel-20251112",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Sleep",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Day 19 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
         "organizations": [],
         "concepts": []
       },
@@ -6493,7 +6585,7 @@
     },
     "wait for travelers to approach": {
       "content_hash": "12208cce6a05ac71",
-      "extracted_at": "2025-12-02T05:31:29.053634",
+      "extracted_at": "2025-12-02T05:32:44.665187",
       "entities": {
         "characters": [
           {
@@ -6564,14 +6656,6 @@
           },
           {
             "name": "cave just around the corner",
-            "title": null,
-            "mentions": [],
-            "facts": [],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "nearby caves",
             "title": null,
             "mentions": [],
             "facts": [],
@@ -6661,8 +6745,7 @@
             "Someone joins Javlyn",
             "Successfully escape",
             "immediate",
-            "mansel-20251102",
-            "mansel-20251114"
+            "mansel-20251102"
           ]
         },
         {
@@ -6709,9 +6792,8 @@
             "What cave?",
             "immediate",
             "leave Jerrick behind",
-            "mansel-20251101",
+            "left the cavern",
             "mansel-20251102",
-            "mansel-20251114",
             "proactive attack",
             "wait for travelers to approach"
           ]
@@ -6722,24 +6804,13 @@
           "evidence": [],
           "passages": [
             "Check the creature",
+            "Day 13 KEB",
             "Day 14 KEB",
             "Day 16 KEB",
             "Day 21 KEB",
             "Day 8 KEB",
             "Do not investigate",
             "leave Jerrick behind"
-          ]
-        },
-        {
-          "fact": "Location: Room",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Collect snacks",
-            "Day 10 KEB",
-            "Day 4 KEB",
-            "Re-enter the cave",
-            "mansel-20251112"
           ]
         },
         {
@@ -6752,11 +6823,55 @@
           ]
         },
         {
-          "fact": "Location: Laundry Pile",
+          "fact": "Location: Room",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Collect snacks"
+            "Collect snacks",
+            "Re-enter the cave",
+            "mansel-20251112",
+            "proactive attack"
+          ]
+        },
+        {
+          "fact": "Location: Cave Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Complete the working",
+            "Day 17 KEB",
+            "Day 18 KEB",
+            "Day 24 KEB",
+            "Day 30 KEB",
+            "Metal object",
+            "mansel-20251102"
+          ]
+        },
+        {
+          "fact": "Location: Cavern",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Complete the working",
+            "Day 10 KEB",
+            "Day 14 KEB",
+            "Day 15 KEB",
+            "Day 17 KEB",
+            "Day 18 KEB",
+            "Day 2 KEB",
+            "Day 23 KEB",
+            "Day 27 KEB",
+            "Day 29 KEB",
+            "Day 3 KEB",
+            "Day 30 KEB",
+            "Day 4 KEB",
+            "Day 6 KEB",
+            "Day 9 KEB",
+            "Magic worked as intended",
+            "Re-enter the cave",
+            "Silence",
+            "one creature",
+            "proactive attack"
           ]
         },
         {
@@ -6782,29 +6897,12 @@
           ]
         },
         {
-          "fact": "Location: Cavern",
+          "fact": "Location: West",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 10 KEB",
-            "Day 14 KEB",
-            "Day 15 KEB",
-            "Day 17 KEB",
-            "Day 18 KEB",
-            "Day 2 KEB",
-            "Day 23 KEB",
-            "Day 29 KEB",
-            "Day 3 KEB",
-            "Day 4 KEB",
-            "Day 6 KEB",
-            "Day 9 KEB",
-            "Magic worked as intended",
-            "Re-enter the cave",
-            "Silence",
-            "mansel-20251114",
-            "one creature",
-            "proactive attack"
+            "immediate"
           ]
         },
         {
@@ -6813,17 +6911,8 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Turn back",
-            "immediate"
-          ]
-        },
-        {
-          "fact": "Location: West",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working",
-            "immediate"
+            "Day 20 KEB",
+            "Turn back"
           ]
         },
         {
@@ -6835,7 +6924,6 @@
             "Day 18 KEB",
             "Day 19 KEB",
             "Day 21 KEB",
-            "Day 24 KEB",
             "Magic worked as intended",
             "immediate"
           ]
@@ -6846,26 +6934,8 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 24 KEB",
             "Magic worked as intended",
             "immediate"
-          ]
-        },
-        {
-          "fact": "Location: Cave Entrance",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working",
-            "Day 11 KEB",
-            "Day 15 KEB",
-            "Day 17 KEB",
-            "Day 23 KEB",
-            "Day 24 KEB",
-            "Day 25 KEB",
-            "Metal object",
-            "What cave?",
-            "mansel-20251102"
           ]
         },
         {
@@ -6885,56 +6955,11 @@
           ]
         },
         {
-          "fact": "Location: Floor",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB",
-            "Day 29 KEB",
-            "Day 4 KEB",
-            "mansel-20251112"
-          ]
-        },
-        {
-          "fact": "Location: Walls",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
           "fact": "Location: Day 27 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Area",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB",
-            "Day 23 KEB",
-            "Mushroom cave"
-          ]
-        },
-        {
-          "fact": "Location: Snow Drift",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Winter Storm",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
           ]
         },
         {
@@ -6947,25 +6972,30 @@
           ]
         },
         {
-          "fact": "Location: Next Town",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB"
-          ]
-        },
-        {
           "fact": "Location: Road",
           "type": "setting",
           "evidence": [],
           "passages": [
+            "Day 13 KEB",
             "Day 14 KEB",
             "Day 16 KEB",
             "Day 18 KEB",
             "Day 21 KEB",
+            "Day 27 KEB",
             "Magic worked as intended",
-            "Someone joins Javlyn",
             "wait for travelers to approach"
+          ]
+        },
+        {
+          "fact": "Location: Cave'S Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 14 KEB",
+            "Day 18 KEB",
+            "No one",
+            "mansel-20251101",
+            "proactive attack"
           ]
         },
         {
@@ -6983,13 +7013,22 @@
           ]
         },
         {
-          "fact": "Location: Cliff",
+          "fact": "Location: Ledge",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 15 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Entrance",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 15 KEB",
-            "Day 26 KEB",
-            "What cave?"
+            "Day 20 KEB",
+            "Day 4 KEB",
+            "Javlyn continued"
           ]
         },
         {
@@ -7001,15 +7040,25 @@
           ]
         },
         {
-          "fact": "Location: Main Road",
+          "fact": "Location: Cliff",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 16 KEB"
+            "Day 15 KEB",
+            "Day 26 KEB",
+            "What cave?"
           ]
         },
         {
-          "fact": "Location: Out Of Town",
+          "fact": "Location: Rockslide",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 15 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Main Road",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7033,22 +7082,11 @@
           ]
         },
         {
-          "fact": "Location: Entrance",
+          "fact": "Location: Cave'S Wall",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 18 KEB",
-            "Day 4 KEB",
-            "Javlyn continued"
-          ]
-        },
-        {
-          "fact": "Location: Chamber",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 18 KEB",
-            "Javlyn continued"
+            "Day 18 KEB"
           ]
         },
         {
@@ -7097,7 +7135,7 @@
           ]
         },
         {
-          "fact": "Location: Butcher",
+          "fact": "Location: The Butcher",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7114,11 +7152,11 @@
           ]
         },
         {
-          "fact": "Location: Pond",
+          "fact": "Location: Tree",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB"
+            "Day 23 KEB"
           ]
         },
         {
@@ -7126,29 +7164,17 @@
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB",
-            "Day 23 KEB",
             "Day 24 KEB",
             "Day 29 KEB",
-            "immediate",
-            "mansel-20251114",
             "wait for travelers to approach"
           ]
         },
         {
-          "fact": "Location: Underbrush",
+          "fact": "Location: My Family'S Barn",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 23 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Tree",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 23 KEB"
+            "Day 24 KEB"
           ]
         },
         {
@@ -7160,48 +7186,23 @@
           ]
         },
         {
-          "fact": "Location: Cavernous Space",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Passage",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Ledge",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Wall",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Ceiling",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB",
-            "Day 4 KEB"
-          ]
-        },
-        {
           "fact": "Location: Stream",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Bottom",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Space",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7217,21 +7218,19 @@
           ]
         },
         {
-          "fact": "Location: Ground",
+          "fact": "Location: Narrowness Of The Cave",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 4 KEB",
-            "Someone joins Javlyn",
-            "one creature"
+            "Day 30 KEB"
           ]
         },
         {
-          "fact": "Location: Well Worn Path",
+          "fact": "Location: Day 22 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 4 KEB"
+            "Day 7 KEB"
           ]
         },
         {
@@ -7252,11 +7251,19 @@
           ]
         },
         {
-          "fact": "Location: Protected Entrance",
+          "fact": "Location: Sloped Shelf",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Do not investigate"
+            "Day 9 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Day 24 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Defense magic"
           ]
         },
         {
@@ -7265,6 +7272,22 @@
           "evidence": [],
           "passages": [
             "Find the lantern"
+          ]
+        },
+        {
+          "fact": "Location: Day 4 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Find the lantern"
+          ]
+        },
+        {
+          "fact": "Location: Chamber",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Javlyn continued"
           ]
         },
         {
@@ -7284,43 +7307,27 @@
           ]
         },
         {
-          "fact": "Location: Day 29 Keb",
+          "fact": "Location: Area",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Silence"
+            "Mushroom cave"
           ]
         },
         {
-          "fact": "Location: Sky",
+          "fact": "Location: Muddy Path",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Turn back"
+            "No one"
           ]
         },
         {
-          "fact": "Location: Corner",
+          "fact": "Location: Day 30 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "What cave?"
-          ]
-        },
-        {
-          "fact": "Location: Entryway",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "What cave?"
-          ]
-        },
-        {
-          "fact": "Location: Cave'S Entrance",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "mansel-20251101"
+            "Start"
           ]
         },
         {
@@ -7340,11 +7347,11 @@
           ]
         },
         {
-          "fact": "Location: Rocky Path",
+          "fact": "Location: Floor",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251102"
+            "mansel-20251112"
           ]
         },
         {
@@ -7360,8 +7367,7 @@
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251112",
-            "mansel-20251114"
+            "mansel-20251112"
           ]
         },
         {
@@ -7381,23 +7387,95 @@
           ]
         },
         {
-          "fact": "Location: Day 21 Keb",
+          "fact": "Location: The Cave",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251112"
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Mushroom Cave",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Cavern",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Village",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Inn",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Path",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Bushes",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Hillside",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Boulder",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Passage Way",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: Corner",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "proactive attack"
           ]
         },
         {
           "fact": "Location: Cave Just Around The Corner",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "wait for travelers to approach"
-          ]
-        },
-        {
-          "fact": "Location: Nearby Caves",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7421,6 +7499,7 @@
             "Day 11 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
+            "Day 18 KEB",
             "Day 22 KEB",
             "Day 28 KEB"
           ]
@@ -7478,7 +7557,6 @@
             "immediate",
             "leave Jerrick behind",
             "mansel-20251101",
-            "mansel-20251114",
             "one creature",
             "proactive attack"
           ]
@@ -7489,25 +7567,17 @@
           "evidence": [],
           "passages": [
             "Check the creature",
-            "Day 15 KEB",
-            "Day 17 KEB"
+            "Day 11 KEB",
+            "Day 17 KEB",
+            "Turn back"
           ]
         },
         {
-          "fact": "Item: Blood",
+          "fact": "Item: Creature'S Blood",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Check the creature"
-          ]
-        },
-        {
-          "fact": "Item: Snacks",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Collect snacks",
-            "mansel-20251112"
           ]
         },
         {
@@ -7528,65 +7598,23 @@
           ]
         },
         {
-          "fact": "Item: Laundry",
+          "fact": "Item: Laundry Pile",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Collect snacks",
-            "Day 21 KEB",
             "mansel-20251112"
           ]
         },
         {
-          "fact": "Item: Mountain Lion Cub",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Collect snacks"
-          ]
-        },
-        {
-          "fact": "Item: Sword",
+          "fact": "Item: Creature",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 11 KEB",
-            "Day 14 KEB",
-            "Day 15 KEB",
-            "Day 16 KEB",
-            "Day 17 KEB",
-            "Day 21 KEB",
-            "Day 22 KEB",
-            "Day 24 KEB",
-            "Day 25 KEB",
-            "Day 26 KEB",
-            "Day 27 KEB",
-            "Day 3 KEB",
-            "Day 30 KEB",
-            "Day 5 KEB",
-            "Find the lantern",
-            "Javlyn continued",
-            "Re-enter the cave",
-            "What cave?",
-            "mansel-20251114",
-            "proactive attack"
-          ]
-        },
-        {
-          "fact": "Item: Shield",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working",
-            "Day 17 KEB",
-            "Day 20 KEB",
-            "Day 24 KEB",
-            "Day 26 KEB",
-            "Day 30 KEB",
-            "Day 5 KEB",
+            "Day 4 KEB",
             "Magic worked as intended",
-            "What cave?"
+            "immediate"
           ]
         },
         {
@@ -7600,28 +7628,47 @@
           ]
         },
         {
-          "fact": "Item: Wall",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working"
-          ]
-        },
-        {
-          "fact": "Item: Beef Stew",
+          "fact": "Item: Shield",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Complete the working",
-            "mansel-20251102"
+            "Day 12 KEB",
+            "Day 17 KEB",
+            "Day 20 KEB",
+            "Day 24 KEB",
+            "Day 26 KEB",
+            "Day 5 KEB",
+            "Magic worked as intended",
+            "What cave?"
           ]
         },
         {
-          "fact": "Item: Open Training Session",
+          "fact": "Item: Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Continue on"
+            "Complete the working",
+            "Day 11 KEB",
+            "Day 12 KEB",
+            "Day 14 KEB",
+            "Day 15 KEB",
+            "Day 16 KEB",
+            "Day 17 KEB",
+            "Day 21 KEB",
+            "Day 22 KEB",
+            "Day 24 KEB",
+            "Day 25 KEB",
+            "Day 26 KEB",
+            "Day 3 KEB",
+            "Day 5 KEB",
+            "Find the lantern",
+            "Javlyn continued",
+            "Re-enter the cave",
+            "Successfully escape",
+            "What cave?",
+            "mansel-20251101",
+            "proactive attack"
           ]
         },
         {
@@ -7630,13 +7677,10 @@
           "evidence": [],
           "passages": [
             "Day 10 KEB",
-            "Day 16 KEB",
             "Day 27 KEB",
             "Day 28 KEB",
-            "Day 3 KEB",
             "Magic worked as intended",
-            "Re-enter the cave",
-            "Successfully escape"
+            "mansel-20251114"
           ]
         },
         {
@@ -7652,6 +7696,16 @@
           ]
         },
         {
+          "fact": "Item: Water",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB",
+            "Day 29 KEB",
+            "Day 4 KEB"
+          ]
+        },
+        {
           "fact": "Item: Puddles",
           "type": "setting",
           "evidence": [],
@@ -7661,15 +7715,6 @@
         },
         {
           "fact": "Item: Bag",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB",
-            "Day 17 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Strap",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7711,11 +7756,28 @@
           ]
         },
         {
+          "fact": "Item: Ice Workings",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
           "fact": "Item: Two Packs",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 13 KEB"
+            "Day 13 KEB",
+            "Someone joins Javlyn"
+          ]
+        },
+        {
+          "fact": "Item: Lantern Light",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 14 KEB"
           ]
         },
         {
@@ -7728,30 +7790,11 @@
           ]
         },
         {
-          "fact": "Item: Lantern Light",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 14 KEB",
-            "mansel-20251114"
-          ]
-        },
-        {
           "fact": "Item: Shovel",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Rock",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB",
-            "Day 28 KEB",
-            "Day 29 KEB"
           ]
         },
         {
@@ -7763,31 +7806,7 @@
           ]
         },
         {
-          "fact": "Item: Ledge",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Broken Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Broken Blade",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Rain Drop",
+          "fact": "Item: Rocks",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7803,11 +7822,22 @@
           ]
         },
         {
-          "fact": "Item: The Monster",
+          "fact": "Item: Broken Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 16 KEB"
+            "Day 15 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Bolt",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 16 KEB",
+            "Day 24 KEB",
+            "Day 26 KEB",
+            "Day 5 KEB"
           ]
         },
         {
@@ -7827,15 +7857,7 @@
           ]
         },
         {
-          "fact": "Item: Floor",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 17 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Wooden Practice Sword",
+          "fact": "Item: Wooden Practice Swords",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7843,7 +7865,7 @@
           ]
         },
         {
-          "fact": "Item: Wooden Practice Blade",
+          "fact": "Item: Actual Blade",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7862,26 +7884,65 @@
           ]
         },
         {
+          "fact": "Item: Wooden Practice Blade",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Blade",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB",
+            "Day 22 KEB",
+            "Day 24 KEB",
+            "Day 25 KEB",
+            "Day 28 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Claws",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB"
+          ]
+        },
+        {
           "fact": "Item: Bed",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 19 KEB",
-            "Day 21 KEB",
             "Day 6 KEB"
           ]
         },
         {
-          "fact": "Item: Window",
+          "fact": "Item: Monster",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 19 KEB",
-            "Start"
+            "Day 20 KEB",
+            "Day 28 KEB",
+            "Magic worked as intended"
           ]
         },
         {
-          "fact": "Item: Working",
+          "fact": "Item: Laundry",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 19 KEB",
+            "Day 21 KEB",
+            "mansel-20251112"
+          ]
+        },
+        {
+          "fact": "Item: Window",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7897,7 +7958,7 @@
           ]
         },
         {
-          "fact": "Item: Cloth Object->Day 11 Keb",
+          "fact": "Item: Cloth Object",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7905,15 +7966,50 @@
           ]
         },
         {
+          "fact": "Item: Day 11 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 2 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Rock",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 2 KEB",
+            "Day 28 KEB",
+            "Day 29 KEB"
+          ]
+        },
+        {
           "fact": "Item: Light",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 20 KEB"
+            "Day 20 KEB",
+            "Day 8 KEB"
           ]
         },
         {
           "fact": "Item: Cabinet",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 21 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Meat",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 21 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Butcher",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -7934,80 +8030,37 @@
           ]
         },
         {
-          "fact": "Item: Adventuring Gear",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 21 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Light Packs",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 21 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Blade",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 22 KEB"
-          ]
-        },
-        {
           "fact": "Item: Arm",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB"
+            "Day 21 KEB"
           ]
         },
         {
-          "fact": "Item: Leg",
+          "fact": "Item: Blood",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB"
+            "Day 21 KEB",
+            "Do not investigate"
           ]
         },
         {
-          "fact": "Item: Creature",
+          "fact": "Item: Clothes",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB",
-            "Day 4 KEB",
-            "Magic worked as intended",
-            "immediate"
+            "Day 21 KEB",
+            "mansel-20251112"
           ]
         },
         {
-          "fact": "Item: Monster",
+          "fact": "Item: Rooms",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB",
-            "Day 28 KEB",
-            "Magic worked as intended"
-          ]
-        },
-        {
-          "fact": "Item: Horde",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 22 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Endurance Training",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 22 KEB"
+            "Day 21 KEB"
           ]
         },
         {
@@ -8019,6 +8072,31 @@
             "Find the lantern",
             "Re-enter the cave",
             "mansel-20251102"
+          ]
+        },
+        {
+          "fact": "Item: Mud",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 23 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Path",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 23 KEB",
+            "Day 4 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Cave Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 23 KEB"
           ]
         },
         {
@@ -8038,26 +8116,6 @@
           ]
         },
         {
-          "fact": "Item: Bolt",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 24 KEB",
-            "Day 26 KEB",
-            "Day 5 KEB",
-            "immediate"
-          ]
-        },
-        {
-          "fact": "Item: Walls",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 24 KEB",
-            "Day 8 KEB"
-          ]
-        },
-        {
           "fact": "Item: Greatsword",
           "type": "setting",
           "evidence": [],
@@ -8066,11 +8124,12 @@
           ]
         },
         {
-          "fact": "Item: Man’S Shirt",
+          "fact": "Item: Donkey",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 27 KEB"
+            "Day 27 KEB",
+            "Day 28 KEB"
           ]
         },
         {
@@ -8079,15 +8138,6 @@
           "evidence": [],
           "passages": [
             "Day 27 KEB",
-            "Day 28 KEB",
-            "Someone joins Javlyn"
-          ]
-        },
-        {
-          "fact": "Item: Donkey",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
             "Day 28 KEB"
           ]
         },
@@ -8097,6 +8147,24 @@
           "evidence": [],
           "passages": [
             "Day 28 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Belt",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB",
+            "Metal object",
+            "mansel-20251102"
+          ]
+        },
+        {
+          "fact": "Item: Ledge",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB"
           ]
         },
         {
@@ -8116,31 +8184,6 @@
           ]
         },
         {
-          "fact": "Item: Pebble",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Water",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Javlyn'S Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 3 KEB",
-            "Magic worked as intended"
-          ]
-        },
-        {
           "fact": "Item: Horns",
           "type": "setting",
           "evidence": [],
@@ -8150,7 +8193,7 @@
           ]
         },
         {
-          "fact": "Item: Guard'S Lanterns",
+          "fact": "Item: Horse",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8158,11 +8201,12 @@
           ]
         },
         {
-          "fact": "Item: Horse",
+          "fact": "Item: Nivek'S Old Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 30 KEB"
+            "Day 30 KEB",
+            "No one"
           ]
         },
         {
@@ -8183,7 +8227,7 @@
           ]
         },
         {
-          "fact": "Item: Bow",
+          "fact": "Item: Swords",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8191,7 +8235,7 @@
           ]
         },
         {
-          "fact": "Item: Tree",
+          "fact": "Item: Shields",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8199,25 +8243,24 @@
           ]
         },
         {
-          "fact": "Item: Oil",
+          "fact": "Item: Bows",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 4 KEB",
-            "Re-enter the cave",
-            "Successfully escape"
+            "Day 30 KEB"
           ]
         },
         {
-          "fact": "Item: Bandage",
+          "fact": "Item: Lanterns",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 6 KEB"
+            "Day 30 KEB",
+            "immediate"
           ]
         },
         {
-          "fact": "Item: Path",
+          "fact": "Item: Body",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8241,11 +8284,11 @@
           ]
         },
         {
-          "fact": "Item: Day 22 Keb",
+          "fact": "Item: Focus",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 7 KEB"
+            "Day 8 KEB"
           ]
         },
         {
@@ -8258,6 +8301,14 @@
         },
         {
           "fact": "Item: White Linen",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 8 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Walls",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8288,22 +8339,6 @@
           "passages": [
             "Day 9 KEB",
             "Metal object"
-          ]
-        },
-        {
-          "fact": "Item: Sloped Shelf",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Do not investigate"
-          ]
-        },
-        {
-          "fact": "Item: Stalagmites",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Do not investigate"
           ]
         },
         {
@@ -8355,21 +8390,11 @@
           ]
         },
         {
-          "fact": "Item: Belt",
+          "fact": "Item: Javlyn'S Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Metal object",
-            "mansel-20251102"
-          ]
-        },
-        {
-          "fact": "Item: Nivek'S Old Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "No one",
-            "mansel-20251101"
+            "Magic worked as intended"
           ]
         },
         {
@@ -8385,7 +8410,16 @@
           "type": "setting",
           "evidence": [],
           "passages": [
+            "Re-enter the cave"
+          ]
+        },
+        {
+          "fact": "Item: Oil",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
             "Re-enter the cave",
+            "Successfully escape",
             "proactive attack"
           ]
         },
@@ -8414,7 +8448,7 @@
           ]
         },
         {
-          "fact": "Item: Dirt",
+          "fact": "Item: Day 29 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8430,11 +8464,19 @@
           ]
         },
         {
-          "fact": "Item: Lanterns",
+          "fact": "Item: Day 16 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "immediate"
+            "Turn back"
+          ]
+        },
+        {
+          "fact": "Item: Door",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Turn back"
           ]
         },
         {
@@ -8451,6 +8493,14 @@
           "evidence": [],
           "passages": [
             "mansel-20251101"
+          ]
+        },
+        {
+          "fact": "Item: Beef Stew",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251102"
           ]
         },
         {
@@ -8486,7 +8536,7 @@
           ]
         },
         {
-          "fact": "Item: Drug",
+          "fact": "Item: Setting Sun",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8494,19 +8544,11 @@
           ]
         },
         {
-          "fact": "Item: Laundry Pile",
+          "fact": "Item: Beam",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251112"
-          ]
-        },
-        {
-          "fact": "Item: Shirts",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "mansel-20251112"
+            "mansel-20251102"
           ]
         },
         {
@@ -8550,7 +8592,23 @@
           ]
         },
         {
-          "fact": "Item: Needle",
+          "fact": "Item: Snacks",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251112"
+          ]
+        },
+        {
+          "fact": "Item: Day 21 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251112"
+          ]
+        },
+        {
+          "fact": "Item: The Lantern Light",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8558,7 +8616,31 @@
           ]
         },
         {
-          "fact": "Item: Shirt",
+          "fact": "Item: The Sword",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Item: The Lantern",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Item: The Well",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Item: The Card Tables",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -8571,6 +8653,46 @@
           "evidence": [],
           "passages": [
             "proactive attack"
+          ]
+        },
+        {
+          "fact": "Item: A Rumor",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: The Laundry",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: Mansel-20251112",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: Sleep",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: Day 19 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
           ]
         },
         {
@@ -8657,15 +8779,6 @@
           "one creature",
           "proactive attack",
           "wait for travelers to approach"
-        ],
-        "mentions": []
-      },
-      "Creature": {
-        "identity": [],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Collect snacks"
         ],
         "mentions": []
       },
@@ -8761,7 +8874,8 @@
         "passages": [
           "Complete the working",
           "Day 8 KEB",
-          "immediate"
+          "immediate",
+          "mansel-20251114"
         ],
         "mentions": []
       },
@@ -8776,17 +8890,20 @@
           "Day 17 KEB",
           "Day 18 KEB",
           "Day 26 KEB",
-          "Day 27 KEB",
+          "Day 3 KEB",
           "Day 30 KEB",
           "Find the lantern",
           "Magic worked as intended",
           "No one",
+          "Re-enter the cave",
+          "Successfully escape",
+          "mansel-20251101",
           "mansel-20251114",
           "proactive attack"
         ],
         "mentions": []
       },
-      "Villagers": {
+      "No One": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -8811,6 +8928,16 @@
           "Successfully escape",
           "leave Jerrick behind",
           "mansel-20251102"
+        ],
+        "mentions": []
+      },
+      "The Creature": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 14 KEB",
+          "Day 21 KEB"
         ],
         "mentions": []
       },
@@ -8886,6 +9013,70 @@
         ],
         "mentions": []
       },
+      "The Monster": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB",
+          "mansel-20251114"
+        ],
+        "mentions": []
+      },
+      "The Male Voice": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Women": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Travelers": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Blue Creature": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Knight": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 24 KEB"
+        ],
+        "mentions": []
+      },
+      "Tavern Keeper": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 24 KEB"
+        ],
+        "mentions": []
+      },
       "The Tallest": {
         "identity": [],
         "zero_action_state": [],
@@ -8919,12 +9110,11 @@
         "variables": [],
         "passages": [
           "Day 26 KEB",
-          "Day 27 KEB",
-          "Day 30 KEB"
+          "Day 27 KEB"
         ],
         "mentions": []
       },
-      "Donkey": {
+      "Victim": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -8961,7 +9151,7 @@
         ],
         "mentions": []
       },
-      "Alexis": {
+      "Jahnice": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -8979,7 +9169,7 @@
         ],
         "mentions": []
       },
-      "Mayor": {
+      "Alexis": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -8988,16 +9178,7 @@
         ],
         "mentions": []
       },
-      "National Guard": {
-        "identity": [],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 30 KEB"
-        ],
-        "mentions": []
-      },
-      "Monsters": {
+      "The Mayor": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -9032,6 +9213,24 @@
           "mansel-20251112"
         ],
         "mentions": []
+      },
+      "The Woman": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "mansel-20251114"
+        ],
+        "mentions": []
+      },
+      "The Storyteller": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "mansel-20251114"
+        ],
+        "mentions": []
       }
     },
     "variables": {
@@ -9041,7 +9240,7 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 0.002154827117919922,
+  "summarization_time_seconds": 0.0021772384643554688,
   "categorized_facts": {
     "constants": {
       "world_rules": [],
@@ -9081,8 +9280,7 @@
             "Someone joins Javlyn",
             "Successfully escape",
             "immediate",
-            "mansel-20251102",
-            "mansel-20251114"
+            "mansel-20251102"
           ]
         },
         {
@@ -9129,9 +9327,8 @@
             "What cave?",
             "immediate",
             "leave Jerrick behind",
-            "mansel-20251101",
+            "left the cavern",
             "mansel-20251102",
-            "mansel-20251114",
             "proactive attack",
             "wait for travelers to approach"
           ]
@@ -9142,24 +9339,13 @@
           "evidence": [],
           "passages": [
             "Check the creature",
+            "Day 13 KEB",
             "Day 14 KEB",
             "Day 16 KEB",
             "Day 21 KEB",
             "Day 8 KEB",
             "Do not investigate",
             "leave Jerrick behind"
-          ]
-        },
-        {
-          "fact": "Location: Room",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Collect snacks",
-            "Day 10 KEB",
-            "Day 4 KEB",
-            "Re-enter the cave",
-            "mansel-20251112"
           ]
         },
         {
@@ -9172,11 +9358,55 @@
           ]
         },
         {
-          "fact": "Location: Laundry Pile",
+          "fact": "Location: Room",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Collect snacks"
+            "Collect snacks",
+            "Re-enter the cave",
+            "mansel-20251112",
+            "proactive attack"
+          ]
+        },
+        {
+          "fact": "Location: Cave Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Complete the working",
+            "Day 17 KEB",
+            "Day 18 KEB",
+            "Day 24 KEB",
+            "Day 30 KEB",
+            "Metal object",
+            "mansel-20251102"
+          ]
+        },
+        {
+          "fact": "Location: Cavern",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Complete the working",
+            "Day 10 KEB",
+            "Day 14 KEB",
+            "Day 15 KEB",
+            "Day 17 KEB",
+            "Day 18 KEB",
+            "Day 2 KEB",
+            "Day 23 KEB",
+            "Day 27 KEB",
+            "Day 29 KEB",
+            "Day 3 KEB",
+            "Day 30 KEB",
+            "Day 4 KEB",
+            "Day 6 KEB",
+            "Day 9 KEB",
+            "Magic worked as intended",
+            "Re-enter the cave",
+            "Silence",
+            "one creature",
+            "proactive attack"
           ]
         },
         {
@@ -9202,29 +9432,12 @@
           ]
         },
         {
-          "fact": "Location: Cavern",
+          "fact": "Location: West",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 10 KEB",
-            "Day 14 KEB",
-            "Day 15 KEB",
-            "Day 17 KEB",
-            "Day 18 KEB",
-            "Day 2 KEB",
-            "Day 23 KEB",
-            "Day 29 KEB",
-            "Day 3 KEB",
-            "Day 4 KEB",
-            "Day 6 KEB",
-            "Day 9 KEB",
-            "Magic worked as intended",
-            "Re-enter the cave",
-            "Silence",
-            "mansel-20251114",
-            "one creature",
-            "proactive attack"
+            "immediate"
           ]
         },
         {
@@ -9233,17 +9446,8 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Turn back",
-            "immediate"
-          ]
-        },
-        {
-          "fact": "Location: West",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working",
-            "immediate"
+            "Day 20 KEB",
+            "Turn back"
           ]
         },
         {
@@ -9255,7 +9459,6 @@
             "Day 18 KEB",
             "Day 19 KEB",
             "Day 21 KEB",
-            "Day 24 KEB",
             "Magic worked as intended",
             "immediate"
           ]
@@ -9266,26 +9469,8 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 24 KEB",
             "Magic worked as intended",
             "immediate"
-          ]
-        },
-        {
-          "fact": "Location: Cave Entrance",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working",
-            "Day 11 KEB",
-            "Day 15 KEB",
-            "Day 17 KEB",
-            "Day 23 KEB",
-            "Day 24 KEB",
-            "Day 25 KEB",
-            "Metal object",
-            "What cave?",
-            "mansel-20251102"
           ]
         },
         {
@@ -9305,56 +9490,11 @@
           ]
         },
         {
-          "fact": "Location: Floor",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB",
-            "Day 29 KEB",
-            "Day 4 KEB",
-            "mansel-20251112"
-          ]
-        },
-        {
-          "fact": "Location: Walls",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
           "fact": "Location: Day 27 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Area",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB",
-            "Day 23 KEB",
-            "Mushroom cave"
-          ]
-        },
-        {
-          "fact": "Location: Snow Drift",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Winter Storm",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
           ]
         },
         {
@@ -9367,25 +9507,30 @@
           ]
         },
         {
-          "fact": "Location: Next Town",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB"
-          ]
-        },
-        {
           "fact": "Location: Road",
           "type": "setting",
           "evidence": [],
           "passages": [
+            "Day 13 KEB",
             "Day 14 KEB",
             "Day 16 KEB",
             "Day 18 KEB",
             "Day 21 KEB",
+            "Day 27 KEB",
             "Magic worked as intended",
-            "Someone joins Javlyn",
             "wait for travelers to approach"
+          ]
+        },
+        {
+          "fact": "Location: Cave'S Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 14 KEB",
+            "Day 18 KEB",
+            "No one",
+            "mansel-20251101",
+            "proactive attack"
           ]
         },
         {
@@ -9403,13 +9548,22 @@
           ]
         },
         {
-          "fact": "Location: Cliff",
+          "fact": "Location: Ledge",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 15 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Entrance",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 15 KEB",
-            "Day 26 KEB",
-            "What cave?"
+            "Day 20 KEB",
+            "Day 4 KEB",
+            "Javlyn continued"
           ]
         },
         {
@@ -9421,15 +9575,25 @@
           ]
         },
         {
-          "fact": "Location: Main Road",
+          "fact": "Location: Cliff",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 16 KEB"
+            "Day 15 KEB",
+            "Day 26 KEB",
+            "What cave?"
           ]
         },
         {
-          "fact": "Location: Out Of Town",
+          "fact": "Location: Rockslide",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 15 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Main Road",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -9453,22 +9617,11 @@
           ]
         },
         {
-          "fact": "Location: Entrance",
+          "fact": "Location: Cave'S Wall",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 18 KEB",
-            "Day 4 KEB",
-            "Javlyn continued"
-          ]
-        },
-        {
-          "fact": "Location: Chamber",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 18 KEB",
-            "Javlyn continued"
+            "Day 18 KEB"
           ]
         },
         {
@@ -9517,7 +9670,7 @@
           ]
         },
         {
-          "fact": "Location: Butcher",
+          "fact": "Location: The Butcher",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -9534,11 +9687,11 @@
           ]
         },
         {
-          "fact": "Location: Pond",
+          "fact": "Location: Tree",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB"
+            "Day 23 KEB"
           ]
         },
         {
@@ -9546,29 +9699,17 @@
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB",
-            "Day 23 KEB",
             "Day 24 KEB",
             "Day 29 KEB",
-            "immediate",
-            "mansel-20251114",
             "wait for travelers to approach"
           ]
         },
         {
-          "fact": "Location: Underbrush",
+          "fact": "Location: My Family'S Barn",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 23 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Tree",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 23 KEB"
+            "Day 24 KEB"
           ]
         },
         {
@@ -9580,48 +9721,23 @@
           ]
         },
         {
-          "fact": "Location: Cavernous Space",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Passage",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Ledge",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Wall",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Ceiling",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB",
-            "Day 4 KEB"
-          ]
-        },
-        {
           "fact": "Location: Stream",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Bottom",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Space",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -9637,21 +9753,19 @@
           ]
         },
         {
-          "fact": "Location: Ground",
+          "fact": "Location: Narrowness Of The Cave",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 4 KEB",
-            "Someone joins Javlyn",
-            "one creature"
+            "Day 30 KEB"
           ]
         },
         {
-          "fact": "Location: Well Worn Path",
+          "fact": "Location: Day 22 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 4 KEB"
+            "Day 7 KEB"
           ]
         },
         {
@@ -9672,11 +9786,19 @@
           ]
         },
         {
-          "fact": "Location: Protected Entrance",
+          "fact": "Location: Sloped Shelf",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Do not investigate"
+            "Day 9 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Day 24 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Defense magic"
           ]
         },
         {
@@ -9685,6 +9807,22 @@
           "evidence": [],
           "passages": [
             "Find the lantern"
+          ]
+        },
+        {
+          "fact": "Location: Day 4 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Find the lantern"
+          ]
+        },
+        {
+          "fact": "Location: Chamber",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Javlyn continued"
           ]
         },
         {
@@ -9704,43 +9842,27 @@
           ]
         },
         {
-          "fact": "Location: Day 29 Keb",
+          "fact": "Location: Area",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Silence"
+            "Mushroom cave"
           ]
         },
         {
-          "fact": "Location: Sky",
+          "fact": "Location: Muddy Path",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Turn back"
+            "No one"
           ]
         },
         {
-          "fact": "Location: Corner",
+          "fact": "Location: Day 30 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "What cave?"
-          ]
-        },
-        {
-          "fact": "Location: Entryway",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "What cave?"
-          ]
-        },
-        {
-          "fact": "Location: Cave'S Entrance",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "mansel-20251101"
+            "Start"
           ]
         },
         {
@@ -9760,11 +9882,11 @@
           ]
         },
         {
-          "fact": "Location: Rocky Path",
+          "fact": "Location: Floor",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251102"
+            "mansel-20251112"
           ]
         },
         {
@@ -9780,8 +9902,7 @@
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251112",
-            "mansel-20251114"
+            "mansel-20251112"
           ]
         },
         {
@@ -9801,23 +9922,95 @@
           ]
         },
         {
-          "fact": "Location: Day 21 Keb",
+          "fact": "Location: The Cave",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251112"
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Mushroom Cave",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Cavern",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Village",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Inn",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Path",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Bushes",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Hillside",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Boulder",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: The Passage Way",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Location: Corner",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "proactive attack"
           ]
         },
         {
           "fact": "Location: Cave Just Around The Corner",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "wait for travelers to approach"
-          ]
-        },
-        {
-          "fact": "Location: Nearby Caves",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -9841,6 +10034,7 @@
             "Day 11 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
+            "Day 18 KEB",
             "Day 22 KEB",
             "Day 28 KEB"
           ]
@@ -9898,7 +10092,6 @@
             "immediate",
             "leave Jerrick behind",
             "mansel-20251101",
-            "mansel-20251114",
             "one creature",
             "proactive attack"
           ]
@@ -9909,25 +10102,17 @@
           "evidence": [],
           "passages": [
             "Check the creature",
-            "Day 15 KEB",
-            "Day 17 KEB"
+            "Day 11 KEB",
+            "Day 17 KEB",
+            "Turn back"
           ]
         },
         {
-          "fact": "Item: Blood",
+          "fact": "Item: Creature'S Blood",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Check the creature"
-          ]
-        },
-        {
-          "fact": "Item: Snacks",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Collect snacks",
-            "mansel-20251112"
           ]
         },
         {
@@ -9948,65 +10133,23 @@
           ]
         },
         {
-          "fact": "Item: Laundry",
+          "fact": "Item: Laundry Pile",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Collect snacks",
-            "Day 21 KEB",
             "mansel-20251112"
           ]
         },
         {
-          "fact": "Item: Mountain Lion Cub",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Collect snacks"
-          ]
-        },
-        {
-          "fact": "Item: Sword",
+          "fact": "Item: Creature",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 11 KEB",
-            "Day 14 KEB",
-            "Day 15 KEB",
-            "Day 16 KEB",
-            "Day 17 KEB",
-            "Day 21 KEB",
-            "Day 22 KEB",
-            "Day 24 KEB",
-            "Day 25 KEB",
-            "Day 26 KEB",
-            "Day 27 KEB",
-            "Day 3 KEB",
-            "Day 30 KEB",
-            "Day 5 KEB",
-            "Find the lantern",
-            "Javlyn continued",
-            "Re-enter the cave",
-            "What cave?",
-            "mansel-20251114",
-            "proactive attack"
-          ]
-        },
-        {
-          "fact": "Item: Shield",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working",
-            "Day 17 KEB",
-            "Day 20 KEB",
-            "Day 24 KEB",
-            "Day 26 KEB",
-            "Day 30 KEB",
-            "Day 5 KEB",
+            "Day 4 KEB",
             "Magic worked as intended",
-            "What cave?"
+            "immediate"
           ]
         },
         {
@@ -10020,28 +10163,47 @@
           ]
         },
         {
-          "fact": "Item: Wall",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Complete the working"
-          ]
-        },
-        {
-          "fact": "Item: Beef Stew",
+          "fact": "Item: Shield",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Complete the working",
-            "mansel-20251102"
+            "Day 12 KEB",
+            "Day 17 KEB",
+            "Day 20 KEB",
+            "Day 24 KEB",
+            "Day 26 KEB",
+            "Day 5 KEB",
+            "Magic worked as intended",
+            "What cave?"
           ]
         },
         {
-          "fact": "Item: Open Training Session",
+          "fact": "Item: Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Continue on"
+            "Complete the working",
+            "Day 11 KEB",
+            "Day 12 KEB",
+            "Day 14 KEB",
+            "Day 15 KEB",
+            "Day 16 KEB",
+            "Day 17 KEB",
+            "Day 21 KEB",
+            "Day 22 KEB",
+            "Day 24 KEB",
+            "Day 25 KEB",
+            "Day 26 KEB",
+            "Day 3 KEB",
+            "Day 5 KEB",
+            "Find the lantern",
+            "Javlyn continued",
+            "Re-enter the cave",
+            "Successfully escape",
+            "What cave?",
+            "mansel-20251101",
+            "proactive attack"
           ]
         },
         {
@@ -10050,13 +10212,10 @@
           "evidence": [],
           "passages": [
             "Day 10 KEB",
-            "Day 16 KEB",
             "Day 27 KEB",
             "Day 28 KEB",
-            "Day 3 KEB",
             "Magic worked as intended",
-            "Re-enter the cave",
-            "Successfully escape"
+            "mansel-20251114"
           ]
         },
         {
@@ -10072,6 +10231,16 @@
           ]
         },
         {
+          "fact": "Item: Water",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB",
+            "Day 29 KEB",
+            "Day 4 KEB"
+          ]
+        },
+        {
           "fact": "Item: Puddles",
           "type": "setting",
           "evidence": [],
@@ -10081,15 +10250,6 @@
         },
         {
           "fact": "Item: Bag",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB",
-            "Day 17 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Strap",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10131,11 +10291,28 @@
           ]
         },
         {
+          "fact": "Item: Ice Workings",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
           "fact": "Item: Two Packs",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 13 KEB"
+            "Day 13 KEB",
+            "Someone joins Javlyn"
+          ]
+        },
+        {
+          "fact": "Item: Lantern Light",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 14 KEB"
           ]
         },
         {
@@ -10148,30 +10325,11 @@
           ]
         },
         {
-          "fact": "Item: Lantern Light",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 14 KEB",
-            "mansel-20251114"
-          ]
-        },
-        {
           "fact": "Item: Shovel",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Rock",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB",
-            "Day 28 KEB",
-            "Day 29 KEB"
           ]
         },
         {
@@ -10183,31 +10341,7 @@
           ]
         },
         {
-          "fact": "Item: Ledge",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Broken Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Broken Blade",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 15 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Rain Drop",
+          "fact": "Item: Rocks",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10223,11 +10357,22 @@
           ]
         },
         {
-          "fact": "Item: The Monster",
+          "fact": "Item: Broken Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 16 KEB"
+            "Day 15 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Bolt",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 16 KEB",
+            "Day 24 KEB",
+            "Day 26 KEB",
+            "Day 5 KEB"
           ]
         },
         {
@@ -10247,15 +10392,7 @@
           ]
         },
         {
-          "fact": "Item: Floor",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 17 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Wooden Practice Sword",
+          "fact": "Item: Wooden Practice Swords",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10263,7 +10400,7 @@
           ]
         },
         {
-          "fact": "Item: Wooden Practice Blade",
+          "fact": "Item: Actual Blade",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10282,26 +10419,65 @@
           ]
         },
         {
+          "fact": "Item: Wooden Practice Blade",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Blade",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB",
+            "Day 22 KEB",
+            "Day 24 KEB",
+            "Day 25 KEB",
+            "Day 28 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Claws",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB"
+          ]
+        },
+        {
           "fact": "Item: Bed",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 19 KEB",
-            "Day 21 KEB",
             "Day 6 KEB"
           ]
         },
         {
-          "fact": "Item: Window",
+          "fact": "Item: Monster",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 19 KEB",
-            "Start"
+            "Day 20 KEB",
+            "Day 28 KEB",
+            "Magic worked as intended"
           ]
         },
         {
-          "fact": "Item: Working",
+          "fact": "Item: Laundry",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 19 KEB",
+            "Day 21 KEB",
+            "mansel-20251112"
+          ]
+        },
+        {
+          "fact": "Item: Window",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10317,7 +10493,7 @@
           ]
         },
         {
-          "fact": "Item: Cloth Object->Day 11 Keb",
+          "fact": "Item: Cloth Object",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10325,15 +10501,50 @@
           ]
         },
         {
+          "fact": "Item: Day 11 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 2 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Rock",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 2 KEB",
+            "Day 28 KEB",
+            "Day 29 KEB"
+          ]
+        },
+        {
           "fact": "Item: Light",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 20 KEB"
+            "Day 20 KEB",
+            "Day 8 KEB"
           ]
         },
         {
           "fact": "Item: Cabinet",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 21 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Meat",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 21 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Butcher",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10354,80 +10565,37 @@
           ]
         },
         {
-          "fact": "Item: Adventuring Gear",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 21 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Light Packs",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 21 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Blade",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 22 KEB"
-          ]
-        },
-        {
           "fact": "Item: Arm",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB"
+            "Day 21 KEB"
           ]
         },
         {
-          "fact": "Item: Leg",
+          "fact": "Item: Blood",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB"
+            "Day 21 KEB",
+            "Do not investigate"
           ]
         },
         {
-          "fact": "Item: Creature",
+          "fact": "Item: Clothes",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB",
-            "Day 4 KEB",
-            "Magic worked as intended",
-            "immediate"
+            "Day 21 KEB",
+            "mansel-20251112"
           ]
         },
         {
-          "fact": "Item: Monster",
+          "fact": "Item: Rooms",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 22 KEB",
-            "Day 28 KEB",
-            "Magic worked as intended"
-          ]
-        },
-        {
-          "fact": "Item: Horde",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 22 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Endurance Training",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 22 KEB"
+            "Day 21 KEB"
           ]
         },
         {
@@ -10439,6 +10607,31 @@
             "Find the lantern",
             "Re-enter the cave",
             "mansel-20251102"
+          ]
+        },
+        {
+          "fact": "Item: Mud",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 23 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Path",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 23 KEB",
+            "Day 4 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Cave Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 23 KEB"
           ]
         },
         {
@@ -10458,26 +10651,6 @@
           ]
         },
         {
-          "fact": "Item: Bolt",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 24 KEB",
-            "Day 26 KEB",
-            "Day 5 KEB",
-            "immediate"
-          ]
-        },
-        {
-          "fact": "Item: Walls",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 24 KEB",
-            "Day 8 KEB"
-          ]
-        },
-        {
           "fact": "Item: Greatsword",
           "type": "setting",
           "evidence": [],
@@ -10486,11 +10659,12 @@
           ]
         },
         {
-          "fact": "Item: Man’S Shirt",
+          "fact": "Item: Donkey",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 27 KEB"
+            "Day 27 KEB",
+            "Day 28 KEB"
           ]
         },
         {
@@ -10499,15 +10673,6 @@
           "evidence": [],
           "passages": [
             "Day 27 KEB",
-            "Day 28 KEB",
-            "Someone joins Javlyn"
-          ]
-        },
-        {
-          "fact": "Item: Donkey",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
             "Day 28 KEB"
           ]
         },
@@ -10517,6 +10682,24 @@
           "evidence": [],
           "passages": [
             "Day 28 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Belt",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB",
+            "Metal object",
+            "mansel-20251102"
+          ]
+        },
+        {
+          "fact": "Item: Ledge",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB"
           ]
         },
         {
@@ -10536,31 +10719,6 @@
           ]
         },
         {
-          "fact": "Item: Pebble",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Water",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 29 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Javlyn'S Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 3 KEB",
-            "Magic worked as intended"
-          ]
-        },
-        {
           "fact": "Item: Horns",
           "type": "setting",
           "evidence": [],
@@ -10570,7 +10728,7 @@
           ]
         },
         {
-          "fact": "Item: Guard'S Lanterns",
+          "fact": "Item: Horse",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10578,11 +10736,12 @@
           ]
         },
         {
-          "fact": "Item: Horse",
+          "fact": "Item: Nivek'S Old Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 30 KEB"
+            "Day 30 KEB",
+            "No one"
           ]
         },
         {
@@ -10603,7 +10762,7 @@
           ]
         },
         {
-          "fact": "Item: Bow",
+          "fact": "Item: Swords",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10611,7 +10770,7 @@
           ]
         },
         {
-          "fact": "Item: Tree",
+          "fact": "Item: Shields",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10619,25 +10778,24 @@
           ]
         },
         {
-          "fact": "Item: Oil",
+          "fact": "Item: Bows",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 4 KEB",
-            "Re-enter the cave",
-            "Successfully escape"
+            "Day 30 KEB"
           ]
         },
         {
-          "fact": "Item: Bandage",
+          "fact": "Item: Lanterns",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 6 KEB"
+            "Day 30 KEB",
+            "immediate"
           ]
         },
         {
-          "fact": "Item: Path",
+          "fact": "Item: Body",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10661,11 +10819,11 @@
           ]
         },
         {
-          "fact": "Item: Day 22 Keb",
+          "fact": "Item: Focus",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Day 7 KEB"
+            "Day 8 KEB"
           ]
         },
         {
@@ -10678,6 +10836,14 @@
         },
         {
           "fact": "Item: White Linen",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 8 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Walls",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10708,22 +10874,6 @@
           "passages": [
             "Day 9 KEB",
             "Metal object"
-          ]
-        },
-        {
-          "fact": "Item: Sloped Shelf",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Do not investigate"
-          ]
-        },
-        {
-          "fact": "Item: Stalagmites",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Do not investigate"
           ]
         },
         {
@@ -10775,21 +10925,11 @@
           ]
         },
         {
-          "fact": "Item: Belt",
+          "fact": "Item: Javlyn'S Sword",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "Metal object",
-            "mansel-20251102"
-          ]
-        },
-        {
-          "fact": "Item: Nivek'S Old Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "No one",
-            "mansel-20251101"
+            "Magic worked as intended"
           ]
         },
         {
@@ -10805,7 +10945,16 @@
           "type": "setting",
           "evidence": [],
           "passages": [
+            "Re-enter the cave"
+          ]
+        },
+        {
+          "fact": "Item: Oil",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
             "Re-enter the cave",
+            "Successfully escape",
             "proactive attack"
           ]
         },
@@ -10834,7 +10983,7 @@
           ]
         },
         {
-          "fact": "Item: Dirt",
+          "fact": "Item: Day 29 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10850,11 +10999,19 @@
           ]
         },
         {
-          "fact": "Item: Lanterns",
+          "fact": "Item: Day 16 Keb",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "immediate"
+            "Turn back"
+          ]
+        },
+        {
+          "fact": "Item: Door",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Turn back"
           ]
         },
         {
@@ -10871,6 +11028,14 @@
           "evidence": [],
           "passages": [
             "mansel-20251101"
+          ]
+        },
+        {
+          "fact": "Item: Beef Stew",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251102"
           ]
         },
         {
@@ -10906,7 +11071,7 @@
           ]
         },
         {
-          "fact": "Item: Drug",
+          "fact": "Item: Setting Sun",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10914,19 +11079,11 @@
           ]
         },
         {
-          "fact": "Item: Laundry Pile",
+          "fact": "Item: Beam",
           "type": "setting",
           "evidence": [],
           "passages": [
-            "mansel-20251112"
-          ]
-        },
-        {
-          "fact": "Item: Shirts",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "mansel-20251112"
+            "mansel-20251102"
           ]
         },
         {
@@ -10970,7 +11127,23 @@
           ]
         },
         {
-          "fact": "Item: Needle",
+          "fact": "Item: Snacks",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251112"
+          ]
+        },
+        {
+          "fact": "Item: Day 21 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251112"
+          ]
+        },
+        {
+          "fact": "Item: The Lantern Light",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10978,7 +11151,31 @@
           ]
         },
         {
-          "fact": "Item: Shirt",
+          "fact": "Item: The Sword",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Item: The Lantern",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Item: The Well",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "mansel-20251114"
+          ]
+        },
+        {
+          "fact": "Item: The Card Tables",
           "type": "setting",
           "evidence": [],
           "passages": [
@@ -10991,6 +11188,46 @@
           "evidence": [],
           "passages": [
             "proactive attack"
+          ]
+        },
+        {
+          "fact": "Item: A Rumor",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: The Laundry",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: Mansel-20251112",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: Sleep",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
+          ]
+        },
+        {
+          "fact": "Item: Day 19 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "raining"
           ]
         },
         {
@@ -11077,15 +11314,6 @@
           "one creature",
           "proactive attack",
           "wait for travelers to approach"
-        ],
-        "mentions": []
-      },
-      "Creature": {
-        "identity": [],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Collect snacks"
         ],
         "mentions": []
       },
@@ -11181,7 +11409,8 @@
         "passages": [
           "Complete the working",
           "Day 8 KEB",
-          "immediate"
+          "immediate",
+          "mansel-20251114"
         ],
         "mentions": []
       },
@@ -11196,17 +11425,20 @@
           "Day 17 KEB",
           "Day 18 KEB",
           "Day 26 KEB",
-          "Day 27 KEB",
+          "Day 3 KEB",
           "Day 30 KEB",
           "Find the lantern",
           "Magic worked as intended",
           "No one",
+          "Re-enter the cave",
+          "Successfully escape",
+          "mansel-20251101",
           "mansel-20251114",
           "proactive attack"
         ],
         "mentions": []
       },
-      "Villagers": {
+      "No One": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -11231,6 +11463,16 @@
           "Successfully escape",
           "leave Jerrick behind",
           "mansel-20251102"
+        ],
+        "mentions": []
+      },
+      "The Creature": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 14 KEB",
+          "Day 21 KEB"
         ],
         "mentions": []
       },
@@ -11306,6 +11548,70 @@
         ],
         "mentions": []
       },
+      "The Monster": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB",
+          "mansel-20251114"
+        ],
+        "mentions": []
+      },
+      "The Male Voice": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Women": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Travelers": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Blue Creature": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB"
+        ],
+        "mentions": []
+      },
+      "The Knight": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 24 KEB"
+        ],
+        "mentions": []
+      },
+      "Tavern Keeper": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 24 KEB"
+        ],
+        "mentions": []
+      },
       "The Tallest": {
         "identity": [],
         "zero_action_state": [],
@@ -11339,12 +11645,11 @@
         "variables": [],
         "passages": [
           "Day 26 KEB",
-          "Day 27 KEB",
-          "Day 30 KEB"
+          "Day 27 KEB"
         ],
         "mentions": []
       },
-      "Donkey": {
+      "Victim": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -11381,7 +11686,7 @@
         ],
         "mentions": []
       },
-      "Alexis": {
+      "Jahnice": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -11399,7 +11704,7 @@
         ],
         "mentions": []
       },
-      "Mayor": {
+      "Alexis": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -11408,16 +11713,7 @@
         ],
         "mentions": []
       },
-      "National Guard": {
-        "identity": [],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 30 KEB"
-        ],
-        "mentions": []
-      },
-      "Monsters": {
+      "The Mayor": {
         "identity": [],
         "zero_action_state": [],
         "variables": [],
@@ -11450,6 +11746,24 @@
         "variables": [],
         "passages": [
           "mansel-20251112"
+        ],
+        "mentions": []
+      },
+      "The Woman": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "mansel-20251114"
+        ],
+        "mentions": []
+      },
+      "The Storyteller": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "mansel-20251114"
         ],
         "mentions": []
       }
@@ -11723,18 +12037,18 @@
     "passages_with_facts": 0,
     "passages_with_no_facts": 64,
     "average_facts_per_passage": 0.0,
-    "character_coverage": 33,
+    "character_coverage": 41,
     "fact_distribution": {
       "world_rules": 0,
-      "setting": 208,
+      "setting": 214,
       "timeline": 0
     },
     "extraction_success_rate": 0.0,
     "deduplication_effectiveness": 0.0
   },
   "meta": {
-    "last_extracted": "2025-12-02T05:31:29.534768",
+    "last_extracted": "2025-12-02T05:32:45.047806",
     "total_passages_extracted": 64,
-    "total_facts": 208
+    "total_facts": 214
   }
 }
