@@ -633,6 +633,32 @@ These are directional goals we cannot directly measure but inform our design dec
 - [ ] 100% of facts have evidence field populated
 - [ ] Evidence citations match source passages
 - [ ] Can search for passage names in source files (e.g., ":: Academy Entrance")
+- [ ] Evidence contains fact claim (or strong synonym), not just entity name mention
+- [ ] Test story with 20 known facts: ≥80% have relevant supporting evidence
+- [ ] Evidence quotes demonstrate the fact being claimed
+
+### Pronoun Resolution
+- [ ] Same-passage unambiguous pronouns (he/she/they) resolve to entity names
+- [ ] Test story pronoun resolution: ≥70% accuracy on known test cases
+- [ ] False merge rate <10% on test story with known distinct entities
+- [ ] Ambiguous pronouns remain unresolved (conservative approach)
+- [ ] Pronoun resolution limited to same passage (not cross-passage)
+
+### Semantic Fact Aggregation
+- [ ] Semantically equivalent facts merged (e.g., "has red hair" = "hair is red")
+- [ ] All evidence from merged facts preserved in combined fact
+- [ ] Conservative merging: when uncertain, keep facts separate
+- [ ] Test story semantic merging: false positive merge rate <5%
+- [ ] Merged facts maintain all original passage citations
+
+### Test Story Requirements
+- [ ] Canonical test story created for validation
+- [ ] Test story contains ≥20 known facts with verified evidence
+- [ ] Test story includes known pronoun resolution cases (documented)
+- [ ] Test story includes known semantic equivalents (documented)
+- [ ] Test story includes known distinct entities (to measure false merge rate)
+- [ ] Test story maintained in repository for regression testing
+- [ ] Test story results tracked over time to measure quality improvements
 
 ### Build Integration (Two-Phase Model)
 - [ ] **Render Phase**: Integrated into automated build pipeline (every push/merge)

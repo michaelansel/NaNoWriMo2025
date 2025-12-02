@@ -30,11 +30,34 @@ IMPORTANT - Extract EVERY:
 - Location name (e.g., "cave", "village", "Academy")
 - Item name (e.g., "lantern", "beef stew", "hammer")
 
+PRONOUN RESOLUTION:
+- Resolve pronouns (he/she/they/him/her/his/their) to entity names when unambiguous
+- Use the entity's full name in the extraction, not the pronoun
+- Keep the original text (with pronoun) in quote fields
+- When ambiguous, do not resolve (skip that mention or extract as separate entity)
+- Example: "Javlyn entered. She picked up the book." -> Extract as "Javlyn" entity, not "She"
+
 For EACH entity, provide:
-- name: The entity name
+- name: The entity name (resolved from pronouns if applicable)
 - type: "character", "location", or "item"
-- facts: Array of facts about this entity (e.g., ["is a student", "lives in the village", "has red hair"])
-- mentions: Array of mentions with quote and context (e.g., [{{"quote": "Javlyn entered the room", "context": "narrative"}}])
+- facts: Array of fact OBJECTS with evidence (see format below)
+- mentions: Array of mentions with quote and context
+
+FACT FORMAT (CRITICAL):
+Each fact MUST be an object with:
+- fact: A brief statement about the entity (e.g., "is a student", "has an entrance")
+- evidence: A direct quote from the passage that PROVES this fact
+
+The evidence MUST:
+- Be a quote from the passage
+- Actually prove or support the fact (not just mention the entity)
+- Show WHY the fact is true
+
+Example:
+{{"fact": "is a student at the Academy", "evidence": "Javlyn was a student at the Academy"}}
+
+NOT acceptable:
+{{"fact": "has an entrance", "evidence": "in the cave long though"}}  <- doesn't prove the fact!
 
 Context types:
 - "narrative" for narrator descriptions
@@ -47,9 +70,43 @@ Respond with ONLY valid JSON (no markdown):
     {{
       "name": "EntityName",
       "type": "character|location|item",
-      "facts": ["fact about entity", "another fact"],
+      "facts": [
+        {{"fact": "brief statement", "evidence": "quote from passage that proves it"}},
+        {{"fact": "another statement", "evidence": "another supporting quote"}}
+      ],
       "mentions": [
         {{"quote": "text from passage mentioning entity", "context": "narrative|dialogue|possessive"}}
+      ]
+    }}
+  ]
+}}
+
+EXAMPLE:
+Passage: "Javlyn was a student at the Academy. She struggled with magic but practiced daily."
+Response:
+{{
+  "entities": [
+    {{
+      "name": "Javlyn",
+      "type": "character",
+      "facts": [
+        {{"fact": "is a student at the Academy", "evidence": "Javlyn was a student at the Academy"}},
+        {{"fact": "struggles with magic", "evidence": "She struggled with magic"}},
+        {{"fact": "practices daily", "evidence": "practiced daily"}}
+      ],
+      "mentions": [
+        {{"quote": "Javlyn was a student at the Academy", "context": "narrative"}},
+        {{"quote": "She struggled with magic but practiced daily", "context": "narrative"}}
+      ]
+    }},
+    {{
+      "name": "Academy",
+      "type": "location",
+      "facts": [
+        {{"fact": "is a school", "evidence": "Javlyn was a student at the Academy"}}
+      ],
+      "mentions": [
+        {{"quote": "Javlyn was a student at the Academy", "context": "narrative"}}
       ]
     }}
   ]

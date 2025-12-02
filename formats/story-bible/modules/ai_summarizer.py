@@ -123,15 +123,25 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
 
             # Add facts as identity with evidence
             for fact in char.get('facts', []):
-                fact_text = fact.strip() if isinstance(fact, str) else str(fact)
-                if not fact_text:
+                # Handle both old format (string) and new format (object with evidence)
+                if isinstance(fact, dict):
+                    # New format: fact is already an object with 'fact' and 'evidence' fields
+                    fact_text = fact.get('fact', '').strip()
+                    evidence_quote = fact.get('evidence', '')
+                elif isinstance(fact, str):
+                    # Old format: fact is a string, use first mention as evidence
+                    fact_text = fact.strip()
+                    # Find supporting quote from mentions
+                    evidence_quote = ""
+                    mentions_list = char.get('mentions', [])
+                    if mentions_list and len(mentions_list) > 0:
+                        evidence_quote = mentions_list[0].get('quote', '')
+                else:
+                    # Unknown format, skip
                     continue
 
-                # Find supporting quote from mentions
-                supporting_quote = ""
-                mentions_list = char.get('mentions', [])
-                if mentions_list and len(mentions_list) > 0:
-                    supporting_quote = mentions_list[0].get('quote', '')
+                if not fact_text:
+                    continue
 
                 # Create fact object with evidence
                 fact_obj = {
@@ -139,7 +149,7 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
                     'evidence': [
                         {
                             'passage': passage_id,
-                            'quote': supporting_quote
+                            'quote': evidence_quote
                         }
                     ]
                 }
@@ -155,7 +165,7 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
                     # Merge evidence (add this passage's evidence)
                     existing_fact['evidence'].append({
                         'passage': passage_id,
-                        'quote': supporting_quote
+                        'quote': evidence_quote
                     })
                 else:
                     # New fact - add it
@@ -191,15 +201,25 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
 
             # Add facts with evidence
             for fact in loc.get('facts', []):
-                fact_text = fact.strip() if isinstance(fact, str) else str(fact)
-                if not fact_text:
+                # Handle both old format (string) and new format (object with evidence)
+                if isinstance(fact, dict):
+                    # New format: fact is already an object with 'fact' and 'evidence' fields
+                    fact_text = fact.get('fact', '').strip()
+                    evidence_quote = fact.get('evidence', '')
+                elif isinstance(fact, str):
+                    # Old format: fact is a string, use first mention as evidence
+                    fact_text = fact.strip()
+                    # Find supporting quote from mentions
+                    evidence_quote = ""
+                    mentions_list = loc.get('mentions', [])
+                    if mentions_list and len(mentions_list) > 0:
+                        evidence_quote = mentions_list[0].get('quote', '')
+                else:
+                    # Unknown format, skip
                     continue
 
-                # Find supporting quote from mentions
-                supporting_quote = ""
-                mentions_list = loc.get('mentions', [])
-                if mentions_list and len(mentions_list) > 0:
-                    supporting_quote = mentions_list[0].get('quote', '')
+                if not fact_text:
+                    continue
 
                 # Create fact object with evidence
                 fact_obj = {
@@ -207,7 +227,7 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
                     'evidence': [
                         {
                             'passage': passage_id,
-                            'quote': supporting_quote
+                            'quote': evidence_quote
                         }
                     ]
                 }
@@ -223,7 +243,7 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
                     # Merge evidence
                     existing_fact['evidence'].append({
                         'passage': passage_id,
-                        'quote': supporting_quote
+                        'quote': evidence_quote
                     })
                 else:
                     # New fact
@@ -258,15 +278,25 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
 
             # Add facts with evidence
             for fact in item.get('facts', []):
-                fact_text = fact.strip() if isinstance(fact, str) else str(fact)
-                if not fact_text:
+                # Handle both old format (string) and new format (object with evidence)
+                if isinstance(fact, dict):
+                    # New format: fact is already an object with 'fact' and 'evidence' fields
+                    fact_text = fact.get('fact', '').strip()
+                    evidence_quote = fact.get('evidence', '')
+                elif isinstance(fact, str):
+                    # Old format: fact is a string, use first mention as evidence
+                    fact_text = fact.strip()
+                    # Find supporting quote from mentions
+                    evidence_quote = ""
+                    mentions_list = item.get('mentions', [])
+                    if mentions_list and len(mentions_list) > 0:
+                        evidence_quote = mentions_list[0].get('quote', '')
+                else:
+                    # Unknown format, skip
                     continue
 
-                # Find supporting quote from mentions
-                supporting_quote = ""
-                mentions_list = item.get('mentions', [])
-                if mentions_list and len(mentions_list) > 0:
-                    supporting_quote = mentions_list[0].get('quote', '')
+                if not fact_text:
+                    continue
 
                 # Create fact object with evidence
                 fact_obj = {
@@ -274,7 +304,7 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
                     'evidence': [
                         {
                             'passage': passage_id,
-                            'quote': supporting_quote
+                            'quote': evidence_quote
                         }
                     ]
                 }
@@ -290,7 +320,7 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
                     # Merge evidence
                     existing_fact['evidence'].append({
                         'passage': passage_id,
-                        'quote': supporting_quote
+                        'quote': evidence_quote
                     })
                 else:
                     # New fact

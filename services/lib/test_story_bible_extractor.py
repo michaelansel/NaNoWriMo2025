@@ -1085,5 +1085,279 @@ class TestExtractionPopulatesFacts(unittest.TestCase):
         self.assertGreater(len(locations[0]['mentions']), 0, "Location mentions should be populated")
 
 
+class TestFactEvidenceStructure(unittest.TestCase):
+    """Test that facts are extracted as objects with evidence (quality fix)."""
+
+    def test_facts_are_objects_with_evidence_field(self):
+        """Facts should be objects with 'fact' and 'evidence' fields."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "Javlyn",
+              "type": "character",
+              "facts": [
+                {
+                  "fact": "is a student at the Academy",
+                  "evidence": "Javlyn was a student at the Academy"
+                }
+              ],
+              "mentions": [
+                {"quote": "Javlyn entered the Academy", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+
+        # CRITICAL: Facts must be objects, not strings
+        facts = characters[0]['facts']
+        self.assertIsInstance(facts, list)
+        self.assertGreater(len(facts), 0)
+
+        # Each fact should be an object with 'fact' and 'evidence' fields
+        fact_obj = facts[0]
+        self.assertIsInstance(fact_obj, dict)
+        self.assertIn('fact', fact_obj)
+        self.assertIn('evidence', fact_obj)
+
+        # Verify values
+        self.assertEqual(fact_obj['fact'], "is a student at the Academy")
+        self.assertEqual(fact_obj['evidence'], "Javlyn was a student at the Academy")
+
+    def test_evidence_proves_the_fact(self):
+        """Evidence quote should support/prove the fact, not just mention the entity."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "cave",
+              "type": "location",
+              "facts": [
+                {
+                  "fact": "has an entrance",
+                  "evidence": "Javlyn found the cave's entrance hidden behind vines"
+                }
+              ],
+              "mentions": [
+                {"quote": "in the cave long though", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        locations = result['entities']['locations']
+        fact_obj = locations[0]['facts'][0]
+
+        # Evidence should contain words that prove the fact
+        self.assertIn('entrance', fact_obj['evidence'].lower())
+        # Evidence should not be just a mention that doesn't prove the fact
+        self.assertNotEqual(fact_obj['evidence'], "in the cave long though")
+
+    def test_handles_backward_compatible_string_facts(self):
+        """Should still handle old format where facts are strings (for existing tests)."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "Javlyn",
+              "type": "character",
+              "facts": ["is a student"],
+              "mentions": []
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        characters = result['entities']['characters']
+        facts = characters[0]['facts']
+
+        # Should accept string facts for backward compatibility
+        self.assertIsInstance(facts[0], str)
+        self.assertEqual(facts[0], "is a student")
+
+
+class TestAISummarizerHandlesNewFormat(unittest.TestCase):
+    """Test that ai_summarizer.py handles fact objects with evidence."""
+
+    def test_handles_fact_objects_with_evidence(self):
+        """ai_summarizer should handle facts as objects with evidence field."""
+        # Import the function we're testing
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'formats' / 'story-bible' / 'modules'))
+
+        try:
+            from ai_summarizer import aggregate_entities_from_extractions
+        except ImportError:
+            self.skipTest("ai_summarizer module not available")
+
+        # Mock extraction with NEW format (facts as objects)
+        per_passage_extractions = {
+            'passage1': {
+                'entities': {
+                    'characters': [
+                        {
+                            'name': 'Javlyn',
+                            'facts': [
+                                {
+                                    'fact': 'is a student at the Academy',
+                                    'evidence': 'Javlyn was a student at the Academy'
+                                }
+                            ],
+                            'mentions': [
+                                {'quote': 'Javlyn entered the room', 'context': 'narrative'}
+                            ]
+                        }
+                    ],
+                    'locations': [],
+                    'items': []
+                }
+            }
+        }
+
+        result = aggregate_entities_from_extractions(per_passage_extractions)
+
+        # Verify character was extracted
+        self.assertIn('Javlyn', result['characters'])
+        javlyn = result['characters']['Javlyn']
+
+        # Verify facts were processed
+        self.assertEqual(len(javlyn['identity']), 1)
+        fact = javlyn['identity'][0]
+
+        # Verify fact structure
+        self.assertIn('fact', fact)
+        self.assertIn('evidence', fact)
+        self.assertEqual(fact['fact'], 'is a student at the Academy')
+
+        # Verify evidence structure
+        self.assertIsInstance(fact['evidence'], list)
+        self.assertEqual(len(fact['evidence']), 1)
+        self.assertEqual(fact['evidence'][0]['passage'], 'passage1')
+        self.assertEqual(fact['evidence'][0]['quote'], 'Javlyn was a student at the Academy')
+
+    def test_handles_backward_compatible_string_facts(self):
+        """ai_summarizer should still handle old format (facts as strings)."""
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'formats' / 'story-bible' / 'modules'))
+
+        try:
+            from ai_summarizer import aggregate_entities_from_extractions
+        except ImportError:
+            self.skipTest("ai_summarizer module not available")
+
+        # Mock extraction with OLD format (facts as strings)
+        per_passage_extractions = {
+            'passage1': {
+                'entities': {
+                    'characters': [
+                        {
+                            'name': 'Kian',
+                            'facts': ['is a warrior', 'carries a sword'],
+                            'mentions': [
+                                {'quote': 'Kian stood ready', 'context': 'narrative'}
+                            ]
+                        }
+                    ],
+                    'locations': [],
+                    'items': []
+                }
+            }
+        }
+
+        result = aggregate_entities_from_extractions(per_passage_extractions)
+
+        # Verify character was extracted
+        self.assertIn('Kian', result['characters'])
+        kian = result['characters']['Kian']
+
+        # Verify facts were processed (even from old format)
+        self.assertEqual(len(kian['identity']), 2)
+
+        # Verify facts have evidence structure (even when source was string)
+        for fact in kian['identity']:
+            self.assertIn('fact', fact)
+            self.assertIn('evidence', fact)
+            self.assertIsInstance(fact['evidence'], list)
+
+
+class TestPronounResolution(unittest.TestCase):
+    """Test that pronouns are resolved to entity names."""
+
+    def test_pronoun_resolved_in_fact(self):
+        """Pronouns in facts should be resolved to entity names."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "Javlyn",
+              "type": "character",
+              "facts": [
+                {
+                  "fact": "studies magic",
+                  "evidence": "Javlyn entered the room. She picked up the spellbook."
+                }
+              ],
+              "mentions": [
+                {"quote": "She picked up the spellbook", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+
+        # Entity should be "Javlyn", not "She"
+        self.assertEqual(characters[0]['name'], "Javlyn")
+
+        # Fact should reference action without pronoun ambiguity
+        fact_obj = characters[0]['facts'][0]
+        self.assertEqual(fact_obj['fact'], "studies magic")
+
+    def test_preserves_original_quote_with_pronoun(self):
+        """Evidence quotes should preserve original text including pronouns."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "Javlyn",
+              "type": "character",
+              "facts": [
+                {
+                  "fact": "picked up the spellbook",
+                  "evidence": "She picked up the spellbook"
+                }
+              ],
+              "mentions": [
+                {"quote": "She picked up the spellbook", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        characters = result['entities']['characters']
+
+        # Evidence should preserve original text (with pronoun)
+        fact_obj = characters[0]['facts'][0]
+        self.assertIn('She', fact_obj['evidence'])
+
+        # But entity name should be resolved form
+        self.assertEqual(characters[0]['name'], "Javlyn")
+
+
 if __name__ == '__main__':
     unittest.main()
