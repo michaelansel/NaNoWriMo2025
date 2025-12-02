@@ -968,5 +968,122 @@ class TestLoadFromCoreLibrary(unittest.TestCase):
             self.assertEqual(passage_text, passage_content)
 
 
+class TestExtractionPopulatesFacts(unittest.TestCase):
+    """Test that extraction populates facts and mentions arrays (Phase 1 fix)."""
+
+    def test_extraction_creates_facts_array_for_entities(self):
+        """Should populate facts array for each extracted entity."""
+        # Mock AI response with facts populated
+        response = """
+        {
+          "entities": [
+            {
+              "name": "Javlyn",
+              "type": "character",
+              "facts": ["is a student at the Academy", "struggles with magic"],
+              "mentions": [
+                {"quote": "Javlyn entered the Academy", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        # Verify entity-first format conversion
+        self.assertIn('entities', result)
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+
+        # CRITICAL: facts array must be populated
+        self.assertIn('facts', characters[0])
+        self.assertIsInstance(characters[0]['facts'], list)
+        self.assertGreater(len(characters[0]['facts']), 0)
+        self.assertIn("is a student at the Academy", characters[0]['facts'])
+
+        # CRITICAL: mentions array must be populated
+        self.assertIn('mentions', characters[0])
+        self.assertIsInstance(characters[0]['mentions'], list)
+        self.assertGreater(len(characters[0]['mentions']), 0)
+        self.assertEqual(characters[0]['mentions'][0]['quote'], "Javlyn entered the Academy")
+
+    def test_extraction_creates_mentions_with_passage_context(self):
+        """Should populate mentions with quote and context."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "cave",
+              "type": "location",
+              "facts": ["dark interior", "near the village"],
+              "mentions": [
+                {"quote": "The cave loomed before them", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        locations = result['entities']['locations']
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(len(locations[0]['facts']), 2)
+        self.assertEqual(len(locations[0]['mentions']), 1)
+        self.assertEqual(locations[0]['mentions'][0]['context'], 'narrative')
+
+    @patch('story_bible_extractor.requests.post')
+    def test_extract_facts_from_passage_populates_facts_and_mentions(self, mock_post):
+        """Integration test: extract_facts_from_passage should return populated facts/mentions."""
+        # Mock Ollama API response with facts and mentions populated
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            'response': json.dumps({
+                "entities": [
+                    {
+                        "name": "Javlyn",
+                        "type": "character",
+                        "facts": ["is a student at the Academy", "struggles with magic"],
+                        "mentions": [
+                            {"quote": "Javlyn entered the Academy", "context": "narrative"}
+                        ]
+                    },
+                    {
+                        "name": "Academy",
+                        "type": "location",
+                        "facts": ["is a school for magic"],
+                        "mentions": [
+                            {"quote": "the Academy stood tall", "context": "narrative"}
+                        ]
+                    }
+                ]
+            })
+        }
+
+        from story_bible_extractor import extract_facts_from_passage
+
+        passage_text = "Javlyn entered the Academy. The Academy stood tall."
+        result = extract_facts_from_passage(passage_text, "Start")
+
+        # Verify structure
+        self.assertIn('entities', result)
+        self.assertIn('characters', result['entities'])
+        self.assertIn('locations', result['entities'])
+
+        # Verify character has facts and mentions populated
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+        self.assertEqual(characters[0]['name'], 'Javlyn')
+        self.assertGreater(len(characters[0]['facts']), 0, "Character facts should be populated")
+        self.assertGreater(len(characters[0]['mentions']), 0, "Character mentions should be populated")
+        self.assertIn("is a student at the Academy", characters[0]['facts'])
+
+        # Verify location has facts and mentions populated
+        locations = result['entities']['locations']
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(locations[0]['name'], 'Academy')
+        self.assertGreater(len(locations[0]['facts']), 0, "Location facts should be populated")
+        self.assertGreater(len(locations[0]['mentions']), 0, "Location mentions should be populated")
+
+
 if __name__ == '__main__':
     unittest.main()

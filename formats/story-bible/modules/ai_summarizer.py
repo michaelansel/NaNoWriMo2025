@@ -121,11 +121,45 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
             if passage_id not in characters[normalized]['passages']:
                 characters[normalized]['passages'].append(passage_id)
 
-            # Add facts as identity
+            # Add facts as identity with evidence
             for fact in char.get('facts', []):
                 fact_text = fact.strip() if isinstance(fact, str) else str(fact)
-                if fact_text and fact_text not in characters[normalized]['identity']:
-                    characters[normalized]['identity'].append(fact_text)
+                if not fact_text:
+                    continue
+
+                # Find supporting quote from mentions
+                supporting_quote = ""
+                mentions_list = char.get('mentions', [])
+                if mentions_list and len(mentions_list) > 0:
+                    supporting_quote = mentions_list[0].get('quote', '')
+
+                # Create fact object with evidence
+                fact_obj = {
+                    'fact': fact_text,
+                    'evidence': [
+                        {
+                            'passage': passage_id,
+                            'quote': supporting_quote
+                        }
+                    ]
+                }
+
+                # Check if fact already exists (merge evidence)
+                existing_fact = None
+                for existing in characters[normalized]['identity']:
+                    if isinstance(existing, dict) and existing.get('fact') == fact_text:
+                        existing_fact = existing
+                        break
+
+                if existing_fact:
+                    # Merge evidence (add this passage's evidence)
+                    existing_fact['evidence'].append({
+                        'passage': passage_id,
+                        'quote': supporting_quote
+                    })
+                else:
+                    # New fact - add it
+                    characters[normalized]['identity'].append(fact_obj)
 
             # Add mentions
             for mention in char.get('mentions', []):
@@ -155,10 +189,45 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
             if passage_id not in locations[normalized]['passages']:
                 locations[normalized]['passages'].append(passage_id)
 
+            # Add facts with evidence
             for fact in loc.get('facts', []):
                 fact_text = fact.strip() if isinstance(fact, str) else str(fact)
-                if fact_text and fact_text not in locations[normalized]['facts']:
-                    locations[normalized]['facts'].append(fact_text)
+                if not fact_text:
+                    continue
+
+                # Find supporting quote from mentions
+                supporting_quote = ""
+                mentions_list = loc.get('mentions', [])
+                if mentions_list and len(mentions_list) > 0:
+                    supporting_quote = mentions_list[0].get('quote', '')
+
+                # Create fact object with evidence
+                fact_obj = {
+                    'fact': fact_text,
+                    'evidence': [
+                        {
+                            'passage': passage_id,
+                            'quote': supporting_quote
+                        }
+                    ]
+                }
+
+                # Check if fact already exists (merge evidence)
+                existing_fact = None
+                for existing in locations[normalized]['facts']:
+                    if isinstance(existing, dict) and existing.get('fact') == fact_text:
+                        existing_fact = existing
+                        break
+
+                if existing_fact:
+                    # Merge evidence
+                    existing_fact['evidence'].append({
+                        'passage': passage_id,
+                        'quote': supporting_quote
+                    })
+                else:
+                    # New fact
+                    locations[normalized]['facts'].append(fact_obj)
 
             for mention in loc.get('mentions', []):
                 quote = mention.get('quote', '')
@@ -187,10 +256,45 @@ def aggregate_entities_from_extractions(per_passage_extractions: Dict) -> Dict:
             if passage_id not in items[normalized]['passages']:
                 items[normalized]['passages'].append(passage_id)
 
+            # Add facts with evidence
             for fact in item.get('facts', []):
                 fact_text = fact.strip() if isinstance(fact, str) else str(fact)
-                if fact_text and fact_text not in items[normalized]['facts']:
-                    items[normalized]['facts'].append(fact_text)
+                if not fact_text:
+                    continue
+
+                # Find supporting quote from mentions
+                supporting_quote = ""
+                mentions_list = item.get('mentions', [])
+                if mentions_list and len(mentions_list) > 0:
+                    supporting_quote = mentions_list[0].get('quote', '')
+
+                # Create fact object with evidence
+                fact_obj = {
+                    'fact': fact_text,
+                    'evidence': [
+                        {
+                            'passage': passage_id,
+                            'quote': supporting_quote
+                        }
+                    ]
+                }
+
+                # Check if fact already exists (merge evidence)
+                existing_fact = None
+                for existing in items[normalized]['facts']:
+                    if isinstance(existing, dict) and existing.get('fact') == fact_text:
+                        existing_fact = existing
+                        break
+
+                if existing_fact:
+                    # Merge evidence
+                    existing_fact['evidence'].append({
+                        'passage': passage_id,
+                        'quote': supporting_quote
+                    })
+                else:
+                    # New fact
+                    items[normalized]['facts'].append(fact_obj)
 
             for mention in item.get('mentions', []):
                 quote = mention.get('quote', '')

@@ -21,7 +21,7 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 120  # 2 minutes per passage
 
 # AI prompt for entity-first extraction (simplified for reliability)
-EXTRACTION_PROMPT = """Extract ALL named entities from this story passage.
+EXTRACTION_PROMPT = """Extract ALL named entities from this story passage with facts and mentions.
 
 IMPORTANT - Extract EVERY:
 - Character name (e.g., "Jerrick", "Miss Rosie", "Javlyn")
@@ -30,8 +30,30 @@ IMPORTANT - Extract EVERY:
 - Location name (e.g., "cave", "village", "Academy")
 - Item name (e.g., "lantern", "beef stew", "hammer")
 
+For EACH entity, provide:
+- name: The entity name
+- type: "character", "location", or "item"
+- facts: Array of facts about this entity (e.g., ["is a student", "lives in the village", "has red hair"])
+- mentions: Array of mentions with quote and context (e.g., [{{"quote": "Javlyn entered the room", "context": "narrative"}}])
+
+Context types:
+- "narrative" for narrator descriptions
+- "dialogue" for character speech
+- "possessive" for possessive references like "Rosie's stew"
+
 Respond with ONLY valid JSON (no markdown):
-{{"entities": [{{"name": "Name", "type": "character|location|item"}}]}}
+{{
+  "entities": [
+    {{
+      "name": "EntityName",
+      "type": "character|location|item",
+      "facts": ["fact about entity", "another fact"],
+      "mentions": [
+        {{"quote": "text from passage mentioning entity", "context": "narrative|dialogue|possessive"}}
+      ]
+    }}
+  ]
+}}
 
 PASSAGE:
 {passage_text}
