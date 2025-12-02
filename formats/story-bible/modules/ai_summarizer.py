@@ -448,6 +448,67 @@ def summarize_facts(per_passage_extractions: Dict) -> Tuple[Optional[Dict], str]
         return (None, "failed")
 
 
+def is_world_rule(fact_text: str) -> bool:
+    """
+    Heuristic to determine if a fact is a world rule.
+
+    World rules are facts about how the world works (magic system, technology, physics).
+    """
+    fact_lower = fact_text.lower()
+
+    # Keywords indicating world rules
+    world_rule_keywords = [
+        'magic', 'technology', 'always', 'never', 'requires',
+        'system', 'law', 'rule', 'physics', 'power', 'ability',
+        'electricity', 'industrial', 'medieval', 'modern',
+        'can', 'cannot', 'must', 'forbidden', 'allowed'
+    ]
+
+    return any(keyword in fact_lower for keyword in world_rule_keywords)
+
+
+def is_timeline_event(fact_text: str) -> bool:
+    """
+    Heuristic to determine if a fact is a historical/timeline event.
+
+    Timeline events are things that happened before the story starts.
+    """
+    fact_lower = fact_text.lower()
+
+    # Keywords indicating past events
+    timeline_keywords = [
+        'ago', 'years', 'decades', 'centuries',
+        'before', 'ancient', 'old', 'historical',
+        'was', 'were', 'had', 'ended', 'began',
+        'witnessed', 'remembered', 'past', 'former',
+        'destroyed', 'built', 'founded', 'established',
+        'war', 'battle', 'conflict', 'calamity'
+    ]
+
+    return any(keyword in fact_lower for keyword in timeline_keywords)
+
+
+def categorize_fact(fact_obj: Dict, entity_name: str) -> str:
+    """
+    Categorize a fact as 'world_rule', 'timeline', or 'setting'.
+
+    Args:
+        fact_obj: Fact object with 'fact' and 'evidence' fields
+        entity_name: Name of the entity this fact belongs to
+
+    Returns:
+        Category string: 'world_rule', 'timeline', or 'setting'
+    """
+    fact_text = fact_obj.get('fact', '')
+
+    if is_world_rule(fact_text):
+        return 'world_rule'
+    elif is_timeline_event(fact_text):
+        return 'timeline'
+    else:
+        return 'setting'
+
+
 def summarize_from_entities(merged_extractions: Dict) -> Tuple[Optional[Dict], str]:
     """
     Aggregate from entity-first extraction format.
@@ -469,27 +530,69 @@ def summarize_from_entities(merged_extractions: Dict) -> Tuple[Optional[Dict], s
     # Build final structure
     # Convert characters dict to expected format
     characters = {}
+    timeline_facts = []
+
     for name, data in aggregated.get('characters', {}).items():
+        identity = []
+
+        # Categorize character facts
+        for fact_obj in data.get('identity', []):
+            category = categorize_fact(fact_obj, name)
+
+            if category == 'timeline':
+                # Move to timeline instead of character identity
+                timeline_facts.append({
+                    'fact': f"{name}: {fact_obj['fact']}",
+                    'type': 'timeline',
+                    'evidence': fact_obj.get('evidence', []),
+                    'source_entity': name
+                })
+            else:
+                # Keep in character identity
+                identity.append(fact_obj)
+
         characters[name] = {
-            'identity': data.get('identity', []),
+            'identity': identity,
             'zero_action_state': [],  # Not extracted in entity format
             'variables': [],  # Not extracted in entity format
             'passages': data.get('passages', []),
             'mentions': data.get('mentions', [])
         }
 
-    # Convert locations to setting facts
+    # Categorize location and item facts
+    world_rules = []
     setting_facts = []
+
     for name, data in aggregated.get('locations', {}).items():
-        for fact in data.get('facts', []):
-            setting_facts.append({
-                'fact': f"{name}: {fact}",
-                'type': 'setting',
-                'evidence': data.get('mentions', [])[:3],  # Limit evidence
-                'passages': data.get('passages', [])
-            })
-        # Also add a basic "exists" fact if no facts
-        if not data.get('facts'):
+        facts_list = data.get('facts', [])
+
+        if facts_list:
+            for fact_obj in facts_list:
+                category = categorize_fact(fact_obj, name)
+
+                if category == 'world_rule':
+                    world_rules.append({
+                        'fact': f"{name}: {fact_obj['fact']}",
+                        'type': 'world_rule',
+                        'evidence': fact_obj.get('evidence', []),
+                        'source_entity': name
+                    })
+                elif category == 'timeline':
+                    timeline_facts.append({
+                        'fact': f"{name}: {fact_obj['fact']}",
+                        'type': 'timeline',
+                        'evidence': fact_obj.get('evidence', []),
+                        'source_entity': name
+                    })
+                else:
+                    setting_facts.append({
+                        'fact': f"{name}: {fact_obj['fact']}",
+                        'type': 'setting',
+                        'evidence': fact_obj.get('evidence', []),
+                        'source_entity': name
+                    })
+        else:
+            # No facts - add basic existence fact
             setting_facts.append({
                 'fact': f"Location: {name}",
                 'type': 'setting',
@@ -497,16 +600,37 @@ def summarize_from_entities(merged_extractions: Dict) -> Tuple[Optional[Dict], s
                 'passages': data.get('passages', [])
             })
 
-    # Convert items to setting facts (or separate category)
+    # Convert items to categorized facts
     for name, data in aggregated.get('items', {}).items():
-        for fact in data.get('facts', []):
-            setting_facts.append({
-                'fact': f"{name}: {fact}",
-                'type': 'setting',
-                'evidence': data.get('mentions', [])[:3],
-                'passages': data.get('passages', [])
-            })
-        if not data.get('facts'):
+        facts_list = data.get('facts', [])
+
+        if facts_list:
+            for fact_obj in facts_list:
+                category = categorize_fact(fact_obj, name)
+
+                if category == 'world_rule':
+                    world_rules.append({
+                        'fact': f"{name}: {fact_obj['fact']}",
+                        'type': 'world_rule',
+                        'evidence': fact_obj.get('evidence', []),
+                        'source_entity': name
+                    })
+                elif category == 'timeline':
+                    timeline_facts.append({
+                        'fact': f"{name}: {fact_obj['fact']}",
+                        'type': 'timeline',
+                        'evidence': fact_obj.get('evidence', []),
+                        'source_entity': name
+                    })
+                else:
+                    setting_facts.append({
+                        'fact': f"{name}: {fact_obj['fact']}",
+                        'type': 'setting',
+                        'evidence': fact_obj.get('evidence', []),
+                        'source_entity': name
+                    })
+        else:
+            # No facts - add basic existence fact
             setting_facts.append({
                 'fact': f"Item: {name}",
                 'type': 'setting',
@@ -516,9 +640,9 @@ def summarize_from_entities(merged_extractions: Dict) -> Tuple[Optional[Dict], s
 
     result = {
         'constants': {
-            'world_rules': [],
+            'world_rules': world_rules,
             'setting': setting_facts,
-            'timeline': []
+            'timeline': timeline_facts
         },
         'characters': characters,
         'variables': {
@@ -530,6 +654,8 @@ def summarize_from_entities(merged_extractions: Dict) -> Tuple[Optional[Dict], s
 
     logging.info("Entity aggregation successful (lossless)")
     logging.info(f"  Characters: {len(characters)}")
+    logging.info(f"  World rules: {len(world_rules)}")
+    logging.info(f"  Timeline: {len(timeline_facts)}")
     logging.info(f"  Setting facts: {len(setting_facts)}")
 
     return (result, "success")
