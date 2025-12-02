@@ -8,6 +8,8 @@ file locking for atomic operations.
 Key components:
 - SharedJobState: Manages active jobs across all workers
 - FileCancellationEvent: Drop-in replacement for threading.Event that works cross-process
+
+Implementation uses file-based synchronization to coordinate across process boundaries.
 """
 
 import os
