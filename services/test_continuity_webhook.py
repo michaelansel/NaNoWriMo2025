@@ -119,6 +119,80 @@ class TestWorkflowWebhook(unittest.TestCase):
         # Should NOT have spawned any threads
         mock_thread.assert_not_called()
 
+    @patch('continuity_webhook.get_pr_number_from_workflow')
+    @patch('continuity_webhook.threading.Thread')
+    @patch('continuity_webhook.post_pr_comment')
+    @patch('continuity_webhook.metrics_lock')
+    @patch('continuity_webhook.processed_workflow_runs', {})
+    def test_new_build_cancels_old_continuity_check(
+        self, mock_metrics_lock, mock_post_comment, mock_thread, mock_get_pr
+    ):
+        """Test that new build cancels old continuity check for the same PR."""
+        # Arrange
+        mock_get_pr.return_value = 42
+
+        # Create mock cancel event for old job
+        old_cancel_event = MagicMock()
+        old_workflow_id = 11111
+
+        # Simulate existing continuity check job
+        active_jobs = {
+            old_workflow_id: {
+                'pr_number': 42,
+                'cancel_event': old_cancel_event,
+                'operation_type': 'continuity'
+            }
+        }
+        pr_active_continuity_jobs = {42: old_workflow_id}
+
+        with patch('continuity_webhook.active_jobs', active_jobs), \
+             patch('continuity_webhook.pr_active_continuity_jobs', pr_active_continuity_jobs):
+
+            # Act
+            with patch.object(webhook_module.app, 'logger'):
+                result = webhook_module.handle_workflow_webhook(self.sample_workflow_payload)
+
+            # Assert
+            # Old job's cancel event should be set
+            old_cancel_event.set.assert_called_once()
+
+    @patch('continuity_webhook.get_pr_number_from_workflow')
+    @patch('continuity_webhook.threading.Thread')
+    @patch('continuity_webhook.post_pr_comment')
+    @patch('continuity_webhook.metrics_lock')
+    @patch('continuity_webhook.processed_workflow_runs', {})
+    def test_new_build_cancels_old_extraction(
+        self, mock_metrics_lock, mock_post_comment, mock_thread, mock_get_pr
+    ):
+        """Test that new build cancels old Story Bible extraction for the same PR."""
+        # Arrange
+        mock_get_pr.return_value = 42
+
+        # Create mock cancel event for old extraction job
+        old_cancel_event = MagicMock()
+        old_extraction_id = 'auto-story-bible-11111'
+
+        # Simulate existing extraction job
+        active_jobs = {
+            old_extraction_id: {
+                'pr_number': 42,
+                'cancel_event': old_cancel_event,
+                'operation_type': 'extraction'
+            }
+        }
+        pr_active_extraction_jobs = {42: old_extraction_id}
+
+        with patch('continuity_webhook.active_jobs', active_jobs), \
+             patch('continuity_webhook.pr_active_extraction_jobs', pr_active_extraction_jobs):
+
+            # Act
+            with patch.object(webhook_module.app, 'logger'):
+                result = webhook_module.handle_workflow_webhook(self.sample_workflow_payload)
+
+            # Assert
+            # Old extraction job's cancel event should be set
+            old_cancel_event.set.assert_called_once()
+
 
 if __name__ == '__main__':
     unittest.main()

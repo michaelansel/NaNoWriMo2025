@@ -76,8 +76,9 @@ from datetime import datetime
 from collections import defaultdict
 import time
 
-active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status, cancel_event}}
-pr_active_jobs = {}  # {pr_number: workflow_id} - track which workflow is active for each PR
+active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status, cancel_event, operation_type}}
+pr_active_continuity_jobs = {}  # {pr_number: workflow_id} - track which continuity check is active for each PR
+pr_active_extraction_jobs = {}  # {pr_number: workflow_id} - track which Story Bible extraction is active for each PR
 job_history = []  # Recent completed jobs
 metrics = defaultdict(int)  # Various counters
 metrics_lock = threading.Lock()
@@ -610,9 +611,10 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                 "current_path": 0,
                 "total_paths": 0,
                 "status": "initializing",
-                "cancel_event": cancel_event
+                "cancel_event": cancel_event,
+                "operation_type": "continuity"
             }
-            pr_active_jobs[pr_number] = workflow_id  # Mark this workflow as active for this PR
+            pr_active_continuity_jobs[pr_number] = workflow_id  # Mark this workflow as active for this PR
             metrics["total_webhooks_received"] += 1
 
         # Fetch artifact list
@@ -966,8 +968,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     metrics["total_jobs_completed"] += 1
 
                 # Clean up PR tracking if this is still the active job for this PR
-                if pr_active_jobs.get(pr_number) == workflow_id:
-                    pr_active_jobs.pop(pr_number, None)
+                if pr_active_continuity_jobs.get(pr_number) == workflow_id:
+                    pr_active_continuity_jobs.pop(pr_number, None)
 
     except Exception as e:
         app.logger.error(f"[Background] Error processing webhook: {e}", exc_info=True)
@@ -987,8 +989,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     metrics["total_jobs_failed"] += 1
 
             # Clean up PR tracking if this is still the active job for this PR
-            if pr_active_jobs.get(pr_number) == workflow_id:
-                pr_active_jobs.pop(pr_number, None)
+            if pr_active_continuity_jobs.get(pr_number) == workflow_id:
+                pr_active_continuity_jobs.pop(pr_number, None)
 
 
 @app.route('/webhook', methods=['POST'])
@@ -1064,17 +1066,28 @@ def handle_workflow_webhook(payload):
         app.logger.error("No artifacts URL in workflow")
         return jsonify({"error": "No artifacts URL"}), 400
 
-    # Cancel any existing job for this PR
-    # WHY: New commits supersede old ones, so stop checking outdated code
+    # Cancel any existing jobs for this PR (both continuity check and Story Bible extraction)
+    # WHY: New commits supersede old ones, so stop processing outdated code
     # This prevents wasted AI computation and confusing duplicate comments
     with metrics_lock:
-        if pr_number in pr_active_jobs:
-            old_workflow_id = pr_active_jobs[pr_number]
+        # Cancel existing continuity check for this PR
+        if pr_number in pr_active_continuity_jobs:
+            old_workflow_id = pr_active_continuity_jobs[pr_number]
             if old_workflow_id in active_jobs:
-                app.logger.info(f"Cancelling existing job (workflow {old_workflow_id}) for PR #{pr_number}")
+                app.logger.info(f"Cancelling existing continuity check (workflow {old_workflow_id}) for PR #{pr_number}")
                 cancel_event = active_jobs[old_workflow_id].get("cancel_event")
                 if cancel_event:
                     # Signal cancellation - checked in process_webhook_async loop
+                    cancel_event.set()
+
+        # Cancel existing Story Bible extraction for this PR
+        if pr_number in pr_active_extraction_jobs:
+            old_extraction_id = pr_active_extraction_jobs[pr_number]
+            if old_extraction_id in active_jobs:
+                app.logger.info(f"Cancelling existing Story Bible extraction ({old_extraction_id}) for PR #{pr_number}")
+                cancel_event = active_jobs[old_extraction_id].get("cancel_event")
+                if cancel_event:
+                    # Signal cancellation - checked in process_story_bible_extraction_async
                     cancel_event.set()
 
     # Spawn background thread to process webhook
@@ -1090,9 +1103,7 @@ def handle_workflow_webhook(payload):
     # Spawn second background thread for Story Bible extraction
     # WHY: Feature spec (story-bible.md) requires automatic extraction after every successful build
     # Run in parallel with continuity check - both are independent operations
-    # NOTE: Unlike continuity checking, we don't cancel old extraction jobs yet
-    # because process_story_bible_extraction_async doesn't support cancellation.
-    # Incremental mode keeps redundant work minimal. Can optimize later if needed.
+    # Supports cancellation: new commits cancel old extractions to prevent duplicate work
     extraction_workflow_id = f"auto-story-bible-{workflow_id}"
     extraction_thread = threading.Thread(
         target=process_story_bible_extraction_async,
@@ -1211,8 +1222,8 @@ def handle_check_continuity_command(payload):
     # Cancel any existing checks for this PR (manual command supersedes auto-validation)
     # This prevents parallel runs and ensures the user's manual request takes priority
     with metrics_lock:
-        if pr_number in pr_active_jobs:
-            existing_workflow_id = pr_active_jobs[pr_number]
+        if pr_number in pr_active_continuity_jobs:
+            existing_workflow_id = pr_active_continuity_jobs[pr_number]
             if existing_workflow_id in active_jobs:
                 app.logger.info(f"Manual command: cancelling existing auto-validation (workflow {existing_workflow_id}) for PR #{pr_number}")
                 active_jobs[existing_workflow_id]['cancel_event'].set()
@@ -1313,7 +1324,7 @@ def parse_story_bible_command_mode(comment_body: str) -> str:
     return 'incremental'  # Default
 
 
-def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, username, mode):
+def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, username, mode, cancel_event=None):
     """Process Story Bible extraction in background thread.
 
     Args:
@@ -1322,7 +1333,11 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
         artifacts_url: URL to download artifacts (None for summarize mode)
         username: GitHub username who triggered the command
         mode: One of 'incremental', 'full', or 'summarize'
+        cancel_event: Optional threading.Event for cancellation support
     """
+    # Create cancel event if not provided
+    if cancel_event is None:
+        cancel_event = threading.Event()
     # Import the extractor module
     import sys
     from pathlib import Path
@@ -1338,6 +1353,19 @@ def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, 
 
     try:
         app.logger.info(f"[Story Bible] Processing extraction for PR #{pr_number} with mode={mode}")
+
+        # Track this job
+        with metrics_lock:
+            active_jobs[workflow_id] = {
+                "pr_number": pr_number,
+                "start_time": datetime.now(),
+                "current_path": 0,
+                "total_paths": 0,
+                "status": "initializing",
+                "cancel_event": cancel_event,
+                "operation_type": "extraction"
+            }
+            pr_active_extraction_jobs[pr_number] = workflow_id  # Mark this extraction as active for this PR
 
         # Post initial comment
         if mode == 'summarize':
@@ -1359,6 +1387,26 @@ _This may take several minutes. Progress updates will be posted as extraction pr
 ---
 _Powered by Ollama (gpt-oss:20b-fullcontext)_
 """)
+
+        # Check for cancellation (early - before downloading artifacts)
+        if cancel_event.is_set():
+            app.logger.info(f"[Story Bible] Extraction cancelled early for PR #{pr_number} (before downloading artifacts)")
+            post_pr_comment(pr_number, """## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            # Clean up tracking
+            with metrics_lock:
+                if workflow_id in active_jobs:
+                    active_jobs.pop(workflow_id, None)
+                if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                    pr_active_extraction_jobs.pop(pr_number, None)
+            return
 
         # Load cache from PR branch (if exists)
         cache = load_story_bible_cache_from_branch(pr_number)
@@ -1453,8 +1501,48 @@ Found **{total_passages}** passage(s) to extract.
 _Progress updates will be posted as each passage completes._
 """)
 
+                # Check for cancellation (before extraction loop starts)
+                if cancel_event.is_set():
+                    app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (before extraction loop)")
+                    post_pr_comment(pr_number, """## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                    # Clean up tracking
+                    with metrics_lock:
+                        if workflow_id in active_jobs:
+                            active_jobs.pop(workflow_id, None)
+                        if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                            pr_active_extraction_jobs.pop(pr_number, None)
+                    return
+
                 # Extract facts from each passage
                 for idx, (passage_id, passage_file, passage_content) in enumerate(passages_to_extract, 1):
+                    # Check for cancellation (at top of extraction loop - between passages)
+                    if cancel_event.is_set():
+                        app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (during extraction, after {idx-1}/{total_passages} passages)")
+                        post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled after {idx-1}/{total_passages} passage(s) - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                        # Clean up tracking
+                        with metrics_lock:
+                            if workflow_id in active_jobs:
+                                active_jobs.pop(workflow_id, None)
+                            if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                                pr_active_extraction_jobs.pop(pr_number, None)
+                        return
+
                     app.logger.info(f"[Story Bible] Extracting passage {idx}/{total_passages}: {passage_id}")
 
                     try:
@@ -1521,6 +1609,26 @@ _Progress updates will be posted as each passage completes._
 Continuing with remaining passages...
 """)
                         continue
+
+        # Check for cancellation (before summarization)
+        if cancel_event.is_set():
+            app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (before summarization)")
+            post_pr_comment(pr_number, """## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled before summarization - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            # Clean up tracking
+            with metrics_lock:
+                if workflow_id in active_jobs:
+                    active_jobs.pop(workflow_id, None)
+                if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                    pr_active_extraction_jobs.pop(pr_number, None)
+            return
 
         # Stage 2.5: Run AI summarization/deduplication
         app.logger.info(f"[Story Bible] Running AI summarization on {len(cache['passage_extractions'])} passages")
@@ -1656,9 +1764,25 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
         app.logger.info(f"[Story Bible] Extraction complete for PR #{pr_number}")
 
+        # Clean up tracking on successful completion
+        with metrics_lock:
+            if workflow_id in active_jobs:
+                active_jobs.pop(workflow_id, None)
+            # Clean up PR tracking if this is still the active extraction for this PR
+            if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                pr_active_extraction_jobs.pop(pr_number, None)
+
     except Exception as e:
         app.logger.error(f"[Story Bible] Error during extraction: {e}", exc_info=True)
         post_pr_comment(pr_number, "⚠️ Error during extraction. Please contact repository maintainers.")
+
+        # Clean up tracking on failure
+        with metrics_lock:
+            if workflow_id in active_jobs:
+                active_jobs.pop(workflow_id, None)
+            # Clean up PR tracking if this is still the active extraction for this PR
+            if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                pr_active_extraction_jobs.pop(pr_number, None)
 
 
 def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
