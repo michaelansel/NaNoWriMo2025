@@ -104,6 +104,11 @@ jobs:
           echo "Merge base: $MERGE_BASE"
           echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
 
+      - name: Build Core Library artifacts
+        run: |
+          chmod +x scripts/build-core.sh
+          ./scripts/build-core.sh
+
       - name: Build AllPaths version (AI continuity checking)
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
