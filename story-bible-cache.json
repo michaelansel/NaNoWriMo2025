@@ -6190,6 +6190,568 @@
       "chunks_processed": 1,
       "passage_name": "wait for travelers to approach",
       "passage_length": 1132
+    },
+    "Day 10 KEB": {
+      "content_hash": "199a1840412c1c0b",
+      "extracted_at": "2025-12-02T05:45:44.406074",
+      "entities": {
+        "characters": [
+          {
+            "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Nivek",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "locations": [
+          {
+            "name": "cavern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cave",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "tunnel",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "outside",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "room",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Day 27 KEB",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "Nivek's sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "mushrooms",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "water",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "puddles",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "Day 10 KEB",
+      "passage_length": 1176
+    },
+    "Day 11 KEB": {
+      "content_hash": "6a9b1d5bbae8cc4e",
+      "extracted_at": "2025-12-02T05:45:47.219679",
+      "entities": {
+        "characters": [
+          {
+            "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "locations": [
+          {
+            "name": "cave",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "tunnel",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cave entrance",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "strap",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "bag",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "canvas bag",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "message tube",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "jacket",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "Day 11 KEB",
+      "passage_length": 1894
+    },
+    "Day 12 KEB": {
+      "content_hash": "eed2f861d409d266",
+      "extracted_at": "2025-12-02T05:45:51.359868",
+      "entities": {
+        "characters": [
+          {
+            "name": "Danita",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Terence",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Kian",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "locations": [
+          {
+            "name": "village",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "snow drift",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "winter storm",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "Danita's shield",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Terence's sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "shield",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "ice workings",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "well",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "harvest",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "festival",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "magic",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "Day 12 KEB",
+      "passage_length": 2366
+    },
+    "Day 13 KEB": {
+      "content_hash": "c9640b2bb3b0de1c",
+      "extracted_at": "2025-12-02T05:46:20.018611",
+      "entities": {
+        "characters": [
+          {
+            "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Jerrick",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Danita",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Kian",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "Terence",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "locations": [
+          {
+            "name": "Relti Pond",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "mushroom cave",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cave",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "packs",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "Day 13 KEB",
+      "passage_length": 2053
+    },
+    "Day 14 KEB": {
+      "content_hash": "adc562aa0f0b7065",
+      "extracted_at": "2025-12-02T05:46:48.066081",
+      "entities": {
+        "characters": [
+          {
+            "name": "Javlyn",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "the creature",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "locations": [
+          {
+            "name": "cave",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "cavern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "road",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "town",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "items": [
+          {
+            "name": "mushroom",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "mushrooms",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "sword",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "lantern",
+            "title": null,
+            "mentions": [],
+            "facts": [],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "Day 14 KEB",
+      "passage_length": 4213
     }
   },
   "summarized_facts": {
@@ -6203,14 +6765,14 @@
           "passages": [
             "A rumor",
             "Day 1 KEB",
-            "Day 13 KEB",
             "Day 18 KEB",
             "Day 23 KEB",
             "Day 26 KEB",
             "Day 30 KEB",
             "Do not investigate",
             "Someone joins Javlyn",
-            "Successfully escape"
+            "Successfully escape",
+            "Day 13 KEB"
           ]
         },
         {
@@ -6221,7 +6783,6 @@
             "A rumor",
             "Complete the working",
             "Day 1 KEB",
-            "Day 12 KEB",
             "Day 17 KEB",
             "Day 20 KEB",
             "Day 21 KEB",
@@ -6231,7 +6792,8 @@
             "Someone joins Javlyn",
             "Successfully escape",
             "immediate",
-            "mansel-20251102"
+            "mansel-20251102",
+            "Day 12 KEB"
           ]
         },
         {
@@ -6241,10 +6803,6 @@
           "passages": [
             "Check the creature",
             "Complete the working",
-            "Day 10 KEB",
-            "Day 11 KEB",
-            "Day 13 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -6281,7 +6839,11 @@
             "left the cavern",
             "mansel-20251102",
             "proactive attack",
-            "wait for travelers to approach"
+            "wait for travelers to approach",
+            "Day 10 KEB",
+            "Day 11 KEB",
+            "Day 13 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -6290,13 +6852,12 @@
           "evidence": [],
           "passages": [
             "Check the creature",
-            "Day 13 KEB",
-            "Day 14 KEB",
             "Day 16 KEB",
             "Day 21 KEB",
             "Day 8 KEB",
             "Do not investigate",
-            "leave Jerrick behind"
+            "leave Jerrick behind",
+            "Day 14 KEB"
           ]
         },
         {
@@ -6316,7 +6877,8 @@
             "Collect snacks",
             "Re-enter the cave",
             "mansel-20251112",
-            "proactive attack"
+            "proactive attack",
+            "Day 10 KEB"
           ]
         },
         {
@@ -6330,7 +6892,8 @@
             "Day 24 KEB",
             "Day 30 KEB",
             "Metal object",
-            "mansel-20251102"
+            "mansel-20251102",
+            "Day 11 KEB"
           ]
         },
         {
@@ -6339,8 +6902,6 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 10 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -6357,7 +6918,9 @@
             "Re-enter the cave",
             "Silence",
             "one creature",
-            "proactive attack"
+            "proactive attack",
+            "Day 10 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -6366,8 +6929,6 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 10 KEB",
-            "Day 11 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -6379,7 +6940,9 @@
             "Day 5 KEB",
             "Javlyn continued",
             "Magic worked as intended",
-            "Metal object"
+            "Metal object",
+            "Day 10 KEB",
+            "Day 11 KEB"
           ]
         },
         {
@@ -6430,58 +6993,6 @@
           "evidence": [],
           "passages": [
             "Continue on"
-          ]
-        },
-        {
-          "fact": "Location: Outside",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Day 27 Keb",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Relti Pond",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB",
-            "Someone joins Javlyn"
-          ]
-        },
-        {
-          "fact": "Location: Road",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB",
-            "Day 14 KEB",
-            "Day 16 KEB",
-            "Day 18 KEB",
-            "Day 21 KEB",
-            "Day 27 KEB",
-            "Magic worked as intended",
-            "wait for travelers to approach"
-          ]
-        },
-        {
-          "fact": "Location: Cave'S Entrance",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 14 KEB",
-            "Day 18 KEB",
-            "No one",
-            "mansel-20251101",
-            "proactive attack"
           ]
         },
         {
@@ -6552,6 +7063,20 @@
           ]
         },
         {
+          "fact": "Location: Road",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 16 KEB",
+            "Day 18 KEB",
+            "Day 21 KEB",
+            "Day 27 KEB",
+            "Magic worked as intended",
+            "wait for travelers to approach",
+            "Day 14 KEB"
+          ]
+        },
+        {
           "fact": "Location: Town Proper",
           "type": "setting",
           "evidence": [],
@@ -6565,6 +7090,17 @@
           "evidence": [],
           "passages": [
             "Day 17 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Cave'S Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB",
+            "No one",
+            "mansel-20251101",
+            "proactive attack"
           ]
         },
         {
@@ -6809,6 +7345,15 @@
           ]
         },
         {
+          "fact": "Location: Relti Pond",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Someone joins Javlyn",
+            "Day 13 KEB"
+          ]
+        },
+        {
           "fact": "Location: Day 30 Keb",
           "type": "setting",
           "evidence": [],
@@ -6969,6 +7514,38 @@
           ]
         },
         {
+          "fact": "Location: Outside",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Day 27 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Snow Drift",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Winter Storm",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
           "fact": "Item: Pants",
           "type": "setting",
           "evidence": [],
@@ -6982,12 +7559,12 @@
           "evidence": [],
           "passages": [
             "A rumor",
-            "Day 11 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
             "Day 22 KEB",
-            "Day 28 KEB"
+            "Day 28 KEB",
+            "Day 11 KEB"
           ]
         },
         {
@@ -7015,8 +7592,6 @@
           "passages": [
             "Check the creature",
             "Complete the working",
-            "Day 10 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -7044,7 +7619,9 @@
             "leave Jerrick behind",
             "mansel-20251101",
             "one creature",
-            "proactive attack"
+            "proactive attack",
+            "Day 10 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -7053,7 +7630,6 @@
           "evidence": [],
           "passages": [
             "Check the creature",
-            "Day 11 KEB",
             "Day 17 KEB",
             "Turn back"
           ]
@@ -7119,14 +7695,14 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 12 KEB",
             "Day 17 KEB",
             "Day 20 KEB",
             "Day 24 KEB",
             "Day 26 KEB",
             "Day 5 KEB",
             "Magic worked as intended",
-            "What cave?"
+            "What cave?",
+            "Day 12 KEB"
           ]
         },
         {
@@ -7135,9 +7711,6 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 11 KEB",
-            "Day 12 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 16 KEB",
             "Day 17 KEB",
@@ -7154,125 +7727,11 @@
             "Successfully escape",
             "What cave?",
             "mansel-20251101",
-            "proactive attack"
-          ]
-        },
-        {
-          "fact": "Item: Nivek'S Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
+            "proactive attack",
             "Day 10 KEB",
-            "Day 27 KEB",
-            "Day 28 KEB",
-            "Magic worked as intended",
-            "mansel-20251114"
-          ]
-        },
-        {
-          "fact": "Item: Mushrooms",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB",
-            "Day 14 KEB",
-            "Day 7 KEB",
-            "Find the lantern",
-            "Re-enter the cave"
-          ]
-        },
-        {
-          "fact": "Item: Water",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB",
-            "Day 29 KEB",
-            "Day 4 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Puddles",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Bag",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Canvas Bag",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Message Tube",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Danita'S Shield",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Terence'S Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
+            "Day 11 KEB",
             "Day 12 KEB",
-            "Day 25 KEB",
-            "Magic worked as intended"
-          ]
-        },
-        {
-          "fact": "Item: Ice Workings",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Two Packs",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB",
-            "Someone joins Javlyn"
-          ]
-        },
-        {
-          "fact": "Item: Lantern Light",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
             "Day 14 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Mushroom",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 14 KEB",
-            "Day 6 KEB"
           ]
         },
         {
@@ -7602,11 +8061,33 @@
           ]
         },
         {
+          "fact": "Item: Terence'S Sword",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 25 KEB",
+            "Magic worked as intended",
+            "Day 12 KEB"
+          ]
+        },
+        {
           "fact": "Item: Greatsword",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 26 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Nivek'S Sword",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 27 KEB",
+            "Day 28 KEB",
+            "Magic worked as intended",
+            "mansel-20251114",
+            "Day 10 KEB"
           ]
         },
         {
@@ -7624,7 +8105,8 @@
           "evidence": [],
           "passages": [
             "Day 27 KEB",
-            "Day 28 KEB"
+            "Day 28 KEB",
+            "Day 13 KEB"
           ]
         },
         {
@@ -7651,6 +8133,16 @@
           "evidence": [],
           "passages": [
             "Day 29 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Water",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB",
+            "Day 4 KEB",
+            "Day 10 KEB"
           ]
         },
         {
@@ -7746,6 +8238,15 @@
           ]
         },
         {
+          "fact": "Item: Mushroom",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 6 KEB",
+            "Day 14 KEB"
+          ]
+        },
+        {
           "fact": "Item: Body",
           "type": "setting",
           "evidence": [],
@@ -7767,6 +8268,18 @@
           "evidence": [],
           "passages": [
             "Day 7 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Mushrooms",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 7 KEB",
+            "Find the lantern",
+            "Re-enter the cave",
+            "Day 10 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -7939,6 +8452,14 @@
           "evidence": [],
           "passages": [
             "Silence"
+          ]
+        },
+        {
+          "fact": "Item: Two Packs",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Someone joins Javlyn"
           ]
         },
         {
@@ -8196,6 +8717,94 @@
           "passages": [
             "wait for travelers to approach"
           ]
+        },
+        {
+          "fact": "Item: Puddles",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Strap",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Bag",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Canvas Bag",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Message Tube",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Danita'S Shield",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Ice Workings",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Well",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Harvest",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Festival",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Magic",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
         }
       ],
       "timeline": []
@@ -8211,11 +8820,6 @@
           "Collect snacks",
           "Complete the working",
           "Continue on",
-          "Day 10 KEB",
-          "Day 11 KEB",
-          "Day 12 KEB",
-          "Day 13 KEB",
-          "Day 14 KEB",
           "Day 15 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
@@ -8264,7 +8868,12 @@
           "mansel-20251114",
           "one creature",
           "proactive attack",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 10 KEB",
+          "Day 11 KEB",
+          "Day 12 KEB",
+          "Day 13 KEB",
+          "Day 14 KEB"
         ],
         "mentions": []
       },
@@ -8274,8 +8883,6 @@
         "variables": [],
         "passages": [
           "Complete the working",
-          "Day 12 KEB",
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
           "Day 20 KEB",
@@ -8292,7 +8899,9 @@
           "What cave?",
           "immediate",
           "mansel-20251114",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 12 KEB",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -8302,8 +8911,6 @@
         "variables": [],
         "passages": [
           "Complete the working",
-          "Day 12 KEB",
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
           "Day 20 KEB",
@@ -8321,7 +8928,9 @@
           "What cave?",
           "immediate",
           "mansel-20251114",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 12 KEB",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -8331,8 +8940,6 @@
         "variables": [],
         "passages": [
           "Complete the working",
-          "Day 12 KEB",
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
           "Day 20 KEB",
@@ -8349,7 +8956,9 @@
           "What cave?",
           "immediate",
           "mansel-20251114",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 12 KEB",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -8385,7 +8994,8 @@
           "Successfully escape",
           "mansel-20251101",
           "mansel-20251114",
-          "proactive attack"
+          "proactive attack",
+          "Day 10 KEB"
         ],
         "mentions": []
       },
@@ -8403,7 +9013,6 @@
         "zero_action_state": [],
         "variables": [],
         "passages": [
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 18 KEB",
           "Day 3 KEB",
@@ -8413,17 +9022,8 @@
           "Someone joins Javlyn",
           "Successfully escape",
           "leave Jerrick behind",
-          "mansel-20251102"
-        ],
-        "mentions": []
-      },
-      "The Creature": {
-        "identity": [],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 14 KEB",
-          "Day 21 KEB"
+          "mansel-20251102",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -8496,6 +9096,16 @@
         "variables": [],
         "passages": [
           "Day 20 KEB"
+        ],
+        "mentions": []
+      },
+      "The Creature": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB",
+          "Day 14 KEB"
         ],
         "mentions": []
       },
@@ -8726,7 +9336,7 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 0.0021772384643554688,
+  "summarization_time_seconds": 0.002031564712524414,
   "categorized_facts": {
     "constants": {
       "world_rules": [],
@@ -8738,14 +9348,14 @@
           "passages": [
             "A rumor",
             "Day 1 KEB",
-            "Day 13 KEB",
             "Day 18 KEB",
             "Day 23 KEB",
             "Day 26 KEB",
             "Day 30 KEB",
             "Do not investigate",
             "Someone joins Javlyn",
-            "Successfully escape"
+            "Successfully escape",
+            "Day 13 KEB"
           ]
         },
         {
@@ -8756,7 +9366,6 @@
             "A rumor",
             "Complete the working",
             "Day 1 KEB",
-            "Day 12 KEB",
             "Day 17 KEB",
             "Day 20 KEB",
             "Day 21 KEB",
@@ -8766,7 +9375,8 @@
             "Someone joins Javlyn",
             "Successfully escape",
             "immediate",
-            "mansel-20251102"
+            "mansel-20251102",
+            "Day 12 KEB"
           ]
         },
         {
@@ -8776,10 +9386,6 @@
           "passages": [
             "Check the creature",
             "Complete the working",
-            "Day 10 KEB",
-            "Day 11 KEB",
-            "Day 13 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -8816,7 +9422,11 @@
             "left the cavern",
             "mansel-20251102",
             "proactive attack",
-            "wait for travelers to approach"
+            "wait for travelers to approach",
+            "Day 10 KEB",
+            "Day 11 KEB",
+            "Day 13 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -8825,13 +9435,12 @@
           "evidence": [],
           "passages": [
             "Check the creature",
-            "Day 13 KEB",
-            "Day 14 KEB",
             "Day 16 KEB",
             "Day 21 KEB",
             "Day 8 KEB",
             "Do not investigate",
-            "leave Jerrick behind"
+            "leave Jerrick behind",
+            "Day 14 KEB"
           ]
         },
         {
@@ -8851,7 +9460,8 @@
             "Collect snacks",
             "Re-enter the cave",
             "mansel-20251112",
-            "proactive attack"
+            "proactive attack",
+            "Day 10 KEB"
           ]
         },
         {
@@ -8865,7 +9475,8 @@
             "Day 24 KEB",
             "Day 30 KEB",
             "Metal object",
-            "mansel-20251102"
+            "mansel-20251102",
+            "Day 11 KEB"
           ]
         },
         {
@@ -8874,8 +9485,6 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 10 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -8892,7 +9501,9 @@
             "Re-enter the cave",
             "Silence",
             "one creature",
-            "proactive attack"
+            "proactive attack",
+            "Day 10 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -8901,8 +9512,6 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 10 KEB",
-            "Day 11 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -8914,7 +9523,9 @@
             "Day 5 KEB",
             "Javlyn continued",
             "Magic worked as intended",
-            "Metal object"
+            "Metal object",
+            "Day 10 KEB",
+            "Day 11 KEB"
           ]
         },
         {
@@ -8965,58 +9576,6 @@
           "evidence": [],
           "passages": [
             "Continue on"
-          ]
-        },
-        {
-          "fact": "Location: Outside",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Day 27 Keb",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Location: Relti Pond",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB",
-            "Someone joins Javlyn"
-          ]
-        },
-        {
-          "fact": "Location: Road",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB",
-            "Day 14 KEB",
-            "Day 16 KEB",
-            "Day 18 KEB",
-            "Day 21 KEB",
-            "Day 27 KEB",
-            "Magic worked as intended",
-            "wait for travelers to approach"
-          ]
-        },
-        {
-          "fact": "Location: Cave'S Entrance",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 14 KEB",
-            "Day 18 KEB",
-            "No one",
-            "mansel-20251101",
-            "proactive attack"
           ]
         },
         {
@@ -9087,6 +9646,20 @@
           ]
         },
         {
+          "fact": "Location: Road",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 16 KEB",
+            "Day 18 KEB",
+            "Day 21 KEB",
+            "Day 27 KEB",
+            "Magic worked as intended",
+            "wait for travelers to approach",
+            "Day 14 KEB"
+          ]
+        },
+        {
           "fact": "Location: Town Proper",
           "type": "setting",
           "evidence": [],
@@ -9100,6 +9673,17 @@
           "evidence": [],
           "passages": [
             "Day 17 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Cave'S Entrance",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 18 KEB",
+            "No one",
+            "mansel-20251101",
+            "proactive attack"
           ]
         },
         {
@@ -9344,6 +9928,15 @@
           ]
         },
         {
+          "fact": "Location: Relti Pond",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Someone joins Javlyn",
+            "Day 13 KEB"
+          ]
+        },
+        {
           "fact": "Location: Day 30 Keb",
           "type": "setting",
           "evidence": [],
@@ -9504,6 +10097,38 @@
           ]
         },
         {
+          "fact": "Location: Outside",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Day 27 Keb",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Snow Drift",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Location: Winter Storm",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
           "fact": "Item: Pants",
           "type": "setting",
           "evidence": [],
@@ -9517,12 +10142,12 @@
           "evidence": [],
           "passages": [
             "A rumor",
-            "Day 11 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
             "Day 22 KEB",
-            "Day 28 KEB"
+            "Day 28 KEB",
+            "Day 11 KEB"
           ]
         },
         {
@@ -9550,8 +10175,6 @@
           "passages": [
             "Check the creature",
             "Complete the working",
-            "Day 10 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 17 KEB",
             "Day 18 KEB",
@@ -9579,7 +10202,9 @@
             "leave Jerrick behind",
             "mansel-20251101",
             "one creature",
-            "proactive attack"
+            "proactive attack",
+            "Day 10 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -9588,7 +10213,6 @@
           "evidence": [],
           "passages": [
             "Check the creature",
-            "Day 11 KEB",
             "Day 17 KEB",
             "Turn back"
           ]
@@ -9654,14 +10278,14 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 12 KEB",
             "Day 17 KEB",
             "Day 20 KEB",
             "Day 24 KEB",
             "Day 26 KEB",
             "Day 5 KEB",
             "Magic worked as intended",
-            "What cave?"
+            "What cave?",
+            "Day 12 KEB"
           ]
         },
         {
@@ -9670,9 +10294,6 @@
           "evidence": [],
           "passages": [
             "Complete the working",
-            "Day 11 KEB",
-            "Day 12 KEB",
-            "Day 14 KEB",
             "Day 15 KEB",
             "Day 16 KEB",
             "Day 17 KEB",
@@ -9689,125 +10310,11 @@
             "Successfully escape",
             "What cave?",
             "mansel-20251101",
-            "proactive attack"
-          ]
-        },
-        {
-          "fact": "Item: Nivek'S Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
+            "proactive attack",
             "Day 10 KEB",
-            "Day 27 KEB",
-            "Day 28 KEB",
-            "Magic worked as intended",
-            "mansel-20251114"
-          ]
-        },
-        {
-          "fact": "Item: Mushrooms",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB",
-            "Day 14 KEB",
-            "Day 7 KEB",
-            "Find the lantern",
-            "Re-enter the cave"
-          ]
-        },
-        {
-          "fact": "Item: Water",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB",
-            "Day 29 KEB",
-            "Day 4 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Puddles",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 10 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Bag",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Canvas Bag",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Message Tube",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 11 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Danita'S Shield",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Terence'S Sword",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
+            "Day 11 KEB",
             "Day 12 KEB",
-            "Day 25 KEB",
-            "Magic worked as intended"
-          ]
-        },
-        {
-          "fact": "Item: Ice Workings",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 12 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Two Packs",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 13 KEB",
-            "Someone joins Javlyn"
-          ]
-        },
-        {
-          "fact": "Item: Lantern Light",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
             "Day 14 KEB"
-          ]
-        },
-        {
-          "fact": "Item: Mushroom",
-          "type": "setting",
-          "evidence": [],
-          "passages": [
-            "Day 14 KEB",
-            "Day 6 KEB"
           ]
         },
         {
@@ -10137,11 +10644,33 @@
           ]
         },
         {
+          "fact": "Item: Terence'S Sword",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 25 KEB",
+            "Magic worked as intended",
+            "Day 12 KEB"
+          ]
+        },
+        {
           "fact": "Item: Greatsword",
           "type": "setting",
           "evidence": [],
           "passages": [
             "Day 26 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Nivek'S Sword",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 27 KEB",
+            "Day 28 KEB",
+            "Magic worked as intended",
+            "mansel-20251114",
+            "Day 10 KEB"
           ]
         },
         {
@@ -10159,7 +10688,8 @@
           "evidence": [],
           "passages": [
             "Day 27 KEB",
-            "Day 28 KEB"
+            "Day 28 KEB",
+            "Day 13 KEB"
           ]
         },
         {
@@ -10186,6 +10716,16 @@
           "evidence": [],
           "passages": [
             "Day 29 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Water",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 29 KEB",
+            "Day 4 KEB",
+            "Day 10 KEB"
           ]
         },
         {
@@ -10281,6 +10821,15 @@
           ]
         },
         {
+          "fact": "Item: Mushroom",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 6 KEB",
+            "Day 14 KEB"
+          ]
+        },
+        {
           "fact": "Item: Body",
           "type": "setting",
           "evidence": [],
@@ -10302,6 +10851,18 @@
           "evidence": [],
           "passages": [
             "Day 7 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Mushrooms",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 7 KEB",
+            "Find the lantern",
+            "Re-enter the cave",
+            "Day 10 KEB",
+            "Day 14 KEB"
           ]
         },
         {
@@ -10474,6 +11035,14 @@
           "evidence": [],
           "passages": [
             "Silence"
+          ]
+        },
+        {
+          "fact": "Item: Two Packs",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Someone joins Javlyn"
           ]
         },
         {
@@ -10731,6 +11300,94 @@
           "passages": [
             "wait for travelers to approach"
           ]
+        },
+        {
+          "fact": "Item: Puddles",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 10 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Strap",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Bag",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Canvas Bag",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Message Tube",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 11 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Danita'S Shield",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Ice Workings",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Well",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Harvest",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Festival",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
+        },
+        {
+          "fact": "Item: Magic",
+          "type": "setting",
+          "evidence": [],
+          "passages": [
+            "Day 12 KEB"
+          ]
         }
       ],
       "timeline": []
@@ -10746,11 +11403,6 @@
           "Collect snacks",
           "Complete the working",
           "Continue on",
-          "Day 10 KEB",
-          "Day 11 KEB",
-          "Day 12 KEB",
-          "Day 13 KEB",
-          "Day 14 KEB",
           "Day 15 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
@@ -10799,7 +11451,12 @@
           "mansel-20251114",
           "one creature",
           "proactive attack",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 10 KEB",
+          "Day 11 KEB",
+          "Day 12 KEB",
+          "Day 13 KEB",
+          "Day 14 KEB"
         ],
         "mentions": []
       },
@@ -10809,8 +11466,6 @@
         "variables": [],
         "passages": [
           "Complete the working",
-          "Day 12 KEB",
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
           "Day 20 KEB",
@@ -10827,7 +11482,9 @@
           "What cave?",
           "immediate",
           "mansel-20251114",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 12 KEB",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -10837,8 +11494,6 @@
         "variables": [],
         "passages": [
           "Complete the working",
-          "Day 12 KEB",
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
           "Day 20 KEB",
@@ -10856,7 +11511,9 @@
           "What cave?",
           "immediate",
           "mansel-20251114",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 12 KEB",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -10866,8 +11523,6 @@
         "variables": [],
         "passages": [
           "Complete the working",
-          "Day 12 KEB",
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 17 KEB",
           "Day 20 KEB",
@@ -10884,7 +11539,9 @@
           "What cave?",
           "immediate",
           "mansel-20251114",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "Day 12 KEB",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -10920,7 +11577,8 @@
           "Successfully escape",
           "mansel-20251101",
           "mansel-20251114",
-          "proactive attack"
+          "proactive attack",
+          "Day 10 KEB"
         ],
         "mentions": []
       },
@@ -10938,7 +11596,6 @@
         "zero_action_state": [],
         "variables": [],
         "passages": [
-          "Day 13 KEB",
           "Day 16 KEB",
           "Day 18 KEB",
           "Day 3 KEB",
@@ -10948,17 +11605,8 @@
           "Someone joins Javlyn",
           "Successfully escape",
           "leave Jerrick behind",
-          "mansel-20251102"
-        ],
-        "mentions": []
-      },
-      "The Creature": {
-        "identity": [],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 14 KEB",
-          "Day 21 KEB"
+          "mansel-20251102",
+          "Day 13 KEB"
         ],
         "mentions": []
       },
@@ -11031,6 +11679,16 @@
         "variables": [],
         "passages": [
           "Day 20 KEB"
+        ],
+        "mentions": []
+      },
+      "The Creature": {
+        "identity": [],
+        "zero_action_state": [],
+        "variables": [],
+        "passages": [
+          "Day 21 KEB",
+          "Day 14 KEB"
         ],
         "mentions": []
       },
@@ -11284,26 +11942,6 @@
         "passage_name": "Day 1 KEB",
         "facts": []
       },
-      "Day 10 KEB": {
-        "passage_name": "Day 10 KEB",
-        "facts": []
-      },
-      "Day 11 KEB": {
-        "passage_name": "Day 11 KEB",
-        "facts": []
-      },
-      "Day 12 KEB": {
-        "passage_name": "Day 12 KEB",
-        "facts": []
-      },
-      "Day 13 KEB": {
-        "passage_name": "Day 13 KEB",
-        "facts": []
-      },
-      "Day 14 KEB": {
-        "passage_name": "Day 14 KEB",
-        "facts": []
-      },
       "Day 15 KEB": {
         "passage_name": "Day 15 KEB",
         "facts": []
@@ -11515,6 +12153,26 @@
       "wait for travelers to approach": {
         "passage_name": "wait for travelers to approach",
         "facts": []
+      },
+      "Day 10 KEB": {
+        "passage_name": "Day 10 KEB",
+        "facts": []
+      },
+      "Day 11 KEB": {
+        "passage_name": "Day 11 KEB",
+        "facts": []
+      },
+      "Day 12 KEB": {
+        "passage_name": "Day 12 KEB",
+        "facts": []
+      },
+      "Day 13 KEB": {
+        "passage_name": "Day 13 KEB",
+        "facts": []
+      },
+      "Day 14 KEB": {
+        "passage_name": "Day 14 KEB",
+        "facts": []
       }
     }
   },
@@ -11526,15 +12184,15 @@
     "character_coverage": 41,
     "fact_distribution": {
       "world_rules": 0,
-      "setting": 214,
+      "setting": 220,
       "timeline": 0
     },
     "extraction_success_rate": 0.0,
     "deduplication_effectiveness": 0.0
   },
   "meta": {
-    "last_extracted": "2025-12-02T05:32:45.047806",
+    "last_extracted": "2025-12-02T05:46:48.542730",
     "total_passages_extracted": 64,
-    "total_facts": 214
+    "total_facts": 220
   }
 }
