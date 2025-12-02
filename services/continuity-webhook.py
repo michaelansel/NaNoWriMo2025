@@ -1879,10 +1879,27 @@ def load_story_bible_cache_from_branch(pr_number: int, commit_sha: str = None) -
 
     try:
         response = requests.get(url, headers=headers, params={"ref": ref})
+        app.logger.info(f"[Story Bible] Cache load attempt: status={response.status_code}, ref={ref[:8] if len(ref) > 8 else ref}")
+
         if response.status_code == 200:
             import base64
-            content = response.json()['content']
+            response_data = response.json()
+            app.logger.info(f"[Story Bible] Response keys: {list(response_data.keys())}")
+
+            if 'content' not in response_data:
+                app.logger.warning(f"[Story Bible] No 'content' key in response")
+                return {}
+
+            content = response_data['content']
+            if not content or not content.strip():
+                app.logger.warning(f"[Story Bible] Empty content in response")
+                return {}
+
             decoded = base64.b64decode(content).decode('utf-8')
+            if not decoded or not decoded.strip():
+                app.logger.warning(f"[Story Bible] Empty decoded content")
+                return {}
+
             cache = json.loads(decoded)
             if commit_sha:
                 app.logger.info(f"[Story Bible] Loaded cache from commit {commit_sha[:8]}")
@@ -1891,12 +1908,12 @@ def load_story_bible_cache_from_branch(pr_number: int, commit_sha: str = None) -
             return cache
         else:
             if commit_sha:
-                app.logger.info(f"[Story Bible] No existing cache found at commit {commit_sha[:8]}, starting fresh")
+                app.logger.info(f"[Story Bible] No existing cache found at commit {commit_sha[:8]} (status {response.status_code}), starting fresh")
             else:
-                app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name}, starting fresh")
+                app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name} (status {response.status_code}), starting fresh")
             return {}
     except Exception as e:
-        app.logger.warning(f"[Story Bible] Could not load cache from branch: {e}")
+        app.logger.warning(f"[Story Bible] Could not load cache (ref={ref[:8] if len(ref) > 8 else ref}): {e}")
         return {}
 
 
