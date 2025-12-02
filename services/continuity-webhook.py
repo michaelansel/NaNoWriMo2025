@@ -1754,6 +1754,17 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
         commit_story_bible_to_branch(pr_number, branch_name, cache, username, mode, total_passages)
 
+        # Regenerate dist files from updated cache
+        # WHY: dist/story-bible.{html,json} must stay in sync with cache
+        # Without this, users see stale output even though cache is up-to-date
+        app.logger.info(f"[Story Bible] Regenerating dist files from cache")
+        try:
+            regenerate_story_bible_dist_files(pr_number, branch_name, cache)
+            app.logger.info(f"[Story Bible] Dist files regenerated successfully")
+        except Exception as e:
+            app.logger.error(f"[Story Bible] Failed to regenerate dist files: {e}")
+            # Continue anyway - cache is still updated, user can manually regenerate if needed
+
         # Post final summary
         character_count = len(categorized_facts.get('characters', {}))
         constant_count = (
@@ -1943,6 +1954,95 @@ def load_story_bible_cache_from_branch(pr_number: int, commit_sha: str = None) -
     except Exception as e:
         app.logger.warning(f"[Story Bible] Could not load cache (ref={ref[:8] if len(ref) > 8 else ref}): {e}")
         return {}
+
+
+def regenerate_story_bible_dist_files(pr_number: int, branch_name: str, cache_data: Dict) -> bool:
+    """Regenerate dist/story-bible.{html,json} from cache and commit to PR branch.
+
+    Args:
+        pr_number: PR number
+        branch_name: Branch name to commit to
+        cache_data: Updated cache data to render
+
+    Returns:
+        True if successful, False otherwise
+    """
+    import sys
+    from pathlib import Path
+    import tempfile
+
+    # Add generator modules to path
+    generator_dir = Path(__file__).parent.parent / 'formats' / 'story-bible'
+    sys.path.insert(0, str(generator_dir / 'modules'))
+
+    from modules.html_generator import generate_html_output
+    from modules.json_generator import generate_json_output
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            # Determine which data to use based on summarization status
+            summarization_status = cache_data.get('summarization_status', 'not_run')
+
+            if summarization_status == 'success' and 'summarized_facts' in cache_data:
+                app.logger.info(f"[Story Bible] Using summarized facts for rendering")
+                categorized = cache_data['summarized_facts']
+                # Ensure metadata includes view_type
+                if 'metadata' not in categorized:
+                    categorized['metadata'] = {}
+                categorized['metadata']['view_type'] = 'summarized'
+            else:
+                app.logger.info(f"[Story Bible] Using categorized facts for rendering")
+                categorized = cache_data['categorized_facts']
+                # Ensure metadata includes view_type
+                if 'metadata' not in categorized:
+                    categorized['metadata'] = {}
+                if 'view_type' not in categorized['metadata']:
+                    categorized['metadata']['view_type'] = 'per_passage'
+
+            # Generate HTML
+            html_output = tmpdir_path / 'story-bible.html'
+            generate_html_output(categorized, html_output)
+
+            # Generate JSON
+            json_output = tmpdir_path / 'story-bible.json'
+            generate_json_output(categorized, json_output)
+
+            # Read generated files
+            with open(html_output, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+
+            with open(json_output, 'r', encoding='utf-8') as f:
+                json_content = f.read()
+
+            # Commit both files to branch
+            commit_message = """Update Story Bible: Regenerate dist files from cache
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+            # Commit HTML
+            html_success = commit_file_to_branch(branch_name, 'dist/story-bible.html', html_content, commit_message)
+            if not html_success:
+                app.logger.error(f"[Story Bible] Failed to commit dist/story-bible.html")
+                return False
+
+            # Commit JSON
+            json_success = commit_file_to_branch(branch_name, 'dist/story-bible.json', json_content, commit_message)
+            if not json_success:
+                app.logger.error(f"[Story Bible] Failed to commit dist/story-bible.json")
+                return False
+
+            return True
+
+    except Exception as e:
+        app.logger.error(f"[Story Bible] Error regenerating dist files: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 
 def commit_story_bible_to_branch(pr_number: int, branch_name: str, cache_data: Dict, username: str, mode: str, passages_extracted: int) -> bool:
