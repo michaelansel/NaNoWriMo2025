@@ -596,7 +596,7 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
         return None
 
 
-def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'):
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only', commit_sha=None):
     """Process webhook in background thread.
 
     Args:
@@ -604,6 +604,7 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
         pr_number: Pull request number
         artifacts_url: URL to fetch workflow artifacts
         mode: Validation mode ('new-only', 'modified', 'all')
+        commit_sha: Optional commit SHA to load cache from (defaults to branch HEAD)
     """
     # Use file-based cancellation event for cross-worker support
     cancel_event = FileCancellationEvent(workflow_id)
@@ -698,7 +699,8 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                     app.logger.warning(f"Could not load passage mapping: {e}")
 
             # Phase 3: Load Story Bible cache from PR branch for world consistency validation
-            story_bible_cache = load_story_bible_cache_from_branch(pr_number)
+            # Load from specific commit SHA if available, otherwise fall back to branch HEAD
+            story_bible_cache = load_story_bible_cache_from_branch(pr_number, commit_sha)
             story_bible_available = bool(
                 story_bible_cache and
                 story_bible_cache.get('categorized_facts', {}).get('constants', {})
@@ -1088,11 +1090,19 @@ def handle_workflow_webhook(payload):
 
     app.logger.info(f"Processing workflow {workflow_id} for PR #{pr_number}")
 
-    # Get artifacts URL
+    # Get artifacts URL and commit SHA
     artifacts_url = workflow_run.get('artifacts_url')
     if not artifacts_url:
         app.logger.error("No artifacts URL in workflow")
         return jsonify({"error": "No artifacts URL"}), 400
+
+    # Get the commit SHA that triggered this workflow
+    # This is critical: we must load cache from the same commit that the artifacts were built from
+    commit_sha = workflow_run.get('head_sha')
+    if commit_sha:
+        app.logger.info(f"Processing workflow {workflow_id} for commit {commit_sha[:8]}")
+    else:
+        app.logger.warning(f"No head_sha in workflow_run, will fall back to branch HEAD")
 
     # Cancel any existing jobs for this PR (both continuity check and Story Bible extraction)
     # WHY: New commits supersede old ones, so stop processing outdated code
@@ -1125,9 +1135,10 @@ def handle_workflow_webhook(payload):
     # Spawn background thread to process webhook
     # WHY: Return immediately (202 Accepted) so GitHub doesn't timeout
     # Always use 'new-only' mode for automatic workflow triggers (fastest)
+    # Pass commit_sha so cache is loaded from the same commit as the artifacts
     thread = threading.Thread(
         target=process_webhook_async,
-        args=(workflow_id, pr_number, artifacts_url, 'new-only'),
+        args=(workflow_id, pr_number, artifacts_url, 'new-only', commit_sha),
         daemon=True  # Dies when main process exits
     )
     thread.start()
@@ -1839,13 +1850,14 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
         shared_state.complete_job(workflow_id, 'failed')
 
 
-def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
+def load_story_bible_cache_from_branch(pr_number: int, commit_sha: str = None) -> Dict:
     """Load story-bible-cache.json from the PR branch if it exists.
 
     Used for both Story Bible extraction (Phase 2) and validation (Phase 3).
 
     Args:
         pr_number: Pull request number
+        commit_sha: Optional specific commit SHA to load cache from (defaults to branch HEAD)
 
     Returns:
         Story Bible cache dict, or empty dict if not found
@@ -1862,17 +1874,26 @@ def load_story_bible_cache_from_branch(pr_number: int) -> Dict:
         "Accept": "application/vnd.github+json"
     }
 
+    # Use commit SHA if provided, otherwise use branch name
+    ref = commit_sha if commit_sha else branch_name
+
     try:
-        response = requests.get(url, headers=headers, params={"ref": branch_name})
+        response = requests.get(url, headers=headers, params={"ref": ref})
         if response.status_code == 200:
             import base64
             content = response.json()['content']
             decoded = base64.b64decode(content).decode('utf-8')
             cache = json.loads(decoded)
-            app.logger.info(f"[Story Bible] Loaded cache from branch {branch_name}")
+            if commit_sha:
+                app.logger.info(f"[Story Bible] Loaded cache from commit {commit_sha[:8]}")
+            else:
+                app.logger.info(f"[Story Bible] Loaded cache from branch {branch_name}")
             return cache
         else:
-            app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name}, starting fresh")
+            if commit_sha:
+                app.logger.info(f"[Story Bible] No existing cache found at commit {commit_sha[:8]}, starting fresh")
+            else:
+                app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name}, starting fresh")
             return {}
     except Exception as e:
         app.logger.warning(f"[Story Bible] Could not load cache from branch: {e}")
