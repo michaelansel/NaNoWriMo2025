@@ -192,6 +192,41 @@ def normalize_conflicts(conflicts):
     return result
 
 
+def calculate_statistics(constants: Dict, characters: Dict, variables: Dict) -> Dict:
+    """
+    Calculate statistics for Story Bible metadata.
+
+    Args:
+        constants: Normalized constants dict with world_rules, setting, timeline
+        characters: Normalized characters dict
+        variables: Normalized variables dict with events, outcomes
+
+    Returns:
+        Dict with total_constants, total_variables, total_characters
+    """
+    # Count all constant facts (world_rules + setting + timeline)
+    total_constants = (
+        len(constants.get('world_rules', [])) +
+        len(constants.get('setting', [])) +
+        len(constants.get('timeline', []))
+    )
+
+    # Count all variable facts (events + outcomes)
+    total_variables = (
+        len(variables.get('events', [])) +
+        len(variables.get('outcomes', []))
+    )
+
+    # Count characters
+    total_characters = len(characters)
+
+    return {
+        'total_constants': total_constants,
+        'total_variables': total_variables,
+        'total_characters': total_characters
+    }
+
+
 def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     """
     Generate HTML Story Bible output.
@@ -233,8 +268,12 @@ def generate_html_output(categorized_facts: Dict, output_path: Path) -> None:
     conflicts = normalize_conflicts(categorized_facts.get('conflicts', []))
 
     # Get metadata and view type
-    metadata = categorized_facts.get('metadata', {})
+    metadata = categorized_facts.get('metadata', {}).copy()  # Copy to avoid mutating input
     view_type = metadata.get('view_type', 'unknown')
+
+    # Calculate and add statistics to metadata
+    stats = calculate_statistics(constants, characters, variables)
+    metadata.update(stats)
 
     # Normalize per-passage facts if present
     per_passage_raw = categorized_facts.get('per_passage', {})

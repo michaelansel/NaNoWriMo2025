@@ -167,16 +167,6 @@
             text-transform: uppercase;
         }
 
-        .badge-validated {
-            background: #28a745;
-            color: white;
-        }
-
-        .badge-new {
-            background: #6c757d;
-            color: white;
-        }
-
         .route {
             background: #e9ecef;
             padding: 1rem;
@@ -255,14 +245,6 @@
                 <div class="stat-label">Displayed Paths</div>
                 <div class="stat-value" id="displayed-paths">{{ total_paths }}</div>
             </div>
-            <div class="stat-item" style="border-left-color: #28a745;">
-                <div class="stat-label">Validated Paths</div>
-                <div class="stat-value">{{ validated_count }}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #6c757d;">
-                <div class="stat-label">New Paths</div>
-                <div class="stat-value">{{ new_count }}</div>
-            </div>
             <div class="stat-item">
                 <div class="stat-label">Shortest Path</div>
                 <div class="stat-value">{{ shortest_path }} passages</div>
@@ -289,13 +271,6 @@
                 <button class="filter-btn" data-filter-type="modified-week" onclick="toggleFilter(this, 'modified-week')">Modified Last Week</button>
             </div>
         </div>
-        <div style="margin-bottom: 1rem;">
-            <strong>Validation Status:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" data-filter-type="validated" onclick="toggleFilter(this, 'validated')">Validated ({{ validated_count }})</button>
-                <button class="filter-btn" data-filter-type="new" onclick="toggleFilter(this, 'new')">New ({{ new_count }})</button>
-            </div>
-        </div>
         <div>
             <strong>Actions:</strong>
             <div class="filter-buttons">
@@ -308,13 +283,10 @@
 
     <div class="container">
 {% for path_data in paths_with_metadata %}
-        <div class="path" data-created-date="{{ path_data.created_date }}" data-commit-date="{{ path_data.commit_date }}" data-validated="{{ path_data.is_validated|lower }}">
+        <div class="path" data-created-date="{{ path_data.created_date }}" data-commit-date="{{ path_data.commit_date }}">
             <div class="path-header">
                 <div class="path-title">Path {{ loop.index }} of {{ total_paths }}</div>
                 <div class="path-meta">
-                    <div class="path-meta-item">
-                        <span class="badge {{ 'badge-validated' if path_data.is_validated else 'badge-new' }}">{{ 'Validated' if path_data.is_validated else 'New' }}</span>
-                    </div>
                     <div class="path-meta-item">
                         📏 Length: {{ path_data.path|length }} passages
                     </div>
@@ -367,9 +339,7 @@
             'created-day': false,
             'created-week': false,
             'modified-day': false,
-            'modified-week': false,
-            'validated': false,
-            'new': false
+            'modified-week': false
         };
 
         function togglePath(button) {
@@ -429,7 +399,6 @@
                 // Get path data
                 const createdDate = path.dataset.createdDate;
                 const commitDate = path.dataset.commitDate;
-                const isValidated = path.dataset.validated === 'true';
 
                 // Apply time-based filters (if any active)
                 if (activeFilters['created-day'] || activeFilters['created-week'] ||
@@ -463,23 +432,6 @@
 
                     // If we have time filters active but this path doesn't match any, hide it
                     if (!matchesTimeFilter) {
-                        shouldDisplay = false;
-                    }
-                }
-
-                // Apply validation status filters (if any active)
-                if (activeFilters['validated'] || activeFilters['new']) {
-                    let matchesStatusFilter = false;
-
-                    if (activeFilters['validated'] && isValidated) {
-                        matchesStatusFilter = true;
-                    }
-                    if (activeFilters['new'] && !isValidated) {
-                        matchesStatusFilter = true;
-                    }
-
-                    // If we have status filters active but this path doesn't match, hide it
-                    if (!matchesStatusFilter) {
                         shouldDisplay = false;
                     }
                 }

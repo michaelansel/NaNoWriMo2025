@@ -18,8 +18,7 @@ from story_bible_extractor import (
     parse_json_from_response,
     categorize_all_facts,
     extract_character_name,
-    chunk_passage,
-    parse_passages_from_allpaths
+    chunk_passage
 )
 
 # Add formats/story-bible/modules to path for ai_summarizer tests
@@ -789,192 +788,301 @@ class TestEntityExtraction(unittest.TestCase):
         self.assertEqual(characters[0]['mentions'][0]['context'], 'narrative')
 
 
-class TestParsePassagesFromAllpaths(unittest.TestCase):
-    """Test parsing passages from AllPaths output."""
+class TestLoadFromCoreLibrary(unittest.TestCase):
+    """Test loading passages from core library artifacts (passages_deduplicated.json)."""
 
-    def test_parses_single_passage(self):
-        """Should parse single passage with hex ID translation."""
-        allpaths_content = """
-[PATH 1/1]
+    def test_loads_from_core_library_when_available(self):
+        """Should load passages from passages_deduplicated.json when available."""
+        import tempfile
+        import os
 
-========================================
-[PASSAGE: 6c6f636b65642d726f6f6d]
-========================================
+        # Create temp directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
 
-:: locked-room
-You try the door. Locked.
+            # Create core library artifact
+            core_artifacts = {
+                "passages": [
+                    {
+                        "name": "Start",
+                        "content": "Welcome to the story...",
+                        "content_hash": "abc123"
+                    },
+                    {
+                        "name": "Middle",
+                        "content": "The story continues...",
+                        "content_hash": "def456"
+                    }
+                ]
+            }
 
-[[Try to pick the lock|lockpicking]]
-"""
-        mapping = {
-            "6c6f636b65642d726f6f6d": "locked-room"
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            with open(artifacts_file, 'w') as f:
+                json.dump(core_artifacts, f)
+
+            # Import the function we'll test
+            from story_bible_extractor import load_passages_from_core_library
+
+            # Load passages
+            passages = load_passages_from_core_library(temp_path)
+
+            # Verify
+            self.assertEqual(len(passages), 2)
+            self.assertEqual(passages[0]["passage_id"], "Start")
+            self.assertEqual(passages[0]["content"], "Welcome to the story...")
+            self.assertEqual(passages[1]["passage_id"], "Middle")
+            self.assertEqual(passages[1]["content"], "The story continues...")
+
+    def test_returns_none_when_core_library_missing(self):
+        """Should return None when core library artifacts not found."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # No core library artifacts created - directory is empty
+
+            from story_bible_extractor import load_passages_from_core_library
+
+            # Should return None when artifacts missing
+            passages = load_passages_from_core_library(temp_path)
+
+            self.assertIsNone(passages)
+
+    def test_returns_none_when_json_invalid(self):
+        """Should return None when passages_deduplicated.json is invalid."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create invalid JSON file
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            artifacts_file.write_text("{ invalid json }")
+
+            from story_bible_extractor import load_passages_from_core_library
+
+            passages = load_passages_from_core_library(temp_path)
+
+            self.assertIsNone(passages)
+
+    def test_deduplicates_passages_by_content_hash(self):
+        """Should use content_hash to identify unchanged passages from cache."""
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Create core library artifact
+            core_artifacts = {
+                "passages": [
+                    {
+                        "name": "Start",
+                        "content": "Welcome to the story...",
+                        "content_hash": "abc123"
+                    }
+                ]
+            }
+
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            with open(artifacts_file, 'w') as f:
+                json.dump(core_artifacts, f)
+
+            # Create cache with same content_hash
+            cache = {
+                'passage_extractions': {
+                    'Start': {
+                        'content_hash': 'abc123',  # Same hash = unchanged
+                        'entities': {'characters': ['TestChar']}
+                    }
+                }
+            }
+
+            from story_bible_extractor import get_passages_to_extract_v2
+
+            # Should return empty list (passage unchanged)
+            passages = get_passages_to_extract_v2(cache, temp_path, mode='incremental')
+
+            self.assertEqual(len(passages), 0)
+
+    def test_content_hash_returned_in_passages_tuple(self):
+        """
+        Test that get_passages_to_extract_v2 returns content_hash in tuple.
+
+        This allows webhook to cache the correct hash from core library,
+        instead of recomputing with a different algorithm.
+
+        Regression test for bug where core library used SHA256[:16] but
+        webhook cached MD5, causing hashes to never match.
+        """
+        import tempfile
+        import hashlib
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Real passage content
+            passage_content = "Javlyn opened the door and stepped into the hallway."
+
+            # Compute hash the way core library does (SHA256[:16])
+            core_hash = hashlib.sha256(passage_content.encode('utf-8')).hexdigest()[:16]
+
+            # Create core library artifact with proper hash
+            core_artifacts = {
+                "passages": [
+                    {
+                        "name": "Start",
+                        "content": passage_content,
+                        "content_hash": core_hash
+                    }
+                ]
+            }
+
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            with open(artifacts_file, 'w') as f:
+                json.dump(core_artifacts, f)
+
+            # Empty cache - passage needs extraction
+            cache = {'passage_extractions': {}}
+
+            from story_bible_extractor import get_passages_to_extract_v2
+
+            # Get passages to extract
+            passages = get_passages_to_extract_v2(cache, temp_path, mode='incremental')
+
+            # Should return one passage
+            self.assertEqual(len(passages), 1)
+
+            # CRITICAL: Tuple should include content_hash as 4th element
+            # Format: (passage_id, passage_file, passage_content, content_hash)
+            passage_tuple = passages[0]
+            self.assertEqual(len(passage_tuple), 4, "Passage tuple should have 4 elements including content_hash")
+
+            passage_id, passage_file, passage_text, returned_hash = passage_tuple
+
+            # Verify returned hash matches core library hash
+            self.assertEqual(returned_hash, core_hash, "Returned hash should match core library hash (SHA256[:16])")
+
+            # Verify passage details
+            self.assertEqual(passage_id, "Start")
+            self.assertEqual(passage_text, passage_content)
+
+
+class TestExtractionPopulatesFacts(unittest.TestCase):
+    """Test that extraction populates facts and mentions arrays (Phase 1 fix)."""
+
+    def test_extraction_creates_facts_array_for_entities(self):
+        """Should populate facts array for each extracted entity."""
+        # Mock AI response with facts populated
+        response = """
+        {
+          "entities": [
+            {
+              "name": "Javlyn",
+              "type": "character",
+              "facts": ["is a student at the Academy", "struggles with magic"],
+              "mentions": [
+                {"quote": "Javlyn entered the Academy", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        # Verify entity-first format conversion
+        self.assertIn('entities', result)
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+
+        # CRITICAL: facts array must be populated
+        self.assertIn('facts', characters[0])
+        self.assertIsInstance(characters[0]['facts'], list)
+        self.assertGreater(len(characters[0]['facts']), 0)
+        self.assertIn("is a student at the Academy", characters[0]['facts'])
+
+        # CRITICAL: mentions array must be populated
+        self.assertIn('mentions', characters[0])
+        self.assertIsInstance(characters[0]['mentions'], list)
+        self.assertGreater(len(characters[0]['mentions']), 0)
+        self.assertEqual(characters[0]['mentions'][0]['quote'], "Javlyn entered the Academy")
+
+    def test_extraction_creates_mentions_with_passage_context(self):
+        """Should populate mentions with quote and context."""
+        response = """
+        {
+          "entities": [
+            {
+              "name": "cave",
+              "type": "location",
+              "facts": ["dark interior", "near the village"],
+              "mentions": [
+                {"quote": "The cave loomed before them", "context": "narrative"}
+              ]
+            }
+          ]
+        }
+        """
+        result = parse_json_from_response(response)
+
+        locations = result['entities']['locations']
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(len(locations[0]['facts']), 2)
+        self.assertEqual(len(locations[0]['mentions']), 1)
+        self.assertEqual(locations[0]['mentions'][0]['context'], 'narrative')
+
+    @patch('story_bible_extractor.requests.post')
+    def test_extract_facts_from_passage_populates_facts_and_mentions(self, mock_post):
+        """Integration test: extract_facts_from_passage should return populated facts/mentions."""
+        # Mock Ollama API response with facts and mentions populated
+        mock_post.return_value.status_code = 200
+        mock_post.return_value.json.return_value = {
+            'response': json.dumps({
+                "entities": [
+                    {
+                        "name": "Javlyn",
+                        "type": "character",
+                        "facts": ["is a student at the Academy", "struggles with magic"],
+                        "mentions": [
+                            {"quote": "Javlyn entered the Academy", "context": "narrative"}
+                        ]
+                    },
+                    {
+                        "name": "Academy",
+                        "type": "location",
+                        "facts": ["is a school for magic"],
+                        "mentions": [
+                            {"quote": "the Academy stood tall", "context": "narrative"}
+                        ]
+                    }
+                ]
+            })
         }
 
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
+        from story_bible_extractor import extract_facts_from_passage
 
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "locked-room")
-        self.assertEqual(result[0]["hex_id"], "6c6f636b65642d726f6f6d")
-        self.assertIn(":: locked-room", result[0]["content"])
-        self.assertNotIn("====", result[0]["content"])  # Separators removed
+        passage_text = "Javlyn entered the Academy. The Academy stood tall."
+        result = extract_facts_from_passage(passage_text, "Start")
 
-    def test_deduplicates_passages(self):
-        """Should process each passage only once even if appears in multiple paths."""
-        allpaths_content = """
-[PATH 1/2]
-[PASSAGE: 68616c6c776179]
-:: hallway
-You are in a hallway.
+        # Verify structure
+        self.assertIn('entities', result)
+        self.assertIn('characters', result['entities'])
+        self.assertIn('locations', result['entities'])
 
-[PATH 2/2]
-[PASSAGE: 68616c6c776179]
-:: hallway
-You are in a hallway.
-"""
-        mapping = {
-            "68616c6c776179": "hallway"
-        }
+        # Verify character has facts and mentions populated
+        characters = result['entities']['characters']
+        self.assertEqual(len(characters), 1)
+        self.assertEqual(characters[0]['name'], 'Javlyn')
+        self.assertGreater(len(characters[0]['facts']), 0, "Character facts should be populated")
+        self.assertGreater(len(characters[0]['mentions']), 0, "Character mentions should be populated")
+        self.assertIn("is a student at the Academy", characters[0]['facts'])
 
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        # Should only return one passage (deduplicated)
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "hallway")
-
-    def test_parses_multiple_passages(self):
-        """Should parse multiple different passages."""
-        allpaths_content = """
-[PASSAGE: 68616c6c776179]
-:: hallway
-You are in a hallway.
-
-[PASSAGE: 6c6f636b65642d726f6f6d]
-:: locked-room
-The door is locked.
-"""
-        mapping = {
-            "68616c6c776179": "hallway",
-            "6c6f636b65642d726f6f6d": "locked-room"
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 2)
-        passage_ids = {p["passage_id"] for p in result}
-        self.assertEqual(passage_ids, {"hallway", "locked-room"})
-
-    def test_skips_unmapped_hex_ids(self):
-        """Should skip passages with hex IDs not in mapping."""
-        allpaths_content = """
-[PASSAGE: 68616c6c776179]
-:: hallway
-Content here.
-
-[PASSAGE: 756e6b6e6f776e]
-:: unknown
-This should be skipped.
-"""
-        mapping = {
-            "68616c6c776179": "hallway"
-            # "756e6b6e6f776e" not in mapping
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "hallway")
-
-    def test_strips_separator_lines(self):
-        """Should remove separator lines (=== markers)."""
-        allpaths_content = """
-========================================
-[PASSAGE: 74657374]
-========================================
-
-:: test
-Content here.
-
-========================================
-"""
-        mapping = {"74657374": "test"}
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        content = result[0]["content"]
-        self.assertNotIn("====", content)
-        self.assertIn(":: test", content)
-        self.assertIn("Content here.", content)
-
-    def test_skips_empty_passages(self):
-        """Should skip passages with empty content after cleaning."""
-        allpaths_content = """
-[PASSAGE: 656d707479]
-========================================
-
-[PASSAGE: 76616c6964]
-:: valid
-Real content.
-"""
-        mapping = {
-            "656d707479": "empty",
-            "76616c6964": "valid"
-        }
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        # Should only have 'valid' passage
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["passage_id"], "valid")
-
-    def test_handles_empty_allpaths_content(self):
-        """Should handle empty AllPaths content gracefully."""
-        result = parse_passages_from_allpaths("", {})
-        self.assertEqual(len(result), 0)
-
-    def test_preserves_passage_content_structure(self):
-        """Should preserve passage content including Twee markup."""
-        allpaths_content = """
-[PASSAGE: 74657374]
-:: test-passage
-You see a door.
-
-<<if $hasKey>>
-[[Unlock door|next]]
-<<else>>
-The door is locked.
-<</if>>
-"""
-        mapping = {"74657374": "test-passage"}
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        self.assertEqual(len(result), 1)
-        content = result[0]["content"]
-        self.assertIn(":: test-passage", content)
-        self.assertIn("<<if $hasKey>>", content)
-        self.assertIn("[[Unlock door|next]]", content)
-
-    def test_cleans_excessive_blank_lines(self):
-        """Should reduce multiple consecutive blank lines to double newline."""
-        allpaths_content = """
-[PASSAGE: 74657374]
-:: test
-
-
-Paragraph 1.
-
-
-
-Paragraph 2.
-"""
-        mapping = {"74657374": "test"}
-
-        result = parse_passages_from_allpaths(allpaths_content, mapping)
-
-        content = result[0]["content"]
-        # Should not have 3+ consecutive newlines
-        self.assertNotIn("\n\n\n", content)
+        # Verify location has facts and mentions populated
+        locations = result['entities']['locations']
+        self.assertEqual(len(locations), 1)
+        self.assertEqual(locations[0]['name'], 'Academy')
+        self.assertGreater(len(locations[0]['facts']), 0, "Location facts should be populated")
+        self.assertGreater(len(locations[0]['mentions']), 0, "Location mentions should be populated")
 
 
 if __name__ == '__main__':

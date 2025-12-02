@@ -209,7 +209,6 @@ def update_validation_cache_with_paths(validation_cache: Dict, all_paths: List[L
             validation_cache[path_hash] = {
                 'route': ' → '.join(path),
                 'first_seen': datetime.now().isoformat(),
-                'validated': False,
                 'commit_date': commit_date,
                 'created_date': creation_date,
                 'category': category,
@@ -273,18 +272,17 @@ def main() -> None:
     """Main entry point for AllPaths generator.
 
     Implements a 5-stage pipeline:
-    - Stage 1: Parse HTML into story graph
+    - Stage 1: Load story_graph.json from core library
     - Stage 2: Generate all possible paths
     - Stage 3: Enrich paths with git metadata
     - Stage 4: Categorize paths (new/modified/unchanged)
     - Stage 5: Output generation (HTML, text files, cache)
 
     Usage:
-        generator.py <input.html> [output_dir] [--write-intermediate]
+        generator.py [output_dir] [--write-intermediate]
 
     Args:
-        input.html: Path to Tweego-compiled HTML file
-        output_dir: Optional directory for output files (default: current directory)
+        output_dir: Optional directory for output files (default: dist)
         --write-intermediate: Optional flag to write intermediate artifacts for debugging
 
     Outputs:
@@ -306,48 +304,64 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description='AllPaths Story Format Generator - Generate all possible story paths for AI continuity checking'
     )
-    parser.add_argument('input_file', type=Path, help='Path to Tweego-compiled HTML file')
-    parser.add_argument('output_dir', type=Path, nargs='?', default=Path('.'),
-                       help='Directory for output files (default: current directory)')
+    parser.add_argument('output_dir', type=Path, nargs='?', default=Path('dist'),
+                       help='Directory for output files (default: dist)')
     parser.add_argument('--write-intermediate', action='store_true', default=False,
                        help='Write intermediate artifacts to dist/allpaths-intermediate/ for debugging')
 
     args = parser.parse_args()
 
-    input_file = args.input_file
     output_dir = args.output_dir
     write_intermediate = args.write_intermediate
 
-    # Read input HTML
-    with open(input_file, 'r', encoding='utf-8') as f:
-        html_content = f.read()
-
     # =========================================================================
-    # STAGE 1: PARSE
+    # STAGE 1: LOAD STORY GRAPH
     # =========================================================================
     print("\n" + "="*80, file=sys.stderr)
-    print("STAGE 1: PARSE - Extracting story structure from HTML", file=sys.stderr)
+    print("STAGE 1: LOAD - Reading story_graph.json from core library", file=sys.stderr)
     print("="*80, file=sys.stderr)
 
-    # Parse story structure from HTML
-    story_data, passages = parse_story_html(html_content)
-    print(f"Extracted {len(passages)} passages from story '{story_data['name']}'", file=sys.stderr)
+    # Load story_graph.json from core library artifacts
+    story_graph_path = output_dir.parent / 'lib' / 'artifacts' / 'story_graph.json'
+    if not story_graph_path.exists():
+        print(f"Error: Core artifact not found: {story_graph_path}", file=sys.stderr)
+        print(f"Run 'npm run build:core' first to generate core artifacts", file=sys.stderr)
+        sys.exit(1)
 
-    # Build graph representation
+    with open(story_graph_path, 'r', encoding='utf-8') as f:
+        story_graph = json.load(f)
+
+    print(f"Loaded story_graph.json with {len(story_graph['passages'])} passages", file=sys.stderr)
+
+    # Extract data from story_graph for compatibility with existing stages
+    start_passage = story_graph['start_passage']
+    metadata = story_graph['metadata']
+
+    # Convert story_graph passages to old format for compatibility
+    passages = {}
+    for name, passage_data in story_graph['passages'].items():
+        passages[name] = {
+            'pid': '',  # PID not needed from story_graph
+            'name': name,
+            'tags': [],  # Tags not in story_graph
+            'text': passage_data['content']
+        }
+
+    # Create story_data for compatibility
+    story_data = {
+        'name': metadata['story_title'],
+        'ifid': metadata['ifid'],
+        'start': '',  # Not needed, we have start_passage directly
+        'format': metadata['format'],
+        'format_version': metadata['format_version']
+    }
+
+    print(f"Story: {story_data['name']}", file=sys.stderr)
+    print(f"Start passage: {start_passage}", file=sys.stderr)
+
+    # Build graph representation (unchanged - still uses passages dict)
     graph = build_graph(passages)
     print(f"Built story graph with {len(graph)} nodes", file=sys.stderr)
-
-    # Find start passage
-    start_passage = None
-    for name, passage in passages.items():
-        if passage['pid'] == story_data['start']:
-            start_passage = name
-            break
-
-    if not start_passage:
-        start_passage = 'Start'
-
-    print(f"Start passage: {start_passage}", file=sys.stderr)
 
     # Write intermediate artifact if requested
     if write_intermediate:
@@ -444,22 +458,24 @@ def main() -> None:
     print(f"Loaded validation cache with {len(validation_cache)} entries", file=sys.stderr)
 
     # Determine git base ref for comparison
-    # Priority order:
-    # 1. GITHUB_MERGE_BASE (PR context with proper isolation) - preferred
-    # 2. origin/GITHUB_BASE_REF (PR context fallback) - may include concurrent main changes
-    # 3. HEAD (local development) - detects uncommitted changes
+    # Two explicit contexts - no automatic fallback:
+    # 1. PR context: GITHUB_MERGE_BASE must be set (workflow calculates it)
+    # 2. Local context: Use HEAD (no env vars set)
     merge_base = os.getenv('GITHUB_MERGE_BASE')
+    github_base_ref = os.getenv('GITHUB_BASE_REF')
+
     if merge_base:
-        # GitHub Actions PR context - use merge base for proper scope isolation
+        # PR context with proper merge base - use it for accurate categorization
         base_ref = merge_base
-        print(f"Using git base ref: {base_ref} (merge base - isolates PR changes)", file=sys.stderr)
-    elif os.getenv('GITHUB_BASE_REF'):
-        # Fallback to origin/base_branch if merge base not available
-        base_ref = f"origin/{os.getenv('GITHUB_BASE_REF')}"
-        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF - may include concurrent main changes)", file=sys.stderr)
-        print(f"[WARN] GITHUB_MERGE_BASE not set, categorization may include changes from main", file=sys.stderr)
+        print(f"Using git base ref: {base_ref} (PR merge base)", file=sys.stderr)
+    elif github_base_ref:
+        # PR context but merge base not calculated - this is a workflow error
+        print(f"[ERROR] GITHUB_BASE_REF is set ({github_base_ref}) but GITHUB_MERGE_BASE is not.", file=sys.stderr)
+        print(f"[ERROR] The GitHub Actions workflow must calculate merge base for accurate categorization.", file=sys.stderr)
+        print(f"[ERROR] Add: MERGE_BASE=$(git merge-base HEAD origin/$GITHUB_BASE_REF)", file=sys.stderr)
+        sys.exit(1)
     else:
-        # Local context - use HEAD to detect uncommitted changes
+        # Local development context - use HEAD to detect uncommitted changes
         base_ref = 'HEAD'
         print(f"Using git base ref: {base_ref} (local development)", file=sys.stderr)
 
@@ -604,7 +620,6 @@ def main() -> None:
 
             # Get categorization data
             category = path_categories.get(path_id, 'new')
-            validated = validation_cache.get(path_id, {}).get('validated', False)
             first_seen = validation_cache.get(path_id, {}).get('first_seen', datetime.now().isoformat())
 
             categorized_path = {
@@ -618,7 +633,6 @@ def main() -> None:
                     'passage_to_file': passage_to_file_for_path
                 },
                 'category': category,
-                'validated': validated,
                 'first_seen': first_seen
             }
             categorized_paths.append(categorized_path)

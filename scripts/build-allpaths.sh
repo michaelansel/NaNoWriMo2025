@@ -1,6 +1,7 @@
 #!/bin/bash
 # Build AllPaths format output
 # Generates all possible story paths for AI-based continuity checking
+# Now reads from core library artifacts (story_graph.json)
 
 set -e
 
@@ -17,33 +18,16 @@ echo "Project: $PROJECT_DIR"
 echo "Output: $DIST_DIR"
 echo ""
 
-# Step 1: Compile story with Paperthin format (just to get the story data)
-echo "[1/2] Compiling story with Tweego..."
-TEMP_FILE="$DIST_DIR/allpaths-temp.html"
-
-if command -v tweego &> /dev/null; then
-    # Use paperthin format as it's simple and just outputs the story data
-    tweego src -o "$TEMP_FILE" -f paperthin-1
-    echo "✓ Story compiled"
-else
-    echo "Error: tweego not found. Please install tweego first."
-    exit 1
-fi
-
-# Step 2: Generate all paths with Python
-echo ""
-echo "[2/2] Generating all paths..."
+# Generate all paths from core library artifacts
+echo "Generating all paths from core artifacts..."
 
 if command -v python3 &> /dev/null; then
-    python3 "$FORMAT_DIR/generator.py" "$TEMP_FILE" "$DIST_DIR"
+    python3 "$FORMAT_DIR/generator.py" "$DIST_DIR"
     echo "✓ Paths generated"
 else
     echo "Error: python3 not found. Please install Python 3."
     exit 1
 fi
-
-# Clean up temp file
-rm -f "$TEMP_FILE"
 
 echo ""
 echo "=== Build Complete ==="

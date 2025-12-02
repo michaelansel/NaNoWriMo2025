@@ -21,7 +21,7 @@ OLLAMA_API_URL = "http://localhost:11434/api/generate"
 OLLAMA_TIMEOUT = 120  # 2 minutes per passage
 
 # AI prompt for entity-first extraction (simplified for reliability)
-EXTRACTION_PROMPT = """Extract ALL named entities from this story passage.
+EXTRACTION_PROMPT = """Extract ALL named entities from this story passage with facts and mentions.
 
 IMPORTANT - Extract EVERY:
 - Character name (e.g., "Jerrick", "Miss Rosie", "Javlyn")
@@ -30,8 +30,30 @@ IMPORTANT - Extract EVERY:
 - Location name (e.g., "cave", "village", "Academy")
 - Item name (e.g., "lantern", "beef stew", "hammer")
 
+For EACH entity, provide:
+- name: The entity name
+- type: "character", "location", or "item"
+- facts: Array of facts about this entity (e.g., ["is a student", "lives in the village", "has red hair"])
+- mentions: Array of mentions with quote and context (e.g., [{{"quote": "Javlyn entered the room", "context": "narrative"}}])
+
+Context types:
+- "narrative" for narrator descriptions
+- "dialogue" for character speech
+- "possessive" for possessive references like "Rosie's stew"
+
 Respond with ONLY valid JSON (no markdown):
-{{"entities": [{{"name": "Name", "type": "character|location|item"}}]}}
+{{
+  "entities": [
+    {{
+      "name": "EntityName",
+      "type": "character|location|item",
+      "facts": ["fact about entity", "another fact"],
+      "mentions": [
+        {{"quote": "text from passage mentioning entity", "context": "narrative|dialogue|possessive"}}
+      ]
+    }}
+  ]
+}}
 
 PASSAGE:
 {passage_text}
@@ -548,167 +570,113 @@ def extract_facts_from_passage_with_chunking(
     return (combined_extraction, len(chunks))
 
 
-def parse_passages_from_allpaths(allpaths_content: str, mapping: Dict[str, str]) -> List[Dict]:
-    """
-    Extract individual passages from AllPaths output.
 
-    Process:
-    1. Split on [PASSAGE: hex_id] markers
-    2. Extract hex ID from marker
-    3. Translate hex_id → passage_name using mapping
-    4. Extract passage content (between PASSAGE marker and next marker or end)
-    5. Deduplicate: track seen passages, process each only once
+
+def load_passages_from_core_library(metadata_dir: Path) -> Optional[List[Dict]]:
+    """
+    Load passages from core library artifacts (passages_deduplicated.json).
+
+    This is the PRIMARY passage loading method. Falls back to AllPaths format
+    if core library artifacts are not available.
 
     Args:
-        allpaths_content: Raw AllPaths output (allpaths.txt)
-        mapping: hex_id → passage_name translation (allpaths-passage-mapping.json)
+        metadata_dir: Directory containing passages_deduplicated.json
 
     Returns:
-        List of unique passages:
+        List of passages in format:
         [
           {
-            "passage_id": "locked-room",  # Human-readable name
-            "hex_id": "6c6f636b65642d726f6f6d",  # Original hex ID
-            "content": ":: Locked Room\nYou try the door...",  # Full passage text
-            "source": "allpaths.txt"
-          },
-          ...
+            "passage_id": "Start",
+            "content": "Passage text...",
+            "content_hash": "abc123..."
+          }
         ]
+        Returns None if core library artifacts not available (triggers fallback).
+
+    Raises:
+        No exceptions - returns None on any error to allow fallback
     """
-    passages = []
-    seen_hex_ids = set()  # Deduplication tracker
+    try:
+        # Look for core library artifact in metadata_dir
+        artifacts_file = metadata_dir / "passages_deduplicated.json"
 
-    # Split on PASSAGE markers
-    # Pattern matches: [PASSAGE: hex_id] where hex_id is lowercase hex digits
-    passage_blocks = re.split(r'\[PASSAGE: ([a-f0-9]+)\]', allpaths_content)
+        if not artifacts_file.exists():
+            logging.info("Core library artifacts not found, will fall back to AllPaths format")
+            return None
 
-    # After split, we get: [text_before_first_passage, hex_id1, content1, hex_id2, content2, ...]
-    # Skip first block (before any passage), process pairs of (hex_id, content)
-    for i in range(1, len(passage_blocks), 2):
-        hex_id = passage_blocks[i]
-        content = passage_blocks[i + 1] if i + 1 < len(passage_blocks) else ""
+        logging.info(f"Found core library artifacts at {artifacts_file}")
 
-        # Deduplicate: skip if already seen
-        if hex_id in seen_hex_ids:
-            continue
-        seen_hex_ids.add(hex_id)
+        # Load and parse JSON
+        with open(artifacts_file, 'r') as f:
+            data = json.load(f)
 
-        # Translate hex ID to passage name
-        passage_name = mapping.get(hex_id)
-        if not passage_name:
-            # Log warning but continue (unmapped ID)
-            logging.warning(f"Unmapped hex ID: {hex_id}")
-            continue
+        # Extract passages
+        passages = []
+        for passage in data.get('passages', []):
+            passages.append({
+                'passage_id': passage['name'],
+                'content': passage['content'],
+                'content_hash': passage['content_hash'],
+                'source': 'core_library'
+            })
 
-        # Extract content (strip separator lines and extra whitespace)
-        content_clean = content.strip()
-        # Remove separator lines (=== markers at start of lines)
-        content_clean = re.sub(r'^=+$', '', content_clean, flags=re.MULTILINE)
-        # Clean up extra blank lines
-        content_clean = re.sub(r'\n{3,}', '\n\n', content_clean)
-        content_clean = content_clean.strip()
+        logging.info(f"Loaded {len(passages)} passages from core library")
+        return passages
 
-        # Skip empty passages
-        if not content_clean:
-            logging.warning(f"Empty passage content for hex_id: {hex_id} (passage: {passage_name})")
-            continue
-
-        passages.append({
-            "passage_id": passage_name,
-            "hex_id": hex_id,
-            "content": content_clean,
-            "source": "allpaths.txt"
-        })
-
-    logging.info(f"Parsed {len(passages)} unique passages from AllPaths output (deduplication removed {len(seen_hex_ids) - len(passages)} duplicates)")
-    return passages
+    except json.JSONDecodeError as e:
+        logging.warning(f"Invalid JSON in core library artifacts: {e}, falling back to AllPaths")
+        return None
+    except Exception as e:
+        logging.warning(f"Error loading core library artifacts: {e}, falling back to AllPaths")
+        return None
 
 
-def get_passages_to_extract(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:
+def get_passages_to_extract_v2(cache: Dict, metadata_dir: Path, mode: str = 'incremental') -> List[tuple]:
     """
     Identify which passages need fact extraction based on cache and mode.
 
-    Supports two extraction modes:
-    1. NEW: allpaths.txt with passage-based approach (preferred, deduplicates)
-    2. LEGACY: path-*.txt files (fallback for backward compatibility)
+    Uses core library artifacts (passages_deduplicated.json). Fails if not available.
 
     Args:
         cache: Story Bible cache dict
-        metadata_dir: Directory containing allpaths-metadata files
+        metadata_dir: Directory containing core library artifacts
         mode: 'incremental' (only new/changed) or 'full' (all passages)
 
     Returns:
-        List of (passage_id, passage_file, passage_content) tuples to process
+        List of (passage_id, passage_file, passage_content, content_hash) tuples to process.
+        The content_hash is included so webhook can cache it without recomputing.
+
+    Raises:
+        FileNotFoundError: If core library artifacts not found
     """
     passages_to_process = []
 
-    # Try NEW passage-based format first (allpaths.txt + mapping)
-    allpaths_file = metadata_dir / "allpaths.txt"
-    mapping_file = metadata_dir / "allpaths-passage-mapping.json"
+    # Load from core library artifacts (required)
+    passages = load_passages_from_core_library(metadata_dir)
 
-    if allpaths_file.exists() and mapping_file.exists():
-        # NEW FORMAT: Parse individual passages from allpaths.txt
-        logging.info("Using new passage-based extraction format")
-        try:
-            with open(allpaths_file, 'r') as f:
-                allpaths_content = f.read()
+    if not passages:
+        raise FileNotFoundError(
+            f"Core library artifacts not found in {metadata_dir}\n"
+            f"Run 'npm run build:core' first to generate core artifacts."
+        )
 
-            with open(mapping_file, 'r') as f:
-                mapping = json.load(f)
+    logging.info("Using core library passages for extraction")
 
-            logging.info(f"Loaded AllPaths output ({len(allpaths_content)} chars) and mapping ({len(mapping)} entries)")
-
-            # Parse passages from AllPaths output
-            passages = parse_passages_from_allpaths(allpaths_content, mapping)
-
-            # Filter based on mode and cache
-            for passage in passages:
-                passage_id = passage["passage_id"]
-                passage_content = passage["content"]
-                content_hash = hashlib.md5(passage_content.encode()).hexdigest()
-
-                # Check cache for this passage
-                cached_extraction = cache.get('passage_extractions', {}).get(passage_id)
-
-                if mode == 'full':
-                    # Force re-extraction regardless of cache
-                    passages_to_process.append((passage_id, passage_id, passage_content))
-                elif mode == 'incremental':
-                    # Only extract if new or changed
-                    if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
-                        passages_to_process.append((passage_id, passage_id, passage_content))
-
-            logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode})")
-            return passages_to_process
-
-        except Exception as e:
-            logging.error(f"Failed to load AllPaths files: {e}, falling back to legacy format")
-
-    # LEGACY FORMAT: Iterate over path-*.txt files (fallback)
-    logging.info("Using legacy path-based extraction format (path-*.txt files)")
-
-    for passage_file in metadata_dir.glob("*.txt"):
-        # Skip allpaths.txt if it exists but failed to parse
-        if passage_file.name == "allpaths.txt":
-            continue
-
-        # Get passage identifier from filename
-        passage_id = passage_file.stem  # filename without extension
-
-        # Read passage content
-        passage_content = passage_file.read_text()
-        content_hash = hashlib.md5(passage_content.encode()).hexdigest()
+    for passage in passages:
+        passage_id = passage['passage_id']
+        passage_content = passage['content']
+        content_hash = passage['content_hash']
 
         # Check cache for this passage
         cached_extraction = cache.get('passage_extractions', {}).get(passage_id)
 
         if mode == 'full':
             # Force re-extraction regardless of cache
-            passages_to_process.append((passage_id, passage_file, passage_content))
+            passages_to_process.append((passage_id, passage_id, passage_content, content_hash))
         elif mode == 'incremental':
             # Only extract if new or changed
             if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
-                passages_to_process.append((passage_id, passage_file, passage_content))
+                passages_to_process.append((passage_id, passage_id, passage_content, content_hash))
 
-    logging.info(f"Selected {len(passages_to_process)} passages for extraction (mode: {mode}, legacy format)")
+    logging.info(f"Selected {len(passages_to_process)} passages for extraction from core library (mode: {mode})")
     return passages_to_process

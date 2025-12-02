@@ -2,20 +2,18 @@
 """
 Stage 1: Loader Module
 
-Loads AllPaths data and prepares it for fact extraction.
+Loads passage data from core library artifacts for fact extraction.
 
 Input:
-    - dist/allpaths-metadata/*.txt - Story path text files
-    - allpaths-validation-status.json - Path metadata
-    - dist/allpaths-passage-mapping.json - Passage ID mapping
+    - lib/artifacts/passages_deduplicated.json - Deduplicated passages from core library
 
 Output:
-    - loaded_paths.json (intermediate artifact)
+    - loaded_passages dict (in-memory)
 
 Responsibilities:
-    - Load all story paths and metadata
-    - Deduplicate passages (same passage in multiple paths)
-    - Build mapping of passage → paths it appears in
+    - Load deduplicated passages from core library
+    - Prepare passage data for fact extraction
+    - No longer depends on AllPaths format (removes inter-format dependency)
 """
 
 import json
@@ -25,12 +23,12 @@ from typing import Dict, List, Set
 from datetime import datetime
 
 
-def load_allpaths_data(dist_dir: Path) -> Dict:
+def load_passages_from_core_library(project_dir: Path) -> Dict:
     """
-    Load AllPaths data from text files and metadata.
+    Load deduplicated passages from core library artifacts.
 
     Args:
-        dist_dir: Path to dist/ directory containing AllPaths output
+        project_dir: Path to project root directory
 
     Returns:
         Dict with structure:
@@ -38,173 +36,79 @@ def load_allpaths_data(dist_dir: Path) -> Dict:
             "passages": {
                 "passage_name": {
                     "text": "Full passage text",
-                    "appears_in_paths": ["path_id1", "path_id2"],
-                    "passage_id": "hex_id",
+                    "content_hash": "abc123...",
                     "length": 5000
                 }
             },
-            "paths": [
-                {
-                    "id": "path_id",
-                    "route": ["Passage1", "Passage2"],
-                    "category": "new|modified|unchanged"
-                }
-            ],
             "metadata": {
-                "total_paths": 30,
                 "total_passages": 50,
-                "generated_at": "2025-11-30T..."
+                "generated_at": "2025-11-30T...",
+                "source": "core_library"
             }
         }
 
     Raises:
-        FileNotFoundError: If required AllPaths output is missing
-        ValueError: If data is corrupted
+        FileNotFoundError: If core library artifacts not found
     """
-    # Check that AllPaths output exists
-    metadata_dir = dist_dir / 'allpaths-metadata'
-    if not metadata_dir.exists():
+    # Load from core library artifacts
+    passages_file = project_dir / 'lib' / 'artifacts' / 'passages_deduplicated.json'
+
+    if not passages_file.exists():
         raise FileNotFoundError(
-            f"AllPaths output not found at {metadata_dir}. "
-            f"Run 'npm run build:allpaths' first."
+            f"Core library artifact not found: {passages_file}\n"
+            f"Run 'npm run build:core' first to generate core artifacts."
         )
 
-    print(f"Loading AllPaths data from {metadata_dir}...", file=sys.stderr)
+    print(f"Loading passages from core library: {passages_file}", file=sys.stderr)
 
-    # Load passage ID mapping (for translating hex IDs back to names)
-    passage_mapping_file = dist_dir / 'allpaths-passage-mapping.json'
-    passage_id_to_name = {}
-    if passage_mapping_file.exists():
-        with open(passage_mapping_file, 'r', encoding='utf-8') as f:
-            mapping_data = json.load(f)
-            passage_id_to_name = mapping_data.get('id_to_name', {})
+    with open(passages_file, 'r', encoding='utf-8') as f:
+        passages_data = json.load(f)
 
-    # Load validation cache (for path metadata and categories)
-    cache_file = dist_dir.parent / 'allpaths-validation-status.json'
-    validation_cache = {}
-    if cache_file.exists():
-        with open(cache_file, 'r', encoding='utf-8') as f:
-            validation_cache = json.load(f)
+    # Convert passages list to dict keyed by name
+    passages = {}
+    for passage in passages_data.get('passages', []):
+        passage_name = passage['name']
+        passages[passage_name] = {
+            'text': passage['content'],
+            'content_hash': passage.get('content_hash', ''),
+            'length': len(passage['content'])
+        }
 
-    # Scan for path text files
-    path_files = sorted(metadata_dir.glob('path-*.txt'))
-
-    if not path_files:
-        raise ValueError(
-            f"No path files found in {metadata_dir}. "
-            f"AllPaths output may be corrupted."
-        )
-
-    print(f"Found {len(path_files)} path files", file=sys.stderr)
-
-    # Data structures
-    passages = {}  # passage_name -> passage data
-    paths = []  # list of path objects
-
-    # Process each path file
-    for path_file in path_files:
-        # Extract path ID from filename (e.g., "path-abc12345.txt" -> "abc12345")
-        path_id = path_file.stem.replace('path-', '')
-
-        try:
-            # Read path file
-            with open(path_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-
-            # Parse path file structure
-            # Expected format:
-            # Route: Passage1 → Passage2 → Passage3
-            # ===
-            # [PASSAGE: hex_id]
-            # Passage1
-            #
-            # passage text...
-            # ===
-            # [PASSAGE: hex_id]
-            # Passage2
-            # ...
-
-            # Extract route
-            route = []
-            for line in content.split('\n'):
-                if line.startswith('Route:'):
-                    route_str = line.replace('Route:', '').strip()
-                    route = [p.strip() for p in route_str.split('→')]
-                    break
-
-            if not route:
-                print(f"Warning: No route found in {path_file}, skipping", file=sys.stderr)
-                continue
-
-            # Get path metadata from validation cache
-            path_info = validation_cache.get(path_id, {})
-            category = path_info.get('category', 'new')
-
-            # Add to paths list
-            paths.append({
-                'id': path_id,
-                'route': route,
-                'category': category
-            })
-
-            # Extract passages from path file
-            # Split by passage markers
-            passage_sections = content.split('[PASSAGE:')
-
-            for section in passage_sections[1:]:  # Skip first empty section
-                # Parse section: hex_id]\nPassage Name\n\npassage text
-                lines = section.split('\n', 2)
-                if len(lines) < 3:
-                    continue
-
-                # Extract passage ID (hex)
-                passage_id = lines[0].strip().rstrip(']')
-
-                # Extract passage name
-                passage_name = lines[1].strip()
-
-                # Translate passage ID to name if mapping available
-                # (passage_name from file might be the hex ID, so translate it)
-                if passage_id in passage_id_to_name:
-                    actual_passage_name = passage_id_to_name[passage_id]
-                else:
-                    actual_passage_name = passage_name
-
-                # Extract passage text
-                passage_text = lines[2] if len(lines) > 2 else ''
-
-                # Deduplicate passages
-                if actual_passage_name not in passages:
-                    passages[actual_passage_name] = {
-                        'text': passage_text,
-                        'appears_in_paths': [],
-                        'passage_id': passage_id,
-                        'length': len(passage_text)
-                    }
-
-                # Track which paths this passage appears in
-                if path_id not in passages[actual_passage_name]['appears_in_paths']:
-                    passages[actual_passage_name]['appears_in_paths'].append(path_id)
-
-        except Exception as e:
-            print(f"Warning: Error processing {path_file}: {e}", file=sys.stderr)
-            print(f"Skipping this path and continuing...", file=sys.stderr)
-            continue
-
-    # Build result
     result = {
         'passages': passages,
-        'paths': paths,
         'metadata': {
-            'total_paths': len(paths),
             'total_passages': len(passages),
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now().isoformat(),
+            'source': 'core_library'
         }
     }
 
-    print(f"Loaded {len(passages)} unique passages across {len(paths)} paths", file=sys.stderr)
+    print(f"Loaded {len(passages)} passages from core library", file=sys.stderr)
 
     return result
+
+
+def load_allpaths_data(dist_dir: Path) -> Dict:
+    """
+    Load passage data (legacy interface for backward compatibility).
+
+    Now loads from core library instead of AllPaths.
+
+    Args:
+        dist_dir: Path to dist/ directory (used to find project root)
+
+    Returns:
+        Dict with passages and metadata
+
+    Raises:
+        FileNotFoundError: If required core library output is missing
+        ValueError: If data is corrupted
+    """
+    # Get project root (dist_dir is typically project_root/dist)
+    project_dir = dist_dir.parent
+
+    # Load from core library
+    return load_passages_from_core_library(project_dir)
 
 
 def main():

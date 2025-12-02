@@ -57,22 +57,7 @@ This browsing feature helps writers track NaNoWriMo progress, find recent work, 
 
 ---
 
-### Need 3: Track Validation Status
-**Context:** Reviewing story quality
-
-**User Goal:** Know which paths have been checked for continuity
-
-**Questions Writers Need Answered:**
-- Which paths have been validated for continuity?
-- Which paths still need review?
-- Has this path been checked by the AI?
-- Are there any known issues with this path?
-
-**Why This Matters:** Writers need to ensure story quality and track which paths have been reviewed, avoiding duplicate work and maintaining confidence in the story.
-
----
-
-### Need 4: Consistent Interface
+### Need 3: Consistent Interface
 **Context:** Viewing AllPaths in different environments (PR preview, deployment)
 
 **User Goal:** Get the same information regardless of where I'm viewing
@@ -121,21 +106,7 @@ This browsing feature helps writers track NaNoWriMo progress, find recent work, 
 
 ---
 
-### Story 3: Tracking Validation Status
-**As a** writer ensuring story quality
-**I want** to see which paths have been validated for continuity
-**So that** I can focus my review on unchecked paths
-
-**Acceptance Criteria:**
-- Paths show validation status badge ("Validated" or "New")
-- Visual indicator distinguishes validated from unvalidated paths
-- Can filter to show only validated or only new paths
-- Statistics show count of validated vs new paths
-- Validation status updates when paths are approved
-
----
-
-### Story 4: Consistent Interface Everywhere
+### Story 3: Consistent Interface Everywhere
 **As a** writer reviewing PR previews
 **I want** to see the same AllPaths interface in PR preview and deployment
 **So that** I can validate changes with confidence that deployment will match
@@ -164,13 +135,10 @@ AllPaths provides a consistent browsing interface showing all story paths with d
 - **Length** - Number of passages in the path
 - **Creation Date** - When the path first became complete (most recent passage in the path was added)
 - **Modification Date** - When the path's content was last changed
-- **Validation Status** - Whether the path has been checked for continuity
 
 **Visual Presentation:**
 - Each path is collapsible (click to expand/collapse content)
 - Dates displayed in human-readable format (e.g., "2025-11-23 14:30 UTC")
-- Validation status shown as badge ("Validated" or "New")
-- Visual styling differentiates validated from unvalidated paths
 - Statistics dashboard at top shows counts and totals
 
 ---
@@ -203,39 +171,11 @@ AllPaths provides a consistent browsing interface showing all story paths with d
 
 ---
 
-### Validation Status Display
-
-**Purpose:** Track which paths have been checked for continuity
-
-**Status Types:**
-- **Validated** - Path has been reviewed and approved for continuity
-- **New** - Path has not yet been validated
-
-**Visual Indicators:**
-- Badge showing status on each path
-- Color-coded visual styling (green for validated, neutral for new)
-- Filter buttons to show only validated or only new paths
-- Statistics showing validated vs new counts
-
-**How Status Changes:**
-- Paths start as "New" when first created
-- Status updates to "Validated" when approved via `/approve-path` command
-- Status may reset to "New" if path content changes after validation
-
-**Use Cases:**
-- Tracking which paths still need review
-- Focusing review effort on unvalidated paths
-- Monitoring quality assurance progress
-- Coordinating team validation work
-
----
-
 ### Consistent Behavior Across Contexts
 
 **The same AllPaths HTML is generated for all builds:**
 - PR preview builds show the same interface as deployment
 - Same date filters available everywhere
-- Same validation status displayed everywhere
 - Same visual design and layout everywhere
 
 **Why Consistency Matters:**
@@ -283,7 +223,6 @@ These indicators require user feedback and observation:
 The system displays all paths with complete metadata:
 - **Path identification:** Unique ID and route for each path
 - **Date metadata:** Creation date and modification date from validation cache
-- **Validation status:** Whether path has been validated for continuity
 - **Path content:** Full prose content, collapsible for navigation
 - **Statistics:** Counts, lengths, and filtered results
 
@@ -304,19 +243,11 @@ The system provides flexible filtering based on time windows:
 - **Filter application:** Client-side filtering for instant response
 - **Statistics update:** Filtered counts displayed when filters are active
 
-### Validation Status Requirements
-The system tracks and displays validation status:
-- **Status types:** "Validated" and "New"
-- **Status source:** Validation cache `validated` field
-- **Status display:** Badge on each path, visual styling
-- **Status filters:** Can filter to show only validated or only new paths
-- **Status updates:** Updates when paths are approved via `/approve-path` command
-
 ### Consistency Requirements
 The system generates identical output across all contexts:
 - **Single HTML generator:** Same code path for all builds
 - **No context detection:** No special behavior for PR vs deployment
-- **Same data displayed:** All builds show dates, filters, and validation status
+- **Same data displayed:** All builds show dates and filters
 - **Same visual design:** Layout and styling identical everywhere
 - **PR preview matches deployment:** What you see in PR is what gets deployed
 
@@ -390,26 +321,12 @@ See architecture documentation for:
 
 ---
 
-### Path Content Changes After Validation
-**Scenario:** Path is validated, then content changes
-
-**Behavior:**
-- Content-based hash detects the change
-- Validation status may reset to "New" (depending on implementation)
-- Path appears in "new" filter results if status resets
-- Writers can re-validate using `/approve-path` command
-
-**Why It Works:** Content changes may introduce new continuity issues, so re-validation ensures quality is maintained.
-
----
-
 ### Local Development Builds
 **Scenario:** Developer runs build locally (no CI environment)
 
 **Behavior:**
 - Same interface as deployed version
 - Shows all paths with creation/modification dates and filters
-- Validation status displayed from cache
 - No special behavior for local builds
 
 **Why It Works:** Consistent behavior everywhere makes local testing reliable and predictable.
@@ -481,14 +398,12 @@ These criteria define when the feature is working correctly.
 - Filter buttons provided: Created Last Day, Created Last Week, Modified Last Day, Modified Last Week
 - Filter buttons work correctly and can be combined
 - Dates displayed in human-readable format with timestamps
-- Validation status displayed for each path (Validated or New)
-- Statistics show total paths, filtered counts, and validation counts
+- Statistics show total paths and filtered counts
 
 ### User Experience
 - AllPaths page shows consistent interface in all contexts
 - Date metadata visible on all paths
 - Filter buttons clearly indicate active state
-- Validation status badges clearly visible
 - Help text explains available features
 - UI maintains consistent design everywhere
 - Statistics accurately reflect total paths and filter results
@@ -496,7 +411,6 @@ These criteria define when the feature is working correctly.
 
 ### Data Requirements
 - Date display uses validation cache `created_date` and `commit_date` fields
-- Validation status uses validation cache `validated` field
 - Missing date metadata handled gracefully (shows "Unknown", doesn't break page)
 - Filter time windows: 24 hours (Last Day), 7 days (Last Week)
 - Date comparisons use UTC to avoid time zone issues
@@ -543,12 +457,6 @@ The `formats/allpaths/README.md` includes a "Using AllPaths for Progress Trackin
 - Modified Last Week: Paths modified in the last 7 days
 - Multiple filters can be active simultaneously
 - Statistics update to show filtered counts
-
-**Validation Status:**
-- "Validated" badge: Path has been checked for continuity
-- "New" badge: Path has not yet been validated
-- Filter to show only validated or only new paths
-- Status updates when paths are approved
 
 **Consistent Interface:**
 - Same interface in PR preview and deployment
@@ -620,20 +528,6 @@ The CONTRIBUTING.md includes a section on PR build artifacts:
 
 ---
 
-### Display Validation Status in HTML
-**Decision:** Show validation status badges and filters in AllPaths HTML
-
-**Rationale:**
-- Writers need to see which paths have been validated
-- Helps coordinate review work across team
-- Integrates browsing with quality tracking
-- Status already in cache - no additional computation
-- Complements continuity checking feature
-
-**Alternative Considered:** Hide validation status from HTML (rejected - less useful, status is valuable information)
-
----
-
 ### UI Transparency
 **Decision:** Always show actual dates and make filter behavior explicit
 
@@ -656,12 +550,10 @@ This feature demonstrates several core principles:
 - Consistent interface reduces cognitive load
 - Progress tracking helps writers monitor NaNoWriMo goals
 - Date filters provide actionable information for daily writing
-- Validation status helps coordinate review work
 
 **Transparency and Inspectability (Principle #5):**
 - Actual dates always visible - no hidden information
 - Filter behavior explicit and understandable
-- Validation status clearly displayed
 - No mysterious categories or hidden logic
 
 **Fast Feedback Loops (Principle #3):**

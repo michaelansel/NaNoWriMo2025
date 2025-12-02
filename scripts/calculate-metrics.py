@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 Writing Metrics & Statistics Calculator
-Analyzes Twee source files to compute word count statistics.
+Analyzes story from core library artifacts to compute word count statistics.
+Reads from story_graph.json - requires 'npm run build:core' first.
 """
 
 import re
@@ -9,7 +10,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Optional
 from statistics import mean, median
 
 
@@ -26,9 +27,6 @@ HARLOWE_LINK_SIMPLE = re.compile(r'\[\[(.+?)\]\]')
 
 # HTML tags
 HTML_TAG = re.compile(r'<[^>]+>')
-
-# Passage header: :: Name [tags]
-PASSAGE_HEADER = re.compile(r'^::\s+.*$', re.MULTILINE)
 
 
 # =============================================================================
@@ -104,109 +102,6 @@ class Passage:
         }
 
 
-class TweeFile:
-    """Represents a Twee file with its passages."""
-
-    def __init__(self, file_path: Path):
-        self.file_path = file_path
-        self.passages: List[Passage] = []
-        self._parse_file()
-
-    def _parse_file(self):
-        """Parse Twee file and extract passages."""
-        try:
-            with open(self.file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
-        except Exception as e:
-            print(f"Warning: Could not read {self.file_path}: {e}", file=sys.stderr)
-            return
-
-        # Split by passage headers
-        # Pattern: :: PassageName [optional tags]
-        passage_pattern = re.compile(r'^::\s+([^\[\n]+?)(?:\s+\[.*?\])?\s*$', re.MULTILINE)
-
-        # Find all passage headers
-        matches = list(passage_pattern.finditer(content))
-
-        for i, match in enumerate(matches):
-            passage_name = match.group(1).strip()
-
-            # Extract content from after this header to before next header (or end of file)
-            start = match.end()
-            end = matches[i + 1].start() if i + 1 < len(matches) else len(content)
-            passage_content = content[start:end].strip()
-
-            # Create passage object
-            passage = Passage(passage_name, passage_content)
-            self.passages.append(passage)
-
-    @property
-    def word_count(self) -> int:
-        """Total word count for this file."""
-        return sum(p.word_count for p in self.passages)
-
-    def to_dict(self) -> Dict:
-        """Convert file to dictionary for JSON output."""
-        return {
-            'file': self.file_path.name,
-            'word_count': self.word_count,
-            'passage_count': len(self.passages),
-        }
-
-
-# =============================================================================
-# FILE FILTERING
-# =============================================================================
-
-# Special files to always exclude
-EXCLUDED_FILES = {'StoryData.twee', 'StoryTitle.twee', 'StoryStyles.twee'}
-
-
-def matches_prefix(filename: str, prefix: str) -> bool:
-    """
-    Check if filename starts with prefix (case-insensitive).
-
-    Args:
-        filename: Name of file to check
-        prefix: Prefix to match
-
-    Returns:
-        True if filename starts with prefix
-    """
-    return filename.lower().startswith(prefix.lower())
-
-
-def filter_files(files: List[Path], include: List[str], exclude: List[str]) -> List[Path]:
-    """
-    Apply include/exclude filters to file list.
-
-    Args:
-        files: List of file paths
-        include: List of prefixes to include (if empty, include all)
-        exclude: List of prefixes to exclude
-
-    Returns:
-        Filtered list of file paths
-
-    Logic:
-    1. Remove special files (StoryData, StoryTitle, StoryStyles)
-    2. If include specified: keep only files matching any include prefix
-    3. Apply exclude: remove files matching any exclude prefix
-    """
-    # Remove special files
-    files = [f for f in files if f.name not in EXCLUDED_FILES]
-
-    # Apply include filter
-    if include:
-        files = [f for f in files if any(matches_prefix(f.name, p) for p in include)]
-
-    # Apply exclude filter
-    if exclude:
-        files = [f for f in files if not any(matches_prefix(f.name, p) for p in exclude)]
-
-    return files
-
-
 # =============================================================================
 # STATISTICS CALCULATION
 # =============================================================================
@@ -265,6 +160,64 @@ def generate_distribution(values: List[int]) -> Dict[str, int]:
 # METRICS COMPUTATION
 # =============================================================================
 
+def calculate_metrics_from_story_graph(
+    story_graph: Dict,
+    top_n: int = 5
+) -> Dict:
+    """
+    Calculate writing metrics from story_graph.json.
+
+    Args:
+        story_graph: Story graph dict from core library
+        top_n: Number of top passages to include
+
+    Returns:
+        Dict containing all metrics
+    """
+    if not story_graph.get('passages'):
+        return {
+            'error': 'No passages found in story graph',
+            'total_words': 0,
+            'file_count': 0,
+            'passage_count': 0,
+        }
+
+    # Extract passages and calculate word counts
+    all_passages = []
+    for name, passage_data in story_graph['passages'].items():
+        content = passage_data['content']
+        passage = Passage(name, content)
+        all_passages.append(passage)
+
+    # Calculate statistics
+    total_words = sum(p.word_count for p in all_passages)
+    passage_word_counts = [p.word_count for p in all_passages]
+
+    passage_stats = calculate_statistics(passage_word_counts)
+
+    # Note: File stats not available from story_graph.json
+    # Would need passage_mapping.json to group by file
+    file_stats = {'min': 0, 'mean': 0.0, 'median': 0.0, 'max': 0}
+    file_distribution = {"0-100": 0, "101-300": 0, "301-500": 0, "501-1000": 0, "1000+": 0}
+
+    passage_distribution = generate_distribution(passage_word_counts)
+
+    # Find top N longest passages
+    top_passages = sorted(all_passages, key=lambda p: p.word_count, reverse=True)[:top_n]
+
+    return {
+        'total_words': total_words,
+        'file_count': 0,  # Not available from story_graph alone
+        'passage_count': len(all_passages),
+        'passage_stats': passage_stats,
+        'file_stats': file_stats,
+        'passage_distribution': passage_distribution,
+        'file_distribution': file_distribution,
+        'top_passages': [p.to_dict() for p in top_passages],
+        'files': [],  # Not available from story_graph alone
+    }
+
+
 def calculate_metrics(
     src_dir: Path,
     include: Optional[List[str]] = None,
@@ -272,64 +225,32 @@ def calculate_metrics(
     top_n: int = 5
 ) -> Dict:
     """
-    Calculate writing metrics for Twee files.
+    Calculate writing metrics from core library artifacts.
 
     Args:
-        src_dir: Directory containing Twee files
-        include: List of filename prefixes to include
-        exclude: List of filename prefixes to exclude
+        src_dir: Source directory (used to locate project root for story_graph.json)
+        include: Ignored (kept for interface compatibility)
+        exclude: Ignored (kept for interface compatibility)
         top_n: Number of top passages to include
 
     Returns:
         Dict containing all metrics
+
+    Raises:
+        FileNotFoundError: If core library artifacts not found
     """
-    # Find all .twee files
-    all_files = sorted(src_dir.glob('*.twee'))
+    # Load from story_graph.json (core library artifacts)
+    story_graph_path = src_dir.parent / 'lib' / 'artifacts' / 'story_graph.json'
+    if not story_graph_path.exists():
+        raise FileNotFoundError(
+            f"Core artifact not found: {story_graph_path}\n"
+            f"Run 'npm run build:core' first to generate core artifacts."
+        )
 
-    # Apply filters
-    filtered_files = filter_files(all_files, include or [], exclude or [])
-
-    if not filtered_files:
-        return {
-            'error': 'No files found matching filters',
-            'total_words': 0,
-            'file_count': 0,
-            'passage_count': 0,
-        }
-
-    # Parse all files
-    twee_files = [TweeFile(f) for f in filtered_files]
-
-    # Collect all passages
-    all_passages = []
-    for tf in twee_files:
-        all_passages.extend(tf.passages)
-
-    # Calculate statistics
-    total_words = sum(tf.word_count for tf in twee_files)
-    passage_word_counts = [p.word_count for p in all_passages]
-    file_word_counts = [tf.word_count for tf in twee_files]
-
-    passage_stats = calculate_statistics(passage_word_counts)
-    file_stats = calculate_statistics(file_word_counts)
-
-    passage_distribution = generate_distribution(passage_word_counts)
-    file_distribution = generate_distribution(file_word_counts)
-
-    # Find top N longest passages
-    top_passages = sorted(all_passages, key=lambda p: p.word_count, reverse=True)[:top_n]
-
-    return {
-        'total_words': total_words,
-        'file_count': len(twee_files),
-        'passage_count': len(all_passages),
-        'passage_stats': passage_stats,
-        'file_stats': file_stats,
-        'passage_distribution': passage_distribution,
-        'file_distribution': file_distribution,
-        'top_passages': [p.to_dict() for p in top_passages],
-        'files': [tf.to_dict() for tf in twee_files],
-    }
+    print(f"Loading from core artifacts: {story_graph_path}", file=sys.stderr)
+    with open(story_graph_path, 'r', encoding='utf-8') as f:
+        story_graph = json.load(f)
+    return calculate_metrics_from_story_graph(story_graph, top_n)
 
 
 # =============================================================================

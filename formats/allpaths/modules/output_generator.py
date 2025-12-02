@@ -81,7 +81,6 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         path_hash = calculate_path_hash(path, passages)
         created_date = validation_cache.get(path_hash, {}).get('created_date', '')
         commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
-        is_validated = validation_cache.get(path_hash, {}).get('validated', False)
 
         # Format dates for display
         created_display = format_date_for_display(created_date)
@@ -92,7 +91,6 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
             'path_hash': path_hash,
             'created_date': created_date,
             'commit_date': commit_date,
-            'is_validated': is_validated,
             'created_display': created_display,
             'modified_display': modified_display,
         })
@@ -100,10 +98,6 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     # Sort by creation date (newest first)
     # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
     paths_with_metadata.sort(key=lambda x: x['created_date'] if x['created_date'] else '0', reverse=True)
-
-    # Count validation status
-    validated_count = sum(1 for p in paths_with_metadata if p['is_validated'])
-    new_count = len(paths_with_metadata) - validated_count
 
     # Set up Jinja2 environment
     template_dir = Path(__file__).parent.parent / 'templates'
@@ -120,8 +114,6 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
         story_name=story_data['name'],
         generated_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         total_paths=len(all_paths),
-        validated_count=validated_count,
-        new_count=new_count,
         shortest_path=min(path_lengths) if path_lengths else 0,
         longest_path=max(path_lengths) if path_lengths else 0,
         average_length=f"{sum(path_lengths) / len(all_paths):.1f}" if all_paths else "0.0",

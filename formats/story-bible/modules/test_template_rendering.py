@@ -122,8 +122,6 @@ def test_template_renders_with_entity_data():
         print(f"✓ Generated HTML file: {output_path}")
         print(f"✓ File size: {len(html_content)} bytes")
 
-        return True
-
     finally:
         # Clean up
         if output_path.exists():
@@ -191,8 +189,6 @@ def test_template_backward_compatibility():
         # Verify no errors due to missing passages/mentions
         print("✓ Template works with old format (backward compatible)")
         print(f"✓ Generated HTML file: {output_path}")
-
-        return True
 
     finally:
         # Clean up
