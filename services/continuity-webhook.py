@@ -1884,27 +1884,55 @@ def load_story_bible_cache_from_branch(pr_number: int, commit_sha: str = None) -
         if response.status_code == 200:
             import base64
             response_data = response.json()
-            app.logger.info(f"[Story Bible] Response keys: {list(response_data.keys())}")
+            file_size = response_data.get('size', 0)
+            app.logger.info(f"[Story Bible] File size: {file_size} bytes")
 
-            if 'content' not in response_data:
-                app.logger.warning(f"[Story Bible] No 'content' key in response")
-                return {}
+            # GitHub Contents API has a 1MB limit for inline content
+            # For files > 1MB, we need to use the Git Blob API
+            if file_size > 1024 * 1024:  # 1MB
+                app.logger.info(f"[Story Bible] File exceeds 1MB, using Git Blob API")
+                git_url = response_data.get('git_url')
+                if not git_url:
+                    app.logger.warning(f"[Story Bible] No git_url in response for large file")
+                    return {}
 
-            content = response_data['content']
-            if not content or not content.strip():
-                app.logger.warning(f"[Story Bible] Empty content in response")
-                return {}
+                # Fetch blob directly
+                blob_response = requests.get(git_url, headers=headers)
+                if blob_response.status_code != 200:
+                    app.logger.warning(f"[Story Bible] Blob API returned status {blob_response.status_code}")
+                    return {}
 
-            decoded = base64.b64decode(content).decode('utf-8')
+                blob_data = blob_response.json()
+                content = blob_data.get('content')
+                if not content:
+                    app.logger.warning(f"[Story Bible] No content in blob response")
+                    return {}
+
+                # Blob API returns base64 with newlines, need to strip them
+                content = content.replace('\n', '')
+                decoded = base64.b64decode(content).decode('utf-8')
+            else:
+                # Small file, use inline content from Contents API
+                if 'content' not in response_data:
+                    app.logger.warning(f"[Story Bible] No 'content' key in response")
+                    return {}
+
+                content = response_data['content']
+                if not content or not content.strip():
+                    app.logger.warning(f"[Story Bible] Empty content in response")
+                    return {}
+
+                decoded = base64.b64decode(content).decode('utf-8')
+
             if not decoded or not decoded.strip():
                 app.logger.warning(f"[Story Bible] Empty decoded content")
                 return {}
 
             cache = json.loads(decoded)
             if commit_sha:
-                app.logger.info(f"[Story Bible] Loaded cache from commit {commit_sha[:8]}")
+                app.logger.info(f"[Story Bible] Loaded cache from commit {commit_sha[:8]} ({len(decoded)} bytes)")
             else:
-                app.logger.info(f"[Story Bible] Loaded cache from branch {branch_name}")
+                app.logger.info(f"[Story Bible] Loaded cache from branch {branch_name} ({len(decoded)} bytes)")
             return cache
         else:
             if commit_sha:
