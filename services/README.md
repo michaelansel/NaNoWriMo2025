@@ -1,6 +1,6 @@
 # Story Continuity Webhook Service
 
-This service receives GitHub webhooks when PR workflows complete, downloads story path artifacts, runs AI-based continuity checking using Ollama, and posts results back to the PR.
+This service receives GitHub webhooks when PR workflows complete, downloads story path artifacts, runs AI-based continuity checking and Story Bible extraction using Ollama, and posts results back to the PR.
 
 ## Table of Contents
 
@@ -40,8 +40,8 @@ GitHub Actions (hosted runner)
 Webhook Service (this host)
   ↓ Verify signature
   ↓ Download artifacts
-  ↓ Run AI continuity check
-  ↓ Post results to PR
+  ├─→ Run AI continuity check → Post results to PR
+  └─→ Run Story Bible extraction → Commit cache to branch
 ```
 
 ## Security

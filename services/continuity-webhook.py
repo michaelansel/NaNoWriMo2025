@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-GitHub webhook service for AI-based story continuity checking.
+GitHub webhook service for AI-based story continuity checking and Story Bible extraction.
 
 This service:
 1. Receives GitHub workflow_run webhooks
 2. Downloads artifacts from completed PR builds
-3. Runs AI continuity checking
-4. Posts results back to the PR
+3. Runs AI continuity checking (validates story consistency)
+4. Runs Story Bible extraction (extracts entities and facts)
+5. Posts results back to the PR
 
 Security:
 - Verifies GitHub webhook signatures (HMAC-SHA256)
@@ -1086,8 +1087,22 @@ def handle_workflow_webhook(payload):
     )
     thread.start()
 
+    # Spawn second background thread for Story Bible extraction
+    # WHY: Feature spec (story-bible.md) requires automatic extraction after every successful build
+    # Run in parallel with continuity check - both are independent operations
+    # NOTE: Unlike continuity checking, we don't cancel old extraction jobs yet
+    # because process_story_bible_extraction_async doesn't support cancellation.
+    # Incremental mode keeps redundant work minimal. Can optimize later if needed.
+    extraction_workflow_id = f"auto-story-bible-{workflow_id}"
+    extraction_thread = threading.Thread(
+        target=process_story_bible_extraction_async,
+        args=(extraction_workflow_id, pr_number, artifacts_url, 'github-actions[bot]', 'incremental'),
+        daemon=True
+    )
+    extraction_thread.start()
+
     # Return immediately
-    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing in background with mode=new-only")
+    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing continuity check and Story Bible extraction in background")
     return jsonify({"message": "Webhook accepted, processing in background", "pr": pr_number}), 202
 
 
