@@ -14,8 +14,6 @@ import sys
 # Add services/lib to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from story_bible_extractor import get_passages_to_extract
-
 
 class TestPassageExtractionIntegration(unittest.TestCase):
     """Integration tests for passage-based extraction flow."""
@@ -217,7 +215,7 @@ class TestCoreLibraryIntegration(unittest.TestCase):
 
         # Should have core library passage, not AllPaths
         self.assertEqual(len(passages), 1)
-        passage_id, _, content = passages[0]
+        passage_id, _, content, content_hash = passages[0]
         self.assertEqual(passage_id, "CorePassage")
         self.assertIn("From core library", content)
 
@@ -237,7 +235,7 @@ class TestCoreLibraryIntegration(unittest.TestCase):
 
         # Should have AllPaths passage
         self.assertEqual(len(passages), 1)
-        passage_id, _, content = passages[0]
+        passage_id, _, content, content_hash = passages[0]
         self.assertEqual(passage_id, "AllPathsPassage")
         self.assertIn("From AllPaths", content)
 
@@ -270,7 +268,7 @@ class TestCoreLibraryIntegration(unittest.TestCase):
 
         # Should only extract the new passage
         self.assertEqual(len(passages), 1)
-        passage_id, _, _ = passages[0]
+        passage_id, _, _, content_hash = passages[0]
         self.assertEqual(passage_id, "New")
 
     def test_changed_passage_detected_by_hash(self):
@@ -301,7 +299,7 @@ class TestCoreLibraryIntegration(unittest.TestCase):
 
         # Should extract the modified passage
         self.assertEqual(len(passages), 1)
-        passage_id, _, content = passages[0]
+        passage_id, _, content, content_hash = passages[0]
         self.assertEqual(passage_id, "Modified")
         self.assertIn("Updated content", content)
 

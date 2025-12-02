@@ -621,7 +621,8 @@ def get_passages_to_extract_v2(cache: Dict, metadata_dir: Path, mode: str = 'inc
         mode: 'incremental' (only new/changed) or 'full' (all passages)
 
     Returns:
-        List of (passage_id, passage_file, passage_content) tuples to process
+        List of (passage_id, passage_file, passage_content, content_hash) tuples to process.
+        The content_hash is included so webhook can cache it without recomputing.
 
     Raises:
         FileNotFoundError: If core library artifacts not found
@@ -649,11 +650,11 @@ def get_passages_to_extract_v2(cache: Dict, metadata_dir: Path, mode: str = 'inc
 
         if mode == 'full':
             # Force re-extraction regardless of cache
-            passages_to_process.append((passage_id, passage_id, passage_content))
+            passages_to_process.append((passage_id, passage_id, passage_content, content_hash))
         elif mode == 'incremental':
             # Only extract if new or changed
             if not cached_extraction or cached_extraction.get('content_hash') != content_hash:
-                passages_to_process.append((passage_id, passage_id, passage_content))
+                passages_to_process.append((passage_id, passage_id, passage_content, content_hash))
 
     logging.info(f"Selected {len(passages_to_process)} passages for extraction from core library (mode: {mode})")
     return passages_to_process

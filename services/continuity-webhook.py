@@ -1522,7 +1522,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     return
 
                 # Extract facts from each passage
-                for idx, (passage_id, passage_file, passage_content) in enumerate(passages_to_extract, 1):
+                for idx, (passage_id, passage_file, passage_content, content_hash) in enumerate(passages_to_extract, 1):
                     # Check for cancellation (at top of extraction loop - between passages)
                     if cancel_event.is_set():
                         app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (during extraction, after {idx-1}/{total_passages} passages)")
@@ -1561,7 +1561,7 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         facts_list = extracted_facts.get('facts', [])
 
                         cache['passage_extractions'][passage_id] = {
-                            'content_hash': hashlib.md5(passage_content.encode()).hexdigest(),
+                            'content_hash': content_hash,  # Use hash from core library (SHA256[:16])
                             'extracted_at': datetime.now().isoformat(),
                             'entities': entities,
                             'facts': facts_list,

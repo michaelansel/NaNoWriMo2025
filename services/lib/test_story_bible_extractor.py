@@ -905,6 +905,68 @@ class TestLoadFromCoreLibrary(unittest.TestCase):
 
             self.assertEqual(len(passages), 0)
 
+    def test_content_hash_returned_in_passages_tuple(self):
+        """
+        Test that get_passages_to_extract_v2 returns content_hash in tuple.
+
+        This allows webhook to cache the correct hash from core library,
+        instead of recomputing with a different algorithm.
+
+        Regression test for bug where core library used SHA256[:16] but
+        webhook cached MD5, causing hashes to never match.
+        """
+        import tempfile
+        import hashlib
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+
+            # Real passage content
+            passage_content = "Javlyn opened the door and stepped into the hallway."
+
+            # Compute hash the way core library does (SHA256[:16])
+            core_hash = hashlib.sha256(passage_content.encode('utf-8')).hexdigest()[:16]
+
+            # Create core library artifact with proper hash
+            core_artifacts = {
+                "passages": [
+                    {
+                        "name": "Start",
+                        "content": passage_content,
+                        "content_hash": core_hash
+                    }
+                ]
+            }
+
+            artifacts_file = temp_path / "passages_deduplicated.json"
+            with open(artifacts_file, 'w') as f:
+                json.dump(core_artifacts, f)
+
+            # Empty cache - passage needs extraction
+            cache = {'passage_extractions': {}}
+
+            from story_bible_extractor import get_passages_to_extract_v2
+
+            # Get passages to extract
+            passages = get_passages_to_extract_v2(cache, temp_path, mode='incremental')
+
+            # Should return one passage
+            self.assertEqual(len(passages), 1)
+
+            # CRITICAL: Tuple should include content_hash as 4th element
+            # Format: (passage_id, passage_file, passage_content, content_hash)
+            passage_tuple = passages[0]
+            self.assertEqual(len(passage_tuple), 4, "Passage tuple should have 4 elements including content_hash")
+
+            passage_id, passage_file, passage_text, returned_hash = passage_tuple
+
+            # Verify returned hash matches core library hash
+            self.assertEqual(returned_hash, core_hash, "Returned hash should match core library hash (SHA256[:16])")
+
+            # Verify passage details
+            self.assertEqual(passage_id, "Start")
+            self.assertEqual(passage_text, passage_content)
+
 
 if __name__ == '__main__':
     unittest.main()
