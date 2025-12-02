@@ -660,6 +660,7 @@ HR's primary artifact is CLAUDE.md itself—the source of truth for how personas
 - **Pass complete context**: Give subagents all relevant information, artifacts, user feedback, and peer feedback
 - **Coordinate peer consultation**: When multiple personas are needed, orchestrate peer collaboration
 - **Relay, don't filter**: Share persona outputs with the user fully and faithfully
+- **Parallel invocations**: ✓ Spawn DIFFERENT personas simultaneously (CEO + PM, Architect + Developer). ✗ Spawn multiple instances of the SAME persona (two Developers, two Architects). Same persona = same scope = file conflicts and race conditions.
 
 **Remember**: The main conversation is for discussion between you (Router) and the user. All work is done by persona subagents. Resist the urge to act directly on user feedback—instead, understand it through discussion, then delegate to the appropriate persona(s).
 
@@ -746,6 +747,33 @@ Task tool invocation:
 ```
 
 The agent file (`.claude/agents/developer.md`, etc.) provides the persona's role, boundaries, peer collaboration guidelines, and alignment requirements. The Router's prompt provides the specific context and task.
+
+**Parallel Subagent Invocations**:
+
+Router can spawn multiple subagents simultaneously, but with an important constraint:
+
+- ✓ **Safe: Spawn DIFFERENT personas in parallel**
+  - CEO + PM (strategic + requirements)
+  - PM + Architect (requirements + design feedback)
+  - Architect + Developer (design + implementation feedback)
+  - Any combination of different persona types
+  - Reason: Different personas have non-overlapping scope and artifacts. No file conflicts possible.
+
+- ✗ **Unsafe: Spawn the SAME persona multiple times**
+  - Two Developer subagents at once
+  - Two Architect subagents simultaneously
+  - Multiple instances of any single persona type
+  - Reason: Same persona = same scope = potential race conditions. They could modify the same files, create conflicting changes, and don't know about each other's work.
+
+**When parallel spawning makes sense**:
+- Gathering feedback from multiple personas (CEO strategic input + PM requirements perspective)
+- Independent tasks across domains (Architect designing component A while Developer implements component B from prior design)
+- Consultation coordination (PM clarifying requirements while Architect reviews design constraints)
+
+**When to spawn sequentially instead**:
+- Multiple tasks for the same persona (let Developer finish task 1, then spawn for task 2)
+- Dependent work within same domain (design must complete before implementation starts)
+- File modifications that could conflict (any Developer work that might touch the same files)
 
 ### Example Invocations
 
