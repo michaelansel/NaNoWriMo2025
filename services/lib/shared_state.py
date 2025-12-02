@@ -10,6 +10,7 @@ Key components:
 - FileCancellationEvent: Drop-in replacement for threading.Event that works cross-process
 
 Implementation uses file-based synchronization to coordinate across process boundaries.
+This allows multiple gunicorn workers to coordinate job cancellation.
 """
 
 import os
