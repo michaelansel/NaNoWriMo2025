@@ -7,12 +7,18 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Set TWEEGO_PATH if not already set
+export TWEEGO_PATH="${TWEEGO_PATH:-/usr/local/share/storyformats}"
+
 echo "=== Building Core Artifacts ==="
 echo
 
+# Create dist directory if it doesn't exist
+mkdir -p "$PROJECT_DIR/dist"
+
 # Generate paperthin HTML for parsing
 echo "Step 1/4: Generating paperthin HTML..."
-tweego "$PROJECT_DIR/src" -o "$PROJECT_DIR/dist/story-paperthin.html" --format=paperthin-1.0.0
+tweego "$PROJECT_DIR/src" -o "$PROJECT_DIR/dist/story-paperthin.html" --format=paperthin-1
 echo "✓ Generated: dist/story-paperthin.html"
 echo
 
