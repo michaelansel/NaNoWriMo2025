@@ -153,6 +153,81 @@ Passage content with Twee syntax
 [[Link Text|DestinationPassage]]
 ```
 
+### StoryData Configuration
+
+**Format**: JSON metadata in the special `StoryData` passage
+
+The `StoryData` passage contains story metadata including optional `storyStyle` configuration that drives AI validation behavior:
+
+```twee
+:: StoryData
+{
+  "ifid": "0683974A-9DD8-4A14-BC84-C9519DDDA688",
+  "format": "Harlowe",
+  "format-version": "3.3.9",
+  "start": "Start",
+  "storyStyle": {
+    "perspective": "third-person",
+    "protagonist": "Javlyn",
+    "tense": "past"
+  }
+}
+```
+
+**Configuration Fields**:
+
+- **perspective** (string): Narrative point of view
+  - `"first-person"`: Story told from protagonist's "I" perspective
+  - `"second-person"`: Story told as "you" (reader is protagonist, typical for CYOA)
+  - `"third-person"`: Story told about protagonist in third person (he/she/they)
+  - Default: `"second-person"` (defaults to standard CYOA style)
+
+- **protagonist** (string or null): Character name for named-protagonist stories
+  - If `perspective` is `"third-person"`, use protagonist's name (e.g., `"Javlyn"`)
+  - If `perspective` is `"first-person"`, may use name for clarity or leave null
+  - If `perspective` is `"second-person"`, must be null (reader IS protagonist)
+  - Default: `null` (reader is protagonist in second-person perspective)
+
+- **tense** (string): Narrative tense
+  - `"past"`: Story told in past tense ("you walked", "he explored")
+  - `"present"`: Story told in present tense for immediacy ("you walk", "he explores")
+  - Default: `"present"` (more immersive for interactive fiction)
+
+**Usage Notes**:
+- `storyStyle` is optional; omit the entire field if using defaults
+- Configuration customizes AI validation prompts (Interactive Fiction validator adapts to your story's style)
+- Configuration is applied by the webhook service during validation
+- When uncertain, use the defaults (second-person, present tense, no protagonist name)
+
+**Examples**:
+
+Standard CYOA (defaults):
+```json
+"storyStyle": {
+  "perspective": "second-person",
+  "protagonist": null,
+  "tense": "present"
+}
+```
+
+Third-person narrative:
+```json
+"storyStyle": {
+  "perspective": "third-person",
+  "protagonist": "Maya",
+  "tense": "past"
+}
+```
+
+First-person memoir:
+```json
+"storyStyle": {
+  "perspective": "first-person",
+  "protagonist": null,
+  "tense": "past"
+}
+```
+
 ### Passage Names
 
 **Format**: Descriptive names with optional prefixes

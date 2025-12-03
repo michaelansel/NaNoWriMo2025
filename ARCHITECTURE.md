@@ -71,7 +71,7 @@ allpaths-validation-status.json        # Validation cache (repository root)
 
 **Location**: `/formats/allpaths/generator.py`, `/formats/allpaths/modules/`
 
-**Purpose**: Generate all possible story paths for AI-based continuity validation
+**Purpose**: Generate all possible story paths for AI-based validation and analysis
 
 **Architecture**: 5-Stage Modular Processing Pipeline
 
@@ -168,26 +168,85 @@ Output: HTML browser, text files, validation cache
 
 See `architecture/008-allpaths-processing-pipeline.md` for complete architecture documentation and design rationale.
 
-### 4. AI Continuity Validation
+### 4. AI Validation Pipeline
 
-**Location**: `/scripts/check-story-continuity.py`
+**Location**: `/scripts/check-story-continuity.py`, `/services/lib/story_bible_validator.py`, `/services/lib/interactive_fiction_validator.py`
 
-**Purpose**: AI-powered story continuity checking using Ollama
+**Purpose**: AI-powered multi-layer validation of story paths using Ollama
 
 **Architecture**:
 - **Validation Modes**: Supports new-only, modified, and all modes
 - **Ollama Integration**: HTTP API calls to local Ollama instance
+- **Multiple Validators**: Three validation layers with specialized focus
 - **Progress Tracking**: Real-time callbacks for incremental updates
 - **Cancellation Support**: Threading events for job cancellation
 - **Result Caching**: Persistent validation status
+- **Configuration-Driven**: Story style config from StoryData.twee customizes validation behavior
+
+**Story Style Configuration**
+
+**Location**: `src/StoryData.twee`
+
+The story's writing style is defined in the StoryData passage as JSON configuration:
+
+```json
+{
+  "ifid": "...",
+  "format": "Harlowe",
+  "format-version": "3.3.9",
+  "start": "Start",
+  "storyStyle": {
+    "perspective": "third-person|first-person|second-person",
+    "protagonist": "Character Name or null",
+    "tense": "past|present"
+  }
+}
+```
+
+**Configuration Fields**:
+- **perspective**: Narrative point of view (defaults to "second-person" for CYOA)
+- **protagonist**: Character name (for first/third-person), null for second-person
+- **tense**: Narrative tense (defaults to "present" for CYOA immediacy)
+
+The webhook service extracts this configuration and passes it to validators that customize their AI prompts based on the story's specific style requirements.
 
 **Validation Modes**:
 1. **new-only** (default): Only brand new paths
 2. **modified**: New and modified paths
 3. **all**: Full validation of all paths
 
+**Three-Layer Validation Pipeline**
+
+**Layer 1: Path Continuity Validation**
+- **Purpose**: Detect logical inconsistencies and contradiction within story paths
+- **Module**: `check_paths_with_progress()` in `check-story-continuity.py`
+- **Checks**: Passage references, timeline consistency, variable state validity
+- **Always Runs**: Applied to all paths in specified validation mode
+
+**Layer 2: Story Bible Validation**
+- **Purpose**: Validate new content against established world constants
+- **Module**: `validate_story_bible()` in `story_bible_validator.py`
+- **Checks**: World rules, setting facts, timeline compatibility, character consistency
+- **Prerequisite**: Requires populated Story Bible (extracted during previous validations)
+- **Config**: Uses default Ollama model and timeout
+- **Returns**: Optional (skips gracefully if Story Bible unavailable)
+
+**Layer 3: Interactive Fiction Style Validation**
+- **Purpose**: Validate CYOA writing style conformance for print-format books
+- **Module**: `validate_interactive_fiction_style()` in `interactive_fiction_validator.py`
+- **Checks**: POV/tense consistency, protagonist immersion, choice quality, pacing, ending satisfaction
+- **Config**: Customized via `storyStyle` from StoryData.twee
+  - Adapts to first/second/third person perspectives
+  - Adjusts for named vs. unnamed protagonists
+  - Validates tense consistency (past vs. present)
+- **Returns**: Optional (skips gracefully with non-blocking timeout)
+
 **Data Flow**:
 ```
+src/StoryData.twee (story style config)
+    ↓
+Webhook extracts storyStyle field
+    ↓
 Text files (allpaths-metadata/) + Validation cache
     ↓
 Categorize paths (new/modified/unchanged)
@@ -196,18 +255,26 @@ Filter by validation mode
     ↓
 For each path:
   - Load story text
-  - Send to Ollama HTTP API
-  - Parse JSON response
-  - Translate passage IDs back to names
+  - Layer 1: Path consistency check → path_result
+  - Layer 2: Story Bible validation → world_result (if available)
+  - Layer 3: Interactive Fiction style → if_result (if story_style present)
+  - Merge results with severity escalation
   - Update validation cache
     ↓
-Return structured results
+Return aggregated results
 ```
+
+**Result Merging**:
+- Each validation layer produces independent results with severity (none/minor/major/critical)
+- Results are merged with highest severity becoming the combined severity
+- Each layer's findings are preserved for detailed reporting
+- Non-blocking failures (timeouts, missing dependencies) degrade gracefully
 
 **Security Features**:
 - **Prompt Injection Protection**: Validates AI responses for suspicious patterns
 - **Content Sanitization**: Removes malicious markdown/XSS from AI output
 - **Text-only Processing**: Never executes code from story content
+- **Config Validation**: Story style values validated against allowed options
 
 ### 5. Story Bible Generation
 
