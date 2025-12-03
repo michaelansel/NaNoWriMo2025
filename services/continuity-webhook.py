@@ -508,12 +508,12 @@ _No paths to check with this mode._
     story_style = results.get('story_style', {})
     style_config = []
     if story_style:
-        if story_style.get('protagonist_name'):
-            style_config.append(f"protagonist: {story_style['protagonist_name']}")
-        if story_style.get('narrative_voice'):
-            style_config.append(f"{story_style['narrative_voice']}")
-        if story_style.get('narrative_tense'):
-            style_config.append(f"{story_style['narrative_tense']} tense")
+        if story_style.get('protagonist'):
+            style_config.append(f"protagonist: {story_style['protagonist']}")
+        if story_style.get('perspective'):
+            style_config.append(f"{story_style['perspective']}")
+        if story_style.get('tense'):
+            style_config.append(f"{story_style['tense']} tense")
     style_desc = ", ".join(style_config) if style_config else "default rules"
 
     if if_issues_count > 0:
@@ -831,6 +831,13 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
             else:
                 app.logger.info(f"[Story Bible] No Story Bible cache available, skipping world validation")
 
+            # Load story style config BEFORE progress callback (so it's available in callback)
+            story_style = read_story_style_config(tmpdir_path)
+            if story_style:
+                app.logger.info(f"[Interactive Fiction] Using story style: {story_style}")
+            else:
+                app.logger.info("[Interactive Fiction] No story style config found, using default CYOA rules")
+
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
             unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
@@ -934,7 +941,36 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     summary = sanitize_ai_content(translate_passage_ids(path_result.get("summary", ""), id_to_name))
                     issues = path_result.get("issues", [])
 
-                    # Choose emoji based on severity
+                    # Run Interactive Fiction validation for this path
+                    if_result = None
+                    text_file = text_dir / f"path-{path_id}.txt"
+                    if text_file.exists():
+                        try:
+                            story_text = text_file.read_text()
+                            if_result = validate_interactive_fiction_style(
+                                passage_text=story_text,
+                                passage_id=path_id,
+                                story_style=story_style
+                            )
+                            # Store IF result in path_result for later use
+                            path_result['interactive_fiction_validation'] = if_result
+
+                            # Update severity if IF validation found more severe issues
+                            if if_result and if_result.get('has_issues'):
+                                current_severity = severity
+                                if_severity = if_result.get('severity', 'none')
+                                severity_order = {'none': 0, 'minor': 1, 'major': 2, 'critical': 3}
+                                combined_severity_value = max(
+                                    severity_order.get(current_severity, 0),
+                                    severity_order.get(if_severity, 0)
+                                )
+                                severity = [k for k, v in severity_order.items() if v == combined_severity_value][0]
+                                path_result['severity'] = severity
+                                path_result['has_issues'] = True
+                        except Exception as e:
+                            app.logger.error(f"[Interactive Fiction] Error validating path {path_id}: {e}")
+
+                    # Choose emoji based on combined severity
                     emoji = "✅"
                     if severity == "critical":
                         emoji = "🔴"
@@ -950,9 +986,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 **Summary:** {summary}
 """
 
-                    # Add detailed issues if present
+                    # Add Continuity Editor issues if present
                     if issues:
-                        update_comment += "\n<details>\n<summary>Details</summary>\n\n"
+                        update_comment += "\n<details>\n<summary>Continuity Issues</summary>\n\n"
                         for issue in issues:
                             issue_type = issue.get("type", "unknown")
                             issue_severity = issue.get("severity", "unknown")
@@ -986,6 +1022,26 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                     update_comment += "\n"
 
                         update_comment += "</details>\n"
+
+                    # Add Interactive Fiction Editor issues if present
+                    if if_result and if_result.get('has_issues'):
+                        if_issues = if_result.get('issues', [])
+                        if_summary = if_result.get('summary', 'Style issues detected')
+                        update_comment += f"\n<details>\n<summary>Interactive Fiction Style Issues ({len(if_issues)} issues)</summary>\n\n"
+                        update_comment += f"_{if_summary}_\n\n"
+                        for if_issue in if_issues:
+                            if_type = if_issue.get('type', 'unknown')
+                            if_sev = if_issue.get('severity', 'unknown')
+                            if_desc = if_issue.get('description', 'No description')
+                            if_evidence = if_issue.get('evidence', '')
+                            if_location = if_issue.get('location', '')
+
+                            update_comment += f"- **{if_type.replace('_', ' ').title()}** ({if_sev}): {if_desc}\n"
+                            if if_evidence:
+                                update_comment += f"  - **Evidence**: \"{if_evidence}\"\n"
+                            if if_location:
+                                update_comment += f"  - **Location**: {if_location}\n"
+                        update_comment += "\n</details>\n"
 
                     app.logger.info(f"[Background] Posting progress update: {current}/{total}")
                     post_pr_comment(pr_number, update_comment)
@@ -1057,60 +1113,11 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
                 app.logger.info(f"[Story Bible] World consistency validation complete")
 
-            # Interactive Fiction style validation (always runs)
-            app.logger.info(f"[Interactive Fiction] Running CYOA style validation for {results['checked_count']} paths")
-
-            # Read story style configuration from StoryData.twee
-            story_style = read_story_style_config(tmpdir_path)
-
+            # Interactive Fiction validation already ran during progress callbacks
+            # Now just update paths_with_issues with the IF results and compute summary
             all_paths = results.get('all_checked_paths', [])
-            for path_result in all_paths:
-                # Get the path text file
-                path_id = path_result.get('id')
-                text_file = text_dir / f"path-{path_id}.txt"
 
-                if text_file.exists():
-                    try:
-                        story_text = text_file.read_text()
-
-                        # Run Interactive Fiction style validation with story style config
-                        app.logger.info(f"[Interactive Fiction Editor] Validating path {path_id}...")
-                        if_result = validate_interactive_fiction_style(
-                            passage_text=story_text,
-                            passage_id=path_id,
-                            story_style=story_style
-                        )
-
-                        # Log the result
-                        if if_result and if_result.get('has_issues'):
-                            issue_count = len(if_result.get('issues', []))
-                            app.logger.info(f"[Interactive Fiction Editor] Path {path_id}: {issue_count} issue(s) found - {if_result.get('summary', '')}")
-                        else:
-                            app.logger.info(f"[Interactive Fiction Editor] Path {path_id}: ✓ Style compliant")
-
-                        # Add to path_result
-                        path_result['interactive_fiction_validation'] = if_result
-
-                        # Update severity if IF validation found more severe issues
-                        if if_result and if_result.get('has_issues'):
-                            current_severity = path_result.get('severity', 'none')
-                            if_severity = if_result.get('severity', 'none')
-
-                            severity_order = {'none': 0, 'minor': 1, 'major': 2, 'critical': 3}
-                            combined_severity_value = max(
-                                severity_order.get(current_severity, 0),
-                                severity_order.get(if_severity, 0)
-                            )
-                            combined_severity = [k for k, v in severity_order.items() if v == combined_severity_value][0]
-
-                            path_result['severity'] = combined_severity
-                            path_result['has_issues'] = True
-
-                    except Exception as e:
-                        app.logger.error(f"[Interactive Fiction] Error validating path {path_id}: {e}", exc_info=True)
-                        # Continue with other paths
-
-            # Also update paths_with_issues with IF validation
+            # Update paths_with_issues with IF validation results
             paths_with_issues = results.get('paths_with_issues', [])
             for path in paths_with_issues:
                 # Find matching path in all_checked_paths
@@ -1127,12 +1134,12 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
             if_total_issues = sum(1 for p in all_paths if p.get('interactive_fiction_validation', {}).get('has_issues', False))
             style_desc = []
             if story_style:
-                if story_style.get('protagonist_name'):
-                    style_desc.append(f"protagonist={story_style['protagonist_name']}")
-                if story_style.get('narrative_voice'):
-                    style_desc.append(f"voice={story_style['narrative_voice']}")
-                if story_style.get('narrative_tense'):
-                    style_desc.append(f"tense={story_style['narrative_tense']}")
+                if story_style.get('protagonist'):
+                    style_desc.append(f"protagonist={story_style['protagonist']}")
+                if story_style.get('perspective'):
+                    style_desc.append(f"voice={story_style['perspective']}")
+                if story_style.get('tense'):
+                    style_desc.append(f"tense={story_style['tense']}")
             style_str = ", ".join(style_desc) if style_desc else "default config"
             app.logger.info(f"[Interactive Fiction Editor] Summary: {if_total_checked} paths checked, {if_total_issues} with issues ({style_str})")
 
