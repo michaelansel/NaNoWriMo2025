@@ -51,6 +51,11 @@ from story_bible_validator import (
     merge_validation_results
 )
 
+# Import Interactive Fiction validator (CYOA style checking)
+from interactive_fiction_validator import (
+    validate_interactive_fiction_style
+)
+
 # Import shared state for cross-worker coordination (supports multiple gunicorn workers)
 from shared_state import (
     get_shared_state,
@@ -438,6 +443,20 @@ _No paths to check with this mode._
         else:
             comment += "✅ No world consistency issues detected\n\n"
 
+    # Interactive Fiction style validation section (always runs)
+    if_issues_count = sum(
+        1 for p in all_checked_paths
+        if p.get('interactive_fiction_validation', {}).get('has_issues', False)
+    )
+
+    comment += "### 📝 Interactive Fiction Style Check\n\n"
+    comment += "✓ Validated against CYOA best practices for print format\n"
+
+    if if_issues_count > 0:
+        comment += f"⚠️ Found style issues in {if_issues_count} path(s)\n\n"
+    else:
+        comment += "✅ No CYOA style issues detected\n\n"
+
     if not results["paths_with_issues"]:
         comment += "### ✅ All Paths Passed\n\n"
         comment += f"No issues found in {results['checked_count']} path(s).\n"
@@ -537,6 +556,31 @@ def format_path_issues(path: dict) -> str:
                 const_source = evidence.get('constant_source', '')
                 if const_source:
                     output += f"  - **Constant source**: {sanitize_ai_content(const_source)}\n"
+            output += "\n"
+
+        output += "</details>\n\n"
+
+    # Interactive Fiction style issues
+    if_validation = path.get('interactive_fiction_validation')
+    if if_validation and if_validation.get('has_issues'):
+        output += "<details>\n<summary>Interactive Fiction Style Issues (CYOA Editor)</summary>\n\n"
+        output += f"_{sanitize_ai_content(if_validation.get('summary', ''))}_\n\n"
+
+        for issue in if_validation.get('issues', []):
+            issue_type = issue.get('type', 'unknown')
+            severity = issue.get('severity', 'unknown')
+            description = sanitize_ai_content(issue.get('description', ''))
+            evidence = sanitize_ai_content(issue.get('evidence', ''))
+            location = sanitize_ai_content(issue.get('location', ''))
+
+            # Format issue type for display
+            display_type = issue_type.replace('_', ' ').capitalize()
+
+            output += f"- **{display_type}** ({severity}): {description}\n"
+            if evidence:
+                output += f"  - **Evidence**: \"{evidence}\"\n"
+            if location:
+                output += f"  - **Location**: {location}\n"
             output += "\n"
 
         output += "</details>\n\n"
@@ -935,6 +979,61 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         path['has_issues'] = matching[0].get('has_issues')
 
                 app.logger.info(f"[Story Bible] World consistency validation complete")
+
+            # Interactive Fiction style validation (always runs)
+            app.logger.info(f"[Interactive Fiction] Running CYOA style validation for {results['checked_count']} paths")
+
+            all_paths = results.get('all_checked_paths', [])
+            for path_result in all_paths:
+                # Get the path text file
+                path_id = path_result.get('id')
+                text_file = text_dir / f"path-{path_id}.txt"
+
+                if text_file.exists():
+                    try:
+                        story_text = text_file.read_text()
+
+                        # Run Interactive Fiction style validation
+                        if_result = validate_interactive_fiction_style(
+                            passage_text=story_text,
+                            passage_id=path_id
+                        )
+
+                        # Add to path_result
+                        path_result['interactive_fiction_validation'] = if_result
+
+                        # Update severity if IF validation found more severe issues
+                        if if_result and if_result.get('has_issues'):
+                            current_severity = path_result.get('severity', 'none')
+                            if_severity = if_result.get('severity', 'none')
+
+                            severity_order = {'none': 0, 'minor': 1, 'major': 2, 'critical': 3}
+                            combined_severity_value = max(
+                                severity_order.get(current_severity, 0),
+                                severity_order.get(if_severity, 0)
+                            )
+                            combined_severity = [k for k, v in severity_order.items() if v == combined_severity_value][0]
+
+                            path_result['severity'] = combined_severity
+                            path_result['has_issues'] = True
+
+                    except Exception as e:
+                        app.logger.error(f"[Interactive Fiction] Error validating path {path_id}: {e}", exc_info=True)
+                        # Continue with other paths
+
+            # Also update paths_with_issues with IF validation
+            paths_with_issues = results.get('paths_with_issues', [])
+            for path in paths_with_issues:
+                # Find matching path in all_checked_paths
+                path_id = path.get('id')
+                matching = [p for p in all_paths if p.get('id') == path_id]
+                if matching:
+                    # Copy interactive_fiction_validation from all_paths
+                    path['interactive_fiction_validation'] = matching[0].get('interactive_fiction_validation')
+                    path['severity'] = matching[0].get('severity')
+                    path['has_issues'] = matching[0].get('has_issues')
+
+            app.logger.info(f"[Interactive Fiction] CYOA style validation complete")
 
             # Translate passage IDs in final results
             if results.get("paths_with_issues"):

@@ -10,6 +10,11 @@
 
 The AI Copy Editing Team is a **validation feature** that automatically checks story paths for consistency issues. Think of it as a team of specialized editors, each with their own expertise, reviewing your story together.
 
+**Current Team:**
+- **Continuity Checker** - Validates internal path consistency
+- **World Fact Checker** - Validates against Story Bible constants
+- **Interactive Fiction Editor** - Validates CYOA style for print-format books
+
 **How it works:**
 - Determines which paths need validation based on what changed in a PR
 - Each team member analyzes those paths from their specialty perspective
@@ -88,6 +93,48 @@ World Fact Checker requires the Story Bible cache to validate against. The cache
 3. World Fact Checker automatically uses cache in next validation
 
 For complete Story Bible feature details and two-phase model explanation, see [features/story-bible.md](./story-bible.md)
+
+---
+
+### Team Member #3: Interactive Fiction Editor
+
+**Specialty:** CYOA/choose-your-own-adventure writing style for print-format books
+
+**What they check:**
+- POV/Tense consistency (second person present tense)
+- Protagonist immersion (avoiding names or [Name] placeholders)
+- Choice quality (meaningful choices with real consequences, balanced options)
+- Pacing issues (avoiding "tunnel" sections - long stretches without choices)
+- Ending quality (satisfying endings, both good and bad)
+
+**What they DON'T check:**
+- Story quality or creativity (subjective)
+- Plot choices (author's creative decision)
+- Genre conventions appropriate to the story
+
+**What they provide:**
+- Issue type (pov_consistency, protagonist_immersion, choice_quality, pacing, ending_quality)
+- Severity (critical/major/minor)
+- Description of the issue
+- Evidence quotes demonstrating the problem
+- Location information (where in passage the issue occurs)
+
+**CYOA Best Practices Reference:**
+
+Based on research into choose-your-own-adventure writing for print books:
+
+1. **Second Person Present Tense**: Written in "you" perspective with present tense for immediacy
+2. **Protagonist Immersion**: Avoid naming protagonist or using placeholders - reader IS the protagonist
+3. **Meaningful Choices**: Every choice should have real consequences, avoid false choices
+4. **Balanced Options**: No choice should be obviously "best" - all should be appealing
+5. **Informed Decisions**: Provide enough context for intentional choices, not blind guessing
+6. **Pacing**: Balance narrative flow with decision points, avoid long sequences without choices
+7. **Satisfying Endings**: Both good and bad endings should feel earned, not arbitrary or punishing
+
+**Severity Rubric:**
+- **CRITICAL**: Major POV breaks (first/third person for paragraphs), named protagonist throughout, no choices (linear narrative)
+- **MAJOR**: Tense inconsistency, false choices (no real difference), very long tunnel sections (5+ paragraphs), clearly unbalanced choices
+- **MINOR**: Occasional POV slips, minor pacing concerns, slightly unbalanced options
 
 ---
 
@@ -212,6 +259,7 @@ These are directional goals we cannot directly measure but inform our design dec
 - [ ] Continuity Checker validates path internal consistency
 - [ ] World Fact Checker loads Story Bible cache (if exists)
 - [ ] World Fact Checker validates new content against established constants
+- [ ] Interactive Fiction Editor validates CYOA style compliance (always runs)
 - [ ] PR comments have separate sections per team member
 - [ ] Clear distinction between team member findings in PR comments
 - [ ] Works gracefully if Story Bible doesn't exist yet (World Fact Checker sits out)

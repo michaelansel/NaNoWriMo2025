@@ -1,0 +1,236 @@
+#!/usr/bin/env python3
+"""
+Interactive Fiction (CYOA) style validation for print-format choose-your-own-adventure stories.
+
+Validates story paths against CYOA best practices for print-format books,
+checking for POV consistency, choice quality, pacing, and ending satisfaction.
+"""
+
+import requests
+import json
+from typing import Dict, Optional
+
+# Ollama configuration
+OLLAMA_MODEL = "gpt-oss:20b-fullcontext"
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+OLLAMA_TIMEOUT = 120  # 2 minutes per validation
+
+# AI prompt for interactive fiction style validation
+VALIDATION_PROMPT = """Reasoning: high
+
+=== SECTION 1: ROLE & CONTEXT ===
+
+You are validating a story path for Choose-Your-Own-Adventure (CYOA) writing style.
+This is for PRINT-FORMAT BOOKS, not digital games.
+
+Your task: Check if this path follows CYOA best practices for print format books.
+
+CRITICAL UNDERSTANDING:
+- CYOA is written in second person present tense ("you" perspective)
+- Reader is the protagonist - avoid naming them or using placeholders
+- Choices should be meaningful with real consequences
+- Pacing matters - balance action with decision points
+- Endings should be satisfying (both good and bad)
+
+=== SECTION 2: CYOA BEST PRACTICES ===
+
+**Second Person Present Tense:**
+- Use "you" throughout (second person)
+- Use present tense for immediacy ("you walk" not "you walked")
+- Avoid first person ("I") or third person ("he/she") for protagonist
+- Never name the protagonist or use [Name] placeholders
+
+**Choice Design:**
+- Every choice should have real consequences
+- Avoid false choices (all options lead to same outcome)
+- Balance options - no choice should be obviously "best"
+- Provide enough context for informed decisions (not blind guessing)
+- Mix high-stakes and low-stakes choices to manage tension
+
+**Pacing:**
+- Avoid long sequences without choices ("tunnel problem")
+- Play up the five senses for immersion
+- Don't make every choice life-or-death
+- Balance narrative flow with decision points
+
+**Endings:**
+- Both good and bad endings should be satisfying to read
+- Bad endings shouldn't feel like author-punishment
+- Avoid too many death/failure endings (frustrating)
+- Endings should feel earned, not arbitrary
+
+=== SECTION 3: PATH TO VALIDATE ===
+
+{passage_text}
+
+=== SECTION 4: VALIDATION TASK ===
+
+Check this path for CYOA style issues:
+
+1. **POV/Tense Consistency**: Is it consistently second person present tense?
+2. **Protagonist Immersion**: Does it avoid naming protagonist or using placeholders?
+3. **Choice Quality**: Do choices appear meaningful? Are options balanced?
+4. **Pacing**: Are there "tunnel" sections (long stretches without choices)?
+5. **Ending Quality** (if ending): Is the ending satisfying or frustratingly abrupt?
+
+DO NOT FLAG:
+- Story quality or creativity (that's subjective)
+- Plot choices (author's creative decision)
+- Genre conventions appropriate to the story
+- Stylistic preferences that don't break CYOA rules
+
+ONLY FLAG clear violations of CYOA best practices.
+
+=== SECTION 5: OUTPUT FORMAT ===
+
+Respond with ONLY valid JSON (no markdown, no code blocks):
+
+{{
+  "has_issues": true/false,
+  "severity": "none|minor|major|critical",
+  "issues": [
+    {{
+      "type": "pov_consistency|protagonist_immersion|choice_quality|pacing|ending_quality",
+      "severity": "minor|major|critical",
+      "description": "Brief description of the issue",
+      "evidence": "Quote from passage demonstrating the issue",
+      "location": "Where in passage this occurs (optional)"
+    }}
+  ],
+  "summary": "Brief overall assessment"
+}}
+
+If no issues found, return:
+{{"has_issues": false, "severity": "none", "issues": [], "summary": "No interactive fiction style issues detected"}}
+
+=== SECTION 6: SEVERITY RUBRIC ===
+
+**CRITICAL** - Major CYOA style breaks:
+- Switches to first/third person for multiple paragraphs
+- Named protagonist breaking immersion throughout
+- No choices at all (pure linear narrative)
+- Ending is clearly punishing/unfair
+
+**MAJOR** - Significant style issues:
+- Consistent tense errors (mixing past/present)
+- Occasional third-person switches
+- False choices (options with no real difference)
+- Very long tunnel sections (5+ paragraphs no choice)
+- Unbalanced choices (one obviously best)
+
+**MINOR** - Small style issues:
+- Occasional POV slips (a sentence or two)
+- Minor pacing concerns
+- Slightly unbalanced choice options
+- Ending could be more satisfying but not terrible
+
+BEGIN VALIDATION (JSON only):
+"""
+
+
+def parse_json_from_response(text: str) -> Dict:
+    """
+    Extract JSON object from AI response that may contain extra text.
+
+    Args:
+        text: Raw AI response text
+
+    Returns:
+        Parsed JSON object
+
+    Raises:
+        json.JSONDecodeError: If no valid JSON found
+    """
+    # Try parsing entire response first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Find JSON object boundaries
+    start = text.find('{')
+    end = text.rfind('}')
+
+    if start == -1 or end == -1:
+        return {
+            "has_issues": False,
+            "severity": "none",
+            "issues": [],
+            "summary": "Could not parse validation response"
+        }
+
+    json_text = text[start:end+1]
+
+    try:
+        return json.loads(json_text)
+    except json.JSONDecodeError:
+        return {
+            "has_issues": False,
+            "severity": "none",
+            "issues": [],
+            "summary": "Could not parse validation response"
+        }
+
+
+def validate_interactive_fiction_style(
+    passage_text: str,
+    passage_id: str
+) -> Optional[Dict]:
+    """
+    Validate a passage for CYOA/interactive fiction style compliance.
+
+    Args:
+        passage_text: The passage content to validate
+        passage_id: Identifier for passage (for logging)
+
+    Returns:
+        Validation result dict with issues, or None if validation failed
+    """
+    # Build validation prompt
+    prompt = VALIDATION_PROMPT.format(
+        passage_text=passage_text
+    )
+
+    # Call Ollama API
+    try:
+        response = requests.post(
+            OLLAMA_API_URL,
+            json={
+                "model": OLLAMA_MODEL,
+                "prompt": prompt,
+                "stream": False,
+                "options": {
+                    "temperature": 0.2,  # Low temperature for consistent validation
+                    "num_predict": 1500
+                }
+            },
+            timeout=OLLAMA_TIMEOUT
+        )
+
+        response.raise_for_status()
+        result = response.json()
+
+        # Parse response
+        raw_response = result.get('response', '')
+
+        # Extract JSON from response
+        validation_result = parse_json_from_response(raw_response)
+
+        return validation_result
+
+    except requests.Timeout:
+        # Timeout is non-blocking - log and return no issues
+        return {
+            "has_issues": False,
+            "severity": "none",
+            "issues": [],
+            "summary": "Interactive fiction validation timed out (skipped)"
+        }
+    except Exception as e:
+        # Other errors are non-blocking - log and return no issues
+        return {
+            "has_issues": False,
+            "severity": "none",
+            "issues": [],
+            "summary": f"Interactive fiction validation error: {str(e)[:50]} (skipped)"
+        }
