@@ -483,13 +483,50 @@ _No paths to check with this mode._
         else:
             comment += "✅ No world consistency issues detected\n\n"
 
-    # Interactive Fiction style validation section (always runs)
+    # Copy Editing Team Summary - shows which editors ran and their results
+    comment += "### 📋 Copy Editing Team Summary\n\n"
+    comment += "| Editor | Status | Details |\n"
+    comment += "|--------|--------|--------|\n"
+
+    # Continuity Editor (AI-powered via Ollama)
+    continuity_issues = len(results.get("paths_with_issues", []))
+    checked_count = results.get("checked_count", 0)
+    if continuity_issues > 0:
+        comment += f"| Continuity Editor | ⚠️ {continuity_issues} issue(s) | Checked {checked_count} paths via Ollama |\n"
+    else:
+        comment += f"| Continuity Editor | ✅ Passed | Checked {checked_count} paths via Ollama |\n"
+
+    # Interactive Fiction Editor (rule-based validation)
     if_issues_count = sum(
         1 for p in all_checked_paths
         if p.get('interactive_fiction_validation', {}).get('has_issues', False)
     )
+    if_paths_checked = sum(
+        1 for p in all_checked_paths
+        if p.get('interactive_fiction_validation') is not None
+    )
+    story_style = results.get('story_style', {})
+    style_config = []
+    if story_style:
+        if story_style.get('protagonist_name'):
+            style_config.append(f"protagonist: {story_style['protagonist_name']}")
+        if story_style.get('narrative_voice'):
+            style_config.append(f"{story_style['narrative_voice']}")
+        if story_style.get('narrative_tense'):
+            style_config.append(f"{story_style['narrative_tense']} tense")
+    style_desc = ", ".join(style_config) if style_config else "default rules"
 
+    if if_issues_count > 0:
+        comment += f"| Interactive Fiction Editor | ⚠️ {if_issues_count} issue(s) | Checked {if_paths_checked} paths ({style_desc}) |\n"
+    else:
+        comment += f"| Interactive Fiction Editor | ✅ Passed | Checked {if_paths_checked} paths ({style_desc}) |\n"
+
+    comment += "\n"
+
+    # Detailed Interactive Fiction style validation section
     comment += "### 📝 Interactive Fiction Style Check\n\n"
+    if story_style:
+        comment += f"**Configuration:** {style_desc}\n\n"
     comment += "✓ Validated against CYOA best practices for print format\n"
 
     if if_issues_count > 0:
@@ -1037,11 +1074,19 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                         story_text = text_file.read_text()
 
                         # Run Interactive Fiction style validation with story style config
+                        app.logger.info(f"[Interactive Fiction Editor] Validating path {path_id}...")
                         if_result = validate_interactive_fiction_style(
                             passage_text=story_text,
                             passage_id=path_id,
                             story_style=story_style
                         )
+
+                        # Log the result
+                        if if_result and if_result.get('has_issues'):
+                            issue_count = len(if_result.get('issues', []))
+                            app.logger.info(f"[Interactive Fiction Editor] Path {path_id}: {issue_count} issue(s) found - {if_result.get('summary', '')}")
+                        else:
+                            app.logger.info(f"[Interactive Fiction Editor] Path {path_id}: ✓ Style compliant")
 
                         # Add to path_result
                         path_result['interactive_fiction_validation'] = if_result
@@ -1077,7 +1122,19 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     path['severity'] = matching[0].get('severity')
                     path['has_issues'] = matching[0].get('has_issues')
 
-            app.logger.info(f"[Interactive Fiction] CYOA style validation complete")
+            # Log IF validation summary
+            if_total_checked = sum(1 for p in all_paths if p.get('interactive_fiction_validation') is not None)
+            if_total_issues = sum(1 for p in all_paths if p.get('interactive_fiction_validation', {}).get('has_issues', False))
+            style_desc = []
+            if story_style:
+                if story_style.get('protagonist_name'):
+                    style_desc.append(f"protagonist={story_style['protagonist_name']}")
+                if story_style.get('narrative_voice'):
+                    style_desc.append(f"voice={story_style['narrative_voice']}")
+                if story_style.get('narrative_tense'):
+                    style_desc.append(f"tense={story_style['narrative_tense']}")
+            style_str = ", ".join(style_desc) if style_desc else "default config"
+            app.logger.info(f"[Interactive Fiction Editor] Summary: {if_total_checked} paths checked, {if_total_issues} with issues ({style_str})")
 
             # Translate passage IDs in final results
             if results.get("paths_with_issues"):
@@ -1111,6 +1168,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                             quote["passage"] = id_to_name.get(passage_id, passage_id)
                                         if quote.get("text"):
                                             quote["text"] = translate_passage_ids(quote["text"], id_to_name)
+
+            # Add story style config to results for PR comment formatting
+            results['story_style'] = story_style
 
             # Format and post final summary comment
             comment = format_pr_comment(results)
