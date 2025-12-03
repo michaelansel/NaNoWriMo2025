@@ -1,11 +1,11 @@
 ---
 name: workflow-collaboration
-description: PROACTIVELY use when personas need to collaborate on features, provide peer feedback, or coordinate work. Apply when Router is coordinating multi-persona work, personas need consultation patterns, or alignment verification is required. Use during feature development, peer consultation, iterative collaboration, and before claiming work complete.
+description: PROACTIVELY use when Router is coordinating multi-persona work. Provides orchestration patterns for spawning personas, coordinating peer consultation, and managing iterative collaboration flows. Router-only skill for coordination, not persona execution.
 ---
 
-# Workflow Collaboration
+# Workflow Collaboration (Router Coordination)
 
-This skill provides detailed workflow patterns for persona collaboration, peer feedback, and alignment verification.
+This skill provides Router orchestration patterns for coordinating persona collaboration, peer feedback, and alignment verification.
 
 ## Feature Development (Collaborative Peer Flow with Alignment Checkpoints)
 
@@ -75,44 +75,6 @@ Router: This is implementation work → Consult Developer
 Note: Even "simple" fixes require alignment check. Developer can explore preliminary fixes if scope unclear,
 but claiming "done" requires verification that fix aligns with documented behavior and standards.
 If bug behavior is ambiguous or fix requires defining new user-facing behavior, Developer MUST consult peers before completion.
-```
-
-## TDD Implementation Flow (Developer Persona with Alignment)
-
-```
-[Spawn Developer subagent with PRD and design]
-  ↓
-SCOPE CHECK:
-  ├─> Requirements defined in features/*.md? Design in architecture/*.md? Work is implementation?
-  ├─> If unclear: Can proceed with exploration, but MUST align before completion
-  └─> Proceed to TDD
-  ↓
-RED Phase:
-  ├─> Read acceptance criteria from features/*.md
-  ├─> Write failing test case(s)
-  ├─> Run tests to confirm failure
-  └─> Output: Failing test(s) with clear failure messages
-  ↓
-GREEN Phase:
-  ├─> Write minimal implementation code
-  ├─> Run tests to confirm passing
-  └─> Output: Passing tests + implementation
-  ↓
-REFACTOR Phase:
-  ├─> Apply STANDARDS.md
-  ├─> Remove duplication, improve clarity
-  ├─> Run tests to confirm still passing
-  └─> Output: Refactored code + passing tests
-  ↓
-REPEAT until all acceptance criteria satisfied
-  ↓
-ALIGNMENT CHECK (before claiming complete):
-  ├─> Do tests pass? ✓
-  ├─> Do tests cover ALL acceptance criteria in features/*.md? ✓
-  ├─> Does implementation follow design in architecture/*.md? ✓
-  ├─> Does code comply with STANDARDS.md? ✓
-  ├─> If ANY misalignment: Consult peers to resolve (PM for requirements, Architect for design)
-  └─> Output: Complete implementation + tests + docs (verified aligned with requirements and design)
 ```
 
 ## Peer Feedback Within Subagents

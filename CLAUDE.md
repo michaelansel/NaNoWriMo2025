@@ -40,6 +40,30 @@ Based on the MetaGPT pattern: specialized roles collaborate as peers with domain
 
 **The Router is a coordinator, not a doer.** All actual work happens in persona subagents.
 
+**What Router Knows vs Delegates**:
+
+Router's knowledge is optimized for coordination, NOT execution:
+
+**Router KNOWS** (coordination patterns):
+- Which persona to spawn for different types of requests
+- How to orchestrate multi-persona collaboration (via workflow-collaboration skill)
+- When to coordinate peer consultation vs sequential work
+- How to relay outputs and coordinate feedback between personas
+- Routing decision tree and invocation patterns
+
+**Router DOES NOT KNOW** (persona-specific details):
+- TDD methodology details (in developer.md)
+- Acceptance criteria writing guidelines (in pm.md)
+- Documentation philosophy specifics (in documentation-philosophy skill, used by personas)
+- Architecture design patterns (in architect.md)
+- Strategic frameworks (in ceo.md)
+
+**Why this separation matters**:
+- Router focuses on orchestration, not domain expertise
+- Personas have complete methodologies in their agent files
+- Skills that personas use (like documentation-philosophy) load for personas, not Router
+- Router doesn't need to know HOW personas work internally, only WHEN to invoke them
+
 **Persona Definitions**: Full persona prompts live in `.claude/agents/*.md` files:
 - `.claude/agents/ceo.md` - Strategic persona
 - `.claude/agents/pm.md` - Product Manager persona
@@ -106,7 +130,7 @@ User request
 
 **Boundaries**: ✓ Define "what" and "why" | ✗ Implementation details, tech choices
 
-**Note**: PM uses the `acceptance-criteria` skill for writing testable requirements.
+**Note**: PM has integrated acceptance criteria guidelines directly in the agent file (no separate skill needed).
 
 ---
 
@@ -164,13 +188,19 @@ User request
 
 ## Skills (Proactively Activated)
 
-Skills contain detailed methodologies that load when relevant context appears:
+Skills contain detailed methodologies that load when relevant context appears. Skills are organized by loading mechanism:
 
-- **workflow-collaboration**: Feature development flows, peer feedback patterns, alignment procedures (`.claude/skills/workflow-collaboration/`)
-- **documentation-philosophy**: How to create durable documentation artifacts (`.claude/skills/documentation-philosophy/`)
-- **acceptance-criteria**: Writing testable, measurable acceptance criteria (`.claude/skills/acceptance-criteria/`)
+**Router Skills** (proactively activated for Router):
+- **workflow-collaboration**: Router orchestration patterns for spawning personas, coordinating peer consultation, and managing iterative collaboration flows (`.claude/skills/workflow-collaboration/`)
 
-Router doesn't need to explicitly activate skills—they load automatically when personas encounter relevant work.
+**Persona-Autoloaded Skills** (loaded via agent `skills:` field):
+- **documentation-philosophy**: Autoloaded by all persona agents. Provides guidance on creating durable, testable documentation artifacts. Personas get this automatically when spawned—Router doesn't need it.
+
+**Persona-Integrated Methodologies** (in agent files, not separate skills):
+- **Acceptance criteria guidelines**: Integrated into `.claude/agents/pm.md` for PM's use
+- **TDD methodology**: Integrated into `.claude/agents/developer.md` for Developer's use
+
+Router doesn't need persona-specific methodologies—those live in agent files or are autoloaded by agents via the `skills:` frontmatter field.
 
 ---
 

@@ -1,11 +1,11 @@
 ---
 name: documentation-philosophy
-description: PROACTIVELY use when personas need to create or update documentation artifacts. Apply when writing VISION.md, ARCHITECTURE.md, STANDARDS.md, features/*.md, or any project documentation. Use to guide documentation decisions about durability, structure, and format.
+description: PROACTIVELY use when PERSONA SUBAGENTS (CEO, PM, Architect, Developer, HR) are creating or updating documentation artifacts. Apply when writing VISION.md, ARCHITECTURE.md, STANDARDS.md, features/*.md, or any project documentation. Persona-only skill for documentation decisions about durability, structure, and format. NOT for Router use.
 ---
 
-# Documentation Philosophy
+# Documentation Philosophy (Persona Guidance)
 
-This skill provides guidance on creating durable, testable documentation artifacts.
+This skill provides persona guidance on creating durable, testable documentation artifacts.
 
 ## Core Principles
 
