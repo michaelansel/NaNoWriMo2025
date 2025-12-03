@@ -289,6 +289,63 @@ These are directional goals we cannot directly measure but inform our design dec
 - [ ] Works gracefully if Story Bible doesn't exist yet (World Fact Checker sits out)
 - [ ] Single PR comment combines all team member reports
 
+**Interactive Fiction Editor - Detailed Acceptance Criteria:**
+
+*Configuration Loading:*
+- [ ] Loads `storyStyle` configuration from `src/StoryData.twee` on initialization
+- [ ] When configuration found, validates using specified `perspective`, `protagonist`, and `tense`
+- [ ] When configuration missing, defaults to second-person present tense (traditional CYOA)
+- [ ] Configuration validation succeeds for valid values: perspective ("first-person", "second-person", "third-person"), tense ("past", "present")
+
+*POV/Tense Consistency Validation:*
+- [ ] Detects POV inconsistencies: switching between first/second/third person within passage
+- [ ] Detects tense inconsistencies: switching between past/present within passage
+- [ ] Assigns severity CRITICAL for multi-paragraph perspective switches
+- [ ] Assigns severity MINOR for occasional POV slips (single sentence)
+- [ ] Assigns severity MAJOR for tense inconsistency throughout passage
+- [ ] Reports issue type `pov_consistency` with evidence quotes showing the perspective/tense break
+
+*Protagonist Consistency Validation:*
+- [ ] For third-person configured: Validates protagonist name matches configured name throughout path
+- [ ] For second-person configured: Flags any protagonist naming (protagonist should remain unnamed)
+- [ ] For first-person configured: Validates first-person perspective maintained consistently
+- [ ] Assigns severity CRITICAL for protagonist name inconsistency in third-person
+- [ ] Assigns severity CRITICAL for naming protagonist in second-person (violates CYOA convention)
+- [ ] Reports issue type `protagonist_consistency` with evidence quotes showing naming issues
+
+*Choice Quality Validation:*
+- [ ] Detects false choices: options with no meaningful difference in outcomes
+- [ ] Detects unbalanced choices: one option obviously better than others (e.g., "good" vs "instant death")
+- [ ] Detects uninformed choices: insufficient context for player to make intentional decision
+- [ ] Assigns severity MAJOR for false choices (all options lead to same outcome)
+- [ ] Assigns severity MAJOR for clearly unbalanced choices
+- [ ] Reports issue type `choice_quality` with evidence quotes showing problematic choices
+
+*Pacing Validation:*
+- [ ] Detects linear narrative: passages with no choices (purely sequential)
+- [ ] Detects tunnel sections: long sequences without choices (5+ paragraphs)
+- [ ] Assigns severity CRITICAL for completely linear narrative (no choices in entire path)
+- [ ] Assigns severity MAJOR for tunnel sections exceeding 5 paragraphs without choice
+- [ ] Assigns severity MINOR for minor pacing concerns (3-4 paragraphs without choice)
+- [ ] Reports issue type `pacing` with location information showing tunnel section length
+
+*Ending Quality Validation:*
+- [ ] Validates endings feel earned and not arbitrary
+- [ ] Checks both good endings and bad endings for satisfying resolution
+- [ ] Detects arbitrary punishment endings (sudden death without foreshadowing)
+- [ ] Detects unsatisfying resolutions (abrupt endings without narrative closure)
+- [ ] Assigns severity based on how well ending follows from player choices
+- [ ] Reports issue type `ending_quality` with evidence quotes from ending passage
+
+*Result Reporting Format:*
+- [ ] Reports include issue type (pov_consistency, protagonist_consistency, choice_quality, pacing, ending_quality)
+- [ ] Reports include severity (critical/major/minor) for each issue found
+- [ ] Reports include clear description explaining the specific problem
+- [ ] Reports include evidence quotes from passages demonstrating the issue
+- [ ] Reports include location information (passage IDs where issue occurs)
+- [ ] PR comment section for Interactive Fiction Editor separates findings from other team members
+- [ ] Summary shows count of issues by severity level (critical/major/minor)
+
 ---
 
 ## How It Works
