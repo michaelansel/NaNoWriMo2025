@@ -6,6 +6,7 @@ Generates all output formats:
 - HTML browser (using Jinja2 templates)
 - Clean text files (prose only, with passage ID anonymization)
 - Metadata text files (with path metadata and passage markers)
+- Raw text files (unprocessed Twee syntax for validation tools)
 - Validation cache updates
 """
 
@@ -209,6 +210,78 @@ def generate_path_text(path: List[str], passages: Dict, path_num: int,
     return '\n'.join(lines)
 
 
+def generate_path_text_raw(path: List[str], passages: Dict, path_num: int,
+                           total_paths: int, passage_id_mapping: Dict[str, str] = None) -> str:
+    """
+    Generate raw text for a single path with Twee link syntax preserved.
+
+    This format is used for validation tools (e.g., Interactive Fiction Editor)
+    that need to see the original [[link]] markers to validate choice formatting.
+
+    Args:
+        path: List of passage names in the path
+        passages: Dict of all passages
+        path_num: Path number (1-indexed)
+        total_paths: Total number of paths
+        passage_id_mapping: Optional mapping from passage names to random IDs
+
+    Returns:
+        Raw text with metadata headers and unprocessed Twee link syntax
+    """
+    # Import dependencies from parent module
+    import sys
+    from pathlib import Path
+    parent_dir = Path(__file__).parent.parent
+    if str(parent_dir) not in sys.path:
+        sys.path.insert(0, str(parent_dir))
+    from generator import calculate_path_hash
+
+    # Import format_passage_text_raw from path_generator module
+    sys.path.insert(0, str(Path(__file__).parent))
+    from path_generator import format_passage_text_raw
+
+    lines = []
+
+    # Always include metadata for raw format
+    lines.append("=" * 80)
+    lines.append(f"PATH {path_num} of {total_paths}")
+    lines.append("=" * 80)
+    # Use IDs in route if mapping provided
+    if passage_id_mapping:
+        route_with_ids = ' → '.join([passage_id_mapping.get(p, p) for p in path])
+        lines.append(f"Route: {route_with_ids}")
+    else:
+        lines.append(f"Route: {' → '.join(path)}")
+    lines.append(f"Length: {len(path)} passages")
+    lines.append(f"Path ID: {calculate_path_hash(path, passages)}")
+    lines.append("=" * 80)
+    lines.append("")
+
+    for passage_name in path:
+        if passage_name not in passages:
+            # Use ID if mapping provided
+            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+            lines.append(f"\n[PASSAGE: {display_name}]")
+            lines.append("[Passage not found]")
+            lines.append("")
+            continue
+
+        passage = passages[passage_name]
+
+        # Use random ID instead of passage name if mapping provided
+        display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
+        lines.append(f"[PASSAGE: {display_name}]")
+        lines.append("")
+
+        # Use raw formatting to preserve [[link]] syntax
+        raw_text = format_passage_text_raw(passage['text'])
+
+        lines.append(raw_text)
+        lines.append("")
+
+    return '\n'.join(lines)
+
+
 def generate_outputs(
     story_data: Dict,
     passages: Dict,
@@ -291,6 +364,21 @@ def generate_outputs(
         with open(text_file, 'w', encoding='utf-8') as f:
             f.write(text_content)
 
+    # Generate raw text files with unprocessed Twee syntax (for IF validator)
+    raw_dir = output_dir / 'allpaths-raw'
+    raw_dir.mkdir(exist_ok=True)
+
+    for i, path in enumerate(all_paths, 1):
+        path_hash = calculate_path_hash(path, passages)
+        # Generate raw text with preserved [[link]] syntax
+        text_content = generate_path_text_raw(path, passages, i, len(all_paths),
+                                              passage_id_mapping=passage_id_mapping)
+
+        # Use content-based hash only (no sequential index)
+        text_file = raw_dir / f'path-{path_hash}.txt'
+        with open(text_file, 'w', encoding='utf-8') as f:
+            f.write(text_content)
+
     # Save validation cache if provided
     if cache_file:
         save_validation_cache(cache_file, validation_cache)
@@ -300,11 +388,13 @@ def generate_outputs(
         'html_file': str(html_file),
         'text_dir': str(text_dir),
         'metadata_dir': str(continuity_dir),
+        'raw_dir': str(raw_dir),
         'cache_file': str(cache_file) if cache_file else None,
         'total_paths': len(all_paths),
         'files_generated': {
             'html': 1,
             'clean_text': len(all_paths),
-            'metadata_text': len(all_paths)
+            'metadata_text': len(all_paths),
+            'raw_text': len(all_paths)
         }
     }

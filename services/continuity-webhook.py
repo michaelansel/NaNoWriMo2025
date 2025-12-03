@@ -942,11 +942,13 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     issues = path_result.get("issues", [])
 
                     # Run Interactive Fiction validation for this path
+                    # IF validator uses allpaths-raw to see original Twee syntax (choice markers)
                     if_result = None
-                    text_file = text_dir / f"path-{path_id}.txt"
-                    if text_file.exists():
+                    raw_dir = text_dir.parent / 'allpaths-raw'
+                    raw_file = raw_dir / f"path-{path_id}.txt"
+                    if raw_file.exists():
                         try:
-                            story_text = text_file.read_text()
+                            story_text = raw_file.read_text()
                             if_result = validate_interactive_fiction_style(
                                 passage_text=story_text,
                                 passage_id=path_id,

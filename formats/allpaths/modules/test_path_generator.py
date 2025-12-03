@@ -376,6 +376,33 @@ def test_format_passage_text_preserves_prose():
     assert 'You can' in formatted
     assert 'or' in formatted
 
+@test("format_passage_text_raw - preserves Twee link syntax")
+def test_format_passage_text_raw_preserves_links():
+    """Test that format_passage_text_raw preserves [[link]] markers"""
+    from path_generator import format_passage_text_raw
+
+    text = 'You can [[Continue->NextPassage]] or [[GoBack]].'
+    raw = format_passage_text_raw(text)
+
+    # Should preserve [[ and ]] markers
+    assert '[[Continue->NextPassage]]' in raw, "Should preserve [[Display->Target]] syntax"
+    assert '[[GoBack]]' in raw, "Should preserve [[Target]] syntax"
+    assert 'You can' in raw, "Should preserve prose"
+    assert 'or' in raw, "Should preserve prose"
+
+@test("format_passage_text_raw - preserves all link formats")
+def test_format_passage_text_raw_all_formats():
+    """Test that format_passage_text_raw preserves all Twee link formats"""
+    from path_generator import format_passage_text_raw
+
+    text = '[[Target]] and [[Display->Target]] and [[Target<-Display]]'
+    raw = format_passage_text_raw(text)
+
+    # Should preserve all link formats
+    assert '[[Target]]' in raw
+    assert '[[Display->Target]]' in raw
+    assert '[[Target<-Display]]' in raw
+
 # ============================================================================
 # INTEGRATION TESTS
 # ============================================================================
@@ -437,6 +464,8 @@ def run_all_tests():
     test_calculate_path_hash_consistent()
     test_calculate_path_hash_content_change()
     test_format_passage_text_preserves_prose()
+    test_format_passage_text_raw_preserves_links()
+    test_format_passage_text_raw_all_formats()
 
     # Integration tests
     print()

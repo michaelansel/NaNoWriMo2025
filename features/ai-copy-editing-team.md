@@ -297,6 +297,13 @@ These are directional goals we cannot directly measure but inform our design dec
 - [ ] When configuration missing, defaults to second-person present tense (traditional CYOA)
 - [ ] Configuration validation succeeds for valid values: perspective ("first-person", "second-person", "third-person"), tense ("past", "present")
 
+*Input Requirements (Interactive Fiction Editor):*
+- [ ] Validator receives unprocessed Twee passage text with choice markers intact
+- [ ] Choice markers preserved in formats: `[[Target]]`, `[[Display->Target]]`, `[[Target<-Display]]`
+- [ ] Validator accurately counts choices per passage for pacing validation
+- [ ] Validator detects malformed choice syntax (missing brackets, broken arrows)
+- [ ] Validator distinguishes between zero choices (linear) vs filtered choices (processed)
+
 *POV/Tense Consistency Validation:*
 - [ ] Detects POV inconsistencies: switching between first/second/third person within passage
 - [ ] Detects tense inconsistencies: switching between past/present within passage
