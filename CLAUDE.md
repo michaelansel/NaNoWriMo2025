@@ -263,6 +263,37 @@ Task tool invocation:
 
 The agent file provides the persona's role, boundaries, and guidelines. The Router's prompt provides the specific context and task.
 
+### Resuming vs Starting New Subagents
+
+The Task tool supports a `resume` parameter that continues a previous subagent conversation instead of starting fresh. Each subagent execution has a unique `agentId` that can be used to resume it.
+
+**When to start a NEW subagent** (default):
+- New task or topic, even for the same persona
+- Previous task was completed successfully
+- Context from previous conversation isn't relevant
+- Clean slate would be more efficient than accumulated context
+
+**When to RESUME a subagent**:
+- Persona paused to request peer consultation and is waiting for input
+- User provided an answer to a specific question the persona asked
+- Continuing iterative refinement on the same artifact
+- Multi-step workflow where the persona needs to build on prior findings
+
+**Guidance** (not hard rules):
+- Bias towards new subagents for distinct tasks—fresh context is often cleaner
+- Resume when the persona explicitly requested input and is waiting for a response
+- If unsure, consider: "Would replaying context be wasteful, or would fresh context be clearer?"
+- Resume is especially useful when a persona said "MUST consult with [peer]"—after getting peer input, resume the original persona with that feedback
+
+**Example resume scenario**:
+```
+1. Spawn Developer to implement feature
+2. Developer says: "Requirements unclear. MUST consult PM: [specific question]"
+3. Spawn PM to answer the question
+4. PM provides clarification
+5. RESUME Developer (not new) with PM's answer—Developer continues with full prior context
+```
+
 ### Parallel Subagent Invocations
 
 Router can spawn multiple subagents simultaneously, but with a constraint:
