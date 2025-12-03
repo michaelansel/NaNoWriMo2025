@@ -397,14 +397,19 @@ def sanitize_ai_content(text: str) -> str:
     return text
 
 
-def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only', limit=None) -> dict:
+def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only', limit=None, specific_paths=None) -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
-        limit_str = f" limit={limit}" if limit else ""
-        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}{limit_str}")
+        params = []
+        if limit:
+            params.append(f"limit={limit}")
+        if specific_paths:
+            params.append(f"paths={len(specific_paths)}")
+        params_str = f" ({', '.join(params)})" if params else ""
+        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}{params_str}")
 
-        # Call the checker function directly with progress callback, cancel event, mode, and limit
-        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode, limit)
+        # Call the checker function directly with progress callback, cancel event, mode, limit, and specific_paths
+        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode, limit, specific_paths)
 
         return results
 
@@ -718,7 +723,7 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
         return None
 
 
-def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only', commit_sha=None, limit=None):
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only', commit_sha=None, limit=None, specific_paths=None):
     """Process webhook in background thread.
 
     Args:
@@ -728,6 +733,7 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
         mode: Validation mode ('new-only', 'modified', 'all')
         commit_sha: Optional commit SHA to load cache from (defaults to branch HEAD)
         limit: Optional limit on number of paths to check (for testing)
+        specific_paths: Optional list of specific path IDs to check (overrides mode)
     """
     # Use file-based cancellation event for cross-worker support
     cancel_event = FileCancellationEvent(workflow_id)
@@ -843,6 +849,26 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
             unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
+
+            # Filter to specific paths if specified (overrides mode-based selection)
+            if specific_paths:
+                original_count = len(unvalidated)
+                # Get all paths from text_dir for matching (in case specified paths aren't in unvalidated)
+                all_text_files = list(text_dir.glob("path-*.txt"))
+                all_path_ids = {f.stem.replace("path-", ""): f for f in all_text_files}
+
+                # Filter to only specified paths that exist
+                matched_paths = []
+                for path_id in specific_paths:
+                    if path_id in all_path_ids:
+                        matched_paths.append((path_id, all_path_ids[path_id]))
+                    else:
+                        app.logger.warning(f"[Background] Specified path {path_id} not found in artifacts")
+
+                unvalidated = matched_paths
+                app.logger.info(f"[Background] Filtering to {len(unvalidated)} specific paths (from {original_count} available)")
+                stats['checked'] = len(unvalidated)
+                stats['skipped'] = original_count - len(unvalidated)
 
             # Apply limit if specified (useful for testing)
             if limit and len(unvalidated) > limit:
@@ -1059,8 +1085,8 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                 except Exception as e:
                     app.logger.error(f"[Background] Error in progress callback: {e}", exc_info=True)
 
-            # Run continuity check with progress callback, cancel event, mode, and limit
-            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode, limit)
+            # Run continuity check with progress callback, cancel event, mode, limit, and specific_paths
+            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode, limit, specific_paths)
 
             # Check if job was cancelled during validation
             if cancel_event.is_set():
@@ -1432,12 +1458,18 @@ def handle_check_continuity_command(payload):
         app.logger.info(f"Ignoring bot's own comment")
         return jsonify({"message": "Ignoring bot's own comment"}), 200
 
-    # Parse mode and optional limit from command
+    # Parse mode and optional parameters from command
     mode = parse_check_command_mode(comment_body)
     limit = parse_check_command_limit(comment_body)
+    specific_paths = parse_check_command_paths(comment_body)
 
-    limit_str = f" limit={limit}" if limit else ""
-    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode}{limit_str} from {username}")
+    params = []
+    if limit:
+        params.append(f"limit={limit}")
+    if specific_paths:
+        params.append(f"paths={','.join(specific_paths)}")
+    params_str = f" ({', '.join(params)})" if params else ""
+    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode}{params_str} from {username}")
 
     # Get PR info to find the latest commit
     pr_info = get_pr_info(pr_number)
@@ -1497,7 +1529,7 @@ def handle_check_continuity_command(payload):
 
     thread = threading.Thread(
         target=process_webhook_async,
-        args=(workflow_id, pr_number, artifacts_url, mode, None, limit),
+        args=(workflow_id, pr_number, artifacts_url, mode, None, limit, specific_paths),
         daemon=True
     )
     thread.start()
@@ -1505,6 +1537,8 @@ def handle_check_continuity_command(payload):
     result = {"message": "Check started", "mode": mode, "workflow_id": workflow_id}
     if limit:
         result["limit"] = limit
+    if specific_paths:
+        result["paths"] = specific_paths
     return jsonify(result), 202
 
 
@@ -2369,6 +2403,28 @@ def parse_check_command_limit(comment_body: str) -> Optional[int]:
     match = re.search(r'limit=(\d+)', comment_body, re.IGNORECASE)
     if match:
         return int(match.group(1))
+    return None
+
+
+def parse_check_command_paths(comment_body: str) -> Optional[List[str]]:
+    """Parse optional path parameter from /check-continuity command.
+
+    Supported formats:
+        /check-continuity path=0b16990d           -> ['0b16990d']
+        /check-continuity paths=0b16990d,abc123   -> ['0b16990d', 'abc123']
+        /check-continuity all                     -> None (all paths per mode)
+
+    Args:
+        comment_body: The comment text
+
+    Returns:
+        List of path IDs or None if not specified
+    """
+    # Match path= or paths= followed by comma-separated hex IDs
+    match = re.search(r'paths?=([a-f0-9,]+)', comment_body, re.IGNORECASE)
+    if match:
+        paths_str = match.group(1)
+        return [p.strip() for p in paths_str.split(',') if p.strip()]
     return None
 
 

@@ -616,7 +616,8 @@ def check_paths_with_progress(
     progress_callback: Optional[Callable[[int, int, Dict], None]] = None,
     cancel_event=None,
     mode: str = DEFAULT_MODE,
-    limit: Optional[int] = None
+    limit: Optional[int] = None,
+    specific_paths: Optional[List[str]] = None
 ) -> Dict:
     """
     Check story paths with optional progress callbacks.
@@ -629,6 +630,7 @@ def check_paths_with_progress(
         cancel_event: Optional threading.Event to signal cancellation
         mode: Validation mode ('new-only', 'modified', 'all')
         limit: Optional maximum number of paths to check (for testing)
+        specific_paths: Optional list of specific path IDs to check (overrides mode)
 
     Returns:
         Dict with checked_count, paths_with_issues, summary, mode, and statistics
@@ -644,6 +646,26 @@ def check_paths_with_progress(
 
     # Get paths to validate based on mode
     unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
+
+    # Filter to specific paths if specified (overrides mode-based selection)
+    if specific_paths:
+        original_count = len(unvalidated)
+        # Get all paths from text_dir for matching
+        all_text_files = list(text_dir.glob("path-*.txt"))
+        all_path_ids = {f.stem.replace("path-", ""): f for f in all_text_files}
+
+        # Filter to only specified paths that exist
+        matched_paths = []
+        for path_id in specific_paths:
+            if path_id in all_path_ids:
+                matched_paths.append((path_id, all_path_ids[path_id]))
+            else:
+                print(f"Warning: Specified path {path_id} not found in artifacts", file=sys.stderr)
+
+        unvalidated = matched_paths
+        print(f"Filtering to {len(unvalidated)} specific paths (from {original_count} available)", file=sys.stderr)
+        stats['checked'] = len(unvalidated)
+        stats['skipped'] = original_count - len(unvalidated)
 
     # Apply limit if specified (useful for testing)
     if limit and len(unvalidated) > limit:
