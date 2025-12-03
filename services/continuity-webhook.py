@@ -204,6 +204,46 @@ def verify_signature(payload_body: bytes, signature_header: str) -> bool:
     return hmac.compare_digest(expected_signature, github_signature)
 
 
+def read_story_style_config(artifact_dir: Path) -> Optional[Dict]:
+    """
+    Read story style configuration from StoryData.twee in the artifact.
+
+    Args:
+        artifact_dir: Root directory of extracted artifact
+
+    Returns:
+        Story style dict with perspective, protagonist, and tense, or None if not found
+    """
+    # Try to find StoryData.twee in the artifact
+    # It could be in src/StoryData.twee or dist/StoryData.twee
+    possible_paths = [
+        artifact_dir / "src" / "StoryData.twee",
+        artifact_dir / "dist" / "StoryData.twee",
+        artifact_dir / "StoryData.twee"
+    ]
+
+    for story_data_path in possible_paths:
+        if story_data_path.exists():
+            try:
+                content = story_data_path.read_text()
+                # Parse the JSON from the StoryData passage
+                # Format is: :: StoryData\n{...json...}
+                lines = content.strip().split('\n')
+                if len(lines) >= 2 and lines[0].strip() == ":: StoryData":
+                    json_content = '\n'.join(lines[1:])
+                    data = json.loads(json_content)
+                    story_style = data.get('storyStyle')
+                    if story_style:
+                        app.logger.info(f"[Interactive Fiction] Found story style config: {story_style}")
+                        return story_style
+            except Exception as e:
+                app.logger.warning(f"[Interactive Fiction] Error reading StoryData.twee from {story_data_path}: {e}")
+                continue
+
+    app.logger.info("[Interactive Fiction] No story style config found in StoryData.twee, using defaults")
+    return None
+
+
 def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
     """Download and extract a GitHub artifact.
 
@@ -983,6 +1023,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
             # Interactive Fiction style validation (always runs)
             app.logger.info(f"[Interactive Fiction] Running CYOA style validation for {results['checked_count']} paths")
 
+            # Read story style configuration from StoryData.twee
+            story_style = read_story_style_config(tmpdir_path)
+
             all_paths = results.get('all_checked_paths', [])
             for path_result in all_paths:
                 # Get the path text file
@@ -993,10 +1036,11 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     try:
                         story_text = text_file.read_text()
 
-                        # Run Interactive Fiction style validation
+                        # Run Interactive Fiction style validation with story style config
                         if_result = validate_interactive_fiction_style(
                             passage_text=story_text,
-                            passage_id=path_id
+                            passage_id=path_id,
+                            story_style=story_style
                         )
 
                         # Add to path_result

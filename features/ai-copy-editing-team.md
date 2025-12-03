@@ -100,9 +100,30 @@ For complete Story Bible feature details and two-phase model explanation, see [f
 
 **Specialty:** CYOA/choose-your-own-adventure writing style for print-format books
 
+**Story Style Configuration:**
+
+The Interactive Fiction Editor validates based on the story style configured in `src/StoryData.twee`:
+
+```json
+{
+  "storyStyle": {
+    "perspective": "third-person",
+    "protagonist": "Javlyn",
+    "tense": "past"
+  }
+}
+```
+
+**Configuration Options:**
+- **perspective**: `"first-person"`, `"second-person"`, or `"third-person"`
+- **protagonist**: Protagonist name (for third-person), or `null` for unnamed protagonist
+- **tense**: `"past"` or `"present"`
+
+If no configuration is found, defaults to second-person present tense (traditional CYOA style).
+
 **What they check:**
-- POV/Tense consistency (second person present tense)
-- Protagonist immersion (avoiding names or [Name] placeholders)
+- POV/Tense consistency (matches configured perspective and tense)
+- Protagonist consistency (for third-person: checks name usage; for second-person: avoids naming protagonist)
 - Choice quality (meaningful choices with real consequences, balanced options)
 - Pacing issues (avoiding "tunnel" sections - long stretches without choices)
 - Ending quality (satisfying endings, both good and bad)
@@ -113,7 +134,7 @@ For complete Story Bible feature details and two-phase model explanation, see [f
 - Genre conventions appropriate to the story
 
 **What they provide:**
-- Issue type (pov_consistency, protagonist_immersion, choice_quality, pacing, ending_quality)
+- Issue type (pov_consistency, protagonist_consistency, choice_quality, pacing, ending_quality)
 - Severity (critical/major/minor)
 - Description of the issue
 - Evidence quotes demonstrating the problem
@@ -123,8 +144,11 @@ For complete Story Bible feature details and two-phase model explanation, see [f
 
 Based on research into choose-your-own-adventure writing for print books:
 
-1. **Second Person Present Tense**: Written in "you" perspective with present tense for immediacy
-2. **Protagonist Immersion**: Avoid naming protagonist or using placeholders - reader IS the protagonist
+1. **POV/Tense Consistency**: Written in configured perspective (first/second/third person) with configured tense
+2. **Protagonist Handling**:
+   - **Second-person**: Avoid naming protagonist - reader IS the protagonist
+   - **Third-person**: Use protagonist name consistently throughout
+   - **First-person**: Maintain first-person perspective consistently
 3. **Meaningful Choices**: Every choice should have real consequences, avoid false choices
 4. **Balanced Options**: No choice should be obviously "best" - all should be appealing
 5. **Informed Decisions**: Provide enough context for intentional choices, not blind guessing
@@ -132,7 +156,7 @@ Based on research into choose-your-own-adventure writing for print books:
 7. **Satisfying Endings**: Both good and bad endings should feel earned, not arbitrary or punishing
 
 **Severity Rubric:**
-- **CRITICAL**: Major POV breaks (first/third person for paragraphs), named protagonist throughout, no choices (linear narrative)
+- **CRITICAL**: Major POV breaks (switching perspectives for paragraphs), protagonist name inconsistency, no choices (linear narrative)
 - **MAJOR**: Tense inconsistency, false choices (no real difference), very long tunnel sections (5+ paragraphs), clearly unbalanced choices
 - **MINOR**: Occasional POV slips, minor pacing concerns, slightly unbalanced options
 
