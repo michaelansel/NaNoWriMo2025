@@ -615,7 +615,8 @@ def check_paths_with_progress(
     cache_file: Path,
     progress_callback: Optional[Callable[[int, int, Dict], None]] = None,
     cancel_event=None,
-    mode: str = DEFAULT_MODE
+    mode: str = DEFAULT_MODE,
+    limit: Optional[int] = None
 ) -> Dict:
     """
     Check story paths with optional progress callbacks.
@@ -627,6 +628,7 @@ def check_paths_with_progress(
                           Signature: callback(current, total, path_result)
         cancel_event: Optional threading.Event to signal cancellation
         mode: Validation mode ('new-only', 'modified', 'all')
+        limit: Optional maximum number of paths to check (for testing)
 
     Returns:
         Dict with checked_count, paths_with_issues, summary, mode, and statistics
@@ -642,6 +644,13 @@ def check_paths_with_progress(
 
     # Get paths to validate based on mode
     unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
+
+    # Apply limit if specified (useful for testing)
+    if limit and len(unvalidated) > limit:
+        print(f"Applying limit={limit} to {len(unvalidated)} paths", file=sys.stderr)
+        unvalidated = unvalidated[:limit]
+        stats['checked'] = limit
+        stats['skipped'] = stats['new'] + stats['modified'] + stats['unchanged'] - limit
 
     print(f"Mode: {mode}", file=sys.stderr)
     print(f"  New: {stats['new']}, Modified: {stats['modified']}, Unchanged: {stats['unchanged']}", file=sys.stderr)
