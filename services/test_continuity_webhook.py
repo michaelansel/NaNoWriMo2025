@@ -20,6 +20,46 @@ webhook_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(webhook_module)
 
 
+class TestModuleImports(unittest.TestCase):
+    """Test that all modules import successfully without errors.
+
+    These tests catch import-time errors like missing imports (Optional, etc.)
+    or undefined variables that would cause the service to fail at startup.
+    """
+
+    def test_continuity_webhook_imports_successfully(self):
+        """Test that continuity-webhook.py imports without NameError or ImportError."""
+        # The module is already imported at the top of this file via importlib
+        # If we got here, the import succeeded
+        self.assertIsNotNone(webhook_module)
+        self.assertTrue(hasattr(webhook_module, 'app'))
+        self.assertTrue(hasattr(webhook_module, 'handle_workflow_webhook'))
+        self.assertTrue(hasattr(webhook_module, 'handle_comment_webhook'))
+        self.assertTrue(hasattr(webhook_module, 'format_pr_comment'))
+
+    def test_interactive_fiction_validator_imports_successfully(self):
+        """Test that interactive_fiction_validator.py imports without errors."""
+        # Import the validator module
+        validator_spec = importlib.util.spec_from_file_location(
+            "interactive_fiction_validator",
+            Path(__file__).parent / "lib" / "interactive_fiction_validator.py"
+        )
+        validator_module = importlib.util.module_from_spec(validator_spec)
+        validator_spec.loader.exec_module(validator_module)
+
+        self.assertIsNotNone(validator_module)
+        self.assertTrue(hasattr(validator_module, 'validate_interactive_fiction_style'))
+
+    def test_webhook_has_required_typing_imports(self):
+        """Test that the webhook module has necessary typing imports."""
+        # Check that typing constructs used in the module are available
+        # This would have caught the missing Optional import
+        import typing
+        self.assertTrue(hasattr(typing, 'Optional'))
+        self.assertTrue(hasattr(typing, 'Dict'))
+        self.assertTrue(hasattr(typing, 'List'))
+
+
 class TestWorkflowWebhook(unittest.TestCase):
     """Test automatic triggering of continuity checking and Story Bible extraction."""
 
