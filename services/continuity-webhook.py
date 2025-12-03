@@ -29,7 +29,7 @@ import re
 import jwt
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from flask import Flask, request, jsonify
 import requests
 
@@ -1407,6 +1407,7 @@ def handle_check_continuity_command(payload):
 
     # Cancel any existing checks for this PR (manual command supersedes auto-validation)
     # This prevents parallel runs and ensures the user's manual request takes priority
+    shared_state = get_shared_state()
     old_workflow_id = shared_state.cancel_existing_job(pr_number, 'continuity')
     if old_workflow_id:
         app.logger.info(f"Manual command: cancelled existing auto-validation (workflow {old_workflow_id}) for PR #{pr_number}")
