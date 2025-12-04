@@ -10,10 +10,7 @@ Tests validate that the validator can check for:
 
 import unittest
 from unittest.mock import patch, MagicMock
-from interactive_fiction_validator import (
-    validate_interactive_fiction_style,
-    VALIDATION_PROMPT
-)
+from interactive_fiction_validator import validate_interactive_fiction_style
 
 
 class TestInteractiveFictionValidator(unittest.TestCase):
@@ -141,6 +138,139 @@ What do I do?
         call_args = mock_post.call_args
         prompt = call_args[1]['json']['prompt']
         self.assertIn("second person", prompt.lower())
+
+    @patch('interactive_fiction_validator.requests.post')
+    def test_protagonist_consistency_issue_type_in_prompt(self, mock_post):
+        """Test that prompt uses 'protagonist_consistency' as issue type, not 'protagonist_immersion'."""
+        # Mock Ollama response
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            'response': '{"has_issues": false, "severity": "none", "issues": [], "summary": "No issues"}'
+        }
+        mock_post.return_value = mock_response
+
+        # Call with default second-person config (triggers protagonist validation)
+        result = validate_interactive_fiction_style(
+            passage_text=self.sample_second_person,
+            passage_id="test-protagonist-terminology"
+        )
+
+        # Check that prompt contains 'protagonist_consistency' as issue type
+        call_args = mock_post.call_args
+        prompt = call_args[1]['json']['prompt']
+        self.assertIn("protagonist_consistency", prompt)
+        self.assertNotIn("protagonist_immersion", prompt)
+
+
+class TestInteractiveFictionValidatorErrorPaths(unittest.TestCase):
+    """Test suite for error handling in Interactive Fiction validator."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.sample_passage = "You walk through the forest."
+
+    @patch('interactive_fiction_validator.requests.post')
+    def test_timeout_returns_empty_issues(self, mock_post):
+        """Test that timeout returns empty issues list, not crash."""
+        # Mock timeout exception
+        mock_post.side_effect = __import__('requests').Timeout("Connection timed out")
+
+        # Call validator
+        result = validate_interactive_fiction_style(
+            passage_text=self.sample_passage,
+            passage_id="test-timeout"
+        )
+
+        # Verify graceful degradation
+        self.assertIsNotNone(result)
+        self.assertEqual(result['has_issues'], False)
+        self.assertEqual(result['severity'], 'none')
+        self.assertEqual(result['issues'], [])
+        self.assertIn("timed out", result['summary'].lower())
+
+    @patch('interactive_fiction_validator.requests.post')
+    def test_json_decode_error_returns_empty_issues(self, mock_post):
+        """Test that JSONDecodeError returns empty issues list, not crash."""
+        # Mock response with invalid JSON
+        mock_response = MagicMock()
+        mock_response.json.side_effect = __import__('json').JSONDecodeError("Invalid JSON", "", 0)
+        mock_post.return_value = mock_response
+
+        # Call validator
+        result = validate_interactive_fiction_style(
+            passage_text=self.sample_passage,
+            passage_id="test-json-error"
+        )
+
+        # Verify graceful degradation
+        self.assertIsNotNone(result)
+        self.assertEqual(result['has_issues'], False)
+        self.assertEqual(result['severity'], 'none')
+        self.assertEqual(result['issues'], [])
+        self.assertIn("error", result['summary'].lower())
+
+    @patch('interactive_fiction_validator.requests.post')
+    def test_malformed_ai_response_returns_empty_issues(self, mock_post):
+        """Test that malformed AI response (missing expected fields) returns empty issues."""
+        # Mock response with malformed structure (no 'response' field)
+        mock_response = MagicMock()
+        mock_response.json.return_value = {
+            'unexpected_field': 'some value'
+        }
+        mock_post.return_value = mock_response
+
+        # Call validator
+        result = validate_interactive_fiction_style(
+            passage_text=self.sample_passage,
+            passage_id="test-malformed-response"
+        )
+
+        # Verify graceful degradation
+        # The parse_json_from_response should handle this gracefully
+        self.assertIsNotNone(result)
+        self.assertEqual(result['has_issues'], False)
+        self.assertEqual(result['severity'], 'none')
+        self.assertEqual(result['issues'], [])
+
+    @patch('interactive_fiction_validator.requests.post')
+    def test_http_error_returns_empty_issues(self, mock_post):
+        """Test that HTTP errors return empty issues list, not crash."""
+        # Mock HTTP error
+        mock_response = MagicMock()
+        mock_response.raise_for_status.side_effect = __import__('requests').HTTPError("500 Server Error")
+        mock_post.return_value = mock_response
+
+        # Call validator
+        result = validate_interactive_fiction_style(
+            passage_text=self.sample_passage,
+            passage_id="test-http-error"
+        )
+
+        # Verify graceful degradation
+        self.assertIsNotNone(result)
+        self.assertEqual(result['has_issues'], False)
+        self.assertEqual(result['severity'], 'none')
+        self.assertEqual(result['issues'], [])
+        self.assertIn("error", result['summary'].lower())
+
+    @patch('interactive_fiction_validator.requests.post')
+    def test_connection_error_returns_empty_issues(self, mock_post):
+        """Test that connection errors return empty issues list, not crash."""
+        # Mock connection error
+        mock_post.side_effect = __import__('requests').ConnectionError("Failed to connect")
+
+        # Call validator
+        result = validate_interactive_fiction_style(
+            passage_text=self.sample_passage,
+            passage_id="test-connection-error"
+        )
+
+        # Verify graceful degradation
+        self.assertIsNotNone(result)
+        self.assertEqual(result['has_issues'], False)
+        self.assertEqual(result['severity'], 'none')
+        self.assertEqual(result['issues'], [])
+        self.assertIn("error", result['summary'].lower())
 
 
 if __name__ == '__main__':
