@@ -137,6 +137,7 @@ jobs:
             dist/
             lib/artifacts/
             allpaths-validation-status.json
+            src/StoryData.twee
           retention-days: 30
 
       - name: Comment on PR with preview instructions

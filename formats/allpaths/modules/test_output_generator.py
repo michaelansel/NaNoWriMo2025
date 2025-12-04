@@ -401,6 +401,78 @@ def test_generate_outputs_passage_mapping():
                 has_id = any(id_val in content for id_val in passage_id_mapping.values())
                 # This is optional - may or may not use IDs
 
+@test("generate_outputs - creates raw text directory")
+def test_generate_outputs_raw_text():
+    from output_generator import generate_outputs
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_dir = Path(tmpdir)
+
+        result = generate_outputs(
+            story_data=SAMPLE_STORY_DATA,
+            passages=SAMPLE_PASSAGES,
+            all_paths=SAMPLE_PATHS,
+            output_dir=output_dir
+        )
+
+        raw_dir = output_dir / 'allpaths-raw'
+        assert raw_dir.exists(), f"Raw text directory should be created at {raw_dir}"
+        assert raw_dir.is_dir(), "allpaths-raw should be a directory"
+
+        # Should have at least one text file
+        text_files = list(raw_dir.glob('*.txt'))
+        assert len(text_files) > 0, "Should create at least one raw text file"
+
+@test("generate_outputs - raw text preserves Twee link syntax")
+def test_generate_outputs_raw_preserves_links():
+    from output_generator import generate_outputs
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_dir = Path(tmpdir)
+
+        result = generate_outputs(
+            story_data=SAMPLE_STORY_DATA,
+            passages=SAMPLE_PASSAGES,
+            all_paths=SAMPLE_PATHS,
+            output_dir=output_dir
+        )
+
+        raw_dir = output_dir / 'allpaths-raw'
+        text_files = list(raw_dir.glob('*.txt'))
+
+        # Check that raw text preserves [[link]] syntax
+        for text_file in text_files:
+            with open(text_file, 'r') as f:
+                content = f.read()
+                # Should preserve [[ and ]] markers from original Twee
+                assert '[[' in content, "Raw text should preserve [[ markers"
+                assert ']]' in content, "Raw text should preserve ]] markers"
+
+@test("generate_outputs - raw text has metadata headers")
+def test_generate_outputs_raw_has_headers():
+    from output_generator import generate_outputs
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_dir = Path(tmpdir)
+
+        result = generate_outputs(
+            story_data=SAMPLE_STORY_DATA,
+            passages=SAMPLE_PASSAGES,
+            all_paths=SAMPLE_PATHS,
+            output_dir=output_dir
+        )
+
+        raw_dir = output_dir / 'allpaths-raw'
+        text_files = list(raw_dir.glob('*.txt'))
+
+        # Check that raw text has metadata headers (like allpaths-metadata)
+        for text_file in text_files:
+            with open(text_file, 'r') as f:
+                content = f.read()
+                # Should have PATH headers and passage markers
+                assert 'PATH 1 of' in content, "Raw text should have PATH headers"
+                assert '[PASSAGE:' in content, "Raw text should have passage markers"
+
 # ============================================================================
 # RUN TESTS
 # ============================================================================
@@ -435,6 +507,9 @@ if __name__ == '__main__':
     test_generate_outputs_return_value()
     test_generate_outputs_validation_cache()
     test_generate_outputs_passage_mapping()
+    test_generate_outputs_raw_text()
+    test_generate_outputs_raw_preserves_links()
+    test_generate_outputs_raw_has_headers()
 
     # Print summary
     print()

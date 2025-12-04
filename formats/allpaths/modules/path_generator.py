@@ -112,6 +112,23 @@ def format_passage_text(text: str, selected_target: str = None) -> str:
     return re.sub(r'\[\[([^\]]+)\]\]', replace_link, text)
 
 
+def format_passage_text_raw(text: str) -> str:
+    """
+    Return passage text unmodified, preserving Twee link syntax.
+
+    This function is used for the allpaths-raw output format, which needs
+    to preserve [[link]] markers for validation tools like the Interactive
+    Fiction Editor.
+
+    Args:
+        text: The passage text to format
+
+    Returns:
+        Unmodified text with [[link]] markers preserved
+    """
+    return text
+
+
 # =============================================================================
 # HASHING AND IDENTIFICATION
 # =============================================================================

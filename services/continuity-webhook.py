@@ -29,7 +29,7 @@ import re
 import jwt
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from flask import Flask, request, jsonify
 import requests
 
@@ -49,6 +49,11 @@ sys.path.insert(0, str(Path(__file__).parent / "lib"))
 from story_bible_validator import (
     validate_against_story_bible,
     merge_validation_results
+)
+
+# Import Interactive Fiction validator (CYOA style checking)
+from interactive_fiction_validator import (
+    validate_interactive_fiction_style
 )
 
 # Import shared state for cross-worker coordination (supports multiple gunicorn workers)
@@ -197,6 +202,46 @@ def verify_signature(payload_body: bytes, signature_header: str) -> bool:
     # Compare signatures using constant-time comparison
     # WHY: Prevents timing attacks that could leak the secret
     return hmac.compare_digest(expected_signature, github_signature)
+
+
+def read_story_style_config(artifact_dir: Path) -> Optional[Dict]:
+    """
+    Read story style configuration from StoryData.twee in the artifact.
+
+    Args:
+        artifact_dir: Root directory of extracted artifact
+
+    Returns:
+        Story style dict with perspective, protagonist, and tense, or None if not found
+    """
+    # Try to find StoryData.twee in the artifact
+    # It could be in src/StoryData.twee or dist/StoryData.twee
+    possible_paths = [
+        artifact_dir / "src" / "StoryData.twee",
+        artifact_dir / "dist" / "StoryData.twee",
+        artifact_dir / "StoryData.twee"
+    ]
+
+    for story_data_path in possible_paths:
+        if story_data_path.exists():
+            try:
+                content = story_data_path.read_text()
+                # Parse the JSON from the StoryData passage
+                # Format is: :: StoryData\n{...json...}
+                lines = content.strip().split('\n')
+                if len(lines) >= 2 and lines[0].strip() == ":: StoryData":
+                    json_content = '\n'.join(lines[1:])
+                    data = json.loads(json_content)
+                    story_style = data.get('storyStyle')
+                    if story_style:
+                        app.logger.info(f"[Interactive Fiction] Found story style config: {story_style}")
+                        return story_style
+            except Exception as e:
+                app.logger.warning(f"[Interactive Fiction] Error reading StoryData.twee from {story_data_path}: {e}")
+                continue
+
+    app.logger.info("[Interactive Fiction] No story style config found in StoryData.twee, using defaults")
+    return None
 
 
 def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
@@ -352,13 +397,19 @@ def sanitize_ai_content(text: str) -> str:
     return text
 
 
-def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only') -> dict:
+def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only', limit=None, specific_paths=None) -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
-        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}")
+        params = []
+        if limit:
+            params.append(f"limit={limit}")
+        if specific_paths:
+            params.append(f"paths={len(specific_paths)}")
+        params_str = f" ({', '.join(params)})" if params else ""
+        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}{params_str}")
 
-        # Call the checker function directly with progress callback, cancel event, and mode
-        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode)
+        # Call the checker function directly with progress callback, cancel event, mode, limit, and specific_paths
+        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode, limit, specific_paths)
 
         return results
 
@@ -437,6 +488,57 @@ _No paths to check with this mode._
             comment += f"⚠️ Found world consistency issues in {world_issues_count} path(s)\n\n"
         else:
             comment += "✅ No world consistency issues detected\n\n"
+
+    # Copy Editing Team Summary - shows which editors ran and their results
+    comment += "### 📋 Copy Editing Team Summary\n\n"
+    comment += "| Editor | Status | Details |\n"
+    comment += "|--------|--------|--------|\n"
+
+    # Continuity Editor (AI-powered via Ollama)
+    continuity_issues = len(results.get("paths_with_issues", []))
+    checked_count = results.get("checked_count", 0)
+    if continuity_issues > 0:
+        comment += f"| Continuity Editor | ⚠️ {continuity_issues} issue(s) | Checked {checked_count} paths via Ollama |\n"
+    else:
+        comment += f"| Continuity Editor | ✅ Passed | Checked {checked_count} paths via Ollama |\n"
+
+    # Interactive Fiction Editor (rule-based validation)
+    if_issues_count = sum(
+        1 for p in all_checked_paths
+        if p.get('interactive_fiction_validation', {}).get('has_issues', False)
+    )
+    if_paths_checked = sum(
+        1 for p in all_checked_paths
+        if p.get('interactive_fiction_validation') is not None
+    )
+    story_style = results.get('story_style', {})
+    style_config = []
+    if story_style:
+        if story_style.get('protagonist'):
+            style_config.append(f"protagonist: {story_style['protagonist']}")
+        if story_style.get('perspective'):
+            style_config.append(f"{story_style['perspective']}")
+        if story_style.get('tense'):
+            style_config.append(f"{story_style['tense']} tense")
+    style_desc = ", ".join(style_config) if style_config else "default rules"
+
+    if if_issues_count > 0:
+        comment += f"| Interactive Fiction Editor | ⚠️ {if_issues_count} issue(s) | Checked {if_paths_checked} paths ({style_desc}) |\n"
+    else:
+        comment += f"| Interactive Fiction Editor | ✅ Passed | Checked {if_paths_checked} paths ({style_desc}) |\n"
+
+    comment += "\n"
+
+    # Detailed Interactive Fiction style validation section
+    comment += "### 📝 Interactive Fiction Style Check\n\n"
+    if story_style:
+        comment += f"**Configuration:** {style_desc}\n\n"
+    comment += "✓ Validated against CYOA best practices for print format\n"
+
+    if if_issues_count > 0:
+        comment += f"⚠️ Found style issues in {if_issues_count} path(s)\n\n"
+    else:
+        comment += "✅ No CYOA style issues detected\n\n"
 
     if not results["paths_with_issues"]:
         comment += "### ✅ All Paths Passed\n\n"
@@ -541,6 +643,31 @@ def format_path_issues(path: dict) -> str:
 
         output += "</details>\n\n"
 
+    # Interactive Fiction style issues
+    if_validation = path.get('interactive_fiction_validation')
+    if if_validation and if_validation.get('has_issues'):
+        output += "<details>\n<summary>Interactive Fiction Style Issues (CYOA Editor)</summary>\n\n"
+        output += f"_{sanitize_ai_content(if_validation.get('summary', ''))}_\n\n"
+
+        for issue in if_validation.get('issues', []):
+            issue_type = issue.get('type', 'unknown')
+            severity = issue.get('severity', 'unknown')
+            description = sanitize_ai_content(issue.get('description', ''))
+            evidence = sanitize_ai_content(issue.get('evidence', ''))
+            location = sanitize_ai_content(issue.get('location', ''))
+
+            # Format issue type for display
+            display_type = issue_type.replace('_', ' ').capitalize()
+
+            output += f"- **{display_type}** ({severity}): {description}\n"
+            if evidence:
+                output += f"  - **Evidence**: \"{evidence}\"\n"
+            if location:
+                output += f"  - **Location**: {location}\n"
+            output += "\n"
+
+        output += "</details>\n\n"
+
     return output
 
 
@@ -596,7 +723,7 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
         return None
 
 
-def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only', commit_sha=None):
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only', commit_sha=None, limit=None, specific_paths=None):
     """Process webhook in background thread.
 
     Args:
@@ -605,6 +732,8 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
         artifacts_url: URL to fetch workflow artifacts
         mode: Validation mode ('new-only', 'modified', 'all')
         commit_sha: Optional commit SHA to load cache from (defaults to branch HEAD)
+        limit: Optional limit on number of paths to check (for testing)
+        specific_paths: Optional list of specific path IDs to check (overrides mode)
     """
     # Use file-based cancellation event for cross-worker support
     cancel_event = FileCancellationEvent(workflow_id)
@@ -710,9 +839,43 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
             else:
                 app.logger.info(f"[Story Bible] No Story Bible cache available, skipping world validation")
 
+            # Load story style config BEFORE progress callback (so it's available in callback)
+            story_style = read_story_style_config(tmpdir_path)
+            if story_style:
+                app.logger.info(f"[Interactive Fiction] Using story style: {story_style}")
+            else:
+                app.logger.info("[Interactive Fiction] No story style config found, using default CYOA rules")
+
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
             unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
+
+            # Filter to specific paths if specified (overrides mode-based selection)
+            if specific_paths:
+                original_count = len(unvalidated)
+                # Get all paths from text_dir for matching (in case specified paths aren't in unvalidated)
+                all_text_files = list(text_dir.glob("path-*.txt"))
+                all_path_ids = {f.stem.replace("path-", ""): f for f in all_text_files}
+
+                # Filter to only specified paths that exist
+                matched_paths = []
+                for path_id in specific_paths:
+                    if path_id in all_path_ids:
+                        matched_paths.append((path_id, all_path_ids[path_id]))
+                    else:
+                        app.logger.warning(f"[Background] Specified path {path_id} not found in artifacts")
+
+                unvalidated = matched_paths
+                app.logger.info(f"[Background] Filtering to {len(unvalidated)} specific paths (from {original_count} available)")
+                stats['checked'] = len(unvalidated)
+                stats['skipped'] = original_count - len(unvalidated)
+
+            # Apply limit if specified (useful for testing)
+            if limit and len(unvalidated) > limit:
+                app.logger.info(f"[Background] Applying limit={limit} to {len(unvalidated)} paths")
+                unvalidated = unvalidated[:limit]
+                stats['checked'] = limit
+                stats['skipped'] = stats['new'] + stats['modified'] + stats['unchanged'] - limit
 
             if not unvalidated:
                 app.logger.info(f"[Background] No paths to check with mode '{mode}'")
@@ -813,7 +976,38 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     summary = sanitize_ai_content(translate_passage_ids(path_result.get("summary", ""), id_to_name))
                     issues = path_result.get("issues", [])
 
-                    # Choose emoji based on severity
+                    # Run Interactive Fiction validation for this path
+                    # IF validator uses allpaths-raw to see original Twee syntax (choice markers)
+                    if_result = None
+                    raw_dir = text_dir.parent / 'allpaths-raw'
+                    raw_file = raw_dir / f"path-{path_id}.txt"
+                    if raw_file.exists():
+                        try:
+                            story_text = raw_file.read_text()
+                            if_result = validate_interactive_fiction_style(
+                                passage_text=story_text,
+                                passage_id=path_id,
+                                story_style=story_style
+                            )
+                            # Store IF result in path_result for later use
+                            path_result['interactive_fiction_validation'] = if_result
+
+                            # Update severity if IF validation found more severe issues
+                            if if_result and if_result.get('has_issues'):
+                                current_severity = severity
+                                if_severity = if_result.get('severity', 'none')
+                                severity_order = {'none': 0, 'minor': 1, 'major': 2, 'critical': 3}
+                                combined_severity_value = max(
+                                    severity_order.get(current_severity, 0),
+                                    severity_order.get(if_severity, 0)
+                                )
+                                severity = [k for k, v in severity_order.items() if v == combined_severity_value][0]
+                                path_result['severity'] = severity
+                                path_result['has_issues'] = True
+                        except Exception as e:
+                            app.logger.error(f"[Interactive Fiction] Error validating path {path_id}: {e}")
+
+                    # Choose emoji based on combined severity
                     emoji = "✅"
                     if severity == "critical":
                         emoji = "🔴"
@@ -829,9 +1023,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 **Summary:** {summary}
 """
 
-                    # Add detailed issues if present
+                    # Add Continuity Editor issues if present
                     if issues:
-                        update_comment += "\n<details>\n<summary>Details</summary>\n\n"
+                        update_comment += "\n<details>\n<summary>Continuity Issues</summary>\n\n"
                         for issue in issues:
                             issue_type = issue.get("type", "unknown")
                             issue_severity = issue.get("severity", "unknown")
@@ -866,13 +1060,33 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
                         update_comment += "</details>\n"
 
+                    # Add Interactive Fiction Editor issues if present
+                    if if_result and if_result.get('has_issues'):
+                        if_issues = if_result.get('issues', [])
+                        if_summary = if_result.get('summary', 'Style issues detected')
+                        update_comment += f"\n<details>\n<summary>Interactive Fiction Style Issues ({len(if_issues)} issues)</summary>\n\n"
+                        update_comment += f"_{if_summary}_\n\n"
+                        for if_issue in if_issues:
+                            if_type = if_issue.get('type', 'unknown')
+                            if_sev = if_issue.get('severity', 'unknown')
+                            if_desc = if_issue.get('description', 'No description')
+                            if_evidence = if_issue.get('evidence', '')
+                            if_location = if_issue.get('location', '')
+
+                            update_comment += f"- **{if_type.replace('_', ' ').title()}** ({if_sev}): {if_desc}\n"
+                            if if_evidence:
+                                update_comment += f"  - **Evidence**: \"{if_evidence}\"\n"
+                            if if_location:
+                                update_comment += f"  - **Location**: {if_location}\n"
+                        update_comment += "\n</details>\n"
+
                     app.logger.info(f"[Background] Posting progress update: {current}/{total}")
                     post_pr_comment(pr_number, update_comment)
                 except Exception as e:
                     app.logger.error(f"[Background] Error in progress callback: {e}", exc_info=True)
 
-            # Run continuity check with progress callback, cancel event, and mode
-            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode)
+            # Run continuity check with progress callback, cancel event, mode, limit, and specific_paths
+            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode, limit, specific_paths)
 
             # Check if job was cancelled during validation
             if cancel_event.is_set():
@@ -936,6 +1150,36 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
                 app.logger.info(f"[Story Bible] World consistency validation complete")
 
+            # Interactive Fiction validation already ran during progress callbacks
+            # Now just update paths_with_issues with the IF results and compute summary
+            all_paths = results.get('all_checked_paths', [])
+
+            # Update paths_with_issues with IF validation results
+            paths_with_issues = results.get('paths_with_issues', [])
+            for path in paths_with_issues:
+                # Find matching path in all_checked_paths
+                path_id = path.get('id')
+                matching = [p for p in all_paths if p.get('id') == path_id]
+                if matching:
+                    # Copy interactive_fiction_validation from all_paths
+                    path['interactive_fiction_validation'] = matching[0].get('interactive_fiction_validation')
+                    path['severity'] = matching[0].get('severity')
+                    path['has_issues'] = matching[0].get('has_issues')
+
+            # Log IF validation summary
+            if_total_checked = sum(1 for p in all_paths if p.get('interactive_fiction_validation') is not None)
+            if_total_issues = sum(1 for p in all_paths if p.get('interactive_fiction_validation', {}).get('has_issues', False))
+            style_desc = []
+            if story_style:
+                if story_style.get('protagonist'):
+                    style_desc.append(f"protagonist={story_style['protagonist']}")
+                if story_style.get('perspective'):
+                    style_desc.append(f"voice={story_style['perspective']}")
+                if story_style.get('tense'):
+                    style_desc.append(f"tense={story_style['tense']}")
+            style_str = ", ".join(style_desc) if style_desc else "default config"
+            app.logger.info(f"[Interactive Fiction Editor] Summary: {if_total_checked} paths checked, {if_total_issues} with issues ({style_str})")
+
             # Translate passage IDs in final results
             if results.get("paths_with_issues"):
                 for path in results["paths_with_issues"]:
@@ -968,6 +1212,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                             quote["passage"] = id_to_name.get(passage_id, passage_id)
                                         if quote.get("text"):
                                             quote["text"] = translate_passage_ids(quote["text"], id_to_name)
+
+            # Add story style config to results for PR comment formatting
+            results['story_style'] = story_style
 
             # Format and post final summary comment
             comment = format_pr_comment(results)
@@ -1211,10 +1458,18 @@ def handle_check_continuity_command(payload):
         app.logger.info(f"Ignoring bot's own comment")
         return jsonify({"message": "Ignoring bot's own comment"}), 200
 
-    # Parse mode from command
+    # Parse mode and optional parameters from command
     mode = parse_check_command_mode(comment_body)
+    limit = parse_check_command_limit(comment_body)
+    specific_paths = parse_check_command_paths(comment_body)
 
-    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode} from {username}")
+    params = []
+    if limit:
+        params.append(f"limit={limit}")
+    if specific_paths:
+        params.append(f"paths={','.join(specific_paths)}")
+    params_str = f" ({', '.join(params)})" if params else ""
+    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode}{params_str} from {username}")
 
     # Get PR info to find the latest commit
     pr_info = get_pr_info(pr_number)
@@ -1264,6 +1519,7 @@ def handle_check_continuity_command(payload):
 
     # Cancel any existing checks for this PR (manual command supersedes auto-validation)
     # This prevents parallel runs and ensures the user's manual request takes priority
+    shared_state = get_shared_state()
     old_workflow_id = shared_state.cancel_existing_job(pr_number, 'continuity')
     if old_workflow_id:
         app.logger.info(f"Manual command: cancelled existing auto-validation (workflow {old_workflow_id}) for PR #{pr_number}")
@@ -1273,12 +1529,17 @@ def handle_check_continuity_command(payload):
 
     thread = threading.Thread(
         target=process_webhook_async,
-        args=(workflow_id, pr_number, artifacts_url, mode),
+        args=(workflow_id, pr_number, artifacts_url, mode, None, limit, specific_paths),
         daemon=True
     )
     thread.start()
 
-    return jsonify({"message": "Check started", "mode": mode, "workflow_id": workflow_id}), 202
+    result = {"message": "Check started", "mode": mode, "workflow_id": workflow_id}
+    if limit:
+        result["limit"] = limit
+    if specific_paths:
+        result["paths"] = specific_paths
+    return jsonify(result), 202
 
 
 def handle_extract_story_bible_command(payload):
@@ -2123,6 +2384,48 @@ def parse_check_command_mode(comment_body: str) -> str:
         return mode.lower()
 
     return 'new-only'  # Default if no mode specified
+
+
+def parse_check_command_limit(comment_body: str) -> Optional[int]:
+    """Parse optional limit parameter from /check-continuity command.
+
+    Supported formats:
+        /check-continuity all limit=1   -> 1
+        /check-continuity limit=3       -> 3
+        /check-continuity all           -> None (no limit)
+
+    Args:
+        comment_body: The comment text
+
+    Returns:
+        Integer limit or None if not specified
+    """
+    match = re.search(r'limit=(\d+)', comment_body, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return None
+
+
+def parse_check_command_paths(comment_body: str) -> Optional[List[str]]:
+    """Parse optional path parameter from /check-continuity command.
+
+    Supported formats:
+        /check-continuity path=0b16990d           -> ['0b16990d']
+        /check-continuity paths=0b16990d,abc123   -> ['0b16990d', 'abc123']
+        /check-continuity all                     -> None (all paths per mode)
+
+    Args:
+        comment_body: The comment text
+
+    Returns:
+        List of path IDs or None if not specified
+    """
+    # Match path= or paths= followed by comma-separated hex IDs
+    match = re.search(r'paths?=([a-f0-9,]+)', comment_body, re.IGNORECASE)
+    if match:
+        paths_str = match.group(1)
+        return [p.strip() for p in paths_str.split(',') if p.strip()]
+    return None
 
 
 def get_pr_info(pr_number: int) -> Dict:

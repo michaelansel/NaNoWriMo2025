@@ -10,6 +10,11 @@
 
 The AI Copy Editing Team is a **validation feature** that automatically checks story paths for consistency issues. Think of it as a team of specialized editors, each with their own expertise, reviewing your story together.
 
+**Current Team:**
+- **Continuity Checker** - Validates internal path consistency
+- **World Fact Checker** - Validates against Story Bible constants
+- **Interactive Fiction Editor** - Validates CYOA style for print-format books
+
 **How it works:**
 - Determines which paths need validation based on what changed in a PR
 - Each team member analyzes those paths from their specialty perspective
@@ -88,6 +93,72 @@ World Fact Checker requires the Story Bible cache to validate against. The cache
 3. World Fact Checker automatically uses cache in next validation
 
 For complete Story Bible feature details and two-phase model explanation, see [features/story-bible.md](./story-bible.md)
+
+---
+
+### Team Member #3: Interactive Fiction Editor
+
+**Specialty:** CYOA/choose-your-own-adventure writing style for print-format books
+
+**Story Style Configuration:**
+
+The Interactive Fiction Editor validates based on the story style configured in `src/StoryData.twee`:
+
+```json
+{
+  "storyStyle": {
+    "perspective": "third-person",
+    "protagonist": "Javlyn",
+    "tense": "past"
+  }
+}
+```
+
+**Configuration Options:**
+- **perspective**: `"first-person"`, `"second-person"`, or `"third-person"`
+- **protagonist**: Protagonist name (for third-person), or `null` for unnamed protagonist
+- **tense**: `"past"` or `"present"`
+
+If no configuration is found, defaults to second-person present tense (traditional CYOA style).
+
+**What they check:**
+- POV/Tense consistency (matches configured perspective and tense)
+- Protagonist consistency (for third-person: checks name usage; for second-person: avoids naming protagonist)
+- Choice quality (meaningful choices with real consequences, balanced options)
+- Pacing issues (avoiding "tunnel" sections - long stretches without choices)
+- Ending quality (satisfying endings, both good and bad)
+
+**What they DON'T check:**
+- Story quality or creativity (subjective)
+- Plot choices (author's creative decision)
+- Genre conventions appropriate to the story
+
+**What they provide:**
+- Issue type (pov_consistency, protagonist_consistency, choice_quality, pacing, ending_quality)
+- Severity (critical/major/minor)
+- Description of the issue
+- Evidence quotes demonstrating the problem
+- Location information (where in passage the issue occurs)
+
+**CYOA Best Practices Reference:**
+
+Based on research into choose-your-own-adventure writing for print books:
+
+1. **POV/Tense Consistency**: Written in configured perspective (first/second/third person) with configured tense
+2. **Protagonist Handling**:
+   - **Second-person**: Avoid naming protagonist - reader IS the protagonist
+   - **Third-person**: Use protagonist name consistently throughout
+   - **First-person**: Maintain first-person perspective consistently
+3. **Meaningful Choices**: Every choice should have real consequences, avoid false choices
+4. **Balanced Options**: No choice should be obviously "best" - all should be appealing
+5. **Informed Decisions**: Provide enough context for intentional choices, not blind guessing
+6. **Pacing**: Balance narrative flow with decision points, avoid long sequences without choices
+7. **Satisfying Endings**: Both good and bad endings should feel earned, not arbitrary or punishing
+
+**Severity Rubric:**
+- **CRITICAL**: Major POV breaks (switching perspectives for paragraphs), protagonist name inconsistency, no choices (linear narrative)
+- **MAJOR**: Tense inconsistency, false choices (no real difference), very long tunnel sections (5+ paragraphs), clearly unbalanced choices
+- **MINOR**: Occasional POV slips, minor pacing concerns, slightly unbalanced options
 
 ---
 
@@ -212,10 +283,75 @@ These are directional goals we cannot directly measure but inform our design dec
 - [ ] Continuity Checker validates path internal consistency
 - [ ] World Fact Checker loads Story Bible cache (if exists)
 - [ ] World Fact Checker validates new content against established constants
+- [ ] Interactive Fiction Editor validates CYOA style compliance (always runs)
 - [ ] PR comments have separate sections per team member
 - [ ] Clear distinction between team member findings in PR comments
 - [ ] Works gracefully if Story Bible doesn't exist yet (World Fact Checker sits out)
 - [ ] Single PR comment combines all team member reports
+
+**Interactive Fiction Editor - Detailed Acceptance Criteria:**
+
+*Configuration Loading:*
+- [ ] Loads `storyStyle` configuration from `src/StoryData.twee` on initialization
+- [ ] When configuration found, validates using specified `perspective`, `protagonist`, and `tense`
+- [ ] When configuration missing, defaults to second-person present tense (traditional CYOA)
+- [ ] Configuration validation succeeds for valid values: perspective ("first-person", "second-person", "third-person"), tense ("past", "present")
+
+*Input Requirements (Interactive Fiction Editor):*
+- [ ] Validator receives unprocessed Twee passage text with choice markers intact
+- [ ] Choice markers preserved in formats: `[[Target]]`, `[[Display->Target]]`, `[[Target<-Display]]`
+- [ ] Validator accurately counts choices per passage for pacing validation
+- [ ] Validator detects malformed choice syntax (missing brackets, broken arrows)
+- [ ] Validator distinguishes between zero choices (linear) vs filtered choices (processed)
+
+*POV/Tense Consistency Validation:*
+- [ ] Detects POV inconsistencies: switching between first/second/third person within passage
+- [ ] Detects tense inconsistencies: switching between past/present within passage
+- [ ] Assigns severity CRITICAL for multi-paragraph perspective switches
+- [ ] Assigns severity MINOR for occasional POV slips (single sentence)
+- [ ] Assigns severity MAJOR for tense inconsistency throughout passage
+- [ ] Reports issue type `pov_consistency` with evidence quotes showing the perspective/tense break
+
+*Protagonist Consistency Validation:*
+- [ ] For third-person configured: Validates protagonist name matches configured name throughout path
+- [ ] For second-person configured: Flags any protagonist naming (protagonist should remain unnamed)
+- [ ] For first-person configured: Validates first-person perspective maintained consistently
+- [ ] Assigns severity CRITICAL for protagonist name inconsistency in third-person
+- [ ] Assigns severity CRITICAL for naming protagonist in second-person (violates CYOA convention)
+- [ ] Reports issue type `protagonist_consistency` with evidence quotes showing naming issues
+
+*Choice Quality Validation:*
+- [ ] Detects false choices: options with no meaningful difference in outcomes
+- [ ] Detects unbalanced choices: one option obviously better than others (e.g., "good" vs "instant death")
+- [ ] Detects uninformed choices: insufficient context for player to make intentional decision
+- [ ] Assigns severity MAJOR for false choices (all options lead to same outcome)
+- [ ] Assigns severity MAJOR for clearly unbalanced choices
+- [ ] Reports issue type `choice_quality` with evidence quotes showing problematic choices
+
+*Pacing Validation:*
+- [ ] Detects linear narrative: passages with no choices (purely sequential)
+- [ ] Detects tunnel sections: long sequences without choices (5+ paragraphs)
+- [ ] Assigns severity CRITICAL for completely linear narrative (no choices in entire path)
+- [ ] Assigns severity MAJOR for tunnel sections exceeding 5 paragraphs without choice
+- [ ] Assigns severity MINOR for minor pacing concerns (3-4 paragraphs without choice)
+- [ ] Reports issue type `pacing` with location information showing tunnel section length
+
+*Ending Quality Validation:*
+- [ ] Validates endings feel earned and not arbitrary
+- [ ] Checks both good endings and bad endings for satisfying resolution
+- [ ] Detects arbitrary punishment endings (sudden death without foreshadowing)
+- [ ] Detects unsatisfying resolutions (abrupt endings without narrative closure)
+- [ ] Assigns severity based on how well ending follows from player choices
+- [ ] Reports issue type `ending_quality` with evidence quotes from ending passage
+
+*Result Reporting Format:*
+- [ ] Reports include issue type (pov_consistency, protagonist_consistency, choice_quality, pacing, ending_quality)
+- [ ] Reports include severity (critical/major/minor) for each issue found
+- [ ] Reports include clear description explaining the specific problem
+- [ ] Reports include evidence quotes from passages demonstrating the issue
+- [ ] Reports include location information (passage IDs where issue occurs)
+- [ ] PR comment section for Interactive Fiction Editor separates findings from other team members
+- [ ] Summary shows count of issues by severity level (critical/major/minor)
 
 ---
 
