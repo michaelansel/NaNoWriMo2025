@@ -2420,8 +2420,8 @@
       "passage_length": 2053
     },
     "Day 14 KEB": {
-      "content_hash": "adc562aa0f0b7065",
-      "extracted_at": "2025-12-02T16:39:06.856614",
+      "content_hash": "705b1f12096147aa",
+      "extracted_at": "2025-12-05T01:31:17.569370",
       "entities": {
         "characters": [
           {
@@ -2429,46 +2429,62 @@
             "title": null,
             "mentions": [
               {
-                "quote": "\"Javlyn called out, \"Hel-hello!\"",
+                "quote": "Javlyn called out, \"Hel-hello!\"",
                 "context": "dialogue"
               },
               {
-                "quote": "\"the sword lowering as the creature stayed non-aggressive\"",
+                "quote": "Javlyn asked, the sword lowering as the creature stayed non-aggressive",
                 "context": "narrative"
               },
               {
-                "quote": "\"But a lot of people think there's a monster in these caves\"",
+                "quote": "Javlyn finally said",
+                "context": "dialogue"
+              },
+              {
+                "quote": "Javlyn admitted, looking around the cavern a little more closely",
                 "context": "narrative"
               },
               {
-                "quote": "\"I'll try to spread the news\"",
+                "quote": "Javlyn finally said",
+                "context": "dialogue"
+              },
+              {
+                "quote": "Javlyn nodded, then started backing up",
                 "context": "narrative"
               },
               {
-                "quote": "\"She was just debating if she should head home and share the news or head on to the next town immediately\"",
+                "quote": "Javlyn finally turned her back",
+                "context": "narrative"
+              },
+              {
+                "quote": "She was just debating if she should head home and share the news or head on to the next town immediately",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "is a person speaking to the creature",
-                "evidence": "\"Javlyn called out, \"Hel-hello!\""
+                "fact": "is speaking to the creature",
+                "evidence": "Javlyn called out, \"Hel-hello!\""
               },
               {
-                "fact": "has a sword that she lowers during the encounter",
-                "evidence": "\"the sword lowering as the creature stayed non-aggressive\""
+                "fact": "has a sword",
+                "evidence": "the sword lowering as the creature stayed non-aggressive"
               },
               {
-                "fact": "is concerned about people being harmed by the creature",
-                "evidence": "\"But a lot of people think there's a monster in these caves\""
+                "fact": "has a mushroom in hand",
+                "evidence": "the creature took a bit of a mushroom it was still holding"
               },
               {
-                "fact": "is willing to spread news about the creature",
-                "evidence": "\"I'll try to spread the news\""
+                "fact": "is in a cave",
+                "evidence": "the creature's eyes were level with her own"
               },
               {
-                "fact": "is traveling along a road after leaving the cave",
-                "evidence": "\"She was just debating if she should head home and share the news or head on to the next town immediately\""
+                "fact": "is aware of the lantern light",
+                "evidence": "Dark and damp and full of terrifying shadows cast due to the lantern light"
+              },
+              {
+                "fact": "is debating whether to head home or to the next town",
+                "evidence": "She was just debating if she should head home and share the news or head on to the next town immediately"
               }
             ],
             "_chunk_number": 1,
@@ -2479,82 +2495,78 @@
             "title": null,
             "mentions": [
               {
-                "quote": "\"The face had a long snout with two curved horns\"",
+                "quote": "The creature stood and turned to face Javlyn",
                 "context": "narrative"
               },
               {
-                "quote": "\"wide enough Javlyn had no idea how the monster fit through the cave's entrance\"",
+                "quote": "The creature took a step forward, and Javlyn took a step back",
                 "context": "narrative"
               },
               {
-                "quote": "\"the creature stayed non-aggressive\"",
+                "quote": "The creature shook its whole body and sat back down",
                 "context": "narrative"
               },
               {
-                "quote": "\"the creature held up the hand with the mushroom then took another bite\"",
+                "quote": "The creature chirruped again",
                 "context": "narrative"
               },
               {
-                "quote": "\"The creature let out a \"week-week-week\" sound\"",
+                "quote": "The creature held up the hand with the mushroom then took another bite",
+                "context": "narrative"
+              },
+              {
+                "quote": "The creature let out a \"week-week-week\" sound",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "has a long snout and two curved horns",
-                "evidence": "\"The face had a long snout with two curved horns\""
+                "fact": "has a long snout with two curved horns",
+                "evidence": "The face had a long snout with two curved horns"
               },
               {
-                "fact": "has wide shoulders and can fit through the cave's entrance",
-                "evidence": "\"wide enough Javlyn had no idea how the monster fit through the cave's entrance\""
+                "fact": "has wide shoulders",
+                "evidence": "The shoulders were wide, wide enough"
               },
               {
-                "fact": "is non-aggressive during the encounter",
-                "evidence": "\"the creature stayed non-aggressive\""
+                "fact": "has arms that brace itself to stand",
+                "evidence": "Its arms came to brace itself to stand"
               },
               {
-                "fact": "eats mushrooms",
-                "evidence": "\"the creature held up the hand with the mushroom then took another bite\""
+                "fact": "is non-aggressive",
+                "evidence": "the creature stayed non-aggressive"
               },
               {
-                "fact": "makes a repetitive high‑pitched sound",
-                "evidence": "\"The creature let out a \"week-week-week\" sound\""
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "three travelers",
-            "title": null,
-            "mentions": [
+                "fact": "has a hand holding a mushroom",
+                "evidence": "the creature took a bit of a mushroom it was still holding"
+              },
               {
-                "quote": "\"One called out, \"Don't suppose you know of any monster infested caves nearby?\"",
-                "context": "dialogue"
-              }
-            ],
-            "facts": [
+                "fact": "makes a rumbling noise like a barn cat's purring",
+                "evidence": "the creature, which started making a rumbling noise, almost like the barn cat's purring"
+              },
               {
-                "fact": "are walking along the road and speak to Javlyn",
-                "evidence": "\"One called out, \"Don't suppose you know of any monster infested caves nearby?\""
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "the sole female",
-            "title": null,
-            "mentions": [
+                "fact": "has a mouth that chirruped",
+                "evidence": "The creature took a step forward, and Javlyn took a step back. At her movement it stopped and chirruped"
+              },
               {
-                "quote": "\"Aye, you've got our word,\" the sole female of the group said",
-                "context": "dialogue"
-              }
-            ],
-            "facts": [
+                "fact": "has a mouth that chirruped again",
+                "evidence": "The creature chirruped again"
+              },
               {
-                "fact": "is part of the group of travelers and gives a promise to leave the creature alone",
-                "evidence": "\"Aye, you've got our word,\" the sole female of the group said"
+                "fact": "has a mouth that chirruped again and took another bite",
+                "evidence": "The creature held up the hand with the mushroom then took another bite"
+              },
+              {
+                "fact": "has a mouth that chirruped again and said \"week-week-week\"",
+                "evidence": "The creature let out a \"week-week-week\" sound"
+              },
+              {
+                "fact": "has a mouth that chirruped again and said \"week-week-week\" and made a rumbling noise",
+                "evidence": "The creature let out a \"week-week-week\" sound, it was repetitive and higher pitched and strangely cute for such a large creature"
+              },
+              {
+                "fact": "has a mouth that chirruped again and said \"week-week-week\" and made a rumbling noise and started making a rumbling noise",
+                "evidence": "The creature let out a \"week-week-week\" sound, it was repetitive and higher pitched and strangely cute for such a large creature"
               }
             ],
             "_chunk_number": 1,
@@ -2567,22 +2579,26 @@
             "title": null,
             "mentions": [
               {
-                "quote": "\"how the monster fit through the cave's entrance\"",
+                "quote": "the cave's entrance",
                 "context": "narrative"
               },
               {
-                "quote": "\"Dark and damp and full of terrifying shadows cast due to the lantern light\"",
+                "quote": "the cavern",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "has an entrance that the creature can fit through",
-                "evidence": "\"how the monster fit through the cave's entrance\""
+                "fact": "has an entrance that the monster fit through",
+                "evidence": "how the monster fit through the cave's entrance"
               },
               {
-                "fact": "contains a cavern with lantern light",
-                "evidence": "\"Dark and damp and full of terrifying shadows cast due to the lantern light\""
+                "fact": "contains a cavern",
+                "evidence": "still across the cavern from the creature"
+              },
+              {
+                "fact": "has lantern light",
+                "evidence": "full of terrifying shadows cast due to the lantern light"
               }
             ],
             "_chunk_number": 1,
@@ -2593,14 +2609,22 @@
             "title": null,
             "mentions": [
               {
-                "quote": "\"still across the cavern from the creature\"",
+                "quote": "still across the cavern from the creature",
+                "context": "narrative"
+              },
+              {
+                "quote": "looking around the cavern a little more closely",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "is part of the cave where the encounter takes place",
-                "evidence": "\"still across the cavern from the creature\""
+                "fact": "is within the cave",
+                "evidence": "still across the cavern from the creature"
+              },
+              {
+                "fact": "has lantern light",
+                "evidence": "full of terrifying shadows cast due to the lantern light"
               }
             ],
             "_chunk_number": 1,
@@ -2611,14 +2635,32 @@
             "title": null,
             "mentions": [
               {
-                "quote": "\"when she spotted three travelers walking along the road\"",
+                "quote": "spotted three travelers walking along the road",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "is where Javlyn meets three travelers",
-                "evidence": "\"when she spotted three travelers walking along the road\""
+                "fact": "has travelers walking along it",
+                "evidence": "spotted three travelers walking along the road"
+              }
+            ],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "town",
+            "title": null,
+            "mentions": [
+              {
+                "quote": "head on to the next town immediately",
+                "context": "narrative"
+              }
+            ],
+            "facts": [
+              {
+                "fact": "is the next destination Javlyn might head to",
+                "evidence": "head on to the next town immediately"
               }
             ],
             "_chunk_number": 1,
@@ -2627,18 +2669,26 @@
         ],
         "items": [
           {
-            "name": "lantern",
+            "name": "sword",
             "title": null,
             "mentions": [
               {
-                "quote": "\"due to the lantern light\"",
+                "quote": "the sword lowering as the creature stayed non-aggressive",
+                "context": "narrative"
+              },
+              {
+                "quote": "she wasn't stupid enough to sheath it right now",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "provides light in the cavern",
-                "evidence": "\"due to the lantern light\""
+                "fact": "is lowered by Javlyn",
+                "evidence": "the sword lowering as the creature stayed non-aggressive"
+              },
+              {
+                "fact": "is not sheathed",
+                "evidence": "she wasn't stupid enough to sheath it right now"
               }
             ],
             "_chunk_number": 1,
@@ -2649,22 +2699,40 @@
             "title": null,
             "mentions": [
               {
-                "quote": "\"the creature held up the hand with the mushroom then took another bite\"",
+                "quote": "the creature took a bit of a mushroom it was still holding",
                 "context": "narrative"
               },
               {
-                "quote": "\"the mushrooms are delicious\"",
+                "quote": "The creature held up the hand with the mushroom then took another bite",
                 "context": "narrative"
               }
             ],
             "facts": [
               {
-                "fact": "is eaten by the creature",
-                "evidence": "\"the creature held up the hand with the mushroom then took another bite\""
+                "fact": "is being held by the creature",
+                "evidence": "the creature took a bit of a mushroom it was still holding"
               },
               {
-                "fact": "is considered delicious by the creature",
-                "evidence": "\"the mushrooms are delicious\""
+                "fact": "is being eaten by the creature",
+                "evidence": "The creature held up the hand with the mushroom then took another bite"
+              }
+            ],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          },
+          {
+            "name": "lantern",
+            "title": null,
+            "mentions": [
+              {
+                "quote": "full of terrifying shadows cast due to the lantern light",
+                "context": "narrative"
+              }
+            ],
+            "facts": [
+              {
+                "fact": "provides light in the cave",
+                "evidence": "full of terrifying shadows cast due to the lantern light"
               }
             ],
             "_chunk_number": 1,
@@ -2677,7 +2745,7 @@
       "facts": [],
       "chunks_processed": 1,
       "passage_name": "Day 14 KEB",
-      "passage_length": 4213
+      "passage_length": 3289
     },
     "Day 15 KEB": {
       "content_hash": "d39bb14f68ff963e",
@@ -14876,6 +14944,63 @@
       "chunks_processed": 1,
       "passage_name": "wait for travelers to approach",
       "passage_length": 1132
+    },
+    "defend the creature": {
+      "content_hash": "425aeef886654c93",
+      "extracted_at": "2025-12-05T01:31:44.504200",
+      "entities": {
+        "characters": [],
+        "locations": [],
+        "items": [],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "defend the creature",
+      "passage_length": 995
+    },
+    "mansel-20251125": {
+      "content_hash": "5854cf96f3994e38",
+      "extracted_at": "2025-12-05T01:32:13.757920",
+      "entities": {
+        "characters": [
+          {
+            "name": "Javlyn",
+            "title": null,
+            "mentions": [
+              {
+                "quote": "Nope, nothing around here, and I would certainly know,",
+                "context": "dialogue"
+              },
+              {
+                "quote": "Javlyn lied to the strangers",
+                "context": "dialogue"
+              }
+            ],
+            "facts": [
+              {
+                "fact": "lied to the strangers",
+                "evidence": "Javlyn lied to the strangers"
+              },
+              {
+                "fact": "claims to know the area",
+                "evidence": "I would certainly know"
+              }
+            ],
+            "_chunk_number": 1,
+            "_chunk_total": 1
+          }
+        ],
+        "locations": [],
+        "items": [],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "mansel-20251125",
+      "passage_length": 86
     }
   },
   "summarized_facts": {
@@ -14888,21 +15013,6 @@
             {
               "passage": "Day 11 KEB",
               "quote": "Javlyn glanced back at the cave entrance"
-            }
-          ],
-          "source_entity": "Cave"
-        },
-        {
-          "fact": "Cave: has an entrance that the creature can fit through",
-          "type": "world_rule",
-          "evidence": [
-            {
-              "passage": "Day 14 KEB",
-              "quote": "\"how the monster fit through the cave's entrance\""
-            },
-            {
-              "passage": "proactive attack",
-              "quote": "Javlyn had no idea how the monster fit through the cave's entrance"
             }
           ],
           "source_entity": "Cave"
@@ -14925,6 +15035,17 @@
             {
               "passage": "Day 2 KEB",
               "quote": "the floor of the cave continued on past the point she could fit"
+            }
+          ],
+          "source_entity": "Cave"
+        },
+        {
+          "fact": "Cave: has an entrance that the creature can fit through",
+          "type": "world_rule",
+          "evidence": [
+            {
+              "passage": "proactive attack",
+              "quote": "Javlyn had no idea how the monster fit through the cave's entrance"
             }
           ],
           "source_entity": "Cave"
@@ -15347,12 +15468,38 @@
           "source_entity": "Cave"
         },
         {
-          "fact": "Cave: contains a cavern with lantern light",
+          "fact": "Cave: has an entrance that the monster fit through",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"Dark and damp and full of terrifying shadows cast due to the lantern light\""
+              "quote": "how the monster fit through the cave's entrance"
+            }
+          ],
+          "source_entity": "Cave"
+        },
+        {
+          "fact": "Cave: contains a cavern",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "still across the cavern from the creature"
+            },
+            {
+              "passage": "Day 17 KEB",
+              "quote": "By the time she exited the tunnel into a large cavern,"
+            }
+          ],
+          "source_entity": "Cave"
+        },
+        {
+          "fact": "Cave: has lantern light",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "full of terrifying shadows cast due to the lantern light"
             }
           ],
           "source_entity": "Cave"
@@ -15364,17 +15511,6 @@
             {
               "passage": "Day 15 KEB",
               "quote": "Grouped together at the back of the cave were three, no four creatures"
-            }
-          ],
-          "source_entity": "Cave"
-        },
-        {
-          "fact": "Cave: contains a cavern",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "Day 17 KEB",
-              "quote": "By the time she exited the tunnel into a large cavern,"
             }
           ],
           "source_entity": "Cave"
@@ -15718,6 +15854,17 @@
           "source_entity": "Cave"
         },
         {
+          "fact": "Town: is the next destination Javlyn might head to",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "head on to the next town immediately"
+            }
+          ],
+          "source_entity": "Town"
+        },
+        {
           "fact": "Town: is a place people run away from the road out of town",
           "type": "setting",
           "evidence": [
@@ -15938,12 +16085,23 @@
           "source_entity": "Cavern"
         },
         {
-          "fact": "Cavern: is part of the cave where the encounter takes place",
+          "fact": "Cavern: is within the cave",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"still across the cavern from the creature\""
+              "quote": "still across the cavern from the creature"
+            }
+          ],
+          "source_entity": "Cavern"
+        },
+        {
+          "fact": "Cavern: has lantern light",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "full of terrifying shadows cast due to the lantern light"
             }
           ],
           "source_entity": "Cavern"
@@ -16184,12 +16342,12 @@
           "source_entity": "Road"
         },
         {
-          "fact": "Road: is where Javlyn meets three travelers",
+          "fact": "Road: has travelers walking along it",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"when she spotted three travelers walking along the road\""
+              "quote": "spotted three travelers walking along the road"
             }
           ],
           "source_entity": "Road"
@@ -16957,10 +17115,6 @@
             {
               "passage": "Day 10 KEB",
               "quote": "the flickering lantern light sent shadows jumping along the walls"
-            },
-            {
-              "passage": "Day 14 KEB",
-              "quote": "\"due to the lantern light\""
             }
           ],
           "source_entity": "Lantern"
@@ -16972,6 +17126,29 @@
             {
               "passage": "Day 10 KEB",
               "quote": "the air was cool, though it felt warmer than outside from the lack of wind. It was dark, with nothing but her lantern providing light"
+            }
+          ],
+          "source_entity": "Lantern"
+        },
+        {
+          "fact": "Lantern: provides light in the cave",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "full of terrifying shadows cast due to the lantern light"
+            },
+            {
+              "passage": "Day 29 KEB",
+              "quote": "The lantern revealed there was a passage, though ceiling was low on this side of the cavern."
+            },
+            {
+              "passage": "Day 3 KEB",
+              "quote": "She watched wearily by lantern light as it fell and twitched."
+            },
+            {
+              "passage": "Re-enter the cave",
+              "quote": "awash in the light of the lantern"
             }
           ],
           "source_entity": "Lantern"
@@ -17075,25 +17252,6 @@
             {
               "passage": "Day 29 KEB",
               "quote": "Javlyn had to fumble a bit, but she was able to attach the lantern to her belt securely."
-            }
-          ],
-          "source_entity": "Lantern"
-        },
-        {
-          "fact": "Lantern: provides light in the cave",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "Day 29 KEB",
-              "quote": "The lantern revealed there was a passage, though ceiling was low on this side of the cavern."
-            },
-            {
-              "passage": "Day 3 KEB",
-              "quote": "She watched wearily by lantern light as it fell and twitched."
-            },
-            {
-              "passage": "Re-enter the cave",
-              "quote": "awash in the light of the lantern"
             }
           ],
           "source_entity": "Lantern"
@@ -17639,6 +17797,17 @@
           "source_entity": "Sword"
         },
         {
+          "fact": "Sword: is not sheathed",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "she wasn't stupid enough to sheath it right now"
+            }
+          ],
+          "source_entity": "Sword"
+        },
+        {
           "fact": "Sword: is used as a tool to move a boulder",
           "type": "setting",
           "evidence": [
@@ -18073,23 +18242,23 @@
           "source_entity": "Two Packs"
         },
         {
-          "fact": "Mushroom: is eaten by the creature",
+          "fact": "Mushroom: is being held by the creature",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"the creature held up the hand with the mushroom then took another bite\""
+              "quote": "the creature took a bit of a mushroom it was still holding"
             }
           ],
           "source_entity": "Mushroom"
         },
         {
-          "fact": "Mushroom: is considered delicious by the creature",
+          "fact": "Mushroom: is being eaten by the creature",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"the mushrooms are delicious\""
+              "quote": "The creature held up the hand with the mushroom then took another bite"
             }
           ],
           "source_entity": "Mushroom"
@@ -19058,6 +19227,17 @@
           "source_entity": "Javlyn"
         },
         {
+          "fact": "Javlyn: is aware of the lantern light",
+          "type": "timeline",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "Dark and damp and full of terrifying shadows cast due to the lantern light"
+            }
+          ],
+          "source_entity": "Javlyn"
+        },
+        {
           "fact": "Javlyn: is the narrator and main protagonist",
           "type": "timeline",
           "evidence": [
@@ -19438,6 +19618,17 @@
             }
           ],
           "source_entity": "Javlyn"
+        },
+        {
+          "fact": "The Creature: has a hand holding a mushroom",
+          "type": "timeline",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "the creature took a bit of a mushroom it was still holding"
+            }
+          ],
+          "source_entity": "The Creature"
         },
         {
           "fact": "Terence: introduced himself and said Kian and Danita were with him",
@@ -20640,6 +20831,17 @@
           "source_entity": "Shield"
         },
         {
+          "fact": "Sword: is lowered by Javlyn",
+          "type": "timeline",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "the sword lowering as the creature stayed non-aggressive"
+            }
+          ],
+          "source_entity": "Sword"
+        },
+        {
           "fact": "Sword: was held by Javlyn to fight the monster",
           "type": "timeline",
           "evidence": [
@@ -21334,6 +21536,10 @@
                 "quote": "she chose to leave Nivek's sword sheathed in favor of her own lantern"
               },
               {
+                "passage": "Day 14 KEB",
+                "quote": "the sword lowering as the creature stayed non-aggressive"
+              },
+              {
                 "passage": "Day 17 KEB",
                 "quote": "Just before entering the cave she grabbed Nivek's sword."
               },
@@ -21623,47 +21829,38 @@
             ]
           },
           {
-            "fact": "is a person speaking to the creature",
+            "fact": "is speaking to the creature",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"Javlyn called out, \"Hel-hello!\""
+                "quote": "Javlyn called out, \"Hel-hello!\""
               }
             ]
           },
           {
-            "fact": "has a sword that she lowers during the encounter",
+            "fact": "has a mushroom in hand",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"the sword lowering as the creature stayed non-aggressive\""
+                "quote": "the creature took a bit of a mushroom it was still holding"
               }
             ]
           },
           {
-            "fact": "is concerned about people being harmed by the creature",
+            "fact": "is in a cave",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"But a lot of people think there's a monster in these caves\""
+                "quote": "the creature's eyes were level with her own"
               }
             ]
           },
           {
-            "fact": "is willing to spread news about the creature",
+            "fact": "is debating whether to head home or to the next town",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"I'll try to spread the news\""
-              }
-            ]
-          },
-          {
-            "fact": "is traveling along a road after leaving the cave",
-            "evidence": [
-              {
-                "passage": "Day 14 KEB",
-                "quote": "\"She was just debating if she should head home and share the news or head on to the next town immediately\""
+                "quote": "She was just debating if she should head home and share the news or head on to the next town immediately"
               }
             ]
           },
@@ -23085,6 +23282,24 @@
                 "quote": "\"Well met,\" Javlyn responded, \"I am Javlyn.\""
               }
             ]
+          },
+          {
+            "fact": "lied to the strangers",
+            "evidence": [
+              {
+                "passage": "mansel-20251125",
+                "quote": "Javlyn lied to the strangers"
+              }
+            ]
+          },
+          {
+            "fact": "claims to know the area",
+            "evidence": [
+              {
+                "passage": "mansel-20251125",
+                "quote": "I would certainly know"
+              }
+            ]
           }
         ],
         "zero_action_state": [],
@@ -23144,7 +23359,8 @@
           "mansel-20251112",
           "one creature",
           "proactive attack",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "mansel-20251125"
         ],
         "mentions": [
           {
@@ -23348,27 +23564,37 @@
             "passage": "Day 13 KEB"
           },
           {
-            "quote": "\"Javlyn called out, \"Hel-hello!\"",
+            "quote": "Javlyn called out, \"Hel-hello!\"",
             "context": "dialogue",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"the sword lowering as the creature stayed non-aggressive\"",
+            "quote": "Javlyn asked, the sword lowering as the creature stayed non-aggressive",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"But a lot of people think there's a monster in these caves\"",
+            "quote": "Javlyn finally said",
+            "context": "dialogue",
+            "passage": "Day 14 KEB"
+          },
+          {
+            "quote": "Javlyn admitted, looking around the cavern a little more closely",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"I'll try to spread the news\"",
+            "quote": "Javlyn nodded, then started backing up",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"She was just debating if she should head home and share the news or head on to the next town immediately\"",
+            "quote": "Javlyn finally turned her back",
+            "context": "narrative",
+            "passage": "Day 14 KEB"
+          },
+          {
+            "quote": "She was just debating if she should head home and share the news or head on to the next town immediately",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
@@ -24546,6 +24772,16 @@
             "quote": "\"Well met,\" Javlyn responded, \"I am Javlyn.\"",
             "context": "dialogue",
             "passage": "wait for travelers to approach"
+          },
+          {
+            "quote": "Nope, nothing around here, and I would certainly know,",
+            "context": "dialogue",
+            "passage": "mansel-20251125"
+          },
+          {
+            "quote": "Javlyn lied to the strangers",
+            "context": "dialogue",
+            "passage": "mansel-20251125"
           }
         ]
       },
@@ -24615,47 +24851,101 @@
             ]
           },
           {
-            "fact": "has a long snout and two curved horns",
+            "fact": "has a long snout with two curved horns",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"The face had a long snout with two curved horns\""
+                "quote": "The face had a long snout with two curved horns"
               }
             ]
           },
           {
-            "fact": "has wide shoulders and can fit through the cave's entrance",
+            "fact": "has wide shoulders",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"wide enough Javlyn had no idea how the monster fit through the cave's entrance\""
+                "quote": "The shoulders were wide, wide enough"
               }
             ]
           },
           {
-            "fact": "is non-aggressive during the encounter",
+            "fact": "has arms that brace itself to stand",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"the creature stayed non-aggressive\""
+                "quote": "Its arms came to brace itself to stand"
               }
             ]
           },
           {
-            "fact": "eats mushrooms",
+            "fact": "is non-aggressive",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"the creature held up the hand with the mushroom then took another bite\""
+                "quote": "the creature stayed non-aggressive"
               }
             ]
           },
           {
-            "fact": "makes a repetitive high‑pitched sound",
+            "fact": "makes a rumbling noise like a barn cat's purring",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"The creature let out a \"week-week-week\" sound\""
+                "quote": "the creature, which started making a rumbling noise, almost like the barn cat's purring"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature took a step forward, and Javlyn took a step back. At her movement it stopped and chirruped"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature chirruped again"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and took another bite",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature held up the hand with the mushroom then took another bite"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and said \"week-week-week\"",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature let out a \"week-week-week\" sound"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and said \"week-week-week\" and made a rumbling noise",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature let out a \"week-week-week\" sound, it was repetitive and higher pitched and strangely cute for such a large creature"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and said \"week-week-week\" and made a rumbling noise and started making a rumbling noise",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature let out a \"week-week-week\" sound, it was repetitive and higher pitched and strangely cute for such a large creature"
               }
             ]
           }
@@ -24698,27 +24988,32 @@
             "passage": "Collect snacks"
           },
           {
-            "quote": "\"The face had a long snout with two curved horns\"",
+            "quote": "The creature stood and turned to face Javlyn",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"wide enough Javlyn had no idea how the monster fit through the cave's entrance\"",
+            "quote": "The creature took a step forward, and Javlyn took a step back",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"the creature stayed non-aggressive\"",
+            "quote": "The creature shook its whole body and sat back down",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"the creature held up the hand with the mushroom then took another bite\"",
+            "quote": "The creature chirruped again",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"The creature let out a \"week-week-week\" sound\"",
+            "quote": "The creature held up the hand with the mushroom then took another bite",
+            "context": "narrative",
+            "passage": "Day 14 KEB"
+          },
+          {
+            "quote": "The creature let out a \"week-week-week\" sound",
             "context": "narrative",
             "passage": "Day 14 KEB"
           }
@@ -27614,56 +27909,6 @@
             "quote": "the first beam of the setting sun hit Jerrick, he groaned and started to move.",
             "context": "narrative",
             "passage": "mansel-20251102"
-          }
-        ]
-      },
-      "Three Travelers": {
-        "identity": [
-          {
-            "fact": "are walking along the road and speak to Javlyn",
-            "evidence": [
-              {
-                "passage": "Day 14 KEB",
-                "quote": "\"One called out, \"Don't suppose you know of any monster infested caves nearby?\""
-              }
-            ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 14 KEB"
-        ],
-        "mentions": [
-          {
-            "quote": "\"One called out, \"Don't suppose you know of any monster infested caves nearby?\"",
-            "context": "dialogue",
-            "passage": "Day 14 KEB"
-          }
-        ]
-      },
-      "The Sole Female": {
-        "identity": [
-          {
-            "fact": "is part of the group of travelers and gives a promise to leave the creature alone",
-            "evidence": [
-              {
-                "passage": "Day 14 KEB",
-                "quote": "\"Aye, you've got our word,\" the sole female of the group said"
-              }
-            ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 14 KEB"
-        ],
-        "mentions": [
-          {
-            "quote": "\"Aye, you've got our word,\" the sole female of the group said",
-            "context": "dialogue",
-            "passage": "Day 14 KEB"
           }
         ]
       },
@@ -28521,7 +28766,7 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 0.012220621109008789,
+  "summarization_time_seconds": 0.012850284576416016,
   "categorized_facts": {
     "constants": {
       "world_rules": [
@@ -28532,21 +28777,6 @@
             {
               "passage": "Day 11 KEB",
               "quote": "Javlyn glanced back at the cave entrance"
-            }
-          ],
-          "source_entity": "Cave"
-        },
-        {
-          "fact": "Cave: has an entrance that the creature can fit through",
-          "type": "world_rule",
-          "evidence": [
-            {
-              "passage": "Day 14 KEB",
-              "quote": "\"how the monster fit through the cave's entrance\""
-            },
-            {
-              "passage": "proactive attack",
-              "quote": "Javlyn had no idea how the monster fit through the cave's entrance"
             }
           ],
           "source_entity": "Cave"
@@ -28569,6 +28799,17 @@
             {
               "passage": "Day 2 KEB",
               "quote": "the floor of the cave continued on past the point she could fit"
+            }
+          ],
+          "source_entity": "Cave"
+        },
+        {
+          "fact": "Cave: has an entrance that the creature can fit through",
+          "type": "world_rule",
+          "evidence": [
+            {
+              "passage": "proactive attack",
+              "quote": "Javlyn had no idea how the monster fit through the cave's entrance"
             }
           ],
           "source_entity": "Cave"
@@ -28991,12 +29232,38 @@
           "source_entity": "Cave"
         },
         {
-          "fact": "Cave: contains a cavern with lantern light",
+          "fact": "Cave: has an entrance that the monster fit through",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"Dark and damp and full of terrifying shadows cast due to the lantern light\""
+              "quote": "how the monster fit through the cave's entrance"
+            }
+          ],
+          "source_entity": "Cave"
+        },
+        {
+          "fact": "Cave: contains a cavern",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "still across the cavern from the creature"
+            },
+            {
+              "passage": "Day 17 KEB",
+              "quote": "By the time she exited the tunnel into a large cavern,"
+            }
+          ],
+          "source_entity": "Cave"
+        },
+        {
+          "fact": "Cave: has lantern light",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "full of terrifying shadows cast due to the lantern light"
             }
           ],
           "source_entity": "Cave"
@@ -29008,17 +29275,6 @@
             {
               "passage": "Day 15 KEB",
               "quote": "Grouped together at the back of the cave were three, no four creatures"
-            }
-          ],
-          "source_entity": "Cave"
-        },
-        {
-          "fact": "Cave: contains a cavern",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "Day 17 KEB",
-              "quote": "By the time she exited the tunnel into a large cavern,"
             }
           ],
           "source_entity": "Cave"
@@ -29362,6 +29618,17 @@
           "source_entity": "Cave"
         },
         {
+          "fact": "Town: is the next destination Javlyn might head to",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "head on to the next town immediately"
+            }
+          ],
+          "source_entity": "Town"
+        },
+        {
           "fact": "Town: is a place people run away from the road out of town",
           "type": "setting",
           "evidence": [
@@ -29582,12 +29849,23 @@
           "source_entity": "Cavern"
         },
         {
-          "fact": "Cavern: is part of the cave where the encounter takes place",
+          "fact": "Cavern: is within the cave",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"still across the cavern from the creature\""
+              "quote": "still across the cavern from the creature"
+            }
+          ],
+          "source_entity": "Cavern"
+        },
+        {
+          "fact": "Cavern: has lantern light",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "full of terrifying shadows cast due to the lantern light"
             }
           ],
           "source_entity": "Cavern"
@@ -29828,12 +30106,12 @@
           "source_entity": "Road"
         },
         {
-          "fact": "Road: is where Javlyn meets three travelers",
+          "fact": "Road: has travelers walking along it",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"when she spotted three travelers walking along the road\""
+              "quote": "spotted three travelers walking along the road"
             }
           ],
           "source_entity": "Road"
@@ -30601,10 +30879,6 @@
             {
               "passage": "Day 10 KEB",
               "quote": "the flickering lantern light sent shadows jumping along the walls"
-            },
-            {
-              "passage": "Day 14 KEB",
-              "quote": "\"due to the lantern light\""
             }
           ],
           "source_entity": "Lantern"
@@ -30616,6 +30890,29 @@
             {
               "passage": "Day 10 KEB",
               "quote": "the air was cool, though it felt warmer than outside from the lack of wind. It was dark, with nothing but her lantern providing light"
+            }
+          ],
+          "source_entity": "Lantern"
+        },
+        {
+          "fact": "Lantern: provides light in the cave",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "full of terrifying shadows cast due to the lantern light"
+            },
+            {
+              "passage": "Day 29 KEB",
+              "quote": "The lantern revealed there was a passage, though ceiling was low on this side of the cavern."
+            },
+            {
+              "passage": "Day 3 KEB",
+              "quote": "She watched wearily by lantern light as it fell and twitched."
+            },
+            {
+              "passage": "Re-enter the cave",
+              "quote": "awash in the light of the lantern"
             }
           ],
           "source_entity": "Lantern"
@@ -30719,25 +31016,6 @@
             {
               "passage": "Day 29 KEB",
               "quote": "Javlyn had to fumble a bit, but she was able to attach the lantern to her belt securely."
-            }
-          ],
-          "source_entity": "Lantern"
-        },
-        {
-          "fact": "Lantern: provides light in the cave",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "Day 29 KEB",
-              "quote": "The lantern revealed there was a passage, though ceiling was low on this side of the cavern."
-            },
-            {
-              "passage": "Day 3 KEB",
-              "quote": "She watched wearily by lantern light as it fell and twitched."
-            },
-            {
-              "passage": "Re-enter the cave",
-              "quote": "awash in the light of the lantern"
             }
           ],
           "source_entity": "Lantern"
@@ -31283,6 +31561,17 @@
           "source_entity": "Sword"
         },
         {
+          "fact": "Sword: is not sheathed",
+          "type": "setting",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "she wasn't stupid enough to sheath it right now"
+            }
+          ],
+          "source_entity": "Sword"
+        },
+        {
           "fact": "Sword: is used as a tool to move a boulder",
           "type": "setting",
           "evidence": [
@@ -31717,23 +32006,23 @@
           "source_entity": "Two Packs"
         },
         {
-          "fact": "Mushroom: is eaten by the creature",
+          "fact": "Mushroom: is being held by the creature",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"the creature held up the hand with the mushroom then took another bite\""
+              "quote": "the creature took a bit of a mushroom it was still holding"
             }
           ],
           "source_entity": "Mushroom"
         },
         {
-          "fact": "Mushroom: is considered delicious by the creature",
+          "fact": "Mushroom: is being eaten by the creature",
           "type": "setting",
           "evidence": [
             {
               "passage": "Day 14 KEB",
-              "quote": "\"the mushrooms are delicious\""
+              "quote": "The creature held up the hand with the mushroom then took another bite"
             }
           ],
           "source_entity": "Mushroom"
@@ -32702,6 +32991,17 @@
           "source_entity": "Javlyn"
         },
         {
+          "fact": "Javlyn: is aware of the lantern light",
+          "type": "timeline",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "Dark and damp and full of terrifying shadows cast due to the lantern light"
+            }
+          ],
+          "source_entity": "Javlyn"
+        },
+        {
           "fact": "Javlyn: is the narrator and main protagonist",
           "type": "timeline",
           "evidence": [
@@ -33082,6 +33382,17 @@
             }
           ],
           "source_entity": "Javlyn"
+        },
+        {
+          "fact": "The Creature: has a hand holding a mushroom",
+          "type": "timeline",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "the creature took a bit of a mushroom it was still holding"
+            }
+          ],
+          "source_entity": "The Creature"
         },
         {
           "fact": "Terence: introduced himself and said Kian and Danita were with him",
@@ -34284,6 +34595,17 @@
           "source_entity": "Shield"
         },
         {
+          "fact": "Sword: is lowered by Javlyn",
+          "type": "timeline",
+          "evidence": [
+            {
+              "passage": "Day 14 KEB",
+              "quote": "the sword lowering as the creature stayed non-aggressive"
+            }
+          ],
+          "source_entity": "Sword"
+        },
+        {
           "fact": "Sword: was held by Javlyn to fight the monster",
           "type": "timeline",
           "evidence": [
@@ -34978,6 +35300,10 @@
                 "quote": "she chose to leave Nivek's sword sheathed in favor of her own lantern"
               },
               {
+                "passage": "Day 14 KEB",
+                "quote": "the sword lowering as the creature stayed non-aggressive"
+              },
+              {
                 "passage": "Day 17 KEB",
                 "quote": "Just before entering the cave she grabbed Nivek's sword."
               },
@@ -35267,47 +35593,38 @@
             ]
           },
           {
-            "fact": "is a person speaking to the creature",
+            "fact": "is speaking to the creature",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"Javlyn called out, \"Hel-hello!\""
+                "quote": "Javlyn called out, \"Hel-hello!\""
               }
             ]
           },
           {
-            "fact": "has a sword that she lowers during the encounter",
+            "fact": "has a mushroom in hand",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"the sword lowering as the creature stayed non-aggressive\""
+                "quote": "the creature took a bit of a mushroom it was still holding"
               }
             ]
           },
           {
-            "fact": "is concerned about people being harmed by the creature",
+            "fact": "is in a cave",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"But a lot of people think there's a monster in these caves\""
+                "quote": "the creature's eyes were level with her own"
               }
             ]
           },
           {
-            "fact": "is willing to spread news about the creature",
+            "fact": "is debating whether to head home or to the next town",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"I'll try to spread the news\""
-              }
-            ]
-          },
-          {
-            "fact": "is traveling along a road after leaving the cave",
-            "evidence": [
-              {
-                "passage": "Day 14 KEB",
-                "quote": "\"She was just debating if she should head home and share the news or head on to the next town immediately\""
+                "quote": "She was just debating if she should head home and share the news or head on to the next town immediately"
               }
             ]
           },
@@ -36729,6 +37046,24 @@
                 "quote": "\"Well met,\" Javlyn responded, \"I am Javlyn.\""
               }
             ]
+          },
+          {
+            "fact": "lied to the strangers",
+            "evidence": [
+              {
+                "passage": "mansel-20251125",
+                "quote": "Javlyn lied to the strangers"
+              }
+            ]
+          },
+          {
+            "fact": "claims to know the area",
+            "evidence": [
+              {
+                "passage": "mansel-20251125",
+                "quote": "I would certainly know"
+              }
+            ]
           }
         ],
         "zero_action_state": [],
@@ -36788,7 +37123,8 @@
           "mansel-20251112",
           "one creature",
           "proactive attack",
-          "wait for travelers to approach"
+          "wait for travelers to approach",
+          "mansel-20251125"
         ],
         "mentions": [
           {
@@ -36992,27 +37328,37 @@
             "passage": "Day 13 KEB"
           },
           {
-            "quote": "\"Javlyn called out, \"Hel-hello!\"",
+            "quote": "Javlyn called out, \"Hel-hello!\"",
             "context": "dialogue",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"the sword lowering as the creature stayed non-aggressive\"",
+            "quote": "Javlyn asked, the sword lowering as the creature stayed non-aggressive",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"But a lot of people think there's a monster in these caves\"",
+            "quote": "Javlyn finally said",
+            "context": "dialogue",
+            "passage": "Day 14 KEB"
+          },
+          {
+            "quote": "Javlyn admitted, looking around the cavern a little more closely",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"I'll try to spread the news\"",
+            "quote": "Javlyn nodded, then started backing up",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"She was just debating if she should head home and share the news or head on to the next town immediately\"",
+            "quote": "Javlyn finally turned her back",
+            "context": "narrative",
+            "passage": "Day 14 KEB"
+          },
+          {
+            "quote": "She was just debating if she should head home and share the news or head on to the next town immediately",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
@@ -38190,6 +38536,16 @@
             "quote": "\"Well met,\" Javlyn responded, \"I am Javlyn.\"",
             "context": "dialogue",
             "passage": "wait for travelers to approach"
+          },
+          {
+            "quote": "Nope, nothing around here, and I would certainly know,",
+            "context": "dialogue",
+            "passage": "mansel-20251125"
+          },
+          {
+            "quote": "Javlyn lied to the strangers",
+            "context": "dialogue",
+            "passage": "mansel-20251125"
           }
         ]
       },
@@ -38259,47 +38615,101 @@
             ]
           },
           {
-            "fact": "has a long snout and two curved horns",
+            "fact": "has a long snout with two curved horns",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"The face had a long snout with two curved horns\""
+                "quote": "The face had a long snout with two curved horns"
               }
             ]
           },
           {
-            "fact": "has wide shoulders and can fit through the cave's entrance",
+            "fact": "has wide shoulders",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"wide enough Javlyn had no idea how the monster fit through the cave's entrance\""
+                "quote": "The shoulders were wide, wide enough"
               }
             ]
           },
           {
-            "fact": "is non-aggressive during the encounter",
+            "fact": "has arms that brace itself to stand",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"the creature stayed non-aggressive\""
+                "quote": "Its arms came to brace itself to stand"
               }
             ]
           },
           {
-            "fact": "eats mushrooms",
+            "fact": "is non-aggressive",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"the creature held up the hand with the mushroom then took another bite\""
+                "quote": "the creature stayed non-aggressive"
               }
             ]
           },
           {
-            "fact": "makes a repetitive high‑pitched sound",
+            "fact": "makes a rumbling noise like a barn cat's purring",
             "evidence": [
               {
                 "passage": "Day 14 KEB",
-                "quote": "\"The creature let out a \"week-week-week\" sound\""
+                "quote": "the creature, which started making a rumbling noise, almost like the barn cat's purring"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature took a step forward, and Javlyn took a step back. At her movement it stopped and chirruped"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature chirruped again"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and took another bite",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature held up the hand with the mushroom then took another bite"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and said \"week-week-week\"",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature let out a \"week-week-week\" sound"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and said \"week-week-week\" and made a rumbling noise",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature let out a \"week-week-week\" sound, it was repetitive and higher pitched and strangely cute for such a large creature"
+              }
+            ]
+          },
+          {
+            "fact": "has a mouth that chirruped again and said \"week-week-week\" and made a rumbling noise and started making a rumbling noise",
+            "evidence": [
+              {
+                "passage": "Day 14 KEB",
+                "quote": "The creature let out a \"week-week-week\" sound, it was repetitive and higher pitched and strangely cute for such a large creature"
               }
             ]
           }
@@ -38342,27 +38752,32 @@
             "passage": "Collect snacks"
           },
           {
-            "quote": "\"The face had a long snout with two curved horns\"",
+            "quote": "The creature stood and turned to face Javlyn",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"wide enough Javlyn had no idea how the monster fit through the cave's entrance\"",
+            "quote": "The creature took a step forward, and Javlyn took a step back",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"the creature stayed non-aggressive\"",
+            "quote": "The creature shook its whole body and sat back down",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"the creature held up the hand with the mushroom then took another bite\"",
+            "quote": "The creature chirruped again",
             "context": "narrative",
             "passage": "Day 14 KEB"
           },
           {
-            "quote": "\"The creature let out a \"week-week-week\" sound\"",
+            "quote": "The creature held up the hand with the mushroom then took another bite",
+            "context": "narrative",
+            "passage": "Day 14 KEB"
+          },
+          {
+            "quote": "The creature let out a \"week-week-week\" sound",
             "context": "narrative",
             "passage": "Day 14 KEB"
           }
@@ -41258,56 +41673,6 @@
             "quote": "the first beam of the setting sun hit Jerrick, he groaned and started to move.",
             "context": "narrative",
             "passage": "mansel-20251102"
-          }
-        ]
-      },
-      "Three Travelers": {
-        "identity": [
-          {
-            "fact": "are walking along the road and speak to Javlyn",
-            "evidence": [
-              {
-                "passage": "Day 14 KEB",
-                "quote": "\"One called out, \"Don't suppose you know of any monster infested caves nearby?\""
-              }
-            ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 14 KEB"
-        ],
-        "mentions": [
-          {
-            "quote": "\"One called out, \"Don't suppose you know of any monster infested caves nearby?\"",
-            "context": "dialogue",
-            "passage": "Day 14 KEB"
-          }
-        ]
-      },
-      "The Sole Female": {
-        "identity": [
-          {
-            "fact": "is part of the group of travelers and gives a promise to leave the creature alone",
-            "evidence": [
-              {
-                "passage": "Day 14 KEB",
-                "quote": "\"Aye, you've got our word,\" the sole female of the group said"
-              }
-            ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "Day 14 KEB"
-        ],
-        "mentions": [
-          {
-            "quote": "\"Aye, you've got our word,\" the sole female of the group said",
-            "context": "dialogue",
-            "passage": "Day 14 KEB"
           }
         ]
       },
@@ -42419,27 +42784,35 @@
       "wait for travelers to approach": {
         "passage_name": "wait for travelers to approach",
         "facts": []
+      },
+      "defend the creature": {
+        "passage_name": "defend the creature",
+        "facts": []
+      },
+      "mansel-20251125": {
+        "passage_name": "mansel-20251125",
+        "facts": []
       }
     }
   },
   "extraction_stats": {
-    "total_passages": 64,
+    "total_passages": 66,
     "passages_with_facts": 0,
-    "passages_with_no_facts": 64,
+    "passages_with_no_facts": 66,
     "average_facts_per_passage": 0.0,
-    "character_coverage": 30,
+    "character_coverage": 28,
     "fact_distribution": {
       "world_rules": 12,
-      "setting": 356,
-      "timeline": 197,
-      "character_identity": 433
+      "setting": 360,
+      "timeline": 200,
+      "character_identity": 438
     },
     "extraction_success_rate": 0.0,
     "deduplication_effectiveness": 0.0
   },
   "meta": {
-    "last_extracted": "2025-12-02T16:57:25.727393",
-    "total_passages_extracted": 64,
-    "total_facts": 565
+    "last_extracted": "2025-12-05T01:32:14.206547",
+    "total_passages_extracted": 66,
+    "total_facts": 572
   }
 }
