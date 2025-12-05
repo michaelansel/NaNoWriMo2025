@@ -2,7 +2,7 @@
 
 Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego/). Write your story in plain text, push to GitHub, and it automatically publishes to the web.
 
-**Play the story:** https://michaelansel.github.io/NaNoWriMo2025/
+**Play the story:** https://michaelansel.github.io/NaNoWriMo2025/play.html
 
 ## Documentation Guide
 
@@ -85,10 +85,10 @@ src/
 
 ## Outputs
 
-- **Harlowe format** (`index.html`): Interactive playable story
-- **Paperthin format** (`proofread.html`): Linear text view for proofreading - [view live](https://michaelansel.github.io/NaNoWriMo2025/proofread.html)
-- **DotGraph format** (`graph.html`): Interactive story structure visualization - [view live](https://michaelansel.github.io/NaNoWriMo2025/graph.html)
-- **AllPaths format** (`allpaths.html`): All possible story paths for AI continuity checking - [view live](https://michaelansel.github.io/NaNoWriMo2025/allpaths.html) | [documentation](formats/allpaths/README.md)
+All output formats are available from the [landing page](https://michaelansel.github.io/NaNoWriMo2025/).
+
+- **Play the story:** [https://michaelansel.github.io/NaNoWriMo2025/play.html](https://michaelansel.github.io/NaNoWriMo2025/play.html)
+- **Browse all formats:** Proofread, metrics, story paths, story bible, and structure visualization - [view all](https://michaelansel.github.io/NaNoWriMo2025/)
 
 ## Resources
 

@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanowrimo2025.example.com/schemas/passages_deduplicated.json",
+  "title": "Passages Deduplicated",
+  "description": "Flat list of passages with content hashes for deduplication",
+  "type": "object",
+  "required": ["passages"],
+  "properties": {
+    "passages": {
+      "type": "array",
+      "description": "List of all passages in the story",
+      "items": {
+        "type": "object",
+        "required": ["name", "content", "content_hash"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Passage name"
+          },
+          "content": {
+            "type": "string",
+            "description": "Raw passage content"
+          },
+          "content_hash": {
+            "type": "string",
+            "description": "Hash of content for deduplication",
+            "pattern": "^[a-f0-9]+$"
+          }
+        }
+      }
+    }
+  }
+}

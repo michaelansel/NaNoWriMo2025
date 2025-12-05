@@ -94,7 +94,7 @@ AI-powered webhook service automatically checks story paths for continuity issue
 - Zero continuity errors merged to main branch
 - Clear, actionable feedback that writers can address
 
-**Related Documents:** [features/ai-continuity-checking.md](features/ai-continuity-checking.md)
+**Related Documents:** [features/ai-copy-editing-team.md](features/ai-copy-editing-team.md)
 
 ---
 
@@ -196,7 +196,34 @@ Validation cache tracks all story paths with unique IDs, validation status, and 
 - Time saved by selective validation: ~60% faster than full validation
 - Accurate change detection (zero false negatives)
 
-**Related Documents:** [features/ai-continuity-checking.md](features/ai-continuity-checking.md)
+**Related Documents:** [features/ai-copy-editing-team.md](features/ai-copy-editing-team.md)
+
+---
+
+### 8. Story Bible Generation
+**Status:** ✅ Released
+**Launched:** November 2025
+**User Impact:** AI-extracted world constants and character information for consistency
+
+Automated extraction of world-building facts from story passages using AI, with deduplication and conflict detection.
+
+**Key Capabilities:**
+- AI extracts constants (always true), variables (player-dependent), and character states
+- Two-level cache: per-passage extractions + summarized/deduplicated view
+- Evidence preservation: every fact cites source passages with quotes
+- Conflict detection: contradictions flagged for author review
+- Cache-first build: HTML renders from cache, no Ollama dependency in CI
+- Webhook-triggered extraction via `/extract-story-bible` command
+
+**Key Innovation:** Conservative AI deduplication merges identical facts while preserving complete evidence trails. Graceful fallback to per-passage view if summarization fails.
+
+**Success Metrics:**
+- Extraction success rate: 100% of passages processed
+- Deduplication effectiveness: ~96% reduction (937 → 38 facts)
+- Evidence preservation: 100% of source citations maintained
+- Build independence: HTML generates without Ollama
+
+**Related Documents:** [features/story-bible.md](features/story-bible.md), [architecture/010-story-bible-design.md](architecture/010-story-bible-design.md)
 
 ---
 
@@ -255,21 +282,46 @@ Refinements to the three-mode validation system (new-only, modified, all) based 
 
 Features on the roadmap, prioritized by value to current phase.
 
+### Writing Metrics & Statistics
+**Status:** 📋 Planned
+**Target:** November 2025 (Immediate)
+**Priority:** HIGH
+**User Impact:** Understand writing output, patterns, and contribution distribution
+
+**Problem:** Writers need to understand their writing output and patterns. This is an active-writing tool that provides quantitative insights into what has been written.
+
+**Proposed Solution:**
+- Total word count calculation
+- Per-passage and per-file statistics (min/mean/median/max)
+- Word count distribution analysis
+- Filter by author (file prefix)
+- Identify longest passages
+
+**Relationship to AllPaths:** Complementary tracking approaches:
+- **AllPaths Progress Tracking:** Path-focused (how many story paths created/modified)
+- **Writing Metrics:** Word-focused (total words written, passage lengths, distributions)
+
+**Related Documents:** [features/writing-metrics.md](features/writing-metrics.md)
+
+---
+
 ### Post-NaNoWriMo Retrospective Tools
 **Status:** 📋 Planned
 **Target:** December 2025
 **Priority:** Medium
-**User Impact:** Learn from writing patterns and progress
+**User Impact:** Analyze trends, patterns, and evolution over time
 
-**Problem:** After completing NaNoWriMo, the team wants to analyze writing patterns, contribution frequency, and path completion timeline to learn what worked well.
+**Problem:** After completing NaNoWriMo, the team wants to analyze writing patterns over time, contribution trends, and story evolution timeline to learn what worked well.
 
 **Proposed Solution:**
-- Analytics dashboard showing daily writing progress
-- Path completion timeline visualization
-- Author contribution patterns
-- Story structure evolution over time
+- Timeline visualization of story evolution over weeks/months
+- Daily and weekly writing velocity trends
+- Pattern analysis showing when authors are most productive
+- Story structure evolution (how branching complexity changed over time)
 
-**Why Deferred:** Not needed during active writing; valuable for retrospective learning after completion.
+**Clarification:** This refers to advanced retrospective analytics (trends, timelines, pattern analysis), NOT basic word counts or progress tracking. Basic metrics are provided by Writing Metrics & Statistics feature during active writing.
+
+**Why Deferred:** Advanced trend analysis not needed during active writing; valuable for retrospective learning after completion.
 
 ---
 

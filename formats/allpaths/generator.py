@@ -10,391 +10,60 @@ import sys
 import json
 import hashlib
 import subprocess
+import argparse
 from pathlib import Path
 from datetime import datetime
 from html.parser import HTMLParser
 from typing import Dict, List, Tuple, Set, Optional
+from jinja2 import Environment, FileSystemLoader
+
+from lib.git_service import GitService
+from modules.parser import (
+    TweeStoryParser,
+    parse_story_html,
+    parse_link,
+    extract_links,
+    build_graph,
+)
+from modules.path_generator import (
+    generate_all_paths_dfs,
+    calculate_path_hash,
+    format_passage_text,
+)
+from modules.git_enricher import (
+    build_passage_to_file_mapping,
+    get_path_commit_date,
+    get_path_creation_date,
+)
+from modules.output_generator import (
+    format_date_for_display,
+    generate_html_output,
+    save_validation_cache,
+    generate_outputs,
+)
+from modules.categorizer import (
+    calculate_route_hash,
+    categorize_paths,
+)
+
+
+# =============================================================================
+# PATH GENERATION
+# =============================================================================
+# Note: Path generation functions moved to modules/path_generator.py
+# - generate_all_paths_dfs: DFS traversal algorithm
+# - calculate_path_hash: Path ID generation
+# - format_passage_text: Text formatting utilities
+
+# =============================================================================
+# HASHING AND FINGERPRINTING
+# =============================================================================
+# Note: Text processing utilities moved to modules/categorizer.py (Step 3.4)
+# - strip_links_from_text: Remove link syntax from prose
+# - normalize_prose_for_comparison: Normalize whitespace for comparison
+# - calculate_route_hash: Calculate hash for path route structure
 
-class TweeStoryParser(HTMLParser):
-    """Parse Tweego-compiled HTML to extract story data"""
 
-    def __init__(self):
-        super().__init__()
-        self.story_data = {}
-        self.passages = {}
-        self.current_passage = None
-        self.current_data = []
-        self.in_passage = False
-
-    def handle_starttag(self, tag, attrs):
-        attrs_dict = dict(attrs)
-
-        if tag == 'tw-storydata':
-            self.story_data = {
-                'name': attrs_dict.get('name', 'Untitled'),
-                'ifid': attrs_dict.get('ifid', ''),
-                'start': attrs_dict.get('startnode', '1'),
-            }
-        elif tag == 'tw-passagedata':
-            self.in_passage = True
-            self.current_passage = {
-                'pid': attrs_dict.get('pid', ''),
-                'name': attrs_dict.get('name', ''),
-                'tags': attrs_dict.get('tags', '').split() if attrs_dict.get('tags') else [],
-                'text': '',
-            }
-            self.current_data = []
-
-    def handle_endtag(self, tag):
-        if tag == 'tw-passagedata' and self.in_passage:
-            self.current_passage['text'] = ''.join(self.current_data).strip()
-            self.passages[self.current_passage['name']] = self.current_passage
-            self.in_passage = False
-            self.current_passage = None
-            self.current_data = []
-
-    def handle_data(self, data):
-        if self.in_passage:
-            self.current_data.append(data)
-
-def parse_story_html(html_content: str) -> Tuple[Dict, Dict]:
-    """Parse Tweego-compiled HTML and extract story data and passages"""
-    parser = TweeStoryParser()
-    parser.feed(html_content)
-    return parser.story_data, parser.passages
-
-def parse_link(link_text: str) -> str:
-    """Parse a Twee link and extract the target passage name"""
-    # [[target]]
-    # [[display->target]]
-    # [[target<-display]]
-    if '->' in link_text:
-        return link_text.split('->')[1].strip()
-    elif '<-' in link_text:
-        return link_text.split('<-')[0].strip()
-    else:
-        return link_text.strip()
-
-def extract_links(passage_text: str) -> List[str]:
-    """Extract all link targets from passage text"""
-    links = re.findall(r'\[\[([^\]]+)\]\]', passage_text)
-    targets = [parse_link(link) for link in links]
-
-    # Remove duplicates while preserving order
-    seen = set()
-    unique_targets = []
-    for t in targets:
-        if t not in seen:
-            seen.add(t)
-            unique_targets.append(t)
-
-    return unique_targets
-
-def build_graph(passages: Dict) -> Dict[str, List[str]]:
-    """Build a directed graph from passages"""
-    graph = {}
-
-    for name, passage in passages.items():
-        # Skip special passages
-        if name in ['StoryTitle', 'StoryData']:
-            continue
-
-        links = extract_links(passage['text'])
-        graph[name] = links
-
-    return graph
-
-def generate_all_paths_dfs(graph: Dict[str, List[str]], start: str,
-                          current_path: List[str] = None,
-                          max_cycles: int = 1) -> List[List[str]]:
-    """
-    Generate all possible paths from start to end nodes using DFS.
-
-    Args:
-        graph: Adjacency list representation of story graph
-        start: Starting passage name
-        current_path: Current path being explored
-        max_cycles: Maximum number of times a passage can be visited
-
-    Returns:
-        List of paths, where each path is a list of passage names
-    """
-    if current_path is None:
-        current_path = []
-
-    # Add current node to path
-    current_path = current_path + [start]
-
-    # Check for excessive cycles
-    if current_path.count(start) > max_cycles:
-        # Found a cycle, terminate this path
-        return []
-
-    # Base case: end node (no outgoing links)
-    if start not in graph or not graph[start]:
-        return [current_path]
-
-    # Recursive case: explore all branches
-    all_paths = []
-    for target in graph[start]:
-        paths_from_target = generate_all_paths_dfs(graph, target, current_path, max_cycles)
-        all_paths.extend(paths_from_target)
-
-    return all_paths
-
-def format_passage_text(text: str, selected_target: str = None) -> str:
-    """
-    Format passage text for reading (convert links to plain text).
-
-    Args:
-        text: The passage text to format
-        selected_target: If provided, only show this link and mark others as [unselected] if multiple links exist
-
-    Returns:
-        Formatted text with links converted to visible text
-    """
-    # Replace [[display->target]] with "display"
-    # Replace [[target<-display]] with "display"
-    # Replace [[target]] with "target"
-
-    # Count total links to determine if we should use placeholders
-    link_count = len(re.findall(r'\[\[([^\]]+)\]\]', text))
-    use_placeholder = link_count > 1
-
-    def replace_link(match):
-        link = match.group(1)
-
-        # Extract display text and target
-        if '->' in link:
-            display = link.split('->')[0].strip()
-            target = link.split('->')[1].strip()
-        elif '<-' in link:
-            display = link.split('<-')[1].strip()
-            target = link.split('<-')[0].strip()
-        else:
-            display = link.strip()
-            target = link.strip()
-
-        # If we have a selected target, only show that one
-        if selected_target is not None:
-            if target == selected_target:
-                return display
-            else:
-                # Use placeholder if multiple links exist, otherwise remove completely
-                return "[unselected]" if use_placeholder else ""
-        else:
-            return display
-
-    return re.sub(r'\[\[([^\]]+)\]\]', replace_link, text)
-
-def calculate_path_hash(path: List[str], passages: Dict[str, Dict]) -> str:
-    """Calculate hash based on path route AND passage content.
-
-    This ensures the hash changes when:
-    - Passage names change (route structure)
-    - Passage content is edited (text changes)
-    - Path structure changes (added/removed passages)
-
-    Args:
-        path: List of passage names in order
-        passages: Dict of passage data including text content
-
-    Returns:
-        8-character hex hash
-    """
-    content_parts = []
-    for passage_name in path:
-        if passage_name in passages:
-            # Include both structure and content in hash
-            passage_text = passages[passage_name].get('text', '')
-            content_parts.append(f"{passage_name}:{passage_text}")
-        else:
-            # Passage doesn't exist (shouldn't happen, but be defensive)
-            content_parts.append(f"{passage_name}:MISSING")
-
-    combined = '\n'.join(content_parts)
-    return hashlib.md5(combined.encode()).hexdigest()[:8]
-
-def strip_links_from_text(text: str) -> str:
-    """Remove all Twee link syntax from text, preserving only prose.
-
-    Strips:
-    - [[target]]
-    - [[display->target]]
-    - [[target<-display]]
-    - :: passage markers (passage names/boundaries)
-
-    Also normalizes whitespace to prevent link-count differences from
-    affecting the fingerprint.
-
-    This allows us to compare pure prose content without navigation changes
-    affecting the fingerprint.
-
-    Args:
-        text: Passage text with potential links
-
-    Returns:
-        Text with all link syntax removed and whitespace normalized
-    """
-    # Remove all [[...]] patterns
-    text = re.sub(r'\[\[([^\]]+)\]\]', '', text)
-
-    # Remove passage markers (lines starting with ::)
-    # These are structural metadata, not prose content
-    text = re.sub(r'^::.*$', '', text, flags=re.MULTILINE)
-
-    # Normalize whitespace: collapse multiple newlines/spaces to single ones
-    # This prevents different numbers of links from creating different whitespace patterns
-    text = re.sub(r'\n\n+', '\n\n', text)  # Collapse 3+ newlines to 2
-    text = re.sub(r'  +', ' ', text)        # Collapse multiple spaces to 1
-
-    return text.strip()  # Remove leading/trailing whitespace
-
-def calculate_raw_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
-    """Calculate fingerprint based on raw passage content INCLUDING links.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This detects ANY content change (prose OR links).
-
-    Args:
-        path: List of passage names in order
-        passages: Dict of passage data including text content
-
-    Returns:
-        8-character hex hash based on full content (with links)
-    """
-    content_parts = []
-    for passage_name in path:
-        if passage_name in passages:
-            passage_text = passages[passage_name].get('text', '')
-            content_parts.append(passage_text)
-        else:
-            content_parts.append("MISSING")
-
-    combined = '\n'.join(content_parts)
-    return hashlib.md5(combined.encode()).hexdigest()[:8]
-
-def normalize_prose_for_comparison(text: str) -> str:
-    """Aggressively normalize prose for split-resistant comparison.
-
-    This normalization handles cases where passages are split/reorganized:
-    - Collapses all whitespace (spaces, newlines, tabs) to single spaces
-    - Strips leading/trailing whitespace
-
-    This allows detecting that "First part. Second part." is the same as
-    "First part." + "\n" + "Second part." when concatenated.
-
-    Args:
-        text: Prose text (already with links stripped)
-
-    Returns:
-        Normalized text with all whitespace collapsed
-    """
-    # Replace all whitespace (including newlines) with single space
-    normalized = re.sub(r'\s+', ' ', text)
-    return normalized.strip()
-
-def calculate_content_fingerprint(path: List[str], passages: Dict[str, Dict]) -> str:
-    """Calculate fingerprint based ONLY on prose content, not names or links.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This fingerprint:
-    - Strips link syntax ([[...]]) to focus on prose changes
-    - Ignores passage names
-    - Ignores route structure
-    - Normalizes whitespace aggressively to detect splits/reorganizations
-
-    This means:
-    - Adding/removing/changing links → No fingerprint change
-    - Adding/editing prose → Fingerprint changes
-    - Restructuring/splitting passages → No fingerprint change (if prose is same)
-
-    Args:
-        path: List of passage names in order
-        passages: Dict of passage data including text content
-
-    Returns:
-        8-character hex hash based on prose content only
-    """
-    content_parts = []
-    for passage_name in path:
-        if passage_name in passages:
-            # Strip links to get prose-only content
-            passage_text = passages[passage_name].get('text', '')
-            prose_only = strip_links_from_text(passage_text)
-            content_parts.append(prose_only)
-        else:
-            # Passage doesn't exist (shouldn't happen, but be defensive)
-            content_parts.append("MISSING")
-
-    # Join all prose and normalize aggressively to handle splits
-    combined = ' '.join(content_parts)
-    normalized = normalize_prose_for_comparison(combined)
-    return hashlib.md5(normalized.encode()).hexdigest()[:8]
-
-def calculate_route_hash(path: List[str]) -> str:
-    """Calculate hash based ONLY on passage names (route structure), not content.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This identifies the path structure independent of content changes.
-    Two paths with the same sequence of passages will have the same route_hash
-    even if the content in those passages has been edited.
-
-    Args:
-        path: List of passage names in order
-
-    Returns:
-        8-character hex hash based on route structure only
-    """
-    route_string = ' → '.join(path)
-    return hashlib.md5(route_string.encode()).hexdigest()[:8]
-
-def calculate_passage_prose_fingerprint(passage_text: str) -> str:
-    """Calculate fingerprint for a single passage's prose content (no links).
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    This allows detecting when prose content is reused/split across passages.
-    For example, if passage A is split into A1 and A2, we can detect that
-    the prose in A1 and A2 existed before in A.
-
-    Args:
-        passage_text: The text content of a single passage
-
-    Returns:
-        8-character hex hash based on prose-only content
-    """
-    prose_only = strip_links_from_text(passage_text)
-    return hashlib.md5(prose_only.encode()).hexdigest()[:8]
-
-def build_passage_fingerprints(path: List[str], passages: Dict[str, Dict]) -> Dict[str, str]:
-    """Build a mapping of passage names to their prose fingerprints for a path.
-
-    DEPRECATED: No longer used for categorization (git-first approach).
-    Kept for backward compatibility with tests and old cache files.
-
-    Args:
-        path: List of passage names in the path
-        passages: Dict of all passages
-
-    Returns:
-        Dict mapping passage name -> prose fingerprint
-    """
-    fingerprints = {}
-    for passage_name in path:
-        if passage_name in passages:
-            passage_text = passages[passage_name].get('text', '')
-            fingerprints[passage_name] = calculate_passage_prose_fingerprint(passage_text)
-        else:
-            fingerprints[passage_name] = 'MISSING'
-    return fingerprints
 
 def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
     """
@@ -421,72 +90,21 @@ def generate_passage_id_mapping(passages: Dict) -> Dict[str, str]:
         mapping[passage_name] = passage_hash
     return mapping
 
-def generate_path_text(path: List[str], passages: Dict, path_num: int,
-                      total_paths: int, include_metadata: bool = True,
-                      passage_id_mapping: Dict[str, str] = None) -> str:
-    """
-    Generate formatted text for a single path.
+# Note: generate_path_text moved to modules/output_generator.py (already duplicated there)
 
-    Args:
-        path: List of passage names in the path
-        passages: Dict of all passages
-        path_num: Path number (1-indexed)
-        total_paths: Total number of paths
-        include_metadata: Whether to include path metadata header
-        passage_id_mapping: Optional mapping from passage names to random IDs
-                           (used to prevent AI from interpreting passage names)
-
-    Returns:
-        Formatted text for the path
-    """
-    lines = []
-
-    if include_metadata:
-        lines.append("=" * 80)
-        lines.append(f"PATH {path_num} of {total_paths}")
-        lines.append("=" * 80)
-        # Use IDs in route if mapping provided
-        if passage_id_mapping:
-            route_with_ids = ' → '.join([passage_id_mapping.get(p, p) for p in path])
-            lines.append(f"Route: {route_with_ids}")
-        else:
-            lines.append(f"Route: {' → '.join(path)}")
-        lines.append(f"Length: {len(path)} passages")
-        lines.append(f"Path ID: {calculate_path_hash(path, passages)}")
-        lines.append("=" * 80)
-        lines.append("")
-
-    for i, passage_name in enumerate(path):
-        if passage_name not in passages:
-            if include_metadata:
-                # Use ID if mapping provided
-                display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
-                lines.append(f"\n[PASSAGE: {display_name}]")
-                lines.append("[Passage not found]")
-                lines.append("")
-            continue
-
-        passage = passages[passage_name]
-
-        # Only include passage headings if metadata is enabled
-        if include_metadata:
-            # Use random ID instead of passage name if mapping provided
-            display_name = passage_id_mapping.get(passage_name, passage_name) if passage_id_mapping else passage_name
-            lines.append(f"[PASSAGE: {display_name}]")
-            lines.append("")
-
-        # Determine the next passage in the path (if any) to filter links
-        next_passage = path[i + 1] if i + 1 < len(path) else None
-
-        # Add formatted passage text with only the selected link visible
-        formatted_text = format_passage_text(passage['text'], next_passage)
-        lines.append(formatted_text)
-        lines.append("")
-
-    return '\n'.join(lines)
+# =============================================================================
+# VALIDATION CACHE
+# =============================================================================
 
 def load_validation_cache(cache_file: Path) -> Dict:
-    """Load previously validated paths from cache"""
+    """Load previously validated paths from cache.
+
+    Args:
+        cache_file: Path to the validation cache JSON file
+
+    Returns:
+        Dict mapping path hash -> validation data, or empty dict if cache doesn't exist
+    """
     if not cache_file.exists():
         return {}
 
@@ -496,171 +114,42 @@ def load_validation_cache(cache_file: Path) -> Dict:
     except:
         return {}
 
-def save_validation_cache(cache_file: Path, cache: Dict):
-    """Save validated paths to cache"""
-    with open(cache_file, 'w') as f:
-        json.dump(cache, indent=2, fp=f)
+# Note: save_validation_cache moved to modules/output_generator.py
 
-def build_passage_to_file_mapping(source_dir: Path) -> Dict[str, Path]:
-    """
-    Build a mapping from passage names to their source .twee files.
+# =============================================================================
+# FILE AND PASSAGE MAPPING
+# =============================================================================
+# Note: build_passage_to_file_mapping moved to modules/git_enricher.py
 
-    Args:
-        source_dir: Directory containing .twee source files
+# =============================================================================
+# GIT INTEGRATION
+# =============================================================================
+# Note: Git enrichment functions moved to modules/git_enricher.py:
+# - get_file_commit_date
+# - get_file_creation_date
+# - get_path_commit_date
+# - get_path_creation_date
+#
+# Note: Git-based categorization functions moved to modules/categorizer.py (Step 3.4):
+# - get_file_content_from_git
+# - analyze_file_changes
+# - parse_twee_content
+# - build_paths_from_base_branch
+# - categorize_paths (two-level categorization with PRIMARY and SECONDARY tests)
 
-    Returns:
-        Dict mapping passage name -> file path
-    """
-    mapping = {}
-
-    # Find all .twee files
-    for twee_file in source_dir.glob('**/*.twee'):
-        try:
-            with open(twee_file, 'r', encoding='utf-8') as f:
-                content = f.read()
-
-            # Find all passage declarations (:: PassageName or ::PassageName)
-            # Allow optional space after :: to handle both formats
-            passages_in_file = re.findall(r'^::\s*(.+?)(?:\s*\[.*?\])?\s*$', content, re.MULTILINE)
-
-            for passage_name in passages_in_file:
-                mapping[passage_name.strip()] = twee_file
-        except Exception as e:
-            # Skip files that can't be read
-            print(f"Warning: Could not read {twee_file}: {e}", file=sys.stderr)
-            continue
-
-    return mapping
-
-def get_file_commit_date(file_path: Path, repo_root: Path) -> Optional[str]:
-    """
-    Get the most recent commit date for a file using git log.
+def verify_base_ref_accessible(repo_root: Path, base_ref: str) -> bool:
+    """Verify that the base_ref is accessible in the git repository.
 
     Args:
-        file_path: Path to the file
         repo_root: Path to git repository root
+        base_ref: Git ref to verify (e.g., 'origin/main', 'HEAD')
 
     Returns:
-        ISO format datetime string of most recent commit, or None if unavailable
-
-    Implementation notes:
-    - Uses -m flag to include merge commits (important for PR-based workflows)
-    - Returns author date (%aI) not committer date for consistency
-    - 5-second timeout prevents hangs on large repos
+        True if base_ref is accessible, False otherwise
     """
-    try:
-        # Get the most recent commit date for this file
-        # -m: Include merge commits (without this, merge commits are skipped)
-        # -1: Only get the most recent commit
-        # --format=%aI: ISO 8601 author date format
-        result = subprocess.run(
-            ['git', 'log', '-m', '-1', '--format=%aI', '--', str(file_path)],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+    git_service = GitService(repo_root)
+    return git_service.verify_ref_accessible(base_ref)
 
-        if result.returncode == 0 and result.stdout.strip():
-            return result.stdout.strip()
-        else:
-            return None
-    except Exception as e:
-        print(f"Warning: Could not get commit date for {file_path}: {e}", file=sys.stderr)
-        return None
-
-def get_file_creation_date(file_path: Path, repo_root: Path) -> Optional[str]:
-    """
-    Get the earliest commit date for a file (when it was first added).
-
-    Args:
-        file_path: Path to the file
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of earliest commit, or None if unavailable
-    """
-    try:
-        # Get all commit dates in reverse chronological order, with -m to include merge commits
-        result = subprocess.run(
-            ['git', 'log', '-m', '--format=%aI', '--reverse', '--', str(file_path)],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0 and result.stdout.strip():
-            dates = result.stdout.strip().split('\n')
-            return dates[0] if dates else None
-        else:
-            return None
-    except Exception as e:
-        print(f"Warning: Could not get creation date for {file_path}: {e}", file=sys.stderr)
-        return None
-
-def get_path_commit_date(path: List[str], passage_to_file: Dict[str, Path],
-                        repo_root: Path) -> Optional[str]:
-    """
-    Get the most recent commit date among all passages in a path.
-
-    Args:
-        path: List of passage names in the path
-        passage_to_file: Mapping from passage names to file paths
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of most recent commit, or None if unavailable
-    """
-    commit_dates = []
-
-    for passage_name in path:
-        if passage_name not in passage_to_file:
-            continue
-
-        file_path = passage_to_file[passage_name]
-        commit_date = get_file_commit_date(file_path, repo_root)
-
-        if commit_date:
-            commit_dates.append(commit_date)
-
-    # Return the most recent date
-    if commit_dates:
-        return max(commit_dates)
-    else:
-        return None
-
-def get_path_creation_date(path: List[str], passage_to_file: Dict[str, Path],
-                          repo_root: Path) -> Optional[str]:
-    """
-    Get the date when a path became fully available (complete).
-    This finds the most recent creation date among all passages in the path.
-
-    Args:
-        path: List of passage names in the path
-        passage_to_file: Mapping from passage names to file paths
-        repo_root: Path to git repository root
-
-    Returns:
-        ISO format datetime string of when path became complete, or None if unavailable
-    """
-    creation_dates = []
-
-    for passage_name in path:
-        if passage_name not in passage_to_file:
-            continue
-
-        file_path = passage_to_file[passage_name]
-        creation_date = get_file_creation_date(file_path, repo_root)
-
-        if creation_date:
-            creation_dates.append(creation_date)
-
-    # Return the most recent creation date - when the path became complete
-    if creation_dates:
-        return max(creation_dates)
-    else:
-        return None
 
 def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
     """
@@ -684,1152 +173,263 @@ def calculate_path_similarity(path1: List[str], path2: List[str]) -> float:
 
     return intersection / union if union > 0 else 0.0
 
-def verify_base_ref_accessible(repo_root: Path, base_ref: str) -> bool:
-    """Verify that the base_ref is accessible in the git repository.
+# =============================================================================
+# OUTPUT GENERATION
+# =============================================================================
+# Note: Output generation functions moved to modules/output_generator.py
+# - format_date_for_display
+# - generate_html_output
+# - save_validation_cache
+# - generate_outputs
+
+# =============================================================================
+# CACHE MANAGEMENT
+# =============================================================================
+
+def update_validation_cache_with_paths(validation_cache: Dict, all_paths: List[List[str]],
+                                      passages: Dict, path_categories: Dict[str, str],
+                                      passage_to_file: Dict[str, Path], repo_root: Path) -> None:
+    """Update validation cache with current paths and their metadata.
 
     Args:
-        repo_root: Path to git repository root
-        base_ref: Git ref to verify (e.g., 'origin/main', 'HEAD')
-
-    Returns:
-        True if base_ref is accessible, False otherwise
-    """
-    try:
-        print(f"[INFO] Verifying git base ref: {base_ref}", file=sys.stderr)
-        result = subprocess.run(
-            ['git', 'rev-parse', '--verify', base_ref],
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0:
-            commit_sha = result.stdout.strip()
-            print(f"[INFO] Base ref '{base_ref}' is accessible (commit: {commit_sha})", file=sys.stderr)
-            return True
-        else:
-            print(f"[ERROR] Base ref '{base_ref}' is NOT accessible!", file=sys.stderr)
-            print(f"[ERROR] Git command failed with return code: {result.returncode}", file=sys.stderr)
-            if result.stderr:
-                print(f"[ERROR] Git stderr: {result.stderr.strip()}", file=sys.stderr)
-            print(f"[ERROR] This will cause all paths to be incorrectly categorized as 'new'", file=sys.stderr)
-            return False
-    except Exception as e:
-        print(f"[ERROR] Exception verifying base ref '{base_ref}': {e}", file=sys.stderr)
-        return False
-
-def get_file_content_from_git(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> Optional[str]:
-    """Get file content from git at a specific ref.
-
-    Args:
-        file_path: Absolute path to the file
-        repo_root: Path to git repository root
-        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
-
-    Returns:
-        File content from the specified ref, or None if file doesn't exist in git
-    """
-    try:
-        rel_path = file_path.relative_to(repo_root)
-        cmd = ['git', 'show', f'{base_ref}:{rel_path}']
-        print(f"[DEBUG] Running git command: {' '.join(cmd)}", file=sys.stderr)
-
-        result = subprocess.run(
-            cmd,
-            cwd=str(repo_root),
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
-
-        if result.returncode == 0:
-            print(f"[DEBUG] Successfully retrieved git content for {rel_path} at {base_ref}", file=sys.stderr)
-            return result.stdout
-        else:
-            print(f"[ERROR] Git command failed for {rel_path} at {base_ref}", file=sys.stderr)
-            print(f"[ERROR] Return code: {result.returncode}", file=sys.stderr)
-            if result.stderr:
-                print(f"[ERROR] Stderr: {result.stderr.strip()}", file=sys.stderr)
-            return None
-    except Exception as e:
-        print(f"[ERROR] Exception getting git content for {file_path} at {base_ref}: {e}", file=sys.stderr)
-        return None
-
-def analyze_file_changes(file_path: Path, repo_root: Path, old_content: Optional[str]) -> dict:
-    """Analyze what kind of changes a file has compared to git content.
-
-    This is the core comparison function that determines file change type.
-    It takes pre-fetched git content to avoid redundant git calls.
-
-    Args:
-        file_path: Absolute path to the .twee file
-        repo_root: Path to git repository root
-        old_content: Content from git (None if file is new)
-
-    Returns:
-        Dict with keys:
-        - 'is_new': True if file doesn't exist in git
-        - 'has_prose_changes': True if prose content changed
-        - 'has_any_changes': True if any content changed (prose, links, structure)
-        - 'reason': Human-readable explanation of the categorization
-        - 'error': Error message if file couldn't be read (None otherwise)
-    """
-    rel_path = file_path.relative_to(repo_root)
-    result = {
-        'is_new': False,
-        'has_prose_changes': False,
-        'has_any_changes': False,
-        'reason': '',
-        'error': None
-    }
-
-    # Check if file exists in git
-    if old_content is None:
-        result['is_new'] = True
-        result['has_prose_changes'] = True
-        result['has_any_changes'] = True
-        result['reason'] = f"File '{rel_path}' is NEW (not found in git)"
-        return result
-
-    # Get current version from filesystem
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            new_content = f.read()
-    except Exception as e:
-        result['has_prose_changes'] = True
-        result['has_any_changes'] = True
-        result['error'] = str(e)
-        result['reason'] = f"File '{rel_path}' could not be read: {e}"
-        return result
-
-    # Compare raw content first (fastest check)
-    if old_content == new_content:
-        result['reason'] = f"File '{rel_path}' is UNCHANGED (identical content)"
-        return result
-
-    # File has some changes - check if prose changed or just links/structure
-    result['has_any_changes'] = True
-
-    # Strip links and normalize whitespace for prose comparison
-    old_prose = normalize_prose_for_comparison(strip_links_from_text(old_content))
-    new_prose = normalize_prose_for_comparison(strip_links_from_text(new_content))
-
-    if old_prose != new_prose:
-        result['has_prose_changes'] = True
-        # Calculate how much prose changed for debugging
-        old_len = len(old_prose)
-        new_len = len(new_prose)
-        result['reason'] = f"File '{rel_path}' has PROSE CHANGES (old: {old_len} chars, new: {new_len} chars)"
-    else:
-        result['reason'] = f"File '{rel_path}' has LINK/STRUCTURE changes only (prose unchanged)"
-
-    return result
-
-
-def file_has_prose_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
-    """Check if a .twee file has prose changes vs just link/structure changes.
-
-    Compares current file content against git base ref. If prose (with links stripped
-    and whitespace normalized) is identical, returns False (no prose changes).
-
-    This allows detecting that a passage split is just reorganization, not new content.
-
-    Args:
-        file_path: Absolute path to the .twee file
-        repo_root: Path to git repository root
-        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
-
-    Returns:
-        True if file has prose changes, False if only links/structure changed
-    """
-    print(f"[DEBUG] Checking prose changes for: {file_path.relative_to(repo_root)}", file=sys.stderr)
-
-    # Get old version from git
-    old_content = get_file_content_from_git(file_path, repo_root, base_ref)
-    if old_content is None:
-        # File doesn't exist in git, it's new
-        print(f"[DEBUG] File not found in git (new file) - has prose changes: True", file=sys.stderr)
-        return True
-
-    # Get current version
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            new_content = f.read()
-    except Exception as e:
-        print(f"[ERROR] Could not read file {file_path}: {e}", file=sys.stderr)
-        return True  # Can't read, assume changed
-
-    # Strip links and normalize whitespace
-    old_prose = normalize_prose_for_comparison(strip_links_from_text(old_content))
-    new_prose = normalize_prose_for_comparison(strip_links_from_text(new_content))
-
-    has_changes = old_prose != new_prose
-    print(f"[DEBUG] Prose comparison result: {'CHANGED' if has_changes else 'UNCHANGED'}", file=sys.stderr)
-    return has_changes
-
-
-def file_has_any_changes(file_path: Path, repo_root: Path, base_ref: str = 'HEAD') -> bool:
-    """Check if a .twee file has ANY changes (including links/structure).
-
-    Compares current file content against git base ref. If any content changed
-    (prose, links, or structure), returns True.
-
-    Args:
-        file_path: Absolute path to the .twee file
-        repo_root: Path to git repository root
-        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
-
-    Returns:
-        True if file has any changes, False if completely unchanged
-    """
-    print(f"[DEBUG] Checking any changes for: {file_path.relative_to(repo_root)}", file=sys.stderr)
-
-    # Get old version from git
-    old_content = get_file_content_from_git(file_path, repo_root, base_ref)
-    if old_content is None:
-        # File doesn't exist in git, it's new
-        print(f"[DEBUG] File not found in git (new file) - has changes: True", file=sys.stderr)
-        return True
-
-    # Get current version
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            new_content = f.read()
-    except Exception as e:
-        print(f"[ERROR] Could not read file {file_path}: {e}", file=sys.stderr)
-        return True  # Can't read, assume changed
-
-    # Compare raw content (no stripping)
-    has_changes = old_content != new_content
-    print(f"[DEBUG] Raw content comparison result: {'CHANGED' if has_changes else 'UNCHANGED'}", file=sys.stderr)
-    return has_changes
-
-def parse_twee_content(twee_content: str) -> Dict[str, Dict]:
-    """
-    Parse twee file content and extract passages.
-
-    Args:
-        twee_content: Content of a twee file
-
-    Returns:
-        Dict mapping passage name -> {'text': passage_text}
-    """
-    passages = {}
-
-    # Split by passage headers (:: PassageName)
-    # Pattern matches :: followed by passage name, optionally with tags in brackets
-    pattern = r'^::\s*(.+?)(?:\s*\[.*?\])?\s*$'
-
-    # Find all passage starts
-    matches = list(re.finditer(pattern, twee_content, re.MULTILINE))
-
-    for i, match in enumerate(matches):
-        passage_name = match.group(1).strip()
-        start = match.end()
-
-        # Content goes until next passage or end of file
-        if i + 1 < len(matches):
-            end = matches[i + 1].start()
-        else:
-            end = len(twee_content)
-
-        passage_text = twee_content[start:end].strip()
-        passages[passage_name] = {'text': passage_text}
-
-    return passages
-
-def build_paths_from_base_branch(repo_root: Path, source_dir: Path, base_ref: str) -> Set[str]:
-    """
-    Build all paths from base branch and return their route hashes.
-
-    This implements the PRIMARY path existence test: Did this exact sequence
-    of passages exist in the base branch?
-
-    Args:
-        repo_root: Repository root path
-        source_dir: Source directory containing twee files (relative to repo_root)
-        base_ref: Git ref for base branch
-
-    Returns:
-        Set of route hashes (passage sequences) that existed in base branch
-    """
-    print(f"\n[INFO] Building paths from base branch '{base_ref}'...", file=sys.stderr)
-
-    # Get list of twee files from base branch
-    result = subprocess.run(
-        ['git', 'ls-tree', '-r', '--name-only', base_ref],
-        cwd=repo_root,
-        capture_output=True,
-        text=True,
-        timeout=10
-    )
-
-    if result.returncode != 0:
-        print(f"[WARN] Could not list files in base branch '{base_ref}': {result.stderr}", file=sys.stderr)
-        return set()
-
-    # Filter to twee files in source directory
-    all_files = result.stdout.strip().split('\n')
-    source_dir_str = str(source_dir.relative_to(repo_root))
-    twee_files = [f for f in all_files if f.startswith(source_dir_str) and f.endswith('.twee')]
-
-    print(f"[INFO] Found {len(twee_files)} twee files in base branch", file=sys.stderr)
-
-    # Parse all twee files to build passages
-    base_passages = {}
-
-    for twee_file_rel in twee_files:
-        # Get file content from base branch
-        result = subprocess.run(
-            ['git', 'show', f'{base_ref}:{twee_file_rel}'],
-            cwd=repo_root,
-            capture_output=True,
-            text=True,
-            timeout=10
-        )
-
-        if result.returncode != 0:
-            print(f"[WARN] Could not read {twee_file_rel} from base branch", file=sys.stderr)
-            continue
-
-        # Parse twee content
-        file_passages = parse_twee_content(result.stdout)
-        base_passages.update(file_passages)
-
-    print(f"[INFO] Parsed {len(base_passages)} passages from base branch", file=sys.stderr)
-
-    # Build graph from base passages
-    base_graph = build_graph(base_passages)
-
-    # Find start passage
-    start_passage = 'Start'
-    if start_passage not in base_graph:
-        # Try to find any passage that might be a start
-        for name in base_passages.keys():
-            if 'start' in name.lower():
-                start_passage = name
-                break
-
-    if start_passage not in base_graph:
-        print(f"[WARN] Start passage not found in base branch, cannot build paths", file=sys.stderr)
-        return set()
-
-    print(f"[INFO] Building all paths from '{start_passage}'...", file=sys.stderr)
-
-    # Generate all paths from base branch
-    base_paths = generate_all_paths_dfs(base_graph, start_passage)
-
-    print(f"[INFO] Generated {len(base_paths)} paths from base branch", file=sys.stderr)
-
-    # Calculate route hashes for all base paths
-    base_route_hashes = set()
-    for path in base_paths:
-        route_hash = calculate_route_hash(path)
-        base_route_hashes.add(route_hash)
-
-    print(f"[INFO] Calculated {len(base_route_hashes)} unique route hashes from base branch", file=sys.stderr)
-
-    return base_route_hashes
-
-def categorize_paths(current_paths: List[List[str]], passages: Dict[str, Dict],
-                    validation_cache: Dict,
-                    passage_to_file: Dict[str, Path] = None,
-                    repo_root: Path = None,
-                    base_ref: str = 'HEAD') -> Dict[str, str]:
-    """
-    Categorize paths as New, Modified, or Unchanged using TWO-LEVEL test.
-
-    The Two-Level Test (from spec):
-    1. PRIMARY: Path Existence Test - Did this exact sequence of passages exist in the base branch?
-       - If YES → Path is either MODIFIED or UNCHANGED (never NEW)
-       - If NO → Path is either NEW or MODIFIED (depends on prose novelty)
-
-    2. SECONDARY: Content/Prose Test - What changed?
-       - If path existed: Did any passage content change? → MODIFIED or UNCHANGED
-       - If path is new: Does it contain novel prose? → NEW or MODIFIED
-
-    Args:
-        current_paths: List of current paths
+        validation_cache: The cache dict to update (modified in place)
+        all_paths: List of all paths
         passages: Dict of passage data
-        validation_cache: Previous validation cache (not used for categorization)
-        passage_to_file: Mapping from passage names to source file paths (optional)
-        repo_root: Path to git repository root (optional)
-        base_ref: Git ref to compare against (default: HEAD). For PRs, use base branch like 'origin/main'
-
-    Returns:
-        Dict mapping path hash -> category ('new', 'modified', 'unchanged')
-
-    Algorithm:
-        For each path:
-            1. PRIMARY: Check if route hash (passage sequence) existed in base branch
-            2. SECONDARY: For each file in path:
-               - Check if prose content changed (git diff with links stripped)
-               - Check if any content changed (including links)
-            3. Categorize using two-level logic:
-               - If path existed in base:
-                 - Any file has content changes → MODIFIED
-                 - No changes → UNCHANGED
-               - If path is new (didn't exist in base):
-                 - Any file has new prose → NEW
-                 - Only link/structure changes → MODIFIED
-               - If git unavailable → NEW (fallback)
+        path_categories: Dict mapping path hash to category
+        passage_to_file: Mapping from passage names to file paths
+        repo_root: Path to repository root
     """
-    print(f"\n[INFO] ===== Starting Path Categorization =====", file=sys.stderr)
-    print(f"[INFO] Total paths to categorize: {len(current_paths)}", file=sys.stderr)
-    print(f"[INFO] Base ref for comparison: {base_ref}", file=sys.stderr)
-
-    categories = {}
-    total_files_checked = 0
-    git_lookups_succeeded = 0
-    git_lookups_failed = 0
-
-    # PRIMARY TEST: Build paths from base branch to check path existence
-    base_route_hashes = set()
-    if passage_to_file and repo_root:
-        # Determine source directory from passage_to_file mapping
-        # Get any file path and work backward to find src directory
-        if passage_to_file:
-            sample_file = next(iter(passage_to_file.values()))
-            # Assume source dir is the parent of twee files (usually 'src')
-            source_dir = sample_file.parent
-            base_route_hashes = build_paths_from_base_branch(repo_root, source_dir, base_ref)
-        else:
-            print(f"[WARN] No passage_to_file mapping available, skipping PRIMARY test", file=sys.stderr)
-    else:
-        print(f"[WARN] No git data available, skipping PRIMARY test", file=sys.stderr)
-
-    print(f"[INFO] Base branch has {len(base_route_hashes)} unique path routes", file=sys.stderr)
-
-    for path in current_paths:
-        path_hash = calculate_path_hash(path, passages)
-
-        # Require git integration for accurate categorization
-        if not passage_to_file or not repo_root:
-            # No git data available - mark as new (conservative fallback)
-            print(f"[WARN] No git data available for path {path_hash}, marking as 'new'", file=sys.stderr)
-            categories[path_hash] = 'new'
-            continue
-
-        # Collect unique files for this path
-        files_in_path = set()
-        for passage_name in path:
-            if passage_name in passage_to_file:
-                files_in_path.add(passage_to_file[passage_name])
-
-        print(f"\n[INFO] Categorizing path {path_hash} ({len(files_in_path)} files)", file=sys.stderr)
-
-        # Check each file for changes (single git call per file)
-        has_prose_changes = False
-        has_any_changes = False
-        files_checked_for_path = 0
-        git_success_for_path = 0
-        git_fail_for_path = 0
-        file_reasons = []  # Collect reasons for detailed logging
-
-        for file_path in files_in_path:
-            files_checked_for_path += 1
-            total_files_checked += 1
-
-            # Single git call per file - fetch content once
-            git_content = get_file_content_from_git(file_path, repo_root, base_ref)
-            if git_content is not None:
-                git_success_for_path += 1
-                git_lookups_succeeded += 1
-            else:
-                git_fail_for_path += 1
-                git_lookups_failed += 1
-
-            # Analyze changes using pre-fetched git content (no redundant git calls)
-            analysis = analyze_file_changes(file_path, repo_root, git_content)
-            file_reasons.append(analysis['reason'])
-            print(f"[DEBUG] {analysis['reason']}", file=sys.stderr)
-
-            if analysis['error']:
-                print(f"[ERROR] {analysis['error']}", file=sys.stderr)
-
-            if analysis['has_prose_changes']:
-                has_prose_changes = True
-                # Continue checking remaining files for complete logging
-
-            if analysis['has_any_changes']:
-                has_any_changes = True
-
-        # Log all file reasons for this path
-        print(f"[INFO] Files in path {path_hash}:", file=sys.stderr)
-        for reason in file_reasons:
-            print(f"[INFO]   - {reason}", file=sys.stderr)
-
-        # TWO-LEVEL CATEGORIZATION
-        # PRIMARY: Check if this path existed in base branch
-        route_hash = calculate_route_hash(path)
-        path_existed_in_base = route_hash in base_route_hashes
-
-        print(f"[INFO] Route hash: {route_hash}, existed in base: {path_existed_in_base}", file=sys.stderr)
-
-        # SECONDARY: Apply logic based on path existence
-        if path_existed_in_base:
-            # Path existed in base → can only be MODIFIED or UNCHANGED (never NEW)
-            if has_any_changes:
-                categories[path_hash] = 'modified'
-                print(f"[INFO] Path {path_hash}: MODIFIED (existed in base, has changes)", file=sys.stderr)
-            else:
-                categories[path_hash] = 'unchanged'
-                print(f"[INFO] Path {path_hash}: UNCHANGED (existed in base, no changes)", file=sys.stderr)
-        else:
-            # Path is new (didn't exist in base) → NEW or MODIFIED based on prose
-            if has_prose_changes:
-                categories[path_hash] = 'new'
-                print(f"[INFO] Path {path_hash}: NEW (new path with novel prose)", file=sys.stderr)
-            else:
-                # New path but no novel prose (e.g., passages moved/reorganized)
-                categories[path_hash] = 'modified'
-                print(f"[INFO] Path {path_hash}: MODIFIED (new path but no novel prose)", file=sys.stderr)
-
-        print(f"[INFO] Git lookups for this path: {git_success_for_path} succeeded, {git_fail_for_path} failed", file=sys.stderr)
-
-    # Summary statistics
-    new_count = sum(1 for c in categories.values() if c == 'new')
-    modified_count = sum(1 for c in categories.values() if c == 'modified')
-    unchanged_count = sum(1 for c in categories.values() if c == 'unchanged')
-
-    print(f"\n[INFO] ===== Categorization Complete =====", file=sys.stderr)
-    print(f"[INFO] Total files checked: {total_files_checked}", file=sys.stderr)
-    print(f"[INFO] Git lookups: {git_lookups_succeeded} succeeded, {git_lookups_failed} failed", file=sys.stderr)
-    print(f"[INFO] Category breakdown:", file=sys.stderr)
-    print(f"[INFO]   - NEW: {new_count} paths", file=sys.stderr)
-    print(f"[INFO]   - MODIFIED: {modified_count} paths", file=sys.stderr)
-    print(f"[INFO]   - UNCHANGED: {unchanged_count} paths", file=sys.stderr)
-
-    return categories
-
-def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[str]],
-                        validation_cache: Dict = None, path_categories: Dict[str, str] = None) -> str:
-    """Generate HTML output with all paths"""
-    if validation_cache is None:
-        validation_cache = {}
-    if path_categories is None:
-        path_categories = {}
-
-    # Calculate statistics
-    path_lengths = [len(p) for p in all_paths]
-    total_passages = sum(path_lengths)
-
-    # Prepare paths with metadata (no sorting by category - ADR-007 single interface)
-    paths_with_metadata = []
     for path in all_paths:
         path_hash = calculate_path_hash(path, passages)
-        created_date = validation_cache.get(path_hash, {}).get('created_date', '')
-        commit_date = validation_cache.get(path_hash, {}).get('commit_date', '')
-        is_validated = validation_cache.get(path_hash, {}).get('validated', False)
-        paths_with_metadata.append((path, path_hash, created_date, commit_date, is_validated))
+        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+        category = path_categories.get(path_hash, 'new')
 
-    # Sort by creation date (newest first)
-    # Use '0' as sentinel for missing dates - sorts before real ISO dates, ends up last with reverse=True
-    paths_with_metadata.sort(key=lambda x: x[2] if x[2] else '0', reverse=True)
-
-    # Count validation status
-    validated_count = sum(1 for _, _, _, _, is_validated in paths_with_metadata if is_validated)
-    new_count = len(paths_with_metadata) - validated_count
-
-    html = f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Paths - {story_data['name']}</title>
-    <style>
-        * {{
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }}
-
-        body {{
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
-        }}
-
-        .header {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-
-        .header h1 {{
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }}
-
-        .header .subtitle {{
-            opacity: 0.9;
-            font-size: 1rem;
-        }}
-
-        .stats {{
-            background: white;
-            margin: 2rem auto;
-            max-width: 1200px;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-
-        .stats h2 {{
-            margin-bottom: 1rem;
-            color: #667eea;
-        }}
-
-        .stats-grid {{
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-        }}
-
-        .stat-item {{
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 4px solid #667eea;
-        }}
-
-        .stat-label {{
-            font-size: 0.875rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }}
-
-        .stat-value {{
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-            margin-top: 0.25rem;
-        }}
-
-        .filter-section {{
-            background: white;
-            margin: 2rem auto;
-            max-width: 1200px;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }}
-
-        .filter-buttons {{
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }}
-
-        .filter-btn {{
-            padding: 0.5rem 1rem;
-            border: 2px solid #667eea;
-            background: white;
-            color: #667eea;
-            border-radius: 4px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s;
-        }}
-
-        .filter-btn:hover {{
-            background: #667eea;
-            color: white;
-        }}
-
-        .filter-btn.active {{
-            background: #667eea;
-            color: white;
-        }}
-
-        .container {{
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
-        }}
-
-        .path {{
-            background: white;
-            margin-bottom: 2rem;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            transition: box-shadow 0.3s;
-        }}
-
-        .path:hover {{
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        }}
-
-        .path-header {{
-            background: #f8f9fa;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e9ecef;
-        }}
-
-        .path-title {{
-            font-size: 1.25rem;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }}
-
-        .path-meta {{
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            font-size: 0.875rem;
-            color: #666;
-        }}
-
-        .path-meta-item {{
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }}
-
-        .badge {{
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }}
-
-        .badge-validated {{
-            background: #28a745;
-            color: white;
-        }}
-
-        .badge-new {{
-            background: #6c757d;
-            color: white;
-        }}
-
-        .route {{
-            background: #e9ecef;
-            padding: 1rem;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-            overflow-x: auto;
-            white-space: nowrap;
-        }}
-
-        .path-content {{
-            padding: 2rem;
-        }}
-
-        .passage {{
-            margin-bottom: 2rem;
-        }}
-
-        .passage-title {{
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #667eea;
-        }}
-
-        .passage-text {{
-            color: #555;
-            white-space: pre-wrap;
-            line-height: 1.8;
-        }}
-
-        .toggle-btn {{
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            margin-top: 1rem;
-            transition: background 0.3s;
-        }}
-
-        .toggle-btn:hover {{
-            background: #5568d3;
-        }}
-
-        .path-content.collapsed {{
-            display: none;
-        }}
-
-        .footer {{
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-            font-size: 0.875rem;
-        }}
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>All Story Paths - {story_data['name']}</h1>
-        <div class="subtitle">Generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</div>
-    </div>
-
-    <div class="stats">
-        <h2>Statistics</h2>
-        <div class="stats-grid">
-            <div class="stat-item">
-                <div class="stat-label">Total Paths</div>
-                <div class="stat-value" id="total-paths">{len(all_paths)}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Displayed Paths</div>
-                <div class="stat-value" id="displayed-paths">{len(all_paths)}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #28a745;">
-                <div class="stat-label">Validated Paths</div>
-                <div class="stat-value">{validated_count}</div>
-            </div>
-            <div class="stat-item" style="border-left-color: #6c757d;">
-                <div class="stat-label">New Paths</div>
-                <div class="stat-value">{new_count}</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Shortest Path</div>
-                <div class="stat-value">{min(path_lengths)} passages</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Longest Path</div>
-                <div class="stat-value">{max(path_lengths)} passages</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-label">Average Length</div>
-                <div class="stat-value">{sum(path_lengths) / len(all_paths):.1f} passages</div>
-            </div>
-        </div>
-    </div>
-
-    <div class="filter-section">
-        <h3>Filter Paths</h3>
-        <div style="margin-bottom: 1rem;">
-            <strong>Time-Based Filters:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" data-filter-type="created-day" onclick="toggleFilter(this, 'created-day')">Created Last Day</button>
-                <button class="filter-btn" data-filter-type="created-week" onclick="toggleFilter(this, 'created-week')">Created Last Week</button>
-                <button class="filter-btn" data-filter-type="modified-day" onclick="toggleFilter(this, 'modified-day')">Modified Last Day</button>
-                <button class="filter-btn" data-filter-type="modified-week" onclick="toggleFilter(this, 'modified-week')">Modified Last Week</button>
-            </div>
-        </div>
-        <div style="margin-bottom: 1rem;">
-            <strong>Validation Status:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" data-filter-type="validated" onclick="toggleFilter(this, 'validated')">Validated ({validated_count})</button>
-                <button class="filter-btn" data-filter-type="new" onclick="toggleFilter(this, 'new')">New ({new_count})</button>
-            </div>
-        </div>
-        <div>
-            <strong>Actions:</strong>
-            <div class="filter-buttons">
-                <button class="filter-btn" onclick="clearAllFilters()">Clear All Filters</button>
-                <button class="filter-btn" onclick="toggleAllPaths()">Expand All</button>
-                <button class="filter-btn" onclick="collapseAllPaths()">Collapse All</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="container">
-'''
-
-    # Generate each path (using sorted paths with metadata)
-    for i, (path, path_hash, created_date, commit_date, is_validated) in enumerate(paths_with_metadata, 1):
-        # Format dates for display
-        def format_date_for_display(date_str):
-            """Format ISO date string to human-readable format (YYYY-MM-DD HH:MM UTC)"""
-            if not date_str:
-                return "Unknown"
-            try:
-                from datetime import datetime as dt
-                # Parse date with timezone info
-                date_dt = dt.fromisoformat(date_str.replace('Z', '+00:00'))
-                # Convert to UTC if it has timezone info
-                if date_dt.tzinfo is not None:
-                    # Convert to UTC
-                    import datetime
-                    utc_dt = date_dt.astimezone(datetime.timezone.utc)
-                    return utc_dt.strftime('%Y-%m-%d %H:%M UTC')
-                else:
-                    # Assume it's already UTC if no timezone
-                    return date_dt.strftime('%Y-%m-%d %H:%M UTC')
-            except:
-                # Fallback to just showing the date part
-                return date_str[:10] if len(date_str) >= 10 else date_str
-
-        created_display = format_date_for_display(created_date)
-        modified_display = format_date_for_display(commit_date)
-
-        # Validation status badge
-        validation_badge = 'badge-validated' if is_validated else 'badge-new'
-        validation_text = 'Validated' if is_validated else 'New'
-
-        html += f'''
-        <div class="path" data-created-date="{created_date}" data-commit-date="{commit_date}" data-validated="{str(is_validated).lower()}">
-            <div class="path-header">
-                <div class="path-title">Path {i} of {len(all_paths)}</div>
-                <div class="path-meta">
-                    <div class="path-meta-item">
-                        <span class="badge {validation_badge}">{validation_text}</span>
-                    </div>
-                    <div class="path-meta-item">
-                        📏 Length: {len(path)} passages
-                    </div>
-                    <div class="path-meta-item">
-                        🔑 ID: {path_hash}
-                    </div>
-                    <div class="path-meta-item">
-                        📅 Created: {created_display}
-                    </div>
-                    <div class="path-meta-item">
-                        🔄 Modified: {modified_display}
-                    </div>
-                    <div class="path-meta-item">
-                        📄 <a href="allpaths-clean/path-{path_hash}.txt" style="color: #667eea; text-decoration: none;">Plain Text</a>
-                    </div>
-                </div>
-                <div style="margin-top: 1rem;">
-                    <div class="route">{' → '.join(path)}</div>
-                </div>
-                <button class="toggle-btn" onclick="togglePath(this)">Show Content</button>
-            </div>
-            <div class="path-content collapsed" id="path-{i}">
-'''
-
-        # Add each passage in the path
-        for j, passage_name in enumerate(path):
-            if passage_name not in passages:
-                html += f'''
-                <div class="passage">
-                    <div class="passage-title">[{passage_name}]</div>
-                    <div class="passage-text">[Passage not found]</div>
-                </div>
-'''
-                continue
-
-            passage = passages[passage_name]
-
-            # Determine the next passage to filter links
-            next_passage = path[j + 1] if j + 1 < len(path) else None
-            formatted_text = format_passage_text(passage['text'], next_passage)
-
-            html += f'''
-                <div class="passage">
-                    <div class="passage-title" style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">[Passage: {passage_name}]</div>
-                    <div class="passage-text">{formatted_text}</div>
-                </div>
-'''
-
-        html += '''
-            </div>
-        </div>
-'''
-
-    html += '''
-    </div>
-
-    <div class="footer">
-        Generated by AllPaths Story Format | For AI-based continuity checking
-    </div>
-
-    <script>
-        // Track active filters (AND logic)
-        let activeFilters = {
-            'created-day': false,
-            'created-week': false,
-            'modified-day': false,
-            'modified-week': false,
-            'validated': false,
-            'new': false
-        };
-
-        function togglePath(button) {
-            const content = button.closest('.path').querySelector('.path-content');
-            const isCollapsed = content.classList.contains('collapsed');
-
-            if (isCollapsed) {
-                content.classList.remove('collapsed');
-                button.textContent = 'Hide Content';
-            } else {
-                content.classList.add('collapsed');
-                button.textContent = 'Show Content';
+        if path_hash not in validation_cache:
+            validation_cache[path_hash] = {
+                'route': ' → '.join(path),
+                'first_seen': datetime.now().isoformat(),
+                'commit_date': commit_date,
+                'created_date': creation_date,
+                'category': category,
             }
-        }
+        else:
+            # Update commit date, created date, and category for existing entries
+            validation_cache[path_hash]['commit_date'] = commit_date
 
-        function toggleFilter(button, filterType) {
-            // Toggle the filter state
-            activeFilters[filterType] = !activeFilters[filterType];
+            # Update created_date to reflect the earliest passage creation date
+            if creation_date:
+                validation_cache[path_hash]['created_date'] = creation_date
 
-            // Update button appearance
-            if (activeFilters[filterType]) {
-                button.classList.add('active');
-            } else {
-                button.classList.remove('active');
+            # Always update category - it's computed fresh from git on each build
+            validation_cache[path_hash]['category'] = category
+
+
+def write_intermediate_story_graph(output_dir: Path, passages: Dict, graph: Dict,
+                                  start_passage: str, story_data: Dict) -> None:
+    """Write intermediate story_graph.json artifact for debugging.
+
+    Args:
+        output_dir: Output directory
+        passages: Dict of passage data
+        graph: Story graph (adjacency list)
+        start_passage: Name of start passage
+        story_data: Story metadata
+    """
+    intermediate_dir = output_dir / 'allpaths-intermediate'
+    intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+    story_graph = {
+        'passages': {
+            name: {
+                'text': passage['text'],
+                'pid': passage['pid'],
+                'links': graph.get(name, [])
             }
-
-            // Apply filters
-            applyFilters();
+            for name, passage in passages.items()
+        },
+        'start_passage': start_passage,
+        'metadata': {
+            'story_title': story_data['name'],
+            'ifid': story_data.get('ifid', ''),
+            'format': story_data.get('format', 'Twine'),
+            'format_version': story_data.get('format-version', '')
         }
+    }
 
-        function clearAllFilters() {
-            // Reset all filters
-            Object.keys(activeFilters).forEach(key => {
-                activeFilters[key] = false;
-            });
+    story_graph_file = intermediate_dir / 'story_graph.json'
+    with open(story_graph_file, 'w', encoding='utf-8') as f:
+        json.dump(story_graph, f, indent=2)
 
-            // Reset all button states
-            document.querySelectorAll('.filter-btn[data-filter-type]').forEach(btn => {
-                btn.classList.remove('active');
-            });
+    print(f"[DEBUG] Wrote intermediate artifact: {story_graph_file}", file=sys.stderr)
 
-            // Apply filters (will show all paths)
-            applyFilters();
-        }
 
-        function applyFilters() {
-            const paths = document.querySelectorAll('.path');
-            const now = new Date();
-            const oneDayAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
-            const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
+# =============================================================================
+# MAIN ENTRY POINT
+# =============================================================================
 
-            let displayedCount = 0;
+def main() -> None:
+    """Main entry point for AllPaths generator.
 
-            paths.forEach(path => {
-                let shouldDisplay = true;
+    Implements a 5-stage pipeline:
+    - Stage 1: Load story_graph.json from core library
+    - Stage 2: Generate all possible paths
+    - Stage 3: Enrich paths with git metadata
+    - Stage 4: Categorize paths (new/modified/unchanged)
+    - Stage 5: Output generation (HTML, text files, cache)
 
-                // Get path data
-                const createdDate = path.dataset.createdDate;
-                const commitDate = path.dataset.commitDate;
-                const isValidated = path.dataset.validated === 'true';
+    Usage:
+        generator.py [output_dir] [--write-intermediate]
 
-                // Apply time-based filters (if any active)
-                if (activeFilters['created-day'] || activeFilters['created-week'] ||
-                    activeFilters['modified-day'] || activeFilters['modified-week']) {
+    Args:
+        output_dir: Optional directory for output files (default: dist)
+        --write-intermediate: Optional flag to write intermediate artifacts for debugging
 
-                    let matchesTimeFilter = false;
+    Outputs:
+        - allpaths.html: Interactive HTML viewer with all paths
+        - allpaths-clean/*.txt: Individual path files with clean prose
+        - allpaths-metadata/*.txt: Individual path files with metadata
+        - allpaths-passage-mapping.json: Mapping between passage names and IDs
+        - allpaths-validation-status.json: Cache of path validation data
 
-                    // Created filters
-                    if (activeFilters['created-day']) {
-                        if (createdDate && new Date(createdDate) >= oneDayAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
-                    if (activeFilters['created-week']) {
-                        if (createdDate && new Date(createdDate) >= oneWeekAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
+        When --write-intermediate is enabled:
+        - dist/allpaths-intermediate/story_graph.json: Stage 1 output (story structure)
+        - dist/allpaths-intermediate/paths.json: Stage 2 output (enumerated paths)
+        - dist/allpaths-intermediate/paths_enriched.json: Stage 3 output (paths with git metadata)
+        - dist/allpaths-intermediate/paths_categorized.json: Stage 4 output (categorized paths)
+    """
+    # =========================================================================
+    # SETUP AND ARGUMENT PARSING
+    # =========================================================================
+    parser = argparse.ArgumentParser(
+        description='AllPaths Story Format Generator - Generate all possible story paths for AI continuity checking'
+    )
+    parser.add_argument('output_dir', type=Path, nargs='?', default=Path('dist'),
+                       help='Directory for output files (default: dist)')
+    parser.add_argument('--write-intermediate', action='store_true', default=False,
+                       help='Write intermediate artifacts to dist/allpaths-intermediate/ for debugging')
 
-                    // Modified filters
-                    if (activeFilters['modified-day']) {
-                        if (commitDate && new Date(commitDate) >= oneDayAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
-                    if (activeFilters['modified-week']) {
-                        if (commitDate && new Date(commitDate) >= oneWeekAgo) {
-                            matchesTimeFilter = true;
-                        }
-                    }
+    args = parser.parse_args()
 
-                    // If we have time filters active but this path doesn't match any, hide it
-                    if (!matchesTimeFilter) {
-                        shouldDisplay = false;
-                    }
-                }
+    output_dir = args.output_dir
+    write_intermediate = args.write_intermediate
 
-                // Apply validation status filters (if any active)
-                if (activeFilters['validated'] || activeFilters['new']) {
-                    let matchesStatusFilter = false;
+    # =========================================================================
+    # STAGE 1: LOAD STORY GRAPH
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 1: LOAD - Reading story_graph.json from core library", file=sys.stderr)
+    print("="*80, file=sys.stderr)
 
-                    if (activeFilters['validated'] && isValidated) {
-                        matchesStatusFilter = true;
-                    }
-                    if (activeFilters['new'] && !isValidated) {
-                        matchesStatusFilter = true;
-                    }
-
-                    // If we have status filters active but this path doesn't match, hide it
-                    if (!matchesStatusFilter) {
-                        shouldDisplay = false;
-                    }
-                }
-
-                // Apply visibility
-                if (shouldDisplay) {
-                    path.style.display = 'block';
-                    displayedCount++;
-                } else {
-                    path.style.display = 'none';
-                }
-            });
-
-            // Update displayed count
-            document.getElementById('displayed-paths').textContent = displayedCount;
-        }
-
-        function toggleAllPaths() {
-            const contents = document.querySelectorAll('.path-content');
-            const buttons = document.querySelectorAll('.toggle-btn');
-
-            contents.forEach(content => content.classList.remove('collapsed'));
-            buttons.forEach(btn => btn.textContent = 'Hide Content');
-        }
-
-        function collapseAllPaths() {
-            const contents = document.querySelectorAll('.path-content');
-            const buttons = document.querySelectorAll('.toggle-btn');
-
-            contents.forEach(content => content.classList.add('collapsed'));
-            buttons.forEach(btn => btn.textContent = 'Show Content');
-        }
-    </script>
-</body>
-</html>
-'''
-
-    return html
-
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: generator.py <input.html> [output_dir]", file=sys.stderr)
+    # Load story_graph.json from core library artifacts
+    story_graph_path = output_dir.parent / 'lib' / 'artifacts' / 'story_graph.json'
+    if not story_graph_path.exists():
+        print(f"Error: Core artifact not found: {story_graph_path}", file=sys.stderr)
+        print(f"Run 'npm run build:core' first to generate core artifacts", file=sys.stderr)
         sys.exit(1)
 
-    input_file = Path(sys.argv[1])
-    output_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else Path('.')
+    with open(story_graph_path, 'r', encoding='utf-8') as f:
+        story_graph = json.load(f)
 
-    # Read input HTML
-    with open(input_file, 'r', encoding='utf-8') as f:
-        html_content = f.read()
+    print(f"Loaded story_graph.json with {len(story_graph['passages'])} passages", file=sys.stderr)
 
-    # Parse story
-    story_data, passages = parse_story_html(html_content)
+    # Extract data from story_graph for compatibility with existing stages
+    start_passage = story_graph['start_passage']
+    metadata = story_graph['metadata']
 
-    # Build graph
+    # Convert story_graph passages to old format for compatibility
+    passages = {}
+    for name, passage_data in story_graph['passages'].items():
+        passages[name] = {
+            'pid': '',  # PID not needed from story_graph
+            'name': name,
+            'tags': [],  # Tags not in story_graph
+            'text': passage_data['content']
+        }
+
+    # Create story_data for compatibility
+    story_data = {
+        'name': metadata['story_title'],
+        'ifid': metadata['ifid'],
+        'start': '',  # Not needed, we have start_passage directly
+        'format': metadata['format'],
+        'format_version': metadata['format_version']
+    }
+
+    print(f"Story: {story_data['name']}", file=sys.stderr)
+    print(f"Start passage: {start_passage}", file=sys.stderr)
+
+    # Build graph representation (unchanged - still uses passages dict)
     graph = build_graph(passages)
+    print(f"Built story graph with {len(graph)} nodes", file=sys.stderr)
 
-    # Find start passage
-    start_passage = None
-    for name, passage in passages.items():
-        if passage['pid'] == story_data['start']:
-            start_passage = name
-            break
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        write_intermediate_story_graph(output_dir, passages, graph, start_passage, story_data)
 
-    if not start_passage:
-        start_passage = 'Start'
+    # =========================================================================
+    # STAGE 2: PATH GENERATION
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 2: PATH GENERATION - Computing all possible story paths", file=sys.stderr)
+    print("="*80, file=sys.stderr)
 
-    # Generate all paths
+    # Generate all paths using depth-first search
     all_paths = generate_all_paths_dfs(graph, start_passage)
+    print(f"Generated {len(all_paths)} total paths", file=sys.stderr)
+    if all_paths:
+        path_lengths = [len(p) for p in all_paths]
+        print(f"Path length range: {min(path_lengths)}-{max(path_lengths)} passages", file=sys.stderr)
+
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build paths data structure matching paths.json schema
+        paths_list = []
+        for path in all_paths:
+            path_id = calculate_path_hash(path, passages)
+            content = {}
+            for passage_name in path:
+                if passage_name in passages:
+                    content[passage_name] = passages[passage_name].get('text', '')
+                else:
+                    content[passage_name] = '[Passage not found]'
+
+            path_obj = {
+                'id': path_id,
+                'route': path,
+                'content': content
+            }
+            paths_list.append(path_obj)
+
+        # Calculate statistics
+        total_paths = len(all_paths)
+        total_passages = len(passages)
+        avg_path_length = sum(len(p) for p in all_paths) / total_paths if total_paths > 0 else 0.0
+
+        paths_data = {
+            'paths': paths_list,
+            'statistics': {
+                'total_paths': total_paths,
+                'total_passages': total_passages,
+                'avg_path_length': avg_path_length
+            }
+        }
+
+        paths_file = intermediate_dir / 'paths.json'
+        with open(paths_file, 'w', encoding='utf-8') as f:
+            json.dump(paths_data, f, indent=2)
+
+        print(f"[DEBUG] Wrote intermediate artifact: {paths_file}", file=sys.stderr)
+
+    # =========================================================================
+    # STAGE 3: GIT ENRICHMENT
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 3: GIT ENRICHMENT - Adding version control metadata", file=sys.stderr)
+    print("="*80, file=sys.stderr)
 
     # Build passage-to-file mapping for git commit date tracking
     repo_root = output_dir.parent  # Assume output_dir is dist/ and repo root is parent
@@ -1855,17 +455,27 @@ def main():
     # Load validation cache (stored at repository root, not in dist/)
     cache_file = output_dir.parent / 'allpaths-validation-status.json'
     validation_cache = load_validation_cache(cache_file)
+    print(f"Loaded validation cache with {len(validation_cache)} entries", file=sys.stderr)
 
     # Determine git base ref for comparison
-    # In PR context (GitHub Actions), compare against base branch
-    # In local context, compare against HEAD (for uncommitted changes)
-    base_ref = os.getenv('GITHUB_BASE_REF')
-    if base_ref:
-        # GitHub Actions PR context - use origin/base_branch
-        base_ref = f'origin/{base_ref}'
-        print(f"Using git base ref: {base_ref} (from GITHUB_BASE_REF)", file=sys.stderr)
+    # Two explicit contexts - no automatic fallback:
+    # 1. PR context: GITHUB_MERGE_BASE must be set (workflow calculates it)
+    # 2. Local context: Use HEAD (no env vars set)
+    merge_base = os.getenv('GITHUB_MERGE_BASE')
+    github_base_ref = os.getenv('GITHUB_BASE_REF')
+
+    if merge_base:
+        # PR context with proper merge base - use it for accurate categorization
+        base_ref = merge_base
+        print(f"Using git base ref: {base_ref} (PR merge base)", file=sys.stderr)
+    elif github_base_ref:
+        # PR context but merge base not calculated - this is a workflow error
+        print(f"[ERROR] GITHUB_BASE_REF is set ({github_base_ref}) but GITHUB_MERGE_BASE is not.", file=sys.stderr)
+        print(f"[ERROR] The GitHub Actions workflow must calculate merge base for accurate categorization.", file=sys.stderr)
+        print(f"[ERROR] Add: MERGE_BASE=$(git merge-base HEAD origin/$GITHUB_BASE_REF)", file=sys.stderr)
+        sys.exit(1)
     else:
-        # Local context - use HEAD to detect uncommitted changes
+        # Local development context - use HEAD to detect uncommitted changes
         base_ref = 'HEAD'
         print(f"Using git base ref: {base_ref} (local development)", file=sys.stderr)
 
@@ -1875,101 +485,224 @@ def main():
         print(f"[ERROR] All paths will be marked as 'new' instead of properly categorized.", file=sys.stderr)
         # Continue execution but warn user that results will be incorrect
 
-    # Categorize paths (New/Modified/Unchanged)
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build paths_enriched data structure matching paths_enriched.json schema
+        enriched_paths = []
+        for path in all_paths:
+            path_id = calculate_path_hash(path, passages)
+
+            # Build content mapping
+            content = {}
+            for passage_name in path:
+                if passage_name in passages:
+                    content[passage_name] = passages[passage_name].get('text', '')
+                else:
+                    content[passage_name] = '[Passage not found]'
+
+            # Collect git metadata
+            files_in_path = []
+            seen_files = set()
+            passage_to_file_for_path = {}
+
+            for passage_name in path:
+                if passage_name in passage_to_file:
+                    file_path = passage_to_file[passage_name]
+                    # Convert to relative path for JSON output
+                    relative_path = str(file_path.relative_to(repo_root))
+                    passage_to_file_for_path[passage_name] = relative_path
+
+                    # Track unique files
+                    if relative_path not in seen_files:
+                        files_in_path.append(relative_path)
+                        seen_files.add(relative_path)
+
+            # Get commit and creation dates for the path
+            commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+            creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+
+            enriched_path = {
+                'id': path_id,
+                'route': path,
+                'content': content,
+                'git_metadata': {
+                    'files': files_in_path,
+                    'commit_date': commit_date,
+                    'created_date': creation_date,
+                    'passage_to_file': passage_to_file_for_path
+                }
+            }
+            enriched_paths.append(enriched_path)
+
+        # Build final structure
+        total_paths = len(all_paths)
+        total_passages = len(passages)
+        avg_path_length = sum(len(p) for p in all_paths) / total_paths if total_paths > 0 else 0.0
+
+        paths_enriched_data = {
+            'paths': enriched_paths,
+            'statistics': {
+                'total_paths': total_paths,
+                'total_passages': total_passages,
+                'avg_path_length': avg_path_length
+            }
+        }
+
+        paths_enriched_file = intermediate_dir / 'paths_enriched.json'
+        with open(paths_enriched_file, 'w', encoding='utf-8') as f:
+            json.dump(paths_enriched_data, f, indent=2)
+
+        print(f"[DEBUG] Wrote intermediate artifact: {paths_enriched_file}", file=sys.stderr)
+
+    # =========================================================================
+    # STAGE 4: PATH CATEGORIZATION
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 4: PATH CATEGORIZATION - Classifying paths (new/modified/unchanged)", file=sys.stderr)
+    print("="*80, file=sys.stderr)
+
+    # Categorize paths using two-level test (path existence + content changes)
     path_categories = categorize_paths(all_paths, passages, validation_cache,
                                       passage_to_file, repo_root, base_ref)
-    print(f"Categorized paths: {sum(1 for c in path_categories.values() if c == 'new')} new, "
-          f"{sum(1 for c in path_categories.values() if c == 'modified')} modified, "
-          f"{sum(1 for c in path_categories.values() if c == 'unchanged')} unchanged", file=sys.stderr)
 
-    # Update validation cache with current paths BEFORE generating HTML
-    # This ensures HTML has access to fresh dates
-    for path in all_paths:
-        path_hash = calculate_path_hash(path, passages)
-        commit_date = get_path_commit_date(path, passage_to_file, repo_root)
-        creation_date = get_path_creation_date(path, passage_to_file, repo_root)
-        category = path_categories.get(path_hash, 'new')
+    new_count = sum(1 for c in path_categories.values() if c == 'new')
+    modified_count = sum(1 for c in path_categories.values() if c == 'modified')
+    unchanged_count = sum(1 for c in path_categories.values() if c == 'unchanged')
 
-        if path_hash not in validation_cache:
-            validation_cache[path_hash] = {
-                'route': ' → '.join(path),
-                'first_seen': datetime.now().isoformat(),
-                'validated': False,
-                'commit_date': commit_date,
-                'created_date': creation_date,
+    print(f"\nCategorization summary:", file=sys.stderr)
+    print(f"  NEW: {new_count} paths", file=sys.stderr)
+    print(f"  MODIFIED: {modified_count} paths", file=sys.stderr)
+    print(f"  UNCHANGED: {unchanged_count} paths", file=sys.stderr)
+
+    # Update validation cache with current paths BEFORE generating outputs
+    update_validation_cache_with_paths(validation_cache, all_paths, passages,
+                                      path_categories, passage_to_file, repo_root)
+    print(f"Updated validation cache with {len(validation_cache)} total entries", file=sys.stderr)
+
+    # Write intermediate artifact if requested
+    if write_intermediate:
+        intermediate_dir = output_dir / 'allpaths-intermediate'
+        intermediate_dir.mkdir(parents=True, exist_ok=True)
+
+        # Build paths_categorized data structure matching paths_categorized.json schema
+        categorized_paths = []
+        for path in all_paths:
+            path_id = calculate_path_hash(path, passages)
+
+            # Build content mapping
+            content = {}
+            for passage_name in path:
+                if passage_name in passages:
+                    content[passage_name] = passages[passage_name].get('text', '')
+                else:
+                    content[passage_name] = '[Passage not found]'
+
+            # Collect git metadata (same as Stage 3)
+            files_in_path = []
+            seen_files = set()
+            passage_to_file_for_path = {}
+
+            for passage_name in path:
+                if passage_name in passage_to_file:
+                    file_path = passage_to_file[passage_name]
+                    relative_path = str(file_path.relative_to(repo_root))
+                    passage_to_file_for_path[passage_name] = relative_path
+
+                    if relative_path not in seen_files:
+                        files_in_path.append(relative_path)
+                        seen_files.add(relative_path)
+
+            commit_date = get_path_commit_date(path, passage_to_file, repo_root)
+            creation_date = get_path_creation_date(path, passage_to_file, repo_root)
+
+            # Get categorization data
+            category = path_categories.get(path_id, 'new')
+            first_seen = validation_cache.get(path_id, {}).get('first_seen', datetime.now().isoformat())
+
+            categorized_path = {
+                'id': path_id,
+                'route': path,
+                'content': content,
+                'git_metadata': {
+                    'files': files_in_path,
+                    'commit_date': commit_date,
+                    'created_date': creation_date,
+                    'passage_to_file': passage_to_file_for_path
+                },
                 'category': category,
+                'first_seen': first_seen
             }
-        else:
-            # Update commit date, created date, and category for existing entries
-            validation_cache[path_hash]['commit_date'] = commit_date
+            categorized_paths.append(categorized_path)
 
-            # Update created_date to reflect the earliest passage creation date
-            # This ensures we show when content was first created, not when path structure appeared
-            if creation_date:
-                validation_cache[path_hash]['created_date'] = creation_date
+        # Build final structure with statistics
+        total_paths = len(all_paths)
+        total_passages = len(passages)
+        avg_path_length = sum(len(p) for p in all_paths) / total_paths if total_paths > 0 else 0.0
 
-            # Always update category - it's computed fresh from git on each build
-            validation_cache[path_hash]['category'] = category
+        paths_categorized_data = {
+            'paths': categorized_paths,
+            'statistics': {
+                'total_paths': total_paths,
+                'total_passages': total_passages,
+                'avg_path_length': avg_path_length,
+                'new': new_count,
+                'modified': modified_count,
+                'unchanged': unchanged_count
+            }
+        }
 
-    # Generate HTML output (uses original passage names for human readability)
-    html_output = generate_html_output(story_data, passages, all_paths, validation_cache, path_categories)
+        paths_categorized_file = intermediate_dir / 'paths_categorized.json'
+        with open(paths_categorized_file, 'w', encoding='utf-8') as f:
+            json.dump(paths_categorized_data, f, indent=2)
 
-    # Write HTML file
-    html_file = output_dir / 'allpaths.html'
-    with open(html_file, 'w', encoding='utf-8') as f:
-        f.write(html_output)
+        print(f"[DEBUG] Wrote intermediate artifact: {paths_categorized_file}", file=sys.stderr)
 
-    print(f"Generated {html_file}", file=sys.stderr)
+    # =========================================================================
+    # STAGE 5: OUTPUT GENERATION
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("STAGE 5: OUTPUT GENERATION - Creating HTML viewer and text files", file=sys.stderr)
+    print("="*80, file=sys.stderr)
 
-    # Generate individual text files for public deployment (clean prose, no metadata)
-    text_dir = output_dir / 'allpaths-clean'
-    text_dir.mkdir(exist_ok=True)
+    # Generate all outputs using the output_generator module
+    result = generate_outputs(
+        story_data=story_data,
+        passages=passages,
+        all_paths=all_paths,
+        output_dir=output_dir,
+        validation_cache=validation_cache,
+        path_categories=path_categories,
+        passage_id_mapping=passage_id_mapping,
+        cache_file=cache_file
+    )
 
-    for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path, passages)
-        # Set include_metadata=False for clean prose output
-        text_content = generate_path_text(path, passages, i, len(all_paths),
-                                         include_metadata=False,
-                                         passage_id_mapping=passage_id_mapping)
+    # Extract file paths from result for summary
+    html_file = Path(result['html_file'])
+    text_dir = Path(result['text_dir'])
+    continuity_dir = Path(result['metadata_dir'])
 
-        # Use content-based hash only (no sequential index)
-        text_file = text_dir / f'path-{path_hash}.txt'
-        with open(text_file, 'w', encoding='utf-8') as f:
-            f.write(text_content)
+    print(f"\nGenerated outputs:", file=sys.stderr)
+    print(f"  HTML viewer: {html_file}", file=sys.stderr)
+    print(f"  Text files (clean): {text_dir}/ ({len(all_paths)} files)", file=sys.stderr)
+    print(f"  Text files (metadata): {continuity_dir}/ ({len(all_paths)} files)", file=sys.stderr)
+    print(f"  Passage mapping: {mapping_file}", file=sys.stderr)
+    print(f"  Validation cache: {cache_file}", file=sys.stderr)
 
-    print(f"Generated {len(all_paths)} text files in {text_dir} (clean prose)", file=sys.stderr)
-
-    # Generate text files for AI continuity checking (with metadata and passage markers)
-    continuity_dir = output_dir / 'allpaths-metadata'
-    continuity_dir.mkdir(exist_ok=True)
-
-    for i, path in enumerate(all_paths, 1):
-        path_hash = calculate_path_hash(path, passages)
-        # Set include_metadata=True for continuity checking with passage markers
-        text_content = generate_path_text(path, passages, i, len(all_paths),
-                                         include_metadata=True,
-                                         passage_id_mapping=passage_id_mapping)
-
-        # Use content-based hash only (no sequential index)
-        text_file = continuity_dir / f'path-{path_hash}.txt'
-        with open(text_file, 'w', encoding='utf-8') as f:
-            f.write(text_content)
-
-    print(f"Generated {len(all_paths)} text files in {continuity_dir} (with metadata)", file=sys.stderr)
-
-    # Save validation cache (already updated with dates before HTML generation)
-    save_validation_cache(cache_file, validation_cache)
-
-    # Print summary
-    print(f"\n=== AllPaths Generation Complete ===", file=sys.stderr)
+    # =========================================================================
+    # PIPELINE COMPLETE
+    # =========================================================================
+    print("\n" + "="*80, file=sys.stderr)
+    print("=== ALLPATHS GENERATION COMPLETE ===", file=sys.stderr)
+    print("="*80, file=sys.stderr)
     print(f"Story: {story_data['name']}", file=sys.stderr)
     print(f"Total paths: {len(all_paths)}", file=sys.stderr)
-    print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
+    if all_paths:
+        print(f"Path lengths: {min(len(p) for p in all_paths)}-{max(len(p) for p in all_paths)} passages", file=sys.stderr)
     print(f"HTML output: {html_file}", file=sys.stderr)
-    print(f"Text files (public): {text_dir}/", file=sys.stderr)
-    print(f"Text files (continuity): {continuity_dir}/", file=sys.stderr)
-    print(f"Passage mapping: {mapping_file}", file=sys.stderr)
-    print(f"Validation cache: {cache_file}", file=sys.stderr)
+    print("="*80 + "\n", file=sys.stderr)
 
 if __name__ == '__main__':
     main()

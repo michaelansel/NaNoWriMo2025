@@ -876,5 +876,501 @@
     "validated_at": "2025-11-21T15:58:33.786396",
     "validated_by": "michaelansel",
     "created_date": "2025-11-20T22:11:39-05:00"
+  },
+  "f878a406": {
+    "route": "Start \u2192 Day 30 KEB",
+    "first_seen": "2025-12-02T01:40:07.197468",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-30T18:36:55-05:00",
+    "category": "unchanged"
+  },
+  "9d03a0cc": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 28 KEB",
+    "first_seen": "2025-12-02T01:40:07.463755",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-28T19:10:50-05:00",
+    "category": "unchanged"
+  },
+  "c9c9888d": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB \u2192 Day 27 KEB",
+    "first_seen": "2025-12-02T01:40:07.827124",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-27T22:52:03-05:00",
+    "category": "unchanged"
+  },
+  "dd073db9": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB \u2192 Silence \u2192 left the cavern",
+    "first_seen": "2025-12-02T01:40:08.291748",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-10T20:20:28-05:00",
+    "category": "unchanged"
+  },
+  "c07f3b2b": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB \u2192 Silence \u2192 Day 29 KEB",
+    "first_seen": "2025-12-02T01:40:08.677983",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-29T22:07:15-05:00",
+    "category": "unchanged"
+  },
+  "36e54fb8": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Check the creature",
+    "first_seen": "2025-12-02T01:40:09.066214",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-10-17T13:51:47-04:00",
+    "category": "unchanged"
+  },
+  "468a4ce1": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
+    "first_seen": "2025-12-02T01:40:09.526968",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-04T18:16:26-05:00",
+    "category": "unchanged"
+  },
+  "ef3be9de": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Day 9 KEB",
+    "first_seen": "2025-12-02T01:40:09.990487",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-09T22:07:38-05:00",
+    "category": "unchanged"
+  },
+  "c18d88df": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Metal object",
+    "first_seen": "2025-12-02T01:40:10.407344",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-02T19:00:37-05:00",
+    "category": "unchanged"
+  },
+  "2e74bf91": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
+    "first_seen": "2025-12-02T01:40:10.922776",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-11T22:16:42-05:00",
+    "category": "unchanged"
+  },
+  "9889b9d7": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Successfully escape \u2192 Re-enter the cave \u2192 leave Jerrick behind",
+    "first_seen": "2025-12-02T01:40:11.431710",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-01T14:59:34-04:00",
+    "category": "unchanged"
+  },
+  "227a205b": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Successfully escape \u2192 Re-enter the cave \u2192 mansel-20251102",
+    "first_seen": "2025-12-02T01:40:11.962766",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-10T11:57:23-05:00",
+    "category": "unchanged"
+  },
+  "4fd14e40": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Successfully escape \u2192 Day 3 KEB",
+    "first_seen": "2025-12-02T01:40:12.490423",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-03T19:43:34-05:00",
+    "category": "unchanged"
+  },
+  "1d9f02a2": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 26 KEB",
+    "first_seen": "2025-12-02T01:40:12.908897",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-26T14:20:41-05:00",
+    "category": "unchanged"
+  },
+  "4dc1a256": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 Day 14 KEB",
+    "first_seen": "2025-12-02T01:40:13.272098",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-14T21:15:28-05:00",
+    "category": "unchanged"
+  },
+  "c3f2f6bc": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 15 KEB",
+    "first_seen": "2025-12-02T01:40:13.559054",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-15T19:11:56-05:00",
+    "category": "unchanged"
+  },
+  "ef110d63": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Defense magic \u2192 Complete the working",
+    "first_seen": "2025-12-02T01:40:14.044105",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-01T17:51:17-04:00",
+    "category": "unchanged"
+  },
+  "c8aa4663": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Defense magic \u2192 Day 24 KEB",
+    "first_seen": "2025-12-02T01:40:14.530054",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-24T20:47:13-05:00",
+    "category": "unchanged"
+  },
+  "97df40f9": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 8 KEB \u2192 immediate",
+    "first_seen": "2025-12-02T01:40:15.050820",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-08T19:07:05-05:00",
+    "category": "unchanged"
+  },
+  "a75d0d9a": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 8 KEB \u2192 Day 20 KEB",
+    "first_seen": "2025-12-02T01:40:15.566609",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-20T22:11:39-05:00",
+    "category": "unchanged"
+  },
+  "6de9e2b3": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 12 KEB \u2192 Magic worked as intended",
+    "first_seen": "2025-12-02T01:40:16.066745",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-12T21:44:31-05:00",
+    "category": "unchanged"
+  },
+  "981084b5": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 12 KEB \u2192 Day 25 KEB",
+    "first_seen": "2025-12-02T01:40:16.595072",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-25T22:09:29-05:00",
+    "category": "unchanged"
+  },
+  "3cc5f3b8": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 17 KEB",
+    "first_seen": "2025-12-02T01:40:17.076023",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-17T22:41:58-05:00",
+    "category": "unchanged"
+  },
+  "3a7cd973": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Day 5 KEB \u2192 Flee",
+    "first_seen": "2025-12-02T01:40:17.532381",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-05T20:46:08-05:00",
+    "category": "unchanged"
+  },
+  "80082171": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Day 5 KEB \u2192 Day 6 KEB",
+    "first_seen": "2025-12-02T01:40:18.008291",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-06T19:12:47-05:00",
+    "category": "unchanged"
+  },
+  "7d0f107f": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Day 23 KEB",
+    "first_seen": "2025-12-02T01:40:18.396484",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-23T20:46:14-05:00",
+    "category": "unchanged"
+  },
+  "4e73895a": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 mansel-20251114",
+    "first_seen": "2025-12-02T01:40:18.720477",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-15T06:41:58-08:00",
+    "category": "unchanged"
+  },
+  "fe055462": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Continue on \u2192 Day 18 KEB",
+    "first_seen": "2025-12-02T01:40:18.960339",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-18T20:21:22-05:00",
+    "category": "unchanged"
+  },
+  "9323def1": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 28 KEB",
+    "first_seen": "2025-12-02T01:40:19.275752",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-28T19:10:50-05:00",
+    "category": "unchanged"
+  },
+  "51a01973": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB \u2192 Day 27 KEB",
+    "first_seen": "2025-12-02T01:40:19.666410",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-27T22:52:03-05:00",
+    "category": "unchanged"
+  },
+  "2c79d21a": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB \u2192 Silence \u2192 left the cavern",
+    "first_seen": "2025-12-02T01:40:20.133800",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-10T20:20:28-05:00",
+    "category": "unchanged"
+  },
+  "44ee2cba": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 10 KEB \u2192 Silence \u2192 Day 29 KEB",
+    "first_seen": "2025-12-02T01:40:20.568730",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-29T22:07:15-05:00",
+    "category": "unchanged"
+  },
+  "0b16990d": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Check the creature",
+    "first_seen": "2025-12-02T01:40:21.065179",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "32b50de9": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Do not investigate",
+    "first_seen": "2025-12-02T01:40:21.601508",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "ad703cc0": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Find the lantern \u2192 Day 4 KEB \u2192 Day 9 KEB",
+    "first_seen": "2025-12-02T01:40:22.138188",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-09T22:07:38-05:00",
+    "category": "unchanged"
+  },
+  "f49daaed": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Metal object",
+    "first_seen": "2025-12-02T01:40:22.619425",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "257bece6": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 proactive attack \u2192 Day 2 KEB \u2192 Day 11 KEB",
+    "first_seen": "2025-12-02T01:40:23.111033",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-11T22:16:42-05:00",
+    "category": "unchanged"
+  },
+  "2ff112ea": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Successfully escape \u2192 Re-enter the cave \u2192 leave Jerrick behind",
+    "first_seen": "2025-12-02T01:40:23.647870",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "8601b116": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Successfully escape \u2192 Re-enter the cave \u2192 mansel-20251102",
+    "first_seen": "2025-12-02T01:40:24.163312",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-10T11:57:23-05:00",
+    "category": "unchanged"
+  },
+  "14802a6a": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Successfully escape \u2192 Day 3 KEB",
+    "first_seen": "2025-12-02T01:40:24.641835",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "842f4f0f": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 mansel-20251101 \u2192 Day 26 KEB",
+    "first_seen": "2025-12-02T01:40:25.113272",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-26T14:20:41-05:00",
+    "category": "unchanged"
+  },
+  "ad1348fe": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 one creature \u2192 Day 14 KEB",
+    "first_seen": "2025-12-02T01:40:25.556087",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-14T21:15:28-05:00",
+    "category": "unchanged"
+  },
+  "ca2d5c02": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Javlyn continued \u2192 Day 15 KEB",
+    "first_seen": "2025-12-02T01:40:25.945404",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-15T19:11:56-05:00",
+    "category": "unchanged"
+  },
+  "36f2ca26": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Defense magic \u2192 Complete the working",
+    "first_seen": "2025-12-02T01:40:26.539809",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "a2b73f30": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Defense magic \u2192 Day 24 KEB",
+    "first_seen": "2025-12-02T01:40:27.118070",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-24T20:47:13-05:00",
+    "category": "unchanged"
+  },
+  "996cddd6": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 8 KEB \u2192 immediate",
+    "first_seen": "2025-12-02T01:40:27.673644",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-08T19:07:05-05:00",
+    "category": "unchanged"
+  },
+  "4edbf8c2": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 8 KEB \u2192 Day 20 KEB",
+    "first_seen": "2025-12-02T01:40:28.256003",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-20T22:11:39-05:00",
+    "category": "unchanged"
+  },
+  "ee90a094": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 12 KEB \u2192 Magic worked as intended",
+    "first_seen": "2025-12-02T01:40:28.836894",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-12T21:44:31-05:00",
+    "category": "unchanged"
+  },
+  "67cba351": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 12 KEB \u2192 Day 25 KEB",
+    "first_seen": "2025-12-02T01:40:29.405885",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-25T22:09:29-05:00",
+    "category": "unchanged"
+  },
+  "e9559898": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Join them \u2192 Day 17 KEB",
+    "first_seen": "2025-12-02T01:40:29.981576",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-17T22:41:58-05:00",
+    "category": "unchanged"
+  },
+  "f26b4bd3": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Day 5 KEB \u2192 Flee",
+    "first_seen": "2025-12-02T01:40:30.547127",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "4e1afe75": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 What cave? \u2192 Day 5 KEB \u2192 Day 6 KEB",
+    "first_seen": "2025-12-02T01:40:31.130242",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "5b08ab3f": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 wait for travelers to approach \u2192 Day 23 KEB",
+    "first_seen": "2025-12-02T01:40:31.588446",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-23T20:46:14-05:00",
+    "category": "unchanged"
+  },
+  "5bfa0c19": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 No one \u2192 Day 1 KEB \u2192 mansel-20251114",
+    "first_seen": "2025-12-02T01:40:31.992992",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-15T06:41:58-08:00",
+    "category": "unchanged"
+  },
+  "920dd895": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Continue on \u2192 Day 18 KEB",
+    "first_seen": "2025-12-02T01:40:32.298714",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-18T20:21:22-05:00",
+    "category": "unchanged"
+  },
+  "6e94bf77": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Turn back \u2192 Day 16 KEB",
+    "first_seen": "2025-12-02T01:40:32.585652",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-16T23:07:56-05:00",
+    "category": "unchanged"
+  },
+  "f93fc867": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Turn back \u2192 Someone joins Javlyn \u2192 Mushroom cave",
+    "first_seen": "2025-12-02T01:40:32.919405",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-07T19:43:00-05:00",
+    "category": "unchanged"
+  },
+  "dc9a6f9c": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Turn back \u2192 Someone joins Javlyn \u2192 Day 13 KEB",
+    "first_seen": "2025-12-02T01:40:33.237760",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-13T19:15:49-05:00",
+    "category": "unchanged"
+  },
+  "3bc35230": {
+    "route": "Start \u2192 raining \u2192 A rumor \u2192 Day 7 KEB \u2192 Day 22 KEB",
+    "first_seen": "2025-12-02T01:40:33.471720",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-22T19:42:48-05:00",
+    "category": "unchanged"
+  },
+  "81e18064": {
+    "route": "Start \u2192 raining \u2192 mansel-20251112 \u2192 Collect snacks",
+    "first_seen": "2025-12-02T01:40:33.661316",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-12T17:06:41-08:00",
+    "category": "unchanged"
+  },
+  "20a104c3": {
+    "route": "Start \u2192 raining \u2192 mansel-20251112 \u2192 Day 21 KEB",
+    "first_seen": "2025-12-02T01:40:33.866271",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-21T22:55:43-05:00",
+    "category": "unchanged"
+  },
+  "a54fd39c": {
+    "route": "Start \u2192 raining \u2192 Day 19 KEB",
+    "first_seen": "2025-12-02T01:40:34.005777",
+    "validated": false,
+    "commit_date": "2025-12-01T06:57:35-05:00",
+    "created_date": "2025-11-19T22:41:53-05:00",
+    "category": "unchanged"
   }
 }

@@ -65,6 +65,11 @@ KEB-251109.twee
 
 KEB-251110.twee
   :: Day 10 KEB
+  [[A shuffling noise->Day 27 KEB]]
+  [[Silence]]
+  :: Silence
+  Taking one last look around, Javlyn [[left the cavern]] or [[investigated further->Day 29 KEB]].
+  :: left the cavern
 
 KEB-251111.twee
   :: Day 11 KEB
@@ -120,8 +125,22 @@ KEB-251125.twee
 KEB-251126.twee
   :: Day 26 KEB
 
+KEB-251127.twee
+  :: Day 27 KEB
+
+KEB-251128.twee
+  :: Day 28 KEB
+
+KEB-251129.twee
+  :: Day 29 KEB
+
+KEB-251130.twee
+  :: Day 30 KEB
+
 Start.twee
   :: Start
+  It's [[sunny->Day 30 KEB]] or [[raining]].
+  :: raining
   [[A rumor]]
   [[The laundry->mansel-20251112]]
   [[Sleep->Day 19 KEB]]
@@ -132,7 +151,7 @@ Start.twee
   [[No one]]
   [[Thirteen people->Day 18 KEB]]
   :: No one
-  After listening for a moment, [[Javlyn continued]] or [[Javlyn paused->Day 1 KEB]].
+  After listening for a moment, [[Javlyn ran forward->Day 28 KEB]], [[Javlyn continued]], or [[Javlyn paused->Day 1 KEB]].
   :: Javlyn continued
   Inside the cave, Javlyn found [[nothing->Day 10 KEB]], [[one creature]], or [[four creatures->Day 15 KEB]].
   :: one creature

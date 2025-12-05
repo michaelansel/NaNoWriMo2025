@@ -69,13 +69,53 @@ Content here.
 
 ---
 
-## Automation
+## What Happens Automatically
 
-When you commit, GitHub Actions automatically:
-- Updates `Resource-Passage Names` file
-- Builds 4 formats: Harlowe (playable), Paperthin (proofread), DotGraph (graph), AllPaths (continuity)
-- Creates preview artifact
-- Posts build stats comment
+When you push changes, the system handles everything for you. Here's what runs and when:
+
+### Automatic: Generates Outputs You Can Browse
+
+These run on every build and produce pages you can view on GitHub Pages:
+
+| Output | What It Is | Where to Find It |
+|--------|-----------|------------------|
+| **Story (Harlowe)** | Playable interactive story | `index.html` |
+| **Proofread (Paperthin)** | Linear text for reading | `proofread.html` |
+| **Structure (DotGraph)** | Visual story map | `graph.html` |
+| **AllPaths** | All possible playthroughs with dates | `allpaths.html` |
+| **Story Bible** | World facts and characters | `story-bible.html` |
+| **Writing Metrics** | Word counts and statistics | `metrics.html` |
+
+### Automatic: Maintains Files For You
+
+These run on every build and update repository files:
+
+| What | Effect |
+|------|--------|
+| **Formatting Linter** | Auto-fixes .twee formatting issues (commits changes) |
+| **Resource Tracking** | Updates passage catalog in `Resource-Passage Names` |
+
+### Automatic: Gives You Feedback
+
+These run on PRs and post results as comments:
+
+| What | When | Where You See It |
+|------|------|------------------|
+| **AI Copy Editing Team** | Every PR | PR comment with validation results |
+| **Build Status** | Every push | Green/red checkmark on PR |
+
+### Manual: Webhook Commands (PR Comments)
+
+Comment these on a PR when you need them:
+
+| Command | What It Does |
+|---------|--------------|
+| `/extract-story-bible` | Re-extracts Story Bible from current content |
+| `/check-continuity` | Run validation (default: new paths only) |
+| `/check-continuity modified` | Validate new + modified paths |
+| `/check-continuity all` | Full validation of all paths |
+
+**Most of the time, you don't need manual commands.** Everything runs automatically.
 
 ---
 

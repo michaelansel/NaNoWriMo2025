@@ -1,5 +1,7 @@
 # Build output
 dist/
+# Intermediate debugging artifacts (allpaths)
+dist/allpaths-intermediate/
 
 # Story formats (downloaded by workflow)
 storyformats/

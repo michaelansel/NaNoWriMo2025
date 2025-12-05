@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """
-GitHub webhook service for AI-based story continuity checking.
+GitHub webhook service for AI-based story continuity checking and Story Bible extraction.
 
 This service:
 1. Receives GitHub workflow_run webhooks
 2. Downloads artifacts from completed PR builds
-3. Runs AI continuity checking
-4. Posts results back to the PR
+3. Runs AI continuity checking (validates story consistency)
+4. Runs Story Bible extraction (extracts entities and facts)
+5. Posts results back to the PR
 
 Security:
 - Verifies GitHub webhook signatures (HMAC-SHA256)
@@ -28,7 +29,7 @@ import re
 import jwt
 import time
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from flask import Flask, request, jsonify
 import requests
 
@@ -42,6 +43,25 @@ check_paths_with_progress = _checker_module.check_paths_with_progress
 get_unvalidated_paths = _checker_module.get_unvalidated_paths
 load_validation_cache = _checker_module.load_validation_cache
 save_validation_cache = _checker_module.save_validation_cache
+
+# Import Story Bible validator (Phase 3: World consistency validation)
+sys.path.insert(0, str(Path(__file__).parent / "lib"))
+from story_bible_validator import (
+    validate_against_story_bible,
+    merge_validation_results
+)
+
+# Import Interactive Fiction validator (CYOA style checking)
+from interactive_fiction_validator import (
+    validate_interactive_fiction_style
+)
+
+# Import shared state for cross-worker coordination (supports multiple gunicorn workers)
+from shared_state import (
+    get_shared_state,
+    FileCancellationEvent,
+    JobInfo
+)
 
 # Configuration (from environment variables)
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
@@ -68,15 +88,18 @@ from datetime import datetime
 from collections import defaultdict
 import time
 
-active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status, cancel_event}}
-pr_active_jobs = {}  # {pr_number: workflow_id} - track which workflow is active for each PR
+active_jobs = {}  # {workflow_id: {pr_number, start_time, current_path, total_paths, status, cancel_event, operation_type}}
+pr_active_continuity_jobs = {}  # {pr_number: workflow_id} - track which continuity check is active for each PR
+pr_active_extraction_jobs = {}  # {pr_number: workflow_id} - track which Story Bible extraction is active for each PR
 job_history = []  # Recent completed jobs
 metrics = defaultdict(int)  # Various counters
 metrics_lock = threading.Lock()
 
 # Webhook deduplication (GitHub can send webhooks multiple times)
 processed_comment_ids = {}  # {comment_id: timestamp} - track processed comments
+processed_workflow_runs = {}  # {workflow_run_id: timestamp} - track processed workflow runs
 COMMENT_DEDUP_TTL = 300  # 5 minutes
+WORKFLOW_DEDUP_TTL = 600  # 10 minutes (workflows can take longer)
 
 # GitHub App authentication - token cache
 _token_cache = {
@@ -179,6 +202,46 @@ def verify_signature(payload_body: bytes, signature_header: str) -> bool:
     # Compare signatures using constant-time comparison
     # WHY: Prevents timing attacks that could leak the secret
     return hmac.compare_digest(expected_signature, github_signature)
+
+
+def read_story_style_config(artifact_dir: Path) -> Optional[Dict]:
+    """
+    Read story style configuration from StoryData.twee in the artifact.
+
+    Args:
+        artifact_dir: Root directory of extracted artifact
+
+    Returns:
+        Story style dict with perspective, protagonist, and tense, or None if not found
+    """
+    # Try to find StoryData.twee in the artifact
+    # It could be in src/StoryData.twee or dist/StoryData.twee
+    possible_paths = [
+        artifact_dir / "src" / "StoryData.twee",
+        artifact_dir / "dist" / "StoryData.twee",
+        artifact_dir / "StoryData.twee"
+    ]
+
+    for story_data_path in possible_paths:
+        if story_data_path.exists():
+            try:
+                content = story_data_path.read_text()
+                # Parse the JSON from the StoryData passage
+                # Format is: :: StoryData\n{...json...}
+                lines = content.strip().split('\n')
+                if len(lines) >= 2 and lines[0].strip() == ":: StoryData":
+                    json_content = '\n'.join(lines[1:])
+                    data = json.loads(json_content)
+                    story_style = data.get('storyStyle')
+                    if story_style:
+                        app.logger.info(f"[Interactive Fiction] Found story style config: {story_style}")
+                        return story_style
+            except Exception as e:
+                app.logger.warning(f"[Interactive Fiction] Error reading StoryData.twee from {story_data_path}: {e}")
+                continue
+
+    app.logger.info("[Interactive Fiction] No story style config found in StoryData.twee, using defaults")
+    return None
 
 
 def download_artifact(artifact_url: str, dest_dir: Path) -> bool:
@@ -334,13 +397,19 @@ def sanitize_ai_content(text: str) -> str:
     return text
 
 
-def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only') -> dict:
+def run_continuity_check(text_dir: Path, cache_file: Path, pr_number: int = None, progress_callback=None, cancel_event=None, mode='new-only', limit=None, specific_paths=None) -> dict:
     """Run the AI continuity checking script with optional progress callbacks."""
     try:
-        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}")
+        params = []
+        if limit:
+            params.append(f"limit={limit}")
+        if specific_paths:
+            params.append(f"paths={len(specific_paths)}")
+        params_str = f" ({', '.join(params)})" if params else ""
+        app.logger.info(f"Running continuity checker on {text_dir} with mode={mode}{params_str}")
 
-        # Call the checker function directly with progress callback, cancel event, and mode
-        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode)
+        # Call the checker function directly with progress callback, cancel event, mode, limit, and specific_paths
+        results = check_paths_with_progress(text_dir, cache_file, progress_callback, cancel_event, mode, limit, specific_paths)
 
         return results
 
@@ -401,6 +470,76 @@ _No paths to check with this mode._
         elif mode == 'modified' and stats['unchanged'] > 0:
             comment += "_Use `/check-continuity all` for full validation._\n\n"
 
+    # Phase 3: Story Bible validation section
+    story_bible_available = any(
+        p.get('world_validation') for p in all_checked_paths
+    )
+
+    if story_bible_available:
+        comment += "### 📖 Story Bible Validation\n\n"
+        comment += "✓ Validated against established world constants\n"
+
+        world_issues_count = sum(
+            1 for p in all_checked_paths
+            if p.get('world_validation', {}).get('has_violations', False)
+        )
+
+        if world_issues_count > 0:
+            comment += f"⚠️ Found world consistency issues in {world_issues_count} path(s)\n\n"
+        else:
+            comment += "✅ No world consistency issues detected\n\n"
+
+    # Copy Editing Team Summary - shows which editors ran and their results
+    comment += "### 📋 Copy Editing Team Summary\n\n"
+    comment += "| Editor | Status | Details |\n"
+    comment += "|--------|--------|--------|\n"
+
+    # Continuity Editor (AI-powered via Ollama)
+    continuity_issues = len(results.get("paths_with_issues", []))
+    checked_count = results.get("checked_count", 0)
+    if continuity_issues > 0:
+        comment += f"| Continuity Editor | ⚠️ {continuity_issues} issue(s) | Checked {checked_count} paths via Ollama |\n"
+    else:
+        comment += f"| Continuity Editor | ✅ Passed | Checked {checked_count} paths via Ollama |\n"
+
+    # Interactive Fiction Editor (rule-based validation)
+    if_issues_count = sum(
+        1 for p in all_checked_paths
+        if p.get('interactive_fiction_validation', {}).get('has_issues', False)
+    )
+    if_paths_checked = sum(
+        1 for p in all_checked_paths
+        if p.get('interactive_fiction_validation') is not None
+    )
+    story_style = results.get('story_style', {})
+    style_config = []
+    if story_style:
+        if story_style.get('protagonist'):
+            style_config.append(f"protagonist: {story_style['protagonist']}")
+        if story_style.get('perspective'):
+            style_config.append(f"{story_style['perspective']}")
+        if story_style.get('tense'):
+            style_config.append(f"{story_style['tense']} tense")
+    style_desc = ", ".join(style_config) if style_config else "default rules"
+
+    if if_issues_count > 0:
+        comment += f"| Interactive Fiction Editor | ⚠️ {if_issues_count} issue(s) | Checked {if_paths_checked} paths ({style_desc}) |\n"
+    else:
+        comment += f"| Interactive Fiction Editor | ✅ Passed | Checked {if_paths_checked} paths ({style_desc}) |\n"
+
+    comment += "\n"
+
+    # Detailed Interactive Fiction style validation section
+    comment += "### 📝 Interactive Fiction Style Check\n\n"
+    if story_style:
+        comment += f"**Configuration:** {style_desc}\n\n"
+    comment += "✓ Validated against CYOA best practices for print format\n"
+
+    if if_issues_count > 0:
+        comment += f"⚠️ Found style issues in {if_issues_count} path(s)\n\n"
+    else:
+        comment += "✅ No CYOA style issues detected\n\n"
+
     if not results["paths_with_issues"]:
         comment += "### ✅ All Paths Passed\n\n"
         comment += f"No issues found in {results['checked_count']} path(s).\n"
@@ -429,59 +568,21 @@ _No paths to check with this mode._
                 comment += format_path_issues(path)
 
     # Add bulk approval commands section
-    if all_checked_paths:
-        comment += "\n### 💡 Quick Approval Commands\n\n"
-        comment += "Copy-paste these commands to approve multiple paths at once:\n\n"
-
-        # Group paths by severity for bulk approval
-        no_issues = [p for p in all_checked_paths if p["severity"] == "none"]
-        minor_only = [p for p in all_checked_paths if p["severity"] == "minor"]
-        major_only = [p for p in all_checked_paths if p["severity"] == "major"]
-        critical_only = [p for p in all_checked_paths if p["severity"] == "critical"]
-
-        # All paths
-        all_ids = ' '.join(p["id"] for p in all_checked_paths)
-        comment += f"**All paths ({len(all_checked_paths)} total):**\n"
-        comment += f"```\n/approve-path {all_ids}\n```\n\n"
-
-        # No issues
-        if no_issues:
-            no_issue_ids = ' '.join(p["id"] for p in no_issues)
-            comment += f"**✅ No issues ({len(no_issues)} paths):**\n"
-            comment += f"```\n/approve-path {no_issue_ids}\n```\n\n"
-
-        # Minor issues only
-        if minor_only:
-            minor_ids = ' '.join(p["id"] for p in minor_only)
-            comment += f"**🟢 Minor issues only ({len(minor_only)} paths):**\n"
-            comment += f"```\n/approve-path {minor_ids}\n```\n\n"
-
-        # Major issues (with warning)
-        if major_only:
-            major_ids = ' '.join(p["id"] for p in major_only)
-            comment += f"**🟡 Major issues ({len(major_only)} paths - review recommended):**\n"
-            comment += f"```\n/approve-path {major_ids}\n```\n\n"
-
-        # Critical issues (with strong warning)
-        if critical_only:
-            critical_ids = ' '.join(p["id"] for p in critical_only)
-            comment += f"**🔴 Critical issues ({len(critical_only)} paths - review required):**\n"
-            comment += f"```\n/approve-path {critical_ids}\n```\n\n"
-
     comment += "\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_\n"
 
     return comment
 
 
 def format_path_issues(path: dict) -> str:
-    """Format issues for a single path."""
+    """Format issues for a single path, including world validation (Phase 3)."""
     path_id = path.get("id", "unknown")
     route_str = " → ".join(path["route"]) if path["route"] else path_id
     output = f"**Path:** `{path_id}` ({route_str})\n\n"
     output += f"_{sanitize_ai_content(path['summary'])}_\n\n"
 
+    # Path consistency issues
     if path.get("issues"):
-        output += "<details>\n<summary>Details</summary>\n\n"
+        output += "<details>\n<summary>Path Consistency Issues</summary>\n\n"
         for issue in path["issues"]:
             issue_type = issue.get("type", "unknown")
             severity = issue.get("severity", "unknown")
@@ -511,6 +612,59 @@ def format_path_issues(path: dict) -> str:
                             if quote_text:
                                 output += f'  > In "{passage_name}": "{quote_text}"\n'
                     output += "\n"
+
+        output += "</details>\n\n"
+
+    # Phase 3: World consistency issues
+    world_validation = path.get('world_validation')
+    if world_validation and world_validation.get('has_violations'):
+        output += "<details>\n<summary>World Consistency Issues (Story Bible)</summary>\n\n"
+        output += f"_{sanitize_ai_content(world_validation.get('summary', ''))}_\n\n"
+
+        for violation in world_validation.get('violations', []):
+            violation_type = violation.get('type', 'unknown')
+            severity = violation.get('severity', 'unknown')
+            description = sanitize_ai_content(violation.get('description', ''))
+            constant_fact = sanitize_ai_content(violation.get('constant_fact', ''))
+            passage_statement = sanitize_ai_content(violation.get('passage_statement', ''))
+
+            output += f"- **{violation_type.replace('_', ' ').capitalize()}** ({severity}): {description}\n"
+            if constant_fact:
+                output += f"  - **Established constant**: \"{constant_fact}\"\n"
+            if passage_statement:
+                output += f"  - **This passage states**: \"{passage_statement}\"\n"
+
+            evidence = violation.get('evidence', {})
+            if evidence and isinstance(evidence, dict):
+                const_source = evidence.get('constant_source', '')
+                if const_source:
+                    output += f"  - **Constant source**: {sanitize_ai_content(const_source)}\n"
+            output += "\n"
+
+        output += "</details>\n\n"
+
+    # Interactive Fiction style issues
+    if_validation = path.get('interactive_fiction_validation')
+    if if_validation and if_validation.get('has_issues'):
+        output += "<details>\n<summary>Interactive Fiction Style Issues (CYOA Editor)</summary>\n\n"
+        output += f"_{sanitize_ai_content(if_validation.get('summary', ''))}_\n\n"
+
+        for issue in if_validation.get('issues', []):
+            issue_type = issue.get('type', 'unknown')
+            severity = issue.get('severity', 'unknown')
+            description = sanitize_ai_content(issue.get('description', ''))
+            evidence = sanitize_ai_content(issue.get('evidence', ''))
+            location = sanitize_ai_content(issue.get('location', ''))
+
+            # Format issue type for display
+            display_type = issue_type.replace('_', ' ').capitalize()
+
+            output += f"- **{display_type}** ({severity}): {description}\n"
+            if evidence:
+                output += f"  - **Evidence**: \"{evidence}\"\n"
+            if location:
+                output += f"  - **Location**: {location}\n"
+            output += "\n"
 
         output += "</details>\n\n"
 
@@ -569,7 +723,7 @@ def get_pr_number_from_workflow(workflow_run_id: int) -> int:
         return None
 
 
-def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'):
+def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only', commit_sha=None, limit=None, specific_paths=None):
     """Process webhook in background thread.
 
     Args:
@@ -577,13 +731,30 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
         pr_number: Pull request number
         artifacts_url: URL to fetch workflow artifacts
         mode: Validation mode ('new-only', 'modified', 'all')
+        commit_sha: Optional commit SHA to load cache from (defaults to branch HEAD)
+        limit: Optional limit on number of paths to check (for testing)
+        specific_paths: Optional list of specific path IDs to check (overrides mode)
     """
-    cancel_event = threading.Event()
+    # Use file-based cancellation event for cross-worker support
+    cancel_event = FileCancellationEvent(workflow_id)
 
     try:
         app.logger.info(f"[Background] Processing workflow {workflow_id} for PR #{pr_number} with mode={mode}")
 
-        # Track this job
+        # Register job with shared state (for cross-worker coordination)
+        shared_state = get_shared_state()
+        job_info = JobInfo(
+            workflow_id=workflow_id,
+            pr_number=pr_number,
+            operation_type='continuity',
+            status='initializing',
+            start_time=time.time()
+        )
+        existing_job = shared_state.register_job(job_info)
+        if existing_job:
+            app.logger.info(f"[Background] Found existing job {existing_job} for PR #{pr_number}, will be cancelled")
+
+        # Also track locally for this worker (for progress updates and status endpoint)
         with metrics_lock:
             active_jobs[workflow_id] = {
                 "pr_number": pr_number,
@@ -591,9 +762,10 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                 "current_path": 0,
                 "total_paths": 0,
                 "status": "initializing",
-                "cancel_event": cancel_event
+                "cancel_event": cancel_event,
+                "operation_type": "continuity"
             }
-            pr_active_jobs[pr_number] = workflow_id  # Mark this workflow as active for this PR
+            pr_active_continuity_jobs[pr_number] = workflow_id  # Mark this workflow as active for this PR
             metrics["total_webhooks_received"] += 1
 
         # Fetch artifact list
@@ -628,10 +800,10 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                 app.logger.error("[Background] Failed to download artifact")
                 return
 
-            # Check for cancellation
+            # Check for cancellation (early - before validation starts)
             if cancel_event.is_set():
-                app.logger.info(f"[Background] Job cancelled for PR #{pr_number}, stopping")
-                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
+                app.logger.info(f"[Background] Job cancelled early for PR #{pr_number} (before validation started)")
+                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled before checking began - newer commit or manual request detected.\n\n_This is expected during rapid development. The latest commit will be validated instead._\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
 
             # Validate structure
@@ -655,9 +827,55 @@ def process_webhook_async(workflow_id, pr_number, artifacts_url, mode='new-only'
                 except Exception as e:
                     app.logger.warning(f"Could not load passage mapping: {e}")
 
+            # Phase 3: Load Story Bible cache from PR branch for world consistency validation
+            # Load from specific commit SHA if available, otherwise fall back to branch HEAD
+            story_bible_cache = load_story_bible_cache_from_branch(pr_number, commit_sha)
+            story_bible_available = bool(
+                story_bible_cache and
+                story_bible_cache.get('categorized_facts', {}).get('constants', {})
+            )
+            if story_bible_available:
+                app.logger.info(f"[Story Bible] Story Bible cache loaded, will validate world consistency")
+            else:
+                app.logger.info(f"[Story Bible] No Story Bible cache available, skipping world validation")
+
+            # Load story style config BEFORE progress callback (so it's available in callback)
+            story_style = read_story_style_config(tmpdir_path)
+            if story_style:
+                app.logger.info(f"[Interactive Fiction] Using story style: {story_style}")
+            else:
+                app.logger.info("[Interactive Fiction] No story style config found, using default CYOA rules")
+
             # Load cache to see what paths need checking
             cache = load_validation_cache(cache_file)
             unvalidated, stats = get_unvalidated_paths(cache, text_dir, mode)
+
+            # Filter to specific paths if specified (overrides mode-based selection)
+            if specific_paths:
+                original_count = len(unvalidated)
+                # Get all paths from text_dir for matching (in case specified paths aren't in unvalidated)
+                all_text_files = list(text_dir.glob("path-*.txt"))
+                all_path_ids = {f.stem.replace("path-", ""): f for f in all_text_files}
+
+                # Filter to only specified paths that exist
+                matched_paths = []
+                for path_id in specific_paths:
+                    if path_id in all_path_ids:
+                        matched_paths.append((path_id, all_path_ids[path_id]))
+                    else:
+                        app.logger.warning(f"[Background] Specified path {path_id} not found in artifacts")
+
+                unvalidated = matched_paths
+                app.logger.info(f"[Background] Filtering to {len(unvalidated)} specific paths (from {original_count} available)")
+                stats['checked'] = len(unvalidated)
+                stats['skipped'] = original_count - len(unvalidated)
+
+            # Apply limit if specified (useful for testing)
+            if limit and len(unvalidated) > limit:
+                app.logger.info(f"[Background] Applying limit={limit} to {len(unvalidated)} paths")
+                unvalidated = unvalidated[:limit]
+                stats['checked'] = limit
+                stats['skipped'] = stats['new'] + stats['modified'] + stats['unchanged'] - limit
 
             if not unvalidated:
                 app.logger.info(f"[Background] No paths to check with mode '{mode}'")
@@ -733,7 +951,6 @@ Found **{total_paths}** path(s) to check.
 _This may take up to 5 minutes per passage. Updates will be posted as each path completes._
 
 💡 **Commands:**
-- Approve paths: `/approve-path abc12345 def67890`
 - Check with different scope: `/check-continuity modified` or `/check-continuity all`
 
 ---
@@ -759,7 +976,38 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     summary = sanitize_ai_content(translate_passage_ids(path_result.get("summary", ""), id_to_name))
                     issues = path_result.get("issues", [])
 
-                    # Choose emoji based on severity
+                    # Run Interactive Fiction validation for this path
+                    # IF validator uses allpaths-raw to see original Twee syntax (choice markers)
+                    if_result = None
+                    raw_dir = text_dir.parent / 'allpaths-raw'
+                    raw_file = raw_dir / f"path-{path_id}.txt"
+                    if raw_file.exists():
+                        try:
+                            story_text = raw_file.read_text()
+                            if_result = validate_interactive_fiction_style(
+                                passage_text=story_text,
+                                passage_id=path_id,
+                                story_style=story_style
+                            )
+                            # Store IF result in path_result for later use
+                            path_result['interactive_fiction_validation'] = if_result
+
+                            # Update severity if IF validation found more severe issues
+                            if if_result and if_result.get('has_issues'):
+                                current_severity = severity
+                                if_severity = if_result.get('severity', 'none')
+                                severity_order = {'none': 0, 'minor': 1, 'major': 2, 'critical': 3}
+                                combined_severity_value = max(
+                                    severity_order.get(current_severity, 0),
+                                    severity_order.get(if_severity, 0)
+                                )
+                                severity = [k for k, v in severity_order.items() if v == combined_severity_value][0]
+                                path_result['severity'] = severity
+                                path_result['has_issues'] = True
+                        except Exception as e:
+                            app.logger.error(f"[Interactive Fiction] Error validating path {path_id}: {e}")
+
+                    # Choose emoji based on combined severity
                     emoji = "✅"
                     if severity == "critical":
                         emoji = "🔴"
@@ -775,9 +1023,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 **Summary:** {summary}
 """
 
-                    # Add detailed issues if present
+                    # Add Continuity Editor issues if present
                     if issues:
-                        update_comment += "\n<details>\n<summary>Details</summary>\n\n"
+                        update_comment += "\n<details>\n<summary>Continuity Issues</summary>\n\n"
                         for issue in issues:
                             issue_type = issue.get("type", "unknown")
                             issue_severity = issue.get("severity", "unknown")
@@ -812,22 +1060,125 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
                         update_comment += "</details>\n"
 
-                    # Add approval helper text
-                    update_comment += f"\n💡 **To approve this path:** reply `/approve-path {path_id}`\n"
+                    # Add Interactive Fiction Editor issues if present
+                    if if_result and if_result.get('has_issues'):
+                        if_issues = if_result.get('issues', [])
+                        if_summary = if_result.get('summary', 'Style issues detected')
+                        update_comment += f"\n<details>\n<summary>Interactive Fiction Style Issues ({len(if_issues)} issues)</summary>\n\n"
+                        update_comment += f"_{if_summary}_\n\n"
+                        for if_issue in if_issues:
+                            if_type = if_issue.get('type', 'unknown')
+                            if_sev = if_issue.get('severity', 'unknown')
+                            if_desc = if_issue.get('description', 'No description')
+                            if_evidence = if_issue.get('evidence', '')
+                            if_location = if_issue.get('location', '')
+
+                            update_comment += f"- **{if_type.replace('_', ' ').title()}** ({if_sev}): {if_desc}\n"
+                            if if_evidence:
+                                update_comment += f"  - **Evidence**: \"{if_evidence}\"\n"
+                            if if_location:
+                                update_comment += f"  - **Location**: {if_location}\n"
+                        update_comment += "\n</details>\n"
 
                     app.logger.info(f"[Background] Posting progress update: {current}/{total}")
                     post_pr_comment(pr_number, update_comment)
                 except Exception as e:
                     app.logger.error(f"[Background] Error in progress callback: {e}", exc_info=True)
 
-            # Run continuity check with progress callback, cancel event, and mode
-            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode)
+            # Run continuity check with progress callback, cancel event, mode, limit, and specific_paths
+            results = run_continuity_check(text_dir, cache_file, pr_number, progress_callback, cancel_event, mode, limit, specific_paths)
 
             # Check if job was cancelled during validation
             if cancel_event.is_set():
-                app.logger.info(f"[Background] Job was cancelled during validation")
-                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled - newer commit detected.\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
+                app.logger.info(f"[Background] Job was cancelled during validation (after some paths completed)")
+                post_pr_comment(pr_number, "## 🤖 AI Continuity Check - Cancelled\n\nValidation cancelled after checking some paths - newer commit or manual request detected.\n\n_This is expected during rapid development. The latest commit will be validated instead._\n\n---\n_Powered by Ollama (gpt-oss:20b-fullcontext)_")
                 return
+
+            # Phase 3: Add Story Bible validation to each checked path
+            if story_bible_available:
+                app.logger.info(f"[Story Bible] Running world consistency validation for {results['checked_count']} paths")
+
+                # Validate each path against Story Bible constants
+                all_paths = results.get('all_checked_paths', [])
+                for path_result in all_paths:
+                    # Get the path text file
+                    path_id = path_result.get('id')
+                    text_file = text_dir / f"path-{path_id}.txt"
+
+                    if text_file.exists():
+                        try:
+                            story_text = text_file.read_text()
+
+                            # Run Story Bible validation
+                            world_result = validate_against_story_bible(
+                                passage_text=story_text,
+                                story_bible_cache=story_bible_cache,
+                                passage_id=path_id
+                            )
+
+                            # Merge with path consistency results
+                            # Note: path_result doesn't have all fields, need to reconstruct
+                            path_consistency_result = {
+                                'has_issues': path_result.get('has_issues', False),
+                                'severity': path_result.get('severity', 'none'),
+                                'issues': path_result.get('issues', []),
+                                'summary': path_result.get('summary', '')
+                            }
+
+                            merged = merge_validation_results(path_consistency_result, world_result)
+
+                            # Update path_result with merged data
+                            path_result['world_validation'] = merged.get('world_validation')
+                            path_result['severity'] = merged.get('severity')
+                            path_result['has_issues'] = merged.get('has_issues')
+
+                        except Exception as e:
+                            app.logger.error(f"[Story Bible] Error validating path {path_id}: {e}", exc_info=True)
+                            # Continue with other paths
+
+                # Also update paths_with_issues
+                paths_with_issues = results.get('paths_with_issues', [])
+                for path in paths_with_issues:
+                    # Find matching path in all_checked_paths
+                    path_id = path.get('id')
+                    matching = [p for p in all_paths if p.get('id') == path_id]
+                    if matching:
+                        # Copy world_validation from merged result
+                        path['world_validation'] = matching[0].get('world_validation')
+                        path['severity'] = matching[0].get('severity')
+                        path['has_issues'] = matching[0].get('has_issues')
+
+                app.logger.info(f"[Story Bible] World consistency validation complete")
+
+            # Interactive Fiction validation already ran during progress callbacks
+            # Now just update paths_with_issues with the IF results and compute summary
+            all_paths = results.get('all_checked_paths', [])
+
+            # Update paths_with_issues with IF validation results
+            paths_with_issues = results.get('paths_with_issues', [])
+            for path in paths_with_issues:
+                # Find matching path in all_checked_paths
+                path_id = path.get('id')
+                matching = [p for p in all_paths if p.get('id') == path_id]
+                if matching:
+                    # Copy interactive_fiction_validation from all_paths
+                    path['interactive_fiction_validation'] = matching[0].get('interactive_fiction_validation')
+                    path['severity'] = matching[0].get('severity')
+                    path['has_issues'] = matching[0].get('has_issues')
+
+            # Log IF validation summary
+            if_total_checked = sum(1 for p in all_paths if p.get('interactive_fiction_validation') is not None)
+            if_total_issues = sum(1 for p in all_paths if p.get('interactive_fiction_validation', {}).get('has_issues', False))
+            style_desc = []
+            if story_style:
+                if story_style.get('protagonist'):
+                    style_desc.append(f"protagonist={story_style['protagonist']}")
+                if story_style.get('perspective'):
+                    style_desc.append(f"voice={story_style['perspective']}")
+                if story_style.get('tense'):
+                    style_desc.append(f"tense={story_style['tense']}")
+            style_str = ", ".join(style_desc) if style_desc else "default config"
+            app.logger.info(f"[Interactive Fiction Editor] Summary: {if_total_checked} paths checked, {if_total_issues} with issues ({style_str})")
 
             # Translate passage IDs in final results
             if results.get("paths_with_issues"):
@@ -862,6 +1213,9 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                                         if quote.get("text"):
                                             quote["text"] = translate_passage_ids(quote["text"], id_to_name)
 
+            # Add story style config to results for PR comment formatting
+            results['story_style'] = story_style
+
             # Format and post final summary comment
             comment = format_pr_comment(results)
             if not post_pr_comment(pr_number, comment):
@@ -870,7 +1224,10 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
 
             app.logger.info(f"[Background] Successfully posted continuity check results to PR #{pr_number}")
 
-            # Mark job as complete
+            # Mark job as complete (shared state for cross-worker coordination)
+            shared_state.complete_job(workflow_id, 'completed')
+
+            # Also update local state
             with metrics_lock:
                 if workflow_id in active_jobs:
                     job_info = active_jobs.pop(workflow_id)
@@ -884,29 +1241,33 @@ _Powered by Ollama (gpt-oss:20b-fullcontext)_
                     metrics["total_jobs_completed"] += 1
 
                 # Clean up PR tracking if this is still the active job for this PR
-                if pr_active_jobs.get(pr_number) == workflow_id:
-                    pr_active_jobs.pop(pr_number, None)
+                if pr_active_continuity_jobs.get(pr_number) == workflow_id:
+                    pr_active_continuity_jobs.pop(pr_number, None)
 
     except Exception as e:
         app.logger.error(f"[Background] Error processing webhook: {e}", exc_info=True)
 
-        # Mark job as failed
+        # Mark job as failed/cancelled (shared state for cross-worker coordination)
+        final_status = "cancelled" if "Job cancelled" in str(e) else "failed"
+        shared_state.complete_job(workflow_id, final_status)
+
+        # Also update local state
         with metrics_lock:
             if workflow_id in active_jobs:
                 job_info = active_jobs.pop(workflow_id)
-                job_info["status"] = "failed" if "Job cancelled" not in str(e) else "cancelled"
+                job_info["status"] = final_status
                 job_info["error"] = str(e)
                 job_info["end_time"] = datetime.now()
                 job_info["duration_seconds"] = (job_info["end_time"] - job_info["start_time"]).total_seconds()
                 job_history.append(job_info)
                 if len(job_history) > 50:
                     job_history.pop(0)
-                if "Job cancelled" not in str(e):
+                if final_status == "failed":
                     metrics["total_jobs_failed"] += 1
 
             # Clean up PR tracking if this is still the active job for this PR
-            if pr_active_jobs.get(pr_number) == workflow_id:
-                pr_active_jobs.pop(pr_number, None)
+            if pr_active_continuity_jobs.get(pr_number) == workflow_id:
+                pr_active_continuity_jobs.pop(pr_number, None)
 
 
 @app.route('/webhook', methods=['POST'])
@@ -951,6 +1312,23 @@ def handle_workflow_webhook(payload):
 
     # Get PR number
     workflow_id = workflow_run.get('id')
+
+    # Deduplication: Check if we've already processed this workflow run
+    with metrics_lock:
+        now = time.time()
+        # Clean up old entries
+        expired_ids = [wid for wid, ts in processed_workflow_runs.items() if now - ts > WORKFLOW_DEDUP_TTL]
+        for wid in expired_ids:
+            del processed_workflow_runs[wid]
+
+        # Check if already processed
+        if workflow_id in processed_workflow_runs:
+            app.logger.info(f"Ignoring duplicate webhook for workflow run {workflow_id}")
+            return jsonify({"message": "Duplicate webhook, already processed"}), 200
+
+        # Mark as processed
+        processed_workflow_runs[workflow_id] = now
+
     pr_number = get_pr_number_from_workflow(workflow_id)
 
     if not pr_number:
@@ -959,37 +1337,73 @@ def handle_workflow_webhook(payload):
 
     app.logger.info(f"Processing workflow {workflow_id} for PR #{pr_number}")
 
-    # Get artifacts URL
+    # Get artifacts URL and commit SHA
     artifacts_url = workflow_run.get('artifacts_url')
     if not artifacts_url:
         app.logger.error("No artifacts URL in workflow")
         return jsonify({"error": "No artifacts URL"}), 400
 
-    # Cancel any existing job for this PR
-    # WHY: New commits supersede old ones, so stop checking outdated code
+    # Get the commit SHA that triggered this workflow
+    # This is critical: we must load cache from the same commit that the artifacts were built from
+    commit_sha = workflow_run.get('head_sha')
+    if commit_sha:
+        app.logger.info(f"Processing workflow {workflow_id} for commit {commit_sha[:8]}")
+    else:
+        app.logger.warning(f"No head_sha in workflow_run, will fall back to branch HEAD")
+
+    # Cancel any existing jobs for this PR (both continuity check and Story Bible extraction)
+    # WHY: New commits supersede old ones, so stop processing outdated code
     # This prevents wasted AI computation and confusing duplicate comments
-    with metrics_lock:
-        if pr_number in pr_active_jobs:
-            old_workflow_id = pr_active_jobs[pr_number]
-            if old_workflow_id in active_jobs:
-                app.logger.info(f"Cancelling existing job (workflow {old_workflow_id}) for PR #{pr_number}")
-                cancel_event = active_jobs[old_workflow_id].get("cancel_event")
+    # NOTE: Uses shared state for cross-worker cancellation (multiple gunicorn workers)
+    shared_state = get_shared_state()
+
+    # Cancel existing continuity check for this PR (works across all workers)
+    old_continuity_id = shared_state.cancel_existing_job(pr_number, 'continuity')
+    if old_continuity_id:
+        app.logger.info(f"Signaled cancellation for continuity check (workflow {old_continuity_id}) for PR #{pr_number}")
+        # Also cancel local in-memory state if this worker happens to have it
+        with metrics_lock:
+            if old_continuity_id in active_jobs:
+                cancel_event = active_jobs[old_continuity_id].get("cancel_event")
                 if cancel_event:
-                    # Signal cancellation - checked in process_webhook_async loop
+                    cancel_event.set()
+
+    # Cancel existing Story Bible extraction for this PR (works across all workers)
+    old_extraction_id = shared_state.cancel_existing_job(pr_number, 'extraction')
+    if old_extraction_id:
+        app.logger.info(f"Signaled cancellation for Story Bible extraction ({old_extraction_id}) for PR #{pr_number}")
+        # Also cancel local in-memory state if this worker happens to have it
+        with metrics_lock:
+            if old_extraction_id in active_jobs:
+                cancel_event = active_jobs[old_extraction_id].get("cancel_event")
+                if cancel_event:
                     cancel_event.set()
 
     # Spawn background thread to process webhook
     # WHY: Return immediately (202 Accepted) so GitHub doesn't timeout
     # Always use 'new-only' mode for automatic workflow triggers (fastest)
+    # Pass commit_sha so cache is loaded from the same commit as the artifacts
     thread = threading.Thread(
         target=process_webhook_async,
-        args=(workflow_id, pr_number, artifacts_url, 'new-only'),
+        args=(workflow_id, pr_number, artifacts_url, 'new-only', commit_sha),
         daemon=True  # Dies when main process exits
     )
     thread.start()
 
+    # Spawn second background thread for Story Bible extraction
+    # WHY: Feature spec (story-bible.md) requires automatic extraction after every successful build
+    # Run in parallel with continuity check - both are independent operations
+    # Supports cancellation: new commits cancel old extractions to prevent duplicate work
+    extraction_workflow_id = f"auto-story-bible-{workflow_id}"
+    extraction_thread = threading.Thread(
+        target=process_story_bible_extraction_async,
+        args=(extraction_workflow_id, pr_number, artifacts_url, 'github-actions[bot]', 'incremental'),
+        daemon=True
+    )
+    extraction_thread.start()
+
     # Return immediately
-    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing in background with mode=new-only")
+    app.logger.info(f"Accepted webhook for PR #{pr_number}, processing continuity check and Story Bible extraction in background")
     return jsonify({"message": "Webhook accepted, processing in background", "pr": pr_number}), 202
 
 
@@ -1008,80 +1422,10 @@ def handle_comment_webhook(payload):
     # Route to appropriate handler
     if re.search(r'/check-continuity\b', comment_body):
         return handle_check_continuity_command(payload)
-    elif re.search(r'/approve-path\b', comment_body):
-        return handle_approve_path_command(payload)
+    elif re.search(r'/extract-story-bible\b', comment_body):
+        return handle_extract_story_bible_command(payload)
     else:
         return jsonify({"message": "No recognized command"}), 200
-
-
-def handle_approve_path_command(payload):
-    """Handle /approve-path command from PR comments."""
-    comment_body = payload['comment']['body']
-    pr_number = payload['issue']['number']
-    username = payload['comment']['user']['login']
-    comment_id = payload['comment']['id']
-
-    # Deduplication: Check if we've already processed this comment
-    with metrics_lock:
-        now = time.time()
-        # Clean up old entries
-        expired_ids = [cid for cid, ts in processed_comment_ids.items() if now - ts > COMMENT_DEDUP_TTL]
-        for cid in expired_ids:
-            del processed_comment_ids[cid]
-
-        # Check if already processed
-        if comment_id in processed_comment_ids:
-            app.logger.info(f"Ignoring duplicate webhook for comment {comment_id}")
-            return jsonify({"message": "Duplicate webhook, already processed"}), 200
-
-        # Mark as processed
-        processed_comment_ids[comment_id] = now
-
-    # Ignore bot's own progress comments by checking for multiple bot markers
-    # This prevents self-triggering from the helper text in progress comments
-    bot_markers = [
-        '💡 **To approve this path:**',
-        '🤖 AI Continuity Check',
-        'Path {current}/{total} Complete'  # Not using f-string, just checking pattern
-    ]
-    if any(marker in comment_body for marker in bot_markers):
-        return jsonify({"message": "Ignoring bot's own comment"}), 200
-
-    # Check authorization first (before potentially expensive cache operations)
-    if not is_authorized(username):
-        post_pr_comment(pr_number,
-            f"⚠️ @{username} is not authorized to approve paths. Only repository collaborators can approve.")
-        return jsonify({"message": "Unauthorized"}), 403
-
-    # Extract path IDs (8-char hex hashes) and category keywords
-    path_ids = re.findall(r'\b[a-f0-9]{8}\b', comment_body)
-
-    # Check for category keywords (all, new, modified, unchanged)
-    category_keywords = []
-    for keyword in ['all', 'new', 'modified', 'unchanged']:
-        # Match keyword as whole word (not part of another word)
-        if re.search(rf'\b{keyword}\b', comment_body, re.IGNORECASE):
-            category_keywords.append(keyword.lower())
-
-    # If no explicit path IDs and no keywords, show error
-    if not path_ids and not category_keywords:
-        post_pr_comment(pr_number,
-            "⚠️ No valid path IDs or categories found.\n\n" +
-            "**Format:**\n" +
-            "- Specific paths: `/approve-path abc12345 def67890`\n" +
-            "- All paths: `/approve-path all`\n" +
-            "- By category: `/approve-path new` or `/approve-path modified`")
-        return jsonify({"message": "No path IDs"}), 200
-
-    # Process asynchronously (will expand keywords inside the async function)
-    thread = threading.Thread(
-        target=process_approval_async,
-        args=(pr_number, path_ids, username, category_keywords),
-        daemon=True
-    )
-    thread.start()
-
-    return jsonify({"message": "Processing approval", "path_count": len(path_ids), "categories": category_keywords}), 202
 
 
 def handle_check_continuity_command(payload):
@@ -1114,10 +1458,18 @@ def handle_check_continuity_command(payload):
         app.logger.info(f"Ignoring bot's own comment")
         return jsonify({"message": "Ignoring bot's own comment"}), 200
 
-    # Parse mode from command
+    # Parse mode and optional parameters from command
     mode = parse_check_command_mode(comment_body)
+    limit = parse_check_command_limit(comment_body)
+    specific_paths = parse_check_command_paths(comment_body)
 
-    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode} from {username}")
+    params = []
+    if limit:
+        params.append(f"limit={limit}")
+    if specific_paths:
+        params.append(f"paths={','.join(specific_paths)}")
+    params_str = f" ({', '.join(params)})" if params else ""
+    app.logger.info(f"Received /check-continuity command for PR #{pr_number} with mode={mode}{params_str} from {username}")
 
     # Get PR info to find the latest commit
     pr_info = get_pr_info(pr_number)
@@ -1165,25 +1517,828 @@ def handle_check_continuity_command(payload):
         post_pr_comment(pr_number, "⚠️ Error fetching workflow information")
         return jsonify({"message": "API error"}), 500
 
-    # Cancel any existing checks for this PR
-    with metrics_lock:
-        if pr_number in pr_active_jobs:
-            existing_workflow_id = pr_active_jobs[pr_number]
-            if existing_workflow_id in active_jobs:
-                app.logger.info(f"Cancelling existing job {existing_workflow_id} for PR #{pr_number}")
-                active_jobs[existing_workflow_id]['cancel_event'].set()
+    # Cancel any existing checks for this PR (manual command supersedes auto-validation)
+    # This prevents parallel runs and ensures the user's manual request takes priority
+    shared_state = get_shared_state()
+    old_workflow_id = shared_state.cancel_existing_job(pr_number, 'continuity')
+    if old_workflow_id:
+        app.logger.info(f"Manual command: cancelled existing auto-validation (workflow {old_workflow_id}) for PR #{pr_number}")
 
     # Spawn background thread for processing using the existing process_webhook_async
     workflow_id = f"manual-{pr_number}-{int(time.time())}"
 
     thread = threading.Thread(
         target=process_webhook_async,
-        args=(workflow_id, pr_number, artifacts_url, mode),
+        args=(workflow_id, pr_number, artifacts_url, mode, None, limit, specific_paths),
         daemon=True
     )
     thread.start()
 
-    return jsonify({"message": "Check started", "mode": mode, "workflow_id": workflow_id}), 202
+    result = {"message": "Check started", "mode": mode, "workflow_id": workflow_id}
+    if limit:
+        result["limit"] = limit
+    if specific_paths:
+        result["paths"] = specific_paths
+    return jsonify(result), 202
+
+
+def handle_extract_story_bible_command(payload):
+    """Handle /extract-story-bible command from PR comments."""
+    comment_body = payload['comment']['body']
+    pr_number = payload['issue']['number']
+    username = payload['comment']['user']['login']
+    comment_id = payload['comment']['id']
+
+    # Deduplication check
+    with metrics_lock:
+        now = time.time()
+        expired_ids = [cid for cid, ts in processed_comment_ids.items() if now - ts > COMMENT_DEDUP_TTL]
+        for cid in expired_ids:
+            del processed_comment_ids[cid]
+
+        if comment_id in processed_comment_ids:
+            app.logger.info(f"Ignoring duplicate /extract-story-bible for comment {comment_id}")
+            return jsonify({"message": "Duplicate webhook"}), 200
+
+        processed_comment_ids[comment_id] = now
+
+    # Ignore bot's own comments
+    bot_markers = [
+        '📖 Story Bible Extraction',
+        'Powered by Ollama',
+        '**Mode:**'
+    ]
+    if any(marker in comment_body for marker in bot_markers):
+        app.logger.info(f"Ignoring bot's own comment")
+        return jsonify({"message": "Ignoring bot's own comment"}), 200
+
+    # Parse mode from command
+    mode = parse_story_bible_command_mode(comment_body)
+
+    app.logger.info(f"Received /extract-story-bible command for PR #{pr_number} with mode={mode} from {username}")
+
+    # Get PR info
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        post_pr_comment(pr_number, "⚠️ Could not retrieve PR information")
+        return jsonify({"message": "PR info error"}), 500
+
+    # Find the latest successful workflow run for this PR
+    artifacts_url = get_latest_artifacts_url(pr_number)
+    if not artifacts_url:
+        post_pr_comment(pr_number, "⚠️ No successful workflow run found for this PR. Please ensure the CI has completed successfully at least once.")
+        return jsonify({"message": "No artifacts found"}), 404
+
+    # Spawn background thread for processing
+    workflow_id = f"story-bible-{pr_number}-{int(time.time())}"
+
+    thread = threading.Thread(
+        target=process_story_bible_extraction_async,
+        args=(workflow_id, pr_number, artifacts_url, username, mode),
+        daemon=True
+    )
+    thread.start()
+
+    return jsonify({"message": "Extraction started", "mode": mode, "workflow_id": workflow_id}), 202
+
+
+def parse_story_bible_command_mode(comment_body: str) -> str:
+    """Parse extraction mode from /extract-story-bible command.
+
+    Formats:
+        /extract-story-bible              -> 'incremental' (default)
+        /extract-story-bible full         -> 'full'
+        /extract-story-bible incremental  -> 'incremental'
+        /extract-story-bible summarize    -> 'summarize'
+
+    Args:
+        comment_body: The comment text
+
+    Returns:
+        One of: 'incremental', 'full', 'summarize'
+    """
+    match = re.search(r'/extract-story-bible(?:\s+(full|incremental|summarize))?', comment_body, re.IGNORECASE)
+
+    if match and match.group(1):
+        return match.group(1).lower()
+
+    return 'incremental'  # Default
+
+
+def process_story_bible_extraction_async(workflow_id, pr_number, artifacts_url, username, mode, cancel_event=None):
+    """Process Story Bible extraction in background thread.
+
+    Args:
+        workflow_id: Unique ID for this workflow
+        pr_number: PR number
+        artifacts_url: URL to download artifacts (None for summarize mode)
+        username: GitHub username who triggered the command
+        mode: One of 'incremental', 'full', or 'summarize'
+        cancel_event: Optional threading.Event for cancellation support (deprecated, ignored)
+    """
+    # Use file-based cancellation event for cross-worker support
+    cancel_event = FileCancellationEvent(workflow_id)
+
+    # Import the extractor module
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent / 'lib'))
+    from story_bible_extractor import (
+        extract_facts_from_passage,
+        extract_facts_from_passage_with_chunking,
+        categorize_all_facts,
+        get_passages_to_extract_v2,
+        run_summarization,
+        calculate_metrics
+    )
+
+    try:
+        app.logger.info(f"[Story Bible] Processing extraction for PR #{pr_number} with mode={mode}")
+
+        # Register job with shared state (for cross-worker coordination)
+        shared_state = get_shared_state()
+        job_info = JobInfo(
+            workflow_id=workflow_id,
+            pr_number=pr_number,
+            operation_type='extraction',
+            status='initializing',
+            start_time=time.time()
+        )
+        existing_job = shared_state.register_job(job_info)
+        if existing_job:
+            app.logger.info(f"[Story Bible] Found existing job {existing_job} for PR #{pr_number}, will be cancelled")
+
+        # Also track locally for this worker
+        with metrics_lock:
+            active_jobs[workflow_id] = {
+                "pr_number": pr_number,
+                "start_time": datetime.now(),
+                "current_path": 0,
+                "total_paths": 0,
+                "status": "initializing",
+                "cancel_event": cancel_event,
+                "operation_type": "extraction"
+            }
+            pr_active_extraction_jobs[pr_number] = workflow_id  # Mark this extraction as active for this PR
+
+        # Post initial comment
+        if mode == 'summarize':
+            mode_text = 'summarization only (no extraction)'
+        elif mode == 'full':
+            mode_text = 'full re-extraction'
+        else:
+            mode_text = 'incremental extraction of new/changed passages'
+
+        post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Starting
+
+**Mode:** `{mode}` _({mode_text})_
+**Requested by:** @{username}
+
+Downloading artifacts and preparing extraction...
+
+_This may take several minutes. Progress updates will be posted as extraction proceeds._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+        # Check for cancellation (early - before downloading artifacts)
+        if cancel_event.is_set():
+            app.logger.info(f"[Story Bible] Extraction cancelled early for PR #{pr_number} (before downloading artifacts)")
+            post_pr_comment(pr_number, """## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            # Clean up tracking
+            with metrics_lock:
+                if workflow_id in active_jobs:
+                    active_jobs.pop(workflow_id, None)
+                if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                    pr_active_extraction_jobs.pop(pr_number, None)
+            # Mark job as cancelled (shared state for cross-worker coordination)
+            shared_state.complete_job(workflow_id, 'cancelled')
+            return
+
+        # Load cache from PR branch (if exists)
+        cache = load_story_bible_cache_from_branch(pr_number)
+
+        # Handle summarize-only mode (skip extraction)
+        if mode == 'summarize':
+            app.logger.info(f"[Story Bible] Summarize-only mode: skipping extraction")
+
+            # Check that passage_extractions exists
+            if not cache:
+                post_pr_comment(pr_number, """⚠️ No Story Bible cache found on this branch.
+
+**Next steps:**
+- Run `/extract-story-bible` first to extract facts from passages
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                return
+
+            if 'passage_extractions' not in cache or not cache['passage_extractions']:
+                post_pr_comment(pr_number, """⚠️ No passage extractions found in cache.
+
+**Next steps:**
+- Run `/extract-story-bible` first to extract facts from passages
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                return
+
+            total_passages = len(cache['passage_extractions'])
+
+            post_pr_comment(pr_number, f"""## 📖 Story Bible Summarization - Processing
+
+Found **{total_passages}** passage(s) with extracted facts.
+
+Running AI summarization to deduplicate and merge facts...
+""")
+
+        else:
+            # Download artifacts for extraction modes
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmpdir_path = Path(tmpdir)
+
+                # Download and extract
+                if not download_artifact_for_pr(artifacts_url, tmpdir_path):
+                    post_pr_comment(pr_number, "⚠️ Failed to download artifacts")
+                    return
+
+                # Load allpaths metadata
+                metadata_dir = tmpdir_path / "dist" / "allpaths-metadata"
+
+                if not metadata_dir.exists():
+                    post_pr_comment(pr_number, "⚠️ No allpaths-metadata found in artifacts. Please ensure the build completed successfully.")
+                    return
+
+                # Copy core library artifacts to metadata_dir if available
+                core_artifacts_source = tmpdir_path / "lib" / "artifacts" / "passages_deduplicated.json"
+                if core_artifacts_source.exists():
+                    import shutil
+                    app.logger.info(f"[Story Bible] Copying core library artifacts to metadata directory")
+                    shutil.copy(core_artifacts_source, metadata_dir / "passages_deduplicated.json")
+                else:
+                    app.logger.info(f"[Story Bible] Core library artifacts not found, will use AllPaths fallback")
+
+                # Identify passages to extract (using new version with core library support)
+                passages_to_extract = get_passages_to_extract_v2(cache, metadata_dir, mode)
+
+                if not passages_to_extract:
+                    post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Complete
+
+**Mode:** `{mode}`
+
+No passages need extraction. Story Bible is up to date.
+
+_Use `/extract-story-bible full` to force full re-extraction._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                    return
+
+                # Post list of passages
+                total_passages = len(passages_to_extract)
+                post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Processing
+
+**Mode:** `{mode}`
+
+Found **{total_passages}** passage(s) to extract.
+
+_Progress updates will be posted as each passage completes._
+""")
+
+                # Check for cancellation (before extraction loop starts)
+                if cancel_event.is_set():
+                    app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (before extraction loop)")
+                    post_pr_comment(pr_number, """## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                    # Clean up tracking
+                    with metrics_lock:
+                        if workflow_id in active_jobs:
+                            active_jobs.pop(workflow_id, None)
+                        if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                            pr_active_extraction_jobs.pop(pr_number, None)
+                    # Mark job as cancelled (shared state for cross-worker coordination)
+                    shared_state.complete_job(workflow_id, 'cancelled')
+                    return
+
+                # Extract facts from each passage
+                for idx, (passage_id, passage_file, passage_content, content_hash) in enumerate(passages_to_extract, 1):
+                    # Check for cancellation (at top of extraction loop - between passages)
+                    if cancel_event.is_set():
+                        app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (during extraction, after {idx-1}/{total_passages} passages)")
+                        post_pr_comment(pr_number, f"""## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled after {idx-1}/{total_passages} passage(s) - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+                        # Clean up tracking
+                        with metrics_lock:
+                            if workflow_id in active_jobs:
+                                active_jobs.pop(workflow_id, None)
+                            if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                                pr_active_extraction_jobs.pop(pr_number, None)
+                        # Mark job as cancelled (shared state for cross-worker coordination)
+                        shared_state.complete_job(workflow_id, 'cancelled')
+                        return
+
+                    app.logger.info(f"[Story Bible] Extracting passage {idx}/{total_passages}: {passage_id}")
+
+                    try:
+                        # Call Ollama API with chunking support
+                        extracted_facts, chunks_processed = extract_facts_from_passage_with_chunking(
+                            passage_id, passage_content
+                        )
+
+                        # Update cache
+                        if 'passage_extractions' not in cache:
+                            cache['passage_extractions'] = {}
+
+                        # Handle new entity-first extraction format
+                        # extracted_facts is now a dict with 'entities' and 'facts' keys
+                        entities = extracted_facts.get('entities', {})
+                        facts_list = extracted_facts.get('facts', [])
+
+                        cache['passage_extractions'][passage_id] = {
+                            'content_hash': content_hash,  # Use hash from core library (SHA256[:16])
+                            'extracted_at': datetime.now().isoformat(),
+                            'entities': entities,
+                            'facts': facts_list,
+                            'chunks_processed': chunks_processed,
+                            'passage_name': passage_id,
+                            'passage_length': len(passage_content)
+                        }
+
+                        # Post progress with entity counts
+                        char_count = len(entities.get('characters', []))
+                        loc_count = len(entities.get('locations', []))
+                        item_count = len(entities.get('items', []))
+
+                        # Build entity preview
+                        char_names = [c.get('name', 'Unknown') for c in entities.get('characters', [])[:5]]
+                        loc_names = [l.get('name', 'Unknown') for l in entities.get('locations', [])[:3]]
+
+                        preview_parts = []
+                        if char_names:
+                            preview_parts.append(f"**Characters:** {', '.join(char_names)}")
+                        if loc_names:
+                            preview_parts.append(f"**Locations:** {', '.join(loc_names)}")
+                        preview_text = '\n'.join(preview_parts) if preview_parts else "No entities found"
+
+                        post_pr_comment(pr_number, f"""### ✅ Passage {idx}/{total_passages} Complete
+
+**Passage:** `{passage_id}`
+**Entities found:** {char_count} characters, {loc_count} locations, {item_count} items
+
+<details>
+<summary>Preview entities</summary>
+
+{preview_text}
+
+</details>
+""")
+
+                    except Exception as e:
+                        app.logger.error(f"[Story Bible] Error extracting passage {passage_id}: {e}", exc_info=True)
+                        post_pr_comment(pr_number, f"""### ⚠️ Passage {idx}/{total_passages} Failed
+
+**Passage:** `{passage_id}`
+**Error:** Extraction failed
+
+Continuing with remaining passages...
+""")
+                        continue
+
+        # Check for cancellation (before summarization)
+        if cancel_event.is_set():
+            app.logger.info(f"[Story Bible] Extraction cancelled for PR #{pr_number} (before summarization)")
+            post_pr_comment(pr_number, """## 📖 Story Bible Extraction - Cancelled
+
+Extraction cancelled before summarization - newer commit detected.
+
+_This is expected during rapid development. The latest commit will be extracted instead._
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+            # Clean up tracking
+            with metrics_lock:
+                if workflow_id in active_jobs:
+                    active_jobs.pop(workflow_id, None)
+                if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                    pr_active_extraction_jobs.pop(pr_number, None)
+            # Mark job as cancelled (shared state for cross-worker coordination)
+            shared_state.complete_job(workflow_id, 'cancelled')
+            return
+
+        # Stage 2.5: Run AI summarization/deduplication
+        app.logger.info(f"[Story Bible] Running AI summarization on {len(cache['passage_extractions'])} passages")
+        summarized_facts = None
+        summarization_status = "skipped"
+        summarization_time = 0.0
+
+        try:
+            summarized_facts, summarization_status, summarization_time = run_summarization(
+                cache.get('passage_extractions', {})
+            )
+            app.logger.info(f"[Story Bible] Summarization {summarization_status} in {summarization_time:.2f}s")
+
+            # Store summarization results in cache
+            cache['summarized_facts'] = summarized_facts
+            cache['summarization_status'] = summarization_status
+            cache['summarization_time_seconds'] = summarization_time
+
+        except Exception as e:
+            # Graceful degradation: log error but continue with categorization
+            app.logger.warning(f"[Story Bible] Summarization failed: {e}, continuing with basic categorization")
+            cache['summarization_status'] = 'failed'
+            cache['summarization_error'] = str(e)
+
+        # Categorize facts (cross-reference across all passages)
+        # Pass summarized_facts if available, otherwise falls back to per-passage extractions
+        app.logger.info(f"[Story Bible] Categorizing facts across {len(cache['passage_extractions'])} passages")
+        categorized_facts = categorize_all_facts(
+            cache.get('passage_extractions', {}),
+            summarized_facts=summarized_facts
+        )
+        cache['categorized_facts'] = categorized_facts
+
+        # Calculate quality metrics
+        app.logger.info(f"[Story Bible] Calculating quality metrics")
+        extraction_stats = calculate_metrics(cache)
+        cache['extraction_stats'] = extraction_stats
+
+        # Update metadata
+        total_facts = (
+            len(categorized_facts.get('constants', {}).get('world_rules', [])) +
+            len(categorized_facts.get('constants', {}).get('setting', [])) +
+            len(categorized_facts.get('constants', {}).get('timeline', [])) +
+            len(categorized_facts.get('variables', {}).get('events', [])) +
+            len(categorized_facts.get('variables', {}).get('outcomes', []))
+        )
+
+        cache['meta'] = {
+            'last_extracted': datetime.now().isoformat(),
+            'total_passages_extracted': len(cache['passage_extractions']),
+            'total_facts': total_facts
+        }
+
+        # Commit cache to PR branch
+        pr_info = get_pr_info(pr_number)
+        branch_name = pr_info['head']['ref']
+
+        # Get total_passages for commit message
+        if mode == 'summarize':
+            total_passages = len(cache['passage_extractions'])
+        # else: total_passages already set during extraction
+
+        commit_story_bible_to_branch(pr_number, branch_name, cache, username, mode, total_passages)
+
+        # Regenerate dist files from updated cache
+        # WHY: dist/story-bible.{html,json} must stay in sync with cache
+        # Without this, users see stale output even though cache is up-to-date
+        app.logger.info(f"[Story Bible] Regenerating dist files from cache")
+        try:
+            regenerate_story_bible_dist_files(pr_number, branch_name, cache)
+            app.logger.info(f"[Story Bible] Dist files regenerated successfully")
+        except Exception as e:
+            app.logger.error(f"[Story Bible] Failed to regenerate dist files: {e}")
+            # Continue anyway - cache is still updated, user can manually regenerate if needed
+
+        # Post final summary
+        character_count = len(categorized_facts.get('characters', {}))
+        constant_count = (
+            len(categorized_facts.get('constants', {}).get('world_rules', [])) +
+            len(categorized_facts.get('constants', {}).get('setting', [])) +
+            len(categorized_facts.get('constants', {}).get('timeline', []))
+        )
+        variable_count = (
+            len(categorized_facts.get('variables', {}).get('events', [])) +
+            len(categorized_facts.get('variables', {}).get('outcomes', []))
+        )
+
+        # Format summarization status for display
+        if summarization_status == 'success':
+            summarization_display = f"✅ Success ({summarization_time:.1f}s) - facts deduplicated"
+        elif summarization_status == 'failed':
+            summarization_display = "⚠️ Failed - using per-passage view"
+        else:
+            summarization_display = "⏭️ Skipped"
+
+        # Customize final comment based on mode
+        if mode == 'summarize':
+            title = "Story Bible Summarization - Complete"
+            passages_label = "Passages processed"
+        else:
+            title = "Story Bible Extraction - Complete"
+            passages_label = "Passages extracted"
+
+        # Format quality metrics for display
+        metrics_text = ""
+        if extraction_stats:
+            character_coverage = extraction_stats.get('character_coverage', 0)
+            avg_facts = extraction_stats.get('average_facts_per_passage', 0)
+            success_rate = extraction_stats.get('extraction_success_rate', 0) * 100
+            dedup_ratio = extraction_stats.get('deduplication_effectiveness', 0) * 100
+
+            metrics_text = f"""
+**Quality Metrics:**
+- **Character coverage:** {character_coverage} characters detected
+- **Extraction success:** {extraction_stats.get('passages_with_facts', 0)}/{extraction_stats.get('total_passages', 0)} passages ({success_rate:.1f}%)
+- **Average facts/passage:** {avg_facts:.1f}
+- **Deduplication:** {dedup_ratio:.0f}% reduction
+"""
+
+        post_pr_comment(pr_number, f"""## 📖 {title}
+
+**Mode:** `{mode}`
+**{passages_label}:** {total_passages}
+**Total facts:** {total_facts}
+**Summarization:** {summarization_display}
+{metrics_text}
+**Summary:**
+- **Constants:** {constant_count} world facts
+- **Characters:** {character_count} characters
+- **Variables:** {variable_count} player-determined facts
+
+**Story Bible updated:**
+- `story-bible-cache.json` committed to branch `{branch_name}`
+- Facts cached for incremental updates
+
+**Next steps:**
+- Review extracted facts in `story-bible-cache.json`
+- Use `/extract-story-bible` again to update as story evolves
+- Facts will be preserved and incrementally updated
+
+---
+_Powered by Ollama (gpt-oss:20b-fullcontext)_
+""")
+
+        app.logger.info(f"[Story Bible] Extraction complete for PR #{pr_number}")
+
+        # Clean up tracking on successful completion
+        with metrics_lock:
+            if workflow_id in active_jobs:
+                active_jobs.pop(workflow_id, None)
+            # Clean up PR tracking if this is still the active extraction for this PR
+            if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                pr_active_extraction_jobs.pop(pr_number, None)
+        # Mark job as complete (shared state for cross-worker coordination)
+        shared_state.complete_job(workflow_id, 'completed')
+
+    except Exception as e:
+        app.logger.error(f"[Story Bible] Error during extraction: {e}", exc_info=True)
+        post_pr_comment(pr_number, "⚠️ Error during extraction. Please contact repository maintainers.")
+
+        # Clean up tracking on failure
+        with metrics_lock:
+            if workflow_id in active_jobs:
+                active_jobs.pop(workflow_id, None)
+            # Clean up PR tracking if this is still the active extraction for this PR
+            if pr_active_extraction_jobs.get(pr_number) == workflow_id:
+                pr_active_extraction_jobs.pop(pr_number, None)
+        # Mark job as failed (shared state for cross-worker coordination)
+        shared_state.complete_job(workflow_id, 'failed')
+
+
+def load_story_bible_cache_from_branch(pr_number: int, commit_sha: str = None) -> Dict:
+    """Load story-bible-cache.json from the PR branch if it exists.
+
+    Used for both Story Bible extraction (Phase 2) and validation (Phase 3).
+
+    Args:
+        pr_number: Pull request number
+        commit_sha: Optional specific commit SHA to load cache from (defaults to branch HEAD)
+
+    Returns:
+        Story Bible cache dict, or empty dict if not found
+    """
+    pr_info = get_pr_info(pr_number)
+    if not pr_info:
+        return {}
+
+    branch_name = pr_info['head']['ref']
+    token = get_github_token()
+    url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/contents/story-bible-cache.json"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    # Use commit SHA if provided, otherwise use branch name
+    ref = commit_sha if commit_sha else branch_name
+
+    try:
+        response = requests.get(url, headers=headers, params={"ref": ref})
+        app.logger.info(f"[Story Bible] Cache load attempt: status={response.status_code}, ref={ref[:8] if len(ref) > 8 else ref}")
+
+        if response.status_code == 200:
+            import base64
+            response_data = response.json()
+            file_size = response_data.get('size', 0)
+            app.logger.info(f"[Story Bible] File size: {file_size} bytes")
+
+            # GitHub Contents API has a 1MB limit for inline content
+            # For files > 1MB, we need to use the Git Blob API
+            if file_size > 1024 * 1024:  # 1MB
+                app.logger.info(f"[Story Bible] File exceeds 1MB, using Git Blob API")
+                git_url = response_data.get('git_url')
+                if not git_url:
+                    app.logger.warning(f"[Story Bible] No git_url in response for large file")
+                    return {}
+
+                # Fetch blob directly
+                blob_response = requests.get(git_url, headers=headers)
+                if blob_response.status_code != 200:
+                    app.logger.warning(f"[Story Bible] Blob API returned status {blob_response.status_code}")
+                    return {}
+
+                blob_data = blob_response.json()
+                content = blob_data.get('content')
+                if not content:
+                    app.logger.warning(f"[Story Bible] No content in blob response")
+                    return {}
+
+                # Blob API returns base64 with newlines, need to strip them
+                content = content.replace('\n', '')
+                decoded = base64.b64decode(content).decode('utf-8')
+            else:
+                # Small file, use inline content from Contents API
+                if 'content' not in response_data:
+                    app.logger.warning(f"[Story Bible] No 'content' key in response")
+                    return {}
+
+                content = response_data['content']
+                if not content or not content.strip():
+                    app.logger.warning(f"[Story Bible] Empty content in response")
+                    return {}
+
+                decoded = base64.b64decode(content).decode('utf-8')
+
+            if not decoded or not decoded.strip():
+                app.logger.warning(f"[Story Bible] Empty decoded content")
+                return {}
+
+            cache = json.loads(decoded)
+            if commit_sha:
+                app.logger.info(f"[Story Bible] Loaded cache from commit {commit_sha[:8]} ({len(decoded)} bytes)")
+            else:
+                app.logger.info(f"[Story Bible] Loaded cache from branch {branch_name} ({len(decoded)} bytes)")
+            return cache
+        else:
+            if commit_sha:
+                app.logger.info(f"[Story Bible] No existing cache found at commit {commit_sha[:8]} (status {response.status_code}), starting fresh")
+            else:
+                app.logger.info(f"[Story Bible] No existing cache found on branch {branch_name} (status {response.status_code}), starting fresh")
+            return {}
+    except Exception as e:
+        app.logger.warning(f"[Story Bible] Could not load cache (ref={ref[:8] if len(ref) > 8 else ref}): {e}")
+        return {}
+
+
+def regenerate_story_bible_dist_files(pr_number: int, branch_name: str, cache_data: Dict) -> bool:
+    """Regenerate dist/story-bible.{html,json} from cache and commit to PR branch.
+
+    Args:
+        pr_number: PR number
+        branch_name: Branch name to commit to
+        cache_data: Updated cache data to render
+
+    Returns:
+        True if successful, False otherwise
+    """
+    import sys
+    from pathlib import Path
+    import tempfile
+
+    # Add generator modules to path
+    generator_dir = Path(__file__).parent.parent / 'formats' / 'story-bible'
+    sys.path.insert(0, str(generator_dir / 'modules'))
+
+    from modules.html_generator import generate_html_output
+    from modules.json_generator import generate_json_output
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+
+            # Determine which data to use based on summarization status
+            summarization_status = cache_data.get('summarization_status', 'not_run')
+
+            if summarization_status == 'success' and 'summarized_facts' in cache_data:
+                app.logger.info(f"[Story Bible] Using summarized facts for rendering")
+                categorized = cache_data['summarized_facts']
+                # Ensure metadata includes view_type
+                if 'metadata' not in categorized:
+                    categorized['metadata'] = {}
+                categorized['metadata']['view_type'] = 'summarized'
+            else:
+                app.logger.info(f"[Story Bible] Using categorized facts for rendering")
+                categorized = cache_data['categorized_facts']
+                # Ensure metadata includes view_type
+                if 'metadata' not in categorized:
+                    categorized['metadata'] = {}
+                if 'view_type' not in categorized['metadata']:
+                    categorized['metadata']['view_type'] = 'per_passage'
+
+            # Generate HTML
+            html_output = tmpdir_path / 'story-bible.html'
+            generate_html_output(categorized, html_output)
+
+            # Generate JSON
+            json_output = tmpdir_path / 'story-bible.json'
+            generate_json_output(categorized, json_output)
+
+            # Read generated files
+            with open(html_output, 'r', encoding='utf-8') as f:
+                html_content = f.read()
+
+            with open(json_output, 'r', encoding='utf-8') as f:
+                json_content = f.read()
+
+            # Commit both files to branch
+            commit_message = """Update Story Bible: Regenerate dist files from cache
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+            # Commit HTML
+            html_success = commit_file_to_branch(branch_name, 'dist/story-bible.html', html_content, commit_message)
+            if not html_success:
+                app.logger.error(f"[Story Bible] Failed to commit dist/story-bible.html")
+                return False
+
+            # Commit JSON
+            json_success = commit_file_to_branch(branch_name, 'dist/story-bible.json', json_content, commit_message)
+            if not json_success:
+                app.logger.error(f"[Story Bible] Failed to commit dist/story-bible.json")
+                return False
+
+            return True
+
+    except Exception as e:
+        app.logger.error(f"[Story Bible] Error regenerating dist files: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+
+def commit_story_bible_to_branch(pr_number: int, branch_name: str, cache_data: Dict, username: str, mode: str, passages_extracted: int) -> bool:
+    """Commit updated Story Bible cache to PR branch."""
+    # Serialize cache
+    cache_content = json.dumps(cache_data, indent=2, ensure_ascii=False)
+
+    # Build commit message based on mode
+    total_facts = cache_data.get('meta', {}).get('total_facts', 0)
+
+    if mode == 'summarize':
+        operation = "Re-ran AI summarization"
+        detail = f"Processed {passages_extracted} passage(s)"
+    elif mode == 'full':
+        operation = "Full extraction + summarization"
+        detail = f"Extracted facts from {passages_extracted} passage(s)"
+    else:  # incremental
+        operation = "Incremental extraction + summarization"
+        detail = f"Extracted facts from {passages_extracted} passage(s)"
+
+    commit_message = f"""Update Story Bible: {operation}
+
+{detail}
+Total facts in cache: {total_facts}
+
+Mode: {mode}
+Requested by: @{username}
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+"""
+
+    # Commit to branch
+    return commit_file_to_branch(branch_name, 'story-bible-cache.json', cache_content, commit_message)
 
 
 def is_authorized(username: str) -> bool:
@@ -1231,189 +2386,46 @@ def parse_check_command_mode(comment_body: str) -> str:
     return 'new-only'  # Default if no mode specified
 
 
-def process_approval_async(pr_number: int, path_ids: List[str], username: str, category_keywords: List[str] = None):
-    """Process path approvals in background.
+def parse_check_command_limit(comment_body: str) -> Optional[int]:
+    """Parse optional limit parameter from /check-continuity command.
+
+    Supported formats:
+        /check-continuity all limit=1   -> 1
+        /check-continuity limit=3       -> 3
+        /check-continuity all           -> None (no limit)
 
     Args:
-        pr_number: Pull request number
-        path_ids: Explicit list of path IDs (8-char hex hashes)
-        username: User requesting approval
-        category_keywords: Optional list of category keywords ('all', 'new', 'modified', 'unchanged')
+        comment_body: The comment text
+
+    Returns:
+        Integer limit or None if not specified
     """
-    try:
-        category_keywords = category_keywords or []
+    match = re.search(r'limit=(\d+)', comment_body, re.IGNORECASE)
+    if match:
+        return int(match.group(1))
+    return None
 
-        app.logger.info(f"[Approval] Processing paths for PR #{pr_number} by {username} - " +
-                       f"explicit IDs: {len(path_ids)}, categories: {category_keywords}")
 
-        # Post initial acknowledgment
-        if category_keywords:
-            categories_str = ', '.join(f'`{k}`' for k in category_keywords)
-            post_pr_comment(pr_number, f"✅ Processing approval for categories: {categories_str}...")
-        else:
-            post_pr_comment(pr_number, f"✅ Processing approval for {len(path_ids)} path(s)...")
+def parse_check_command_paths(comment_body: str) -> Optional[List[str]]:
+    """Parse optional path parameter from /check-continuity command.
 
-        # Get PR info to find branch name
-        pr_info = get_pr_info(pr_number)
-        if not pr_info:
-            post_pr_comment(pr_number, "⚠️ Error: Could not retrieve PR information")
-            return
+    Supported formats:
+        /check-continuity path=0b16990d           -> ['0b16990d']
+        /check-continuity paths=0b16990d,abc123   -> ['0b16990d', 'abc123']
+        /check-continuity all                     -> None (all paths per mode)
 
-        branch_name = pr_info['head']['ref']
-        repo_full_name = pr_info['head']['repo']['full_name']
+    Args:
+        comment_body: The comment text
 
-        # Validate branch name format (alphanumeric, dash, underscore, slash, dot)
-        if not re.match(r'^[a-zA-Z0-9/_.-]+$', branch_name):
-            post_pr_comment(pr_number, "⚠️ Error: Invalid branch name format")
-            app.logger.error(f"Invalid branch name: {branch_name}")
-            return
-
-        # Download the latest artifact from the most recent workflow run on this PR
-        artifacts_url = get_latest_artifacts_url(pr_number)
-        if not artifacts_url:
-            post_pr_comment(pr_number, "⚠️ Error: No workflow artifacts found for this PR")
-            return
-
-        # Download and extract artifact
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpdir_path = Path(tmpdir)
-
-            if not download_artifact_for_pr(artifacts_url, tmpdir_path):
-                post_pr_comment(pr_number, "⚠️ Error: Failed to download validation cache")
-                return
-
-            cache_file = tmpdir_path / "allpaths-validation-status.json"
-            if not cache_file.exists():
-                post_pr_comment(pr_number, "⚠️ Error: Validation cache not found in artifacts")
-                return
-
-            # Load cache
-            cache = load_validation_cache(cache_file)
-
-            # Expand category keywords to actual path IDs
-            expanded_from_keywords = []
-            category_stats = {}
-
-            if category_keywords:
-                for keyword in category_keywords:
-                    if keyword == 'all':
-                        # Get all paths regardless of category
-                        for path_id, data in cache.items():
-                            if isinstance(data, dict) and path_id not in expanded_from_keywords:
-                                expanded_from_keywords.append(path_id)
-                        category_stats['all'] = len(expanded_from_keywords)
-                    else:
-                        # Get paths by specific category
-                        count = 0
-                        for path_id, data in cache.items():
-                            if isinstance(data, dict):
-                                if data.get('category') == keyword and path_id not in expanded_from_keywords:
-                                    expanded_from_keywords.append(path_id)
-                                    count += 1
-                        category_stats[keyword] = count
-
-                app.logger.info(f"[Approval] Expanded keywords to {len(expanded_from_keywords)} path IDs: {category_stats}")
-
-            # Combine explicit path IDs with expanded ones (remove duplicates)
-            all_path_ids = list(set(path_ids + expanded_from_keywords))
-
-            if not all_path_ids:
-                post_pr_comment(pr_number, "⚠️ No paths found to approve. The specified categories may be empty.")
-                return
-
-            # Mark paths as validated
-            approved_count = 0
-            not_found = []
-            already_approved = []
-
-            for path_id in all_path_ids:
-                if path_id in cache and isinstance(cache[path_id], dict):
-                    if cache[path_id].get("validated", False):
-                        already_approved.append(path_id)
-                    else:
-                        cache[path_id]["validated"] = True
-                        cache[path_id]["validated_at"] = datetime.now().isoformat()
-                        cache[path_id]["validated_by"] = username
-                        approved_count += 1
-                else:
-                    not_found.append(path_id)
-
-            # Save updated cache
-            save_validation_cache(cache_file, cache)
-
-            # Commit cache back to PR branch
-            cache_content = cache_file.read_text()
-
-            # Build commit message
-            if category_keywords:
-                categories_str = ', '.join(category_keywords)
-                commit_message = f"""Mark {approved_count} path(s) as validated ({categories_str})
-
-Categories approved by @{username}: {categories_str}
-- Total paths: {len(all_path_ids)}
-- Newly approved: {approved_count}
-- Already approved: {len(already_approved)}
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-"""
-            else:
-                commit_message = f"""Mark {approved_count} path(s) as validated
-
-Paths approved by @{username}:
-{chr(10).join(f'- {pid}' for pid in all_path_ids if pid not in not_found and pid not in already_approved)}
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-"""
-
-            if not commit_file_to_branch(branch_name, "allpaths-validation-status.json",
-                                        cache_content, commit_message):
-                post_pr_comment(pr_number, "⚠️ Error: Failed to commit validation cache")
-                return
-
-            # Post success comment
-            if category_keywords:
-                categories_str = ', '.join(f'`{k}`' for k in category_keywords)
-                success_lines = [f"✅ Successfully validated {approved_count} path(s) from categories: {categories_str} by @{username}\n"]
-                if category_stats:
-                    success_lines.append("**Category breakdown:**")
-                    for cat, count in category_stats.items():
-                        success_lines.append(f"- `{cat}`: {count} path(s)")
-                    success_lines.append("")
-            else:
-                success_lines = [f"✅ Successfully validated {approved_count} path(s) by @{username}\n"]
-
-            if approved_count > 0 and not category_keywords:
-                success_lines.append("**Approved paths:**")
-                for pid in all_path_ids:
-                    if pid not in not_found and pid not in already_approved:
-                        route = cache.get(pid, {}).get("route", pid)
-                        success_lines.append(f"- `{pid}` ({route})")
-
-            if already_approved:
-                success_lines.append(f"\n**Already approved:** {len(already_approved)} path(s)")
-                if len(already_approved) <= 10:
-                    success_lines.append(', '.join(f'`{p}`' for p in already_approved))
-
-            if not_found:
-                success_lines.append(f"\n**Not found:** {len(not_found)} path(s)")
-                if len(not_found) <= 10:
-                    success_lines.append(', '.join(f'`{p}`' for p in not_found))
-
-            success_lines.append("\nThese paths won't be re-checked unless their content changes.")
-
-            post_pr_comment(pr_number, '\n'.join(success_lines))
-
-            app.logger.info(f"[Approval] Successfully approved {approved_count} paths for PR #{pr_number}")
-
-    except Exception as e:
-        # Log detailed error to server only
-        app.logger.error(f"[Approval] Error: {e}", exc_info=True)
-        # Return generic error to user
-        post_pr_comment(pr_number, "⚠️ Error processing approval. Please contact repository maintainers.")
+    Returns:
+        List of path IDs or None if not specified
+    """
+    # Match path= or paths= followed by comma-separated hex IDs
+    match = re.search(r'paths?=([a-f0-9,]+)', comment_body, re.IGNORECASE)
+    if match:
+        paths_str = match.group(1)
+        return [p.strip() for p in paths_str.split(',') if p.strip()]
+    return None
 
 
 def get_pr_info(pr_number: int) -> Dict:

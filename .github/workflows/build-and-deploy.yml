@@ -76,10 +76,14 @@ jobs:
           mv dotgraph-temp/dotgraph-2 storyformats/
           rm -rf dotgraph-temp dotgraph.zip
 
-      - name: Build Harlowe version (main)
+      - name: Build Harlowe version (playable story)
         run: |
           mkdir -p dist
-          tweego src -o dist/index.html -f harlowe-3
+          tweego src -o dist/play.html -f harlowe-3
+
+      - name: Copy landing page
+        run: |
+          cp landing/index.html dist/index.html
 
       - name: Build Paperthin version (proofread)
         run: |
@@ -89,19 +93,40 @@ jobs:
         run: |
           tweego src -o dist/graph.html -f dotgraph-2
 
-      - name: Fetch base branch for PR categorization
+      - name: Fetch base branch and calculate merge base for PR categorization
         if: github.event_name == 'pull_request'
         run: |
           # Fetch the base branch so git comparisons work for path categorization
           git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-          echo "Fetched base branch: origin/${{ github.base_ref }}"
+          # Calculate merge base to isolate PR changes from concurrent main changes
+          MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
+          echo "Base branch: origin/${{ github.base_ref }}"
+          echo "Merge base: $MERGE_BASE"
+          echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
+
+      - name: Build Core Library artifacts
+        run: |
+          chmod +x scripts/build-core.sh
+          ./scripts/build-core.sh
 
       - name: Build AllPaths version (AI continuity checking)
         env:
           GITHUB_BASE_REF: ${{ github.base_ref }}
+          GITHUB_MERGE_BASE: ${{ env.GITHUB_MERGE_BASE }}
         run: |
           chmod +x scripts/build-allpaths.sh
           ./scripts/build-allpaths.sh
+
+      - name: Build Metrics version (writing statistics)
+        run: |
+          chmod +x scripts/build-metrics.sh
+          ./scripts/build-metrics.sh
+
+      - name: Build Story Bible (world consistency tracking)
+        continue-on-error: true
+        run: |
+          chmod +x scripts/build-story-bible.sh
+          ./scripts/build-story-bible.sh
 
       - name: Upload build artifacts (for PR preview and continuity checking)
         if: github.event_name == 'pull_request'
@@ -110,7 +135,9 @@ jobs:
           name: story-preview
           path: |
             dist/
+            lib/artifacts/
             allpaths-validation-status.json
+            src/StoryData.twee
           retention-days: 30
 
       - name: Comment on PR with preview instructions
@@ -119,10 +146,11 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const indexSize = fs.statSync('dist/index.html').size;
+            const playSize = fs.statSync('dist/play.html').size;
             const proofreadSize = fs.statSync('dist/proofread.html').size;
             const graphSize = fs.statSync('dist/graph.html').size;
             const allpathsSize = fs.statSync('dist/allpaths.html').size;
+            const metricsSize = fs.statSync('dist/metrics.html').size;
 
             // Count AllPaths text files
             const allpathsTextFiles = fs.readdirSync('dist/allpaths-clean').filter(f => f.endsWith('.txt'));
@@ -137,24 +165,19 @@ jobs:
             Your story has been built successfully!
 
             **📊 Build Stats:**
-            - Harlowe version: ${(indexSize / 1024).toFixed(2)} KB
+            - Playable story: ${(playSize / 1024).toFixed(2)} KB
             - Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
             - DotGraph version: ${(graphSize / 1024).toFixed(2)} KB
             - AllPaths version: ${(allpathsSize / 1024).toFixed(2)} KB (${pathCount} paths)
+            - Metrics version: ${(metricsSize / 1024).toFixed(2)} KB
 
             **🎮 Preview Your Changes:**
             1. Download the \`story-preview\` artifact from the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
             2. Extract the zip file
-            3. Open \`index.html\` to play the story
-            4. Open \`proofread.html\` for linear proofreading
-            5. Open \`graph.html\` to visualize the story structure
-            6. Open \`allpaths.html\` to browse all ${pathCount} story paths
+            3. Open \`index.html\` (landing page) to access all output formats
 
             **💡 Tip:** Once merged to main, this will be live at:
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/proofread.html
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/graph.html
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/allpaths.html`
+            - https://${context.repo.owner}.github.io/${context.repo.repo}/ (landing page with links to all formats)`
             });
 
       - name: Save build artifacts for deployment

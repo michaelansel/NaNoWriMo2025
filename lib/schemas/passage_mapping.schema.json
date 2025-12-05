@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanowrimo2025.example.com/schemas/passage_mapping.json",
+  "title": "Passage Mapping",
+  "description": "Bidirectional mapping between passage names, IDs, and source files",
+  "type": "object",
+  "required": ["by_name", "by_id", "by_file"],
+  "properties": {
+    "by_name": {
+      "type": "object",
+      "description": "Map passage names to file locations",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": ["string", "null"],
+              "description": "Relative path to source file"
+            },
+            "line": {
+              "type": ["integer", "null"],
+              "description": "Line number in source file",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "by_id": {
+      "type": "object",
+      "description": "Map passage IDs to names and file locations",
+      "patternProperties": {
+        ".*": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Passage name"
+            },
+            "file": {
+              "type": ["string", "null"],
+              "description": "Relative path to source file"
+            },
+            "line": {
+              "type": ["integer", "null"],
+              "description": "Line number in source file",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "by_file": {
+      "type": "object",
+      "description": "Map source files to passages they contain",
+      "patternProperties": {
+        ".*": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Passage name"
+              },
+              "line": {
+                "type": ["integer", "null"],
+                "description": "Line number in file",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

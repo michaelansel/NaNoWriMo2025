@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/allpaths/paths_categorized.schema.json",
+  "title": "AllPaths Categorized Paths",
+  "description": "Stage 4 output: Paths with categorization (new/modified/unchanged) and validation metadata",
+  "type": "object",
+  "required": ["paths", "statistics"],
+  "properties": {
+    "paths": {
+      "type": "array",
+      "description": "Array of paths with categorization and validation metadata",
+      "items": {
+        "type": "object",
+        "required": ["id", "route", "content", "git_metadata", "category", "validated", "first_seen"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique hash identifier for this path",
+            "pattern": "^[a-f0-9]{8}$"
+          },
+          "route": {
+            "type": "array",
+            "description": "Ordered list of passage names in this path",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          },
+          "content": {
+            "type": "object",
+            "description": "Mapping of passage names to their text content",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "git_metadata": {
+            "type": "object",
+            "description": "Git version control metadata for this path",
+            "required": ["files", "commit_date", "created_date", "passage_to_file"],
+            "properties": {
+              "files": {
+                "type": "array",
+                "description": "Source files containing passages in this path",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "commit_date": {
+                "type": ["string", "null"],
+                "description": "ISO 8601 timestamp of most recent commit affecting this path",
+                "format": "date-time"
+              },
+              "created_date": {
+                "type": ["string", "null"],
+                "description": "ISO 8601 timestamp when first passage in path was created",
+                "format": "date-time"
+              },
+              "passage_to_file": {
+                "type": "object",
+                "description": "Mapping of passage names to source file paths",
+                "additionalProperties": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "category": {
+            "type": "string",
+            "description": "Path category based on two-level test (path existence + content changes)",
+            "enum": ["new", "modified", "unchanged"]
+          },
+          "validated": {
+            "type": "boolean",
+            "description": "Whether this path has been validated by a human reviewer"
+          },
+          "first_seen": {
+            "type": "string",
+            "description": "ISO 8601 timestamp when this path was first detected",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "statistics": {
+      "type": "object",
+      "description": "Aggregate statistics about path categorization",
+      "required": ["new", "modified", "unchanged"],
+      "properties": {
+        "new": {
+          "type": "integer",
+          "description": "Count of new paths (not in base branch, with novel prose)",
+          "minimum": 0
+        },
+        "modified": {
+          "type": "integer",
+          "description": "Count of modified paths (existed in base with changes, or new path without novel prose)",
+          "minimum": 0
+        },
+        "unchanged": {
+          "type": "integer",
+          "description": "Count of unchanged paths (existed in base with no changes)",
+          "minimum": 0
+        },
+        "total_paths": {
+          "type": "integer",
+          "description": "Total number of paths",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}

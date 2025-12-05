@@ -382,18 +382,64 @@ KEB-251103.twee:
 
 ## Architecture
 
-### Components
+### Overview
 
-1. **generator.py** - Path generation engine
-   - Parses Tweego-compiled HTML
-   - Performs DFS to find all paths
-   - Generates HTML and text outputs
-   - Manages validation cache
+The AllPaths generator uses a **5-stage modular pipeline** architecture with well-defined intermediate artifacts. Each stage is independently testable and debuggable.
 
-2. **build-allpaths.sh** - Build script
-   - Orchestrates Tweego compilation (using paperthin format)
-   - Runs Python generator
-   - Cleans up temporary files
+### 5-Stage Processing Pipeline
+
+```
+Stage 1: Parse & Extract
+   Module: modules/parser.py
+   Input: HTML from Tweego (paperthin format)
+   Output: story_graph.json (intermediate)
+   Purpose: Extract clean story structure from HTML
+
+Stage 2: Generate Paths
+   Module: modules/path_generator.py
+   Input: story_graph.json
+   Output: paths.json (intermediate)
+   Purpose: Enumerate all paths via DFS traversal
+
+Stage 3: Enrich with Git Data
+   Module: modules/git_enricher.py
+   Input: paths.json + git repository
+   Output: paths_enriched.json (intermediate)
+   Purpose: Add git metadata (dates, files, passage-to-file mapping)
+
+Stage 4: Categorize Paths
+   Module: modules/categorizer.py
+   Input: paths_enriched.json + validation cache
+   Output: paths_categorized.json (intermediate)
+   Purpose: Classify paths as new/modified/unchanged
+
+Stage 5: Generate Outputs
+   Module: modules/output_generator.py
+   Input: paths_categorized.json
+   Output: HTML browser, text files, updated cache
+   Purpose: Create all final output formats
+```
+
+### Module Structure
+
+```
+formats/allpaths/
+├── generator.py              # Orchestrator for 5-stage pipeline
+├── modules/
+│   ├── parser.py             # Stage 1: HTML → story_graph
+│   ├── path_generator.py     # Stage 2: story_graph → paths
+│   ├── git_enricher.py       # Stage 3: paths → paths_enriched
+│   ├── categorizer.py        # Stage 4: paths_enriched → paths_categorized
+│   └── output_generator.py   # Stage 5: paths_categorized → outputs
+├── schemas/
+│   ├── story_graph.schema.json
+│   ├── paths.schema.json
+│   ├── paths_enriched.schema.json
+│   └── paths_categorized.schema.json
+├── lib/
+│   └── git_service.py        # Git operations abstraction
+└── tests/                    # 32 comprehensive tests
+```
 
 ### Data Flow
 
@@ -404,12 +450,58 @@ KEB-251103.twee:
     ↓
   Temporary HTML (with story data)
     ↓
-  generator.py
+  generator.py orchestrates:
+    ↓
+  Stage 1: parser → story_graph.json
+    ↓
+  Stage 2: path_generator → paths.json
+    ↓
+  Stage 3: git_enricher → paths_enriched.json
+    ↓
+  Stage 4: categorizer → paths_categorized.json
+    ↓
+  Stage 5: output_generator →
     ↓
   ┌─────────────┬──────────────────┬────────────────────┬──────────────────┐
   ↓             ↓                  ↓                    ↓                  ↓
 allpaths.html  allpaths-clean/  allpaths-metadata/  validation-status.json
 ```
+
+### Debugging Workflow
+
+The `--write-intermediate` flag enables stage-by-stage debugging by writing intermediate artifacts:
+
+**Running with intermediate artifacts:**
+```bash
+python3 formats/allpaths/generator.py temp.html dist/ --write-intermediate
+```
+
+**Intermediate artifacts written to `dist/allpaths-intermediate/`:**
+- `story_graph.json` - Stage 1 output (story structure)
+- `paths.json` - Stage 2 output (enumerated paths)
+- `paths_enriched.json` - Stage 3 output (paths with git metadata)
+- `paths_categorized.json` - Stage 4 output (paths with categories)
+
+**Use cases for intermediate artifacts:**
+1. **Verify parsing** - Check story_graph.json for correct passage extraction
+2. **Debug path generation** - Inspect paths.json for missing or incorrect paths
+3. **Validate git metadata** - Review paths_enriched.json for date/file accuracy
+4. **Check categorization** - Examine paths_categorized.json for new/modified/unchanged classification
+5. **Isolate issues** - Determine which stage is producing unexpected results
+
+**Inspecting artifacts:**
+```bash
+# Pretty-print a specific artifact
+cat dist/allpaths-intermediate/story_graph.json | python3 -m json.tool
+
+# Check artifact structure
+jq '.passages | keys' dist/allpaths-intermediate/story_graph.json
+
+# Count paths
+jq '.paths | length' dist/allpaths-intermediate/paths.json
+```
+
+Each artifact conforms to its corresponding JSON schema in `formats/allpaths/schemas/`.
 
 ### Algorithm
 

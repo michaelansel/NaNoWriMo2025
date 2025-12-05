@@ -83,12 +83,13 @@
 - **Manual maintenance:** Zero (completely automated)
 
 ### Secondary Metrics
-- **File organization:** Easy to navigate and understand
-- **Conflict rate:** Low rate of resource file merge conflicts
-- **Usage:** Writers reference file regularly
+- **Conflict rate:** <5% of PRs have resource file merge conflicts
 - **Accuracy:** File always matches actual passages
 
-### Qualitative Metrics
+### Qualitative Indicators
+These are directional goals we cannot directly measure but inform our design decisions:
+- File organization is easy to navigate and understand
+- Writers reference file regularly when creating passages
 - Writer feedback: "I always check the resource file before creating passages"
 - No confusion about which passages exist
 - No duplicate passage name incidents
@@ -316,9 +317,9 @@ See [architecture/automated-resource-tracking.md](../architecture/automated-reso
 - ✅ **File size:** ~150 lines (very manageable)
 
 ### Usage Metrics
-- **File references:** Regular usage by writers
 - **PR diff reviews:** Visible in every PR
 - **Conflict rate:** <2% of PRs (rare)
+- **Writer references:** Soft goal - writers use file when creating passages (observable in PR discussions)
 
 ---
 

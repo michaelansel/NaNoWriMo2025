@@ -1,6 +1,32 @@
 # Story Continuity Webhook Service
 
-This service receives GitHub webhooks when PR workflows complete, downloads story path artifacts, runs AI-based continuity checking using Ollama, and posts results back to the PR.
+This service receives GitHub webhooks when PR workflows complete, downloads story path artifacts, runs AI-based continuity checking and Story Bible extraction using Ollama, and posts results back to the PR.
+
+## Table of Contents
+
+**Getting Started:**
+- [Quick Reference](#quick-reference) - Common commands and troubleshooting
+- [Setup](#setup) - Installation and configuration
+- [GitHub Configuration](#github-configuration) - Webhook setup
+
+**Operations:**
+- [Monitoring](#monitoring) - Service status and logs
+- [Troubleshooting](#troubleshooting) - Common issues and solutions
+- [Configuration](#configuration) - Environment variables
+
+**Features:**
+- [Validation Modes](#validation-modes) - new-only, modified, all
+- [Handling Multiple Commits](#handling-multiple-commits) - Auto-cancellation behavior
+- [Approving Validated Paths](#approving-validated-paths) - Path approval workflow
+
+**Technical:**
+- [Architecture](#architecture) - System design
+- [Components](#components) - Service components
+- [Security](#security) - Security model
+- [Testing](#testing) - Test procedures
+- [Development](#development) - Development workflow
+- [Performance](#performance) - Performance characteristics
+- [Maintenance](#maintenance) - Maintenance tasks
 
 ## Architecture
 
@@ -14,8 +40,8 @@ GitHub Actions (hosted runner)
 Webhook Service (this host)
   ↓ Verify signature
   ↓ Download artifacts
-  ↓ Run AI continuity check
-  ↓ Post results to PR
+  ├─→ Run AI continuity check → Post results to PR
+  └─→ Run Story Bible extraction → Commit cache to branch
 ```
 
 ## Security
@@ -24,6 +50,45 @@ Webhook Service (this host)
 - **Webhook signature verification**: HMAC-SHA256 signatures prevent spoofing
 - **Artifact validation**: File structure and sizes are validated before processing
 - **Text-only processing**: Story text goes to Ollama prompt only (never executed)
+
+## Quick Reference
+
+### Common Operations
+
+```bash
+# Service control
+systemctl --user start continuity-webhook       # Start the service
+systemctl --user stop continuity-webhook        # Stop the service
+systemctl --user restart continuity-webhook     # Restart the service
+systemctl --user status continuity-webhook      # Check service status
+systemctl --user enable continuity-webhook      # Enable auto-start on boot
+
+# View logs
+journalctl --user -u continuity-webhook -f      # Follow logs in real-time
+journalctl --user -u continuity-webhook -n 100  # View last 100 log lines
+
+# Health and status checks
+curl http://localhost:5000/health               # Health check endpoint
+curl http://localhost:5000/status               # Service metrics and active jobs
+```
+
+### Troubleshooting Quick Commands
+
+```bash
+# Service won't start
+systemctl --user status continuity-webhook      # Check service status
+journalctl --user -u continuity-webhook -n 50   # Check recent logs
+cat ~/.config/continuity-webhook/env            # Verify environment file
+
+# Test Ollama
+curl http://localhost:11434/api/tags            # Check if Ollama is running
+ollama list                                     # List available models
+
+# Test webhook service
+curl http://localhost:5000/health               # Verify service is responding
+```
+
+**For detailed setup, configuration, and troubleshooting, see the sections below.**
 
 ## Components
 
@@ -267,7 +332,7 @@ curl -X POST http://localhost:5000/webhook \
 The continuity checker supports three validation modes to balance speed and thoroughness.
 
 **For detailed product requirements and technical architecture, see:**
-- [features/ai-continuity-checking.md](../features/ai-continuity-checking.md) - Product specification
+- [features/ai-copy-editing-team.md](../features/ai-copy-editing-team.md) - Product specification
 - [architecture/002-validation-cache.md](../architecture/002-validation-cache.md) - Technical architecture and design decisions
 
 ### Quick Reference
@@ -459,7 +524,7 @@ Linter reformats 55 files (smart quotes, spacing). All paths through these files
 
 ### Edge Cases (Categorization)
 
-These edge cases relate to how paths are categorized. For general edge cases, see [features/ai-continuity-checking.md](../features/ai-continuity-checking.md#edge-cases).
+These edge cases relate to how paths are categorized. For general edge cases, see [features/ai-copy-editing-team.md](../features/ai-copy-editing-team.md#edge-cases).
 
 #### Unreachable Paths
 
@@ -510,6 +575,75 @@ All three passages are part of path `Start → A → B → C → End`
 4. **After validation:** `/approve-path [ids]` (mark as reviewed)
 
 **For complete documentation including use cases, examples, and design rationale, see the links above.**
+
+## Handling Multiple Commits
+
+During active development, you may push new commits while a validation is running. The service handles this gracefully with automatic cancellation:
+
+### What Happens When You Push a New Commit
+
+When a new commit triggers a workflow while validation is running:
+
+1. **GitHub completes the new workflow** for your latest commit
+2. **Service receives webhook** for the new workflow run
+3. **Service cancels old validation** - the running check for the previous commit is cancelled
+4. **Service starts new validation** - checking begins for the latest commit
+5. **Cancellation comment posted** - you'll see: "Validation cancelled - newer commit detected"
+
+### Why This Is a Feature
+
+This automatic cancellation is **intentional and beneficial**:
+
+- **Always validates latest code** - you don't waste time reviewing results for outdated commits
+- **No confusing parallel runs** - only one validation runs per PR at a time
+- **Rapid iteration friendly** - push fixes quickly without waiting for old checks to complete
+- **Resource efficient** - doesn't waste server time checking obsolete commits
+
+### Manual Commands Override Auto-Validation
+
+When you manually trigger validation with `/check-continuity`, the service:
+
+1. **Cancels any running auto-validation** from workflow triggers
+2. **Starts your manual validation** immediately
+3. **Ensures your request takes priority** over automatic checks
+
+This prevents parallel runs and ensures manual requests supersede automatic validation.
+
+### Edge Cases
+
+**Cancelled during validation:**
+- Most common case - new commit arrives while AI is checking paths
+- You'll see: "Validation cancelled - newer commit detected"
+- This is expected behavior during rapid development
+
+**Cancelled before validation starts:**
+- Rare case - new commit arrives during artifact download
+- Same cancellation message appears
+- Service proceeds with the latest commit only
+
+### Expected Behavior During Development
+
+```markdown
+# Push commit 1
+→ Workflow completes, validation starts...
+
+# Push commit 2 (while commit 1 is still being validated)
+→ Commit 1 validation: "Validation cancelled - newer commit detected"
+→ Commit 2 validation: Starting fresh for latest commit
+
+# Push commit 3 (while commit 2 is still being validated)
+→ Commit 2 validation: "Validation cancelled - newer commit detected"
+→ Commit 3 validation: Starting fresh for latest commit
+```
+
+**This is working as designed** - you always get results for your latest code.
+
+### Best Practices
+
+- **Let cancellations happen** - they're protecting you from reviewing stale results
+- **Wait for completion** if you want results - avoid pushing commits during validation
+- **Use manual commands** (`/check-continuity`) to override and retry specific validation modes
+- **Understand the pattern** - final commit before you stop pushing will complete fully
 
 ## Approving Validated Paths
 

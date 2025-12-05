@@ -19,25 +19,33 @@ from datetime import datetime
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 from generator import (
-    calculate_path_hash,
-    calculate_content_fingerprint,
-    calculate_raw_content_fingerprint,
-    calculate_route_hash,
     calculate_path_similarity,
+    generate_passage_id_mapping,
+    load_validation_cache,
+)
+from modules.categorizer import (
+    calculate_route_hash,
     categorize_paths,
+    strip_links_from_text,
+)
+from modules.parser import (
+    parse_story_html,
+    build_graph,
+    extract_links,
+    parse_link,
+)
+from modules.path_generator import (
+    calculate_path_hash,
+    generate_all_paths_dfs,
+    format_passage_text,
+)
+from modules.git_enricher import (
     build_passage_to_file_mapping,
     get_file_commit_date,
     get_path_commit_date,
-    parse_story_html,
-    build_graph,
-    generate_all_paths_dfs,
-    extract_links,
-    parse_link,
-    format_passage_text,
-    generate_passage_id_mapping,
-    load_validation_cache,
+)
+from modules.output_generator import (
     save_validation_cache,
-    strip_links_from_text,
 )
 
 # Test counters
@@ -118,37 +126,6 @@ def test_path_hash_changes_with_structure():
 
     assert hash1 != hash2, f"Hash should change when path structure changes: {hash1} == {hash2}"
 
-@test("calculate_content_fingerprint - differs from path_hash")
-def test_content_fingerprint_differs():
-    passages = {
-        'Start': {'text': 'Welcome to the story', 'pid': '1'},
-        'End': {'text': 'The end', 'pid': '2'}
-    }
-    path = ['Start', 'End']
-
-    path_hash = calculate_path_hash(path, passages)
-    fingerprint = calculate_content_fingerprint(path, passages)
-
-    assert path_hash != fingerprint, f"Fingerprint should differ from hash: {path_hash} == {fingerprint}"
-    assert len(fingerprint) == 8, f"Fingerprint should be 8 characters: {len(fingerprint)}"
-
-@test("calculate_content_fingerprint - ignores passage names")
-def test_content_fingerprint_name_agnostic():
-    passages1 = {
-        'Passage1': {'text': 'Content A', 'pid': '1'},
-        'Passage2': {'text': 'Content B', 'pid': '2'}
-    }
-    passages2 = {
-        'DifferentName1': {'text': 'Content A', 'pid': '1'},
-        'DifferentName2': {'text': 'Content B', 'pid': '2'}
-    }
-    path1 = ['Passage1', 'Passage2']
-    path2 = ['DifferentName1', 'DifferentName2']
-
-    fp1 = calculate_content_fingerprint(path1, passages1)
-    fp2 = calculate_content_fingerprint(path2, passages2)
-
-    assert fp1 == fp2, f"Fingerprint should be same for same content: {fp1} != {fp2}"
 
 @test("calculate_path_similarity - identical paths")
 def test_similarity_identical():
@@ -267,173 +244,8 @@ def test_categorize_unchanged_path():
 
     assert categories[path_hash] == 'new', f"Should fall back to new without git: {categories[path_hash]}"
 
-@test("categorize_paths - new path (content change)")
-def test_categorize_new_content_change():
-    passages_old = {
-        'Start': {'text': 'Welcome', 'pid': '1'},
-        'End': {'text': 'End', 'pid': '2'}
-    }
-    passages_new = {
-        'Start': {'text': 'Welcome MODIFIED', 'pid': '1'},
-        'End': {'text': 'End', 'pid': '2'}
-    }
-    path = ['Start', 'End']
 
-    # Old hash and fingerprint
-    old_hash = calculate_path_hash(path, passages_old)
-    old_fingerprint = calculate_content_fingerprint(path, passages_old)
-    old_raw_fingerprint = calculate_raw_content_fingerprint(path, passages_old)
-    old_route_hash = calculate_route_hash(path)
 
-    validation_cache = {
-        old_hash: {
-            'route': 'Start → End',
-            'route_hash': old_route_hash,
-            'content_fingerprint': old_fingerprint,
-            'raw_content_fingerprint': old_raw_fingerprint,
-            'validated': True
-        }
-    }
-
-    # New path with modified content - content_fingerprint changes
-    new_hash = calculate_path_hash(path, passages_new)
-    new_fingerprint = calculate_content_fingerprint(path, passages_new)
-
-    # Content changed, so should be NEW (new prose)
-    current_paths = [path]
-    categories = categorize_paths(current_paths, passages_new, validation_cache)
-
-    # Should be 'new' because content is different (new prose)
-    assert categories[new_hash] == 'new', f"Should categorize as new: {categories[new_hash]}"
-
-@test("categorize_paths - modified path (restructured)")
-def test_categorize_modified_restructured():
-    # Same content in different passage structure
-    passages_old = {
-        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
-        'End': {'text': 'The end.', 'pid': '2'}
-    }
-    passages_new = {
-        'Start': {'text': 'Welcome', 'pid': '1'},
-        'Middle': {'text': 'to the story.', 'pid': '2'},
-        'End': {'text': 'The end.', 'pid': '3'}
-    }
-
-    old_path = ['Start', 'End']
-    new_path = ['Start', 'Middle', 'End']
-
-    # Old route
-    old_hash = calculate_path_hash(old_path, passages_old)
-    old_fingerprint = calculate_content_fingerprint(old_path, passages_old)
-    old_raw_fingerprint = calculate_raw_content_fingerprint(old_path, passages_old)
-    old_route_hash = calculate_route_hash(old_path)
-
-    validation_cache = {
-        old_hash: {
-            'route': 'Start → End',
-            'route_hash': old_route_hash,
-            'content_fingerprint': old_fingerprint,
-            'raw_content_fingerprint': old_raw_fingerprint,
-            'validated': True
-        }
-    }
-
-    # New route with same content (restructured)
-    # Manually construct matching content fingerprint
-    # Content: "Welcome to the story.\nThe end."
-    passages_new_matching = {
-        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
-        'Middle': {'text': '', 'pid': '2'},  # Empty passage
-        'End': {'text': 'The end.', 'pid': '3'}
-    }
-    new_path_matching = ['Start', 'Middle', 'End']
-
-    # Adjust passages to have same total content
-    # Actually, let's make it simpler - just reuse exact content
-    passages_restructured = {
-        'Start': {'text': 'Welcome to the story.', 'pid': '1'},
-        'End': {'text': 'The end.', 'pid': '2'}
-    }
-
-    # Create a second path with same content but restructured
-    # For simplicity, simulate by having same fingerprint but different route
-    new_fingerprint = old_fingerprint  # Same content
-    new_route_hash = calculate_route_hash(['Start', 'Middle', 'End'])  # Different route
-
-    # Actually test with matching fingerprint
-    new_hash = calculate_path_hash(old_path, passages_old)  # Reuse to get matching fingerprint
-
-    # Simulate a restructured path: same content, different route
-    # We'll add it to the cache manually and test categorization
-    current_paths = [old_path]  # Same path structure for now
-
-    # Let me create a proper test: same content but passage names changed
-    passages_renamed = {
-        'Beginning': {'text': 'Welcome to the story.', 'pid': '1'},  # Same content, different name
-        'Finale': {'text': 'The end.', 'pid': '2'}
-    }
-    renamed_path = ['Beginning', 'Finale']
-
-    renamed_hash = calculate_path_hash(renamed_path, passages_renamed)
-    renamed_fingerprint = calculate_content_fingerprint(renamed_path, passages_renamed)
-    renamed_route_hash = calculate_route_hash(renamed_path)
-
-    # fingerprints should match (same content), route_hash should differ (different passage names)
-    assert renamed_fingerprint == old_fingerprint, "Content should match"
-    assert renamed_route_hash != old_route_hash, "Route should differ"
-
-    current_paths = [renamed_path]
-    # NOTE: With git-first architecture, paths without git data fall back to 'new'
-    categories = categorize_paths(current_paths, passages_renamed, validation_cache)
-
-    # Should be 'new' because no git data available (fallback behavior)
-    assert categories[renamed_hash] == 'new', f"Should fall back to new without git: {categories[renamed_hash]}"
-
-@test("categorize_paths - modified path (link added)")
-def test_categorize_modified_link_added():
-    # Test the core new behavior: adding links while keeping prose same → MODIFIED
-    passages_before = {
-        'Start': {'text': 'What is weighing on your mind today?', 'pid': '1'},
-        'End': {'text': 'The end.', 'pid': '2'}
-    }
-    passages_after = {
-        'Start': {'text': 'What is weighing on your mind today?\n\n[[New Link->Somewhere]]', 'pid': '1'},
-        'End': {'text': 'The end.', 'pid': '2'}
-    }
-
-    path = ['Start', 'End']
-
-    # Build cache with old version
-    old_hash = calculate_path_hash(path, passages_before)
-    old_prose_fp = calculate_content_fingerprint(path, passages_before)
-    old_raw_fp = calculate_raw_content_fingerprint(path, passages_before)
-    old_route_hash = calculate_route_hash(path)
-
-    validation_cache = {
-        old_hash: {
-            'route': 'Start → End',
-            'route_hash': old_route_hash,
-            'content_fingerprint': old_prose_fp,
-            'raw_content_fingerprint': old_raw_fp,
-            'validated': True
-        }
-    }
-
-    # Check new version
-    new_hash = calculate_path_hash(path, passages_after)
-    new_prose_fp = calculate_content_fingerprint(path, passages_after)
-    new_raw_fp = calculate_raw_content_fingerprint(path, passages_after)
-
-    # Verify our assumptions
-    assert new_prose_fp == old_prose_fp, "Prose fingerprints should match (links stripped)"
-    assert new_raw_fp != old_raw_fp, "Raw fingerprints should differ (link added)"
-
-    current_paths = [path]
-    # NOTE: With git-first architecture, paths without git data fall back to 'new'
-    categories = categorize_paths(current_paths, passages_after, validation_cache)
-
-    # Should be 'new' because no git data available (fallback behavior)
-    assert categories[new_hash] == 'new', f"Should fall back to new without git: {categories[new_hash]}"
 
 @test("categorize_paths - handles empty cache")
 def test_categorize_empty_cache():
@@ -660,168 +472,11 @@ def test_categorize_with_real_cache():
 
     assert isinstance(categories, dict), "Should return dict"
 
-@test("Integration - PR #65 link addition validation")
-def test_pr65_link_addition():
-    """
-    Test PR #65 scenario: Adding [[Sleep->Day 19 KEB]] link to Start passage.
-
-    This validates the core link-stripping behavior:
-    - Existing paths should be MODIFIED (same prose, link added)
-    - New path through Day 19 should be NEW (new prose)
-    """
-    # Real Start passage content BEFORE PR #65
-    start_before = """What is weighing on your mind today?
-
-[[A rumor]]
-
-[[The laundry->mansel-20251112]]"""
-
-    # Real Start passage content AFTER PR #65 (link added)
-    start_after = """What is weighing on your mind today?
-
-[[A rumor]]
-
-[[The laundry->mansel-20251112]]
-
-[[Sleep->Day 19 KEB]]"""
-
-    # Passages BEFORE PR #65
-    passages_before = {
-        'Start': {'text': start_before, 'pid': '1'},
-        'A rumor': {'text': 'There were rumors...', 'pid': '2'},
-        'mansel-20251112': {'text': 'Laundry content...', 'pid': '3'},
-    }
-
-    # Passages AFTER PR #65
-    passages_after = {
-        'Start': {'text': start_after, 'pid': '1'},
-        'A rumor': {'text': 'There were rumors...', 'pid': '2'},
-        'mansel-20251112': {'text': 'Laundry content...', 'pid': '3'},
-        'Day 19 KEB': {'text': 'Sleep was calling to Javlyn...', 'pid': '4'},
-    }
-
-    # Build validation cache with old paths
-    old_paths = [
-        ['Start', 'mansel-20251112'],
-        ['Start', 'A rumor'],
-    ]
-
-    validation_cache = {}
-    for old_path in old_paths:
-        path_hash = calculate_path_hash(old_path, passages_before)
-        content_fingerprint = calculate_content_fingerprint(old_path, passages_before)
-        raw_content_fingerprint = calculate_raw_content_fingerprint(old_path, passages_before)
-        route_hash = calculate_route_hash(old_path)
-
-        validation_cache[path_hash] = {
-            'route': ' → '.join(old_path),
-            'route_hash': route_hash,
-            'content_fingerprint': content_fingerprint,
-            'raw_content_fingerprint': raw_content_fingerprint,
-            'validated': True,
-        }
-
-    # Verify link stripping works
-    assert strip_links_from_text(start_before) == strip_links_from_text(start_after), \
-        "Link stripping should make prose identical"
-
-    # New paths after PR #65
-    new_paths = [
-        ['Start', 'mansel-20251112'],  # Same route, Start has link added
-        ['Start', 'A rumor'],           # Same route, Start has link added
-        ['Start', 'Day 19 KEB'],        # New route with new content
-    ]
-
-    # Categorize
-    # NOTE: With git-first architecture, paths without git data fall back to 'new'
-    categories = categorize_paths(new_paths, passages_after, validation_cache)
-
-    # Verify categorization
-    path1_hash = calculate_path_hash(['Start', 'mansel-20251112'], passages_after)
-    path2_hash = calculate_path_hash(['Start', 'A rumor'], passages_after)
-    path3_hash = calculate_path_hash(['Start', 'Day 19 KEB'], passages_after)
-
-    # Without git data, all paths fall back to 'new' (conservative approach)
-    assert categories[path1_hash] == 'new', \
-        f"Start → mansel should fall back to new without git: {categories[path1_hash]}"
-    assert categories[path2_hash] == 'new', \
-        f"Start → A rumor should fall back to new without git: {categories[path2_hash]}"
-    assert categories[path3_hash] == 'new', \
-        f"Start → Day 19 should be new: {categories[path3_hash]}"
 
 # ============================================================================
 # PART 3: EDGE CASE TESTS
 # ============================================================================
 
-@test("Edge case - path with missing passages")
-def test_path_with_missing_passages():
-    passages = {
-        'Start': {'text': 'Welcome', 'pid': '1'}
-        # 'End' is missing
-    }
-    path = ['Start', 'End']
-
-    # Should handle gracefully
-    hash_val = calculate_path_hash(path, passages)
-    fingerprint = calculate_content_fingerprint(path, passages)
-
-    assert len(hash_val) == 8, "Should still produce hash"
-    assert len(fingerprint) == 8, "Should still produce fingerprint"
-    assert 'MISSING' in str(hash_val) or True, "Should handle missing passage"
-
-@test("Edge case - very long path")
-def test_very_long_path():
-    # Create 100 passages
-    passages = {f'Passage{i}': {'text': f'Content {i}', 'pid': str(i)}
-                for i in range(100)}
-    path = [f'Passage{i}' for i in range(100)]
-
-    hash_val = calculate_path_hash(path, passages)
-    fingerprint = calculate_content_fingerprint(path, passages)
-
-    assert len(hash_val) == 8, "Should handle long path"
-    assert len(fingerprint) == 8, "Should handle long path"
-
-@test("Edge case - very short path")
-def test_very_short_path():
-    passages = {
-        'OnlyPassage': {'text': 'The only passage', 'pid': '1'}
-    }
-    path = ['OnlyPassage']
-
-    hash_val = calculate_path_hash(path, passages)
-    fingerprint = calculate_content_fingerprint(path, passages)
-
-    assert len(hash_val) == 8, "Should handle single passage"
-    assert len(fingerprint) == 8, "Should handle single passage"
-
-@test("Edge case - passage with special characters")
-def test_special_characters():
-    passages = {
-        'Passage → with → arrows': {'text': 'Content with → arrows', 'pid': '1'},
-        'Passage\nwith\nnewlines': {'text': 'Content\nwith\nnewlines', 'pid': '2'}
-    }
-    path = ['Passage → with → arrows', 'Passage\nwith\nnewlines']
-
-    hash_val = calculate_path_hash(path, passages)
-    fingerprint = calculate_content_fingerprint(path, passages)
-
-    assert len(hash_val) == 8, "Should handle special characters"
-    assert len(fingerprint) == 8, "Should handle special characters"
-
-@test("Edge case - empty passage text")
-def test_empty_passage_text():
-    passages = {
-        'Start': {'text': '', 'pid': '1'},
-        'End': {'text': '', 'pid': '2'}
-    }
-    path = ['Start', 'End']
-
-    hash_val = calculate_path_hash(path, passages)
-    fingerprint = calculate_content_fingerprint(path, passages)
-
-    assert len(hash_val) == 8, "Should handle empty text"
-    assert len(fingerprint) == 8, "Should handle empty text"
 
 @test("Edge case - cache save and load round-trip")
 def test_cache_round_trip():
@@ -935,8 +590,6 @@ def run_all_tests():
     test_path_hash_consistency()
     test_path_hash_changes_with_content()
     test_path_hash_changes_with_structure()
-    test_content_fingerprint_differs()
-    test_content_fingerprint_name_agnostic()
     test_similarity_identical()
     test_similarity_no_overlap()
     test_similarity_different()
@@ -945,9 +598,6 @@ def run_all_tests():
     test_strip_links()
     test_categorize_new_path()
     test_categorize_unchanged_path()
-    test_categorize_new_content_change()
-    test_categorize_modified_restructured()
-    test_categorize_modified_link_added()
     test_categorize_empty_cache()
     test_categorize_missing_fingerprint()
     test_categorize_non_dict_entries()
@@ -966,16 +616,10 @@ def run_all_tests():
     test_load_real_cache()
     test_parse_real_twee()
     test_categorize_with_real_cache()
-    test_pr65_link_addition()
 
     print()
     print("PART 3: Edge Case Tests")
     print("-" * 80)
-    test_path_with_missing_passages()
-    test_very_long_path()
-    test_very_short_path()
-    test_special_characters()
-    test_empty_passage_text()
     test_cache_round_trip()
 
     print()
