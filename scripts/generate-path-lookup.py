@@ -71,59 +71,102 @@ window.getPathId = function(history) {
     return window.pathIdLookup[route] || null;
 };
 
-// Display path ID at endings (passages with no outgoing links)
+// Get passage history from footer element
+function getHistory() {
+    // Look in the rendered passage for the history span
+    var passage = document.querySelector('tw-story tw-passage');
+    if (!passage) return null;
+
+    var historyEl = passage.querySelector('#harlowe-history-data');
+    if (historyEl) {
+        var text = historyEl.textContent.trim();
+        // Filter out the macro text if not evaluated
+        if (text && !text.includes('(history:)')) {
+            var parts = text.split(', ').filter(function(s) { return s && s.length > 0; });
+            console.log('[PathID] History from footer:', parts);
+            return parts;
+        }
+    }
+    console.log('[PathID] Could not read history from footer element');
+    return null;
+}
+
+// Display path ID at endings
 (function() {
     function checkAndDisplayPathId() {
-        // Check if this is an ending (no tw-link elements = no outgoing links)
-        var links = document.querySelectorAll('tw-story tw-passage tw-link');
-        if (links.length > 0) {
-            return; // Has links, not an ending
+        var passage = document.querySelector('tw-story tw-passage');
+        if (!passage) {
+            console.log('[PathID] No passage found');
+            return;
         }
 
-        // Get history from footer element
-        var historyEl = document.getElementById('harlowe-history-data');
-        if (!historyEl) return;
+        // Check if this is an ending - look for any clickable links
+        // Harlowe uses tw-link for rendered links
+        var links = passage.querySelectorAll('tw-link');
+        console.log('[PathID] Found', links.length, 'links in passage');
+        if (links.length > 0) return; // Has links, not an ending
 
-        var historyText = historyEl.textContent.trim();
-        if (!historyText) return;
+        // Also check for tw-expression with link macros (covers edge cases)
+        var expressions = passage.querySelectorAll('tw-expression[name="link"], tw-expression[name="link-goto"]');
+        console.log('[PathID] Found', expressions.length, 'link expressions');
+        if (expressions.length > 0) return;
 
-        var history = historyText.split(', ').filter(function(s) { return s; });
-        if (history.length === 0) return;
+        console.log('[PathID] This appears to be an ending');
+
+        // Get history
+        var history = getHistory();
+        if (!history || history.length === 0) {
+            console.log('[PathID] No history available');
+            return;
+        }
 
         // Look up path ID
+        var route = history.join('→');
+        console.log('[PathID] Looking up route:', route);
         var pathId = window.getPathId(history);
-        if (!pathId) return;
+        if (!pathId) {
+            console.log('[PathID] No path ID found for route');
+            // Show available keys for debugging
+            var keys = Object.keys(window.pathIdLookup || {});
+            console.log('[PathID] Available routes (first 5):', keys.slice(0, 5));
+            return;
+        }
 
-        // Display in container
-        var container = document.querySelector('.path-id-container');
-        if (!container || container.hasChildNodes()) return;
+        console.log('[PathID] Found path ID:', pathId);
 
+        // Check if already displayed
+        var container = passage.querySelector('.path-id-display');
+        if (container) return;
+
+        // Create and append display
         var div = document.createElement('div');
+        div.className = 'path-id-display';
         div.style.cssText = 'margin-top: 2em; padding-top: 1em; border-top: 1px solid #666; font-size: 0.9em; color: #888;';
-        div.innerHTML = '<p style="font-family: monospace;">Path ID: ' + pathId + '</p>';
-        container.appendChild(div);
+        div.innerHTML = '<p style="font-family: monospace; margin: 0;">Path ID: ' + pathId + '</p>';
+        passage.appendChild(div);
+        console.log('[PathID] Displayed path ID successfully');
     }
 
-    // Run after each passage renders
-    var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length > 0) {
-                setTimeout(checkAndDisplayPathId, 50);
-            }
-        });
+    // Run after each passage change with a delay for Harlowe to finish rendering
+    var observer = new MutationObserver(function() {
+        setTimeout(checkAndDisplayPathId, 200);
     });
 
-    // Start observing when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            var story = document.querySelector('tw-story');
-            if (story) observer.observe(story, { childList: true, subtree: true });
-            checkAndDisplayPathId();
-        });
-    } else {
+    function init() {
         var story = document.querySelector('tw-story');
-        if (story) observer.observe(story, { childList: true, subtree: true });
-        checkAndDisplayPathId();
+        if (story) {
+            console.log('[PathID] Initialized, observing tw-story');
+            observer.observe(story, { childList: true, subtree: true });
+            setTimeout(checkAndDisplayPathId, 200);
+        } else {
+            console.log('[PathID] tw-story not found at init');
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
     }
 })();
 """
