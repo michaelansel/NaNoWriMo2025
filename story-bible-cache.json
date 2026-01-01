@@ -14878,8 +14878,8 @@
       "passage_length": 1132
     },
     "PathIdDisplay": {
-      "content_hash": "0aa24017b1a59e06",
-      "extracted_at": "2026-01-01T22:17:00.080284",
+      "content_hash": "a95a98ad89b714b1",
+      "extracted_at": "2026-01-01T22:37:08.749815",
       "entities": {
         "characters": [],
         "locations": [],
@@ -14890,7 +14890,7 @@
       "facts": [],
       "chunks_processed": 1,
       "passage_name": "PathIdDisplay",
-      "passage_length": 185
+      "passage_length": 277
     }
   },
   "summarized_facts": {
@@ -28536,7 +28536,7 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 0.009569644927978516,
+  "summarization_time_seconds": 0.010097980499267578,
   "categorized_facts": {
     "constants": {
       "world_rules": [
@@ -42457,7 +42457,7 @@
     "deduplication_effectiveness": 0.0
   },
   "meta": {
-    "last_extracted": "2026-01-01T22:17:00.532147",
+    "last_extracted": "2026-01-01T22:37:09.253087",
     "total_passages_extracted": 65,
     "total_facts": 565
   }
