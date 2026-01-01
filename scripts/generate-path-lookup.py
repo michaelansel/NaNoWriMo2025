@@ -65,34 +65,47 @@ def main():
 
     # JavaScript for path ID display
     helper_js = """
-// Get path ID for current history
-window.getPathId = function(history) {
-    var route = history.join('→');
+// Get path ID for current history (including current passage)
+window.getPathId = function(fullPath) {
+    var route = fullPath.join('→');
     return window.pathIdLookup[route] || null;
 };
 
-// Get passage history from footer element
-function getHistory() {
-    // Look in the rendered passage for the history span
+// Get full path: history (past passages) + current passage
+function getFullPath() {
     var passage = document.querySelector('tw-story tw-passage');
     if (!passage) return null;
 
-    var historyEl = passage.querySelector('#harlowe-history-data');
+    // Get current passage name from tw-passage element
+    var currentPassage = passage.getAttribute('name');
+    if (!currentPassage) {
+        console.log('[PathID] Could not get current passage name');
+        return null;
+    }
+    console.log('[PathID] Current passage:', currentPassage);
+
+    // Get history from footer element (past passages only)
+    var historyEl = document.getElementById('harlowe-history-data');
+    var pastPassages = [];
     if (historyEl) {
         var text = historyEl.textContent.trim();
-        // Filter out the macro text if not evaluated
-        if (text && !text.includes('(history:)')) {
-            var parts = text.split(', ').filter(function(s) { return s && s.length > 0; });
-            console.log('[PathID] History from footer:', parts);
-            return parts;
+        // Filter out unevaluated macro text
+        if (text && !text.includes('(history:)') && !text.includes('(text:')) {
+            pastPassages = text.split(', ').filter(function(s) { return s && s.length > 0; });
         }
     }
-    console.log('[PathID] Could not read history from footer element');
-    return null;
+    console.log('[PathID] Past passages:', pastPassages);
+
+    // Combine: history + current passage = full path
+    var fullPath = pastPassages.concat([currentPassage]);
+    console.log('[PathID] Full path:', fullPath);
+    return fullPath;
 }
 
 // Display path ID at endings
 (function() {
+    var lastDisplayedPassage = '';
+
     function checkAndDisplayPathId() {
         var passage = document.querySelector('tw-story tw-passage');
         if (!passage) {
@@ -100,43 +113,42 @@ function getHistory() {
             return;
         }
 
+        var currentPassage = passage.getAttribute('name');
+        if (!currentPassage) return;
+
+        // Skip if already processed this passage
+        if (currentPassage === lastDisplayedPassage) return;
+
         // Check if this is an ending - look for any clickable links
-        // Harlowe uses tw-link for rendered links
         var links = passage.querySelectorAll('tw-link');
         console.log('[PathID] Found', links.length, 'links in passage');
         if (links.length > 0) return; // Has links, not an ending
 
-        // Also check for tw-expression with link macros (covers edge cases)
-        var expressions = passage.querySelectorAll('tw-expression[name="link"], tw-expression[name="link-goto"]');
-        console.log('[PathID] Found', expressions.length, 'link expressions');
-        if (expressions.length > 0) return;
-
         console.log('[PathID] This appears to be an ending');
 
-        // Get history
-        var history = getHistory();
-        if (!history || history.length === 0) {
-            console.log('[PathID] No history available');
+        // Get full path (history + current passage)
+        var fullPath = getFullPath();
+        if (!fullPath || fullPath.length === 0) {
+            console.log('[PathID] No path available');
             return;
         }
 
         // Look up path ID
-        var route = history.join('→');
+        var route = fullPath.join('→');
         console.log('[PathID] Looking up route:', route);
-        var pathId = window.getPathId(history);
+        var pathId = window.getPathId(fullPath);
         if (!pathId) {
             console.log('[PathID] No path ID found for route');
-            // Show available keys for debugging
             var keys = Object.keys(window.pathIdLookup || {});
             console.log('[PathID] Available routes (first 5):', keys.slice(0, 5));
             return;
         }
 
         console.log('[PathID] Found path ID:', pathId);
+        lastDisplayedPassage = currentPassage;
 
         // Check if already displayed
-        var container = passage.querySelector('.path-id-display');
-        if (container) return;
+        if (passage.querySelector('.path-id-display')) return;
 
         // Create and append display
         var div = document.createElement('div');
@@ -149,7 +161,7 @@ function getHistory() {
 
     // Run after each passage change with a delay for Harlowe to finish rendering
     var observer = new MutationObserver(function() {
-        setTimeout(checkAndDisplayPathId, 200);
+        setTimeout(checkAndDisplayPathId, 300);
     });
 
     function init() {
