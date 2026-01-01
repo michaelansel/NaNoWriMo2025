@@ -63,14 +63,69 @@ def main():
     # Generate JavaScript code
     js_code = generate_javascript_lookup(lookup)
 
-    # Also create a helper function to get path ID from history
+    # JavaScript for path ID display
     helper_js = """
 // Get path ID for current history
 window.getPathId = function(history) {
-    // Convert history array to lookup key
     var route = history.join('→');
-    return window.pathIdLookup[route] || 'unknown';
+    return window.pathIdLookup[route] || null;
 };
+
+// Display path ID at endings (passages with no outgoing links)
+(function() {
+    function checkAndDisplayPathId() {
+        // Check if this is an ending (no tw-link elements = no outgoing links)
+        var links = document.querySelectorAll('tw-story tw-passage tw-link');
+        if (links.length > 0) {
+            return; // Has links, not an ending
+        }
+
+        // Get history from footer element
+        var historyEl = document.getElementById('harlowe-history-data');
+        if (!historyEl) return;
+
+        var historyText = historyEl.textContent.trim();
+        if (!historyText) return;
+
+        var history = historyText.split(', ').filter(function(s) { return s; });
+        if (history.length === 0) return;
+
+        // Look up path ID
+        var pathId = window.getPathId(history);
+        if (!pathId) return;
+
+        // Display in container
+        var container = document.querySelector('.path-id-container');
+        if (!container || container.hasChildNodes()) return;
+
+        var div = document.createElement('div');
+        div.style.cssText = 'margin-top: 2em; padding-top: 1em; border-top: 1px solid #666; font-size: 0.9em; color: #888;';
+        div.innerHTML = '<p style="font-family: monospace;">Path ID: ' + pathId + '</p>';
+        container.appendChild(div);
+    }
+
+    // Run after each passage renders
+    var observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length > 0) {
+                setTimeout(checkAndDisplayPathId, 50);
+            }
+        });
+    });
+
+    // Start observing when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            var story = document.querySelector('tw-story');
+            if (story) observer.observe(story, { childList: true, subtree: true });
+            checkAndDisplayPathId();
+        });
+    } else {
+        var story = document.querySelector('tw-story');
+        if (story) observer.observe(story, { childList: true, subtree: true });
+        checkAndDisplayPathId();
+    }
+})();
 """
 
     full_js = js_code + "\n" + helper_js
