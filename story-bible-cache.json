@@ -14878,206 +14878,19 @@
       "passage_length": 1132
     },
     "PathIdDisplay": {
-      "content_hash": "93c2bda77bb0a97e",
-      "extracted_at": "2026-01-01T02:11:16.337879",
+      "content_hash": "95739c3f6110ad44",
+      "extracted_at": "2026-01-01T02:15:26.631796",
       "entities": {
-        "characters": [
-          {
-            "name": "player",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "when the player reaches an ending",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "reaches an ending to trigger Path ID display",
-                "evidence": "It displays the unique path ID when the player reaches an ending."
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          }
-        ],
-        "locations": [
-          {
-            "name": "ending",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "An ending is defined as a passage with no outgoing links.",
-                "context": "narrative"
-              },
-              {
-                "quote": "when the player reaches an ending",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "is a passage with no outgoing links",
-                "evidence": "An ending is defined as a passage with no outgoing links."
-              },
-              {
-                "fact": "triggers Path ID display when reached",
-                "evidence": "It displays the unique path ID when the player reaches an ending."
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "passage",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "(set: $currentPassage to (passage:)'s name)",
-                "context": "narrative"
-              },
-              {
-                "quote": "(if: (passage:)'s links's length is 0)[",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "has a name stored in $currentPassage",
-                "evidence": "(set: $currentPassage to (passage:)'s name)"
-              },
-              {
-                "fact": "has links that determine if it is an ending",
-                "evidence": "(if: (passage:)'s links's length is 0)["
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          }
-        ],
-        "items": [
-          {
-            "name": "Path ID",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "It displays the unique path ID when the player reaches an ending.",
-                "context": "narrative"
-              },
-              {
-                "quote": "var container = document.querySelector('.path-id-container');",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "is displayed in the footer of ending passages",
-                "evidence": "It displays the unique path ID when the player reaches an ending."
-              },
-              {
-                "fact": "is shown in a div with class 'path-id-container'",
-                "evidence": "var container = document.querySelector('.path-id-container');"
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "history",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "var historyText = historyEl.textContent.trim();",
-                "context": "narrative"
-              },
-              {
-                "quote": "var history = historyText.split(', ').filter(function(s) { return s; });",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "stores the sequence of passages visited",
-                "evidence": "var historyText = historyEl.textContent.trim();"
-              },
-              {
-                "fact": "is split into an array of passage names",
-                "evidence": "var history = historyText.split(', ').filter(function(s) { return s; });"
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "route",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "var route = history.join('→');",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "is the concatenated string of passage names separated by arrows",
-                "evidence": "var route = history.join('→');"
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "pathId",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "var pathId = window.pathIdLookup && window.pathIdLookup[route];",
-                "context": "narrative"
-              },
-              {
-                "quote": "if (pathId) {",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "is retrieved from window.pathIdLookup using the route key",
-                "evidence": "var pathId = window.pathIdLookup && window.pathIdLookup[route];"
-              },
-              {
-                "fact": "is displayed if found",
-                "evidence": "if (pathId) {"
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          },
-          {
-            "name": "window.pathIdLookup",
-            "title": null,
-            "mentions": [
-              {
-                "quote": "var pathId = window.pathIdLookup && window.pathIdLookup[route];",
-                "context": "narrative"
-              }
-            ],
-            "facts": [
-              {
-                "fact": "contains precomputed lookup table for path IDs",
-                "evidence": "var pathId = window.pathIdLookup && window.pathIdLookup[route];"
-              }
-            ],
-            "_chunk_number": 1,
-            "_chunk_total": 1
-          }
-        ],
+        "characters": [],
+        "locations": [],
+        "items": [],
         "organizations": [],
         "concepts": []
       },
       "facts": [],
       "chunks_processed": 1,
       "passage_name": "PathIdDisplay",
-      "passage_length": 1827
+      "passage_length": 177
     }
   },
   "summarized_facts": {
@@ -16760,28 +16573,6 @@
           "source_entity": "Passage"
         },
         {
-          "fact": "Passage: has a name stored in $currentPassage",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "(set: $currentPassage to (passage:)'s name)"
-            }
-          ],
-          "source_entity": "Passage"
-        },
-        {
-          "fact": "Passage: has links that determine if it is an ending",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "(if: (passage:)'s links's length is 0)["
-            }
-          ],
-          "source_entity": "Passage"
-        },
-        {
           "fact": "Entrance: is the point of entry to the cave",
           "type": "setting",
           "evidence": [
@@ -17015,28 +16806,6 @@
             }
           ],
           "source_entity": "Kitchen"
-        },
-        {
-          "fact": "Ending: is a passage with no outgoing links",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "An ending is defined as a passage with no outgoing links."
-            }
-          ],
-          "source_entity": "Ending"
-        },
-        {
-          "fact": "Ending: triggers Path ID display when reached",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "It displays the unique path ID when the player reaches an ending."
-            }
-          ],
-          "source_entity": "Ending"
         },
         {
           "fact": "Pants: are two layers",
@@ -19252,94 +19021,6 @@
             }
           ],
           "source_entity": "Cloaks"
-        },
-        {
-          "fact": "Path Id: is displayed in the footer of ending passages",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "It displays the unique path ID when the player reaches an ending."
-            }
-          ],
-          "source_entity": "Path Id"
-        },
-        {
-          "fact": "Path Id: is shown in a div with class 'path-id-container'",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var container = document.querySelector('.path-id-container');"
-            }
-          ],
-          "source_entity": "Path Id"
-        },
-        {
-          "fact": "History: stores the sequence of passages visited",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var historyText = historyEl.textContent.trim();"
-            }
-          ],
-          "source_entity": "History"
-        },
-        {
-          "fact": "History: is split into an array of passage names",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var history = historyText.split(', ').filter(function(s) { return s; });"
-            }
-          ],
-          "source_entity": "History"
-        },
-        {
-          "fact": "Route: is the concatenated string of passage names separated by arrows",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var route = history.join('→');"
-            }
-          ],
-          "source_entity": "Route"
-        },
-        {
-          "fact": "Pathid: is retrieved from window.pathIdLookup using the route key",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var pathId = window.pathIdLookup && window.pathIdLookup[route];"
-            }
-          ],
-          "source_entity": "Pathid"
-        },
-        {
-          "fact": "Pathid: is displayed if found",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "if (pathId) {"
-            }
-          ],
-          "source_entity": "Pathid"
-        },
-        {
-          "fact": "Window.Pathidlookup: contains precomputed lookup table for path IDs",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var pathId = window.pathIdLookup && window.pathIdLookup[route];"
-            }
-          ],
-          "source_entity": "Window.Pathidlookup"
         }
       ],
       "timeline": [
@@ -28846,31 +28527,6 @@
             "passage": "mansel-20251112"
           }
         ]
-      },
-      "Player": {
-        "identity": [
-          {
-            "fact": "reaches an ending to trigger Path ID display",
-            "evidence": [
-              {
-                "passage": "PathIdDisplay",
-                "quote": "It displays the unique path ID when the player reaches an ending."
-              }
-            ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "PathIdDisplay"
-        ],
-        "mentions": [
-          {
-            "quote": "when the player reaches an ending",
-            "context": "narrative",
-            "passage": "PathIdDisplay"
-          }
-        ]
       }
     },
     "variables": {
@@ -28880,7 +28536,7 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 0.010054349899291992,
+  "summarization_time_seconds": 0.010160684585571289,
   "categorized_facts": {
     "constants": {
       "world_rules": [
@@ -30561,28 +30217,6 @@
           "source_entity": "Passage"
         },
         {
-          "fact": "Passage: has a name stored in $currentPassage",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "(set: $currentPassage to (passage:)'s name)"
-            }
-          ],
-          "source_entity": "Passage"
-        },
-        {
-          "fact": "Passage: has links that determine if it is an ending",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "(if: (passage:)'s links's length is 0)["
-            }
-          ],
-          "source_entity": "Passage"
-        },
-        {
           "fact": "Entrance: is the point of entry to the cave",
           "type": "setting",
           "evidence": [
@@ -30816,28 +30450,6 @@
             }
           ],
           "source_entity": "Kitchen"
-        },
-        {
-          "fact": "Ending: is a passage with no outgoing links",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "An ending is defined as a passage with no outgoing links."
-            }
-          ],
-          "source_entity": "Ending"
-        },
-        {
-          "fact": "Ending: triggers Path ID display when reached",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "It displays the unique path ID when the player reaches an ending."
-            }
-          ],
-          "source_entity": "Ending"
         },
         {
           "fact": "Pants: are two layers",
@@ -33053,94 +32665,6 @@
             }
           ],
           "source_entity": "Cloaks"
-        },
-        {
-          "fact": "Path Id: is displayed in the footer of ending passages",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "It displays the unique path ID when the player reaches an ending."
-            }
-          ],
-          "source_entity": "Path Id"
-        },
-        {
-          "fact": "Path Id: is shown in a div with class 'path-id-container'",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var container = document.querySelector('.path-id-container');"
-            }
-          ],
-          "source_entity": "Path Id"
-        },
-        {
-          "fact": "History: stores the sequence of passages visited",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var historyText = historyEl.textContent.trim();"
-            }
-          ],
-          "source_entity": "History"
-        },
-        {
-          "fact": "History: is split into an array of passage names",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var history = historyText.split(', ').filter(function(s) { return s; });"
-            }
-          ],
-          "source_entity": "History"
-        },
-        {
-          "fact": "Route: is the concatenated string of passage names separated by arrows",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var route = history.join('→');"
-            }
-          ],
-          "source_entity": "Route"
-        },
-        {
-          "fact": "Pathid: is retrieved from window.pathIdLookup using the route key",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var pathId = window.pathIdLookup && window.pathIdLookup[route];"
-            }
-          ],
-          "source_entity": "Pathid"
-        },
-        {
-          "fact": "Pathid: is displayed if found",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "if (pathId) {"
-            }
-          ],
-          "source_entity": "Pathid"
-        },
-        {
-          "fact": "Window.Pathidlookup: contains precomputed lookup table for path IDs",
-          "type": "setting",
-          "evidence": [
-            {
-              "passage": "PathIdDisplay",
-              "quote": "var pathId = window.pathIdLookup && window.pathIdLookup[route];"
-            }
-          ],
-          "source_entity": "Window.Pathidlookup"
         }
       ],
       "timeline": [
@@ -42647,31 +42171,6 @@
             "passage": "mansel-20251112"
           }
         ]
-      },
-      "Player": {
-        "identity": [
-          {
-            "fact": "reaches an ending to trigger Path ID display",
-            "evidence": [
-              {
-                "passage": "PathIdDisplay",
-                "quote": "It displays the unique path ID when the player reaches an ending."
-              }
-            ]
-          }
-        ],
-        "zero_action_state": [],
-        "variables": [],
-        "passages": [
-          "PathIdDisplay"
-        ],
-        "mentions": [
-          {
-            "quote": "when the player reaches an ending",
-            "context": "narrative",
-            "passage": "PathIdDisplay"
-          }
-        ]
       }
     },
     "variables": {
@@ -42947,19 +42446,19 @@
     "passages_with_facts": 0,
     "passages_with_no_facts": 65,
     "average_facts_per_passage": 0.0,
-    "character_coverage": 31,
+    "character_coverage": 30,
     "fact_distribution": {
       "world_rules": 12,
-      "setting": 368,
+      "setting": 356,
       "timeline": 197,
-      "character_identity": 434
+      "character_identity": 433
     },
     "extraction_success_rate": 0.0,
     "deduplication_effectiveness": 0.0
   },
   "meta": {
-    "last_extracted": "2026-01-01T02:11:16.750954",
+    "last_extracted": "2026-01-01T02:15:27.051275",
     "total_passages_extracted": 65,
-    "total_facts": 577
+    "total_facts": 565
   }
 }
