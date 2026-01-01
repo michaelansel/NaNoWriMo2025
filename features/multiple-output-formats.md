@@ -118,12 +118,15 @@ These are directional goals we cannot directly measure but inform our design dec
 - Harlowe 3 game mechanics (variables, conditionals, etc.)
 - Styled with custom CSS
 - Hosted on GitHub Pages
+- Path ID display at story endings (8-character unique identifier)
 
 **Use Cases:**
 - Play testing new passages
 - Experiencing the story as a player
 - Sharing with readers
 - Verifying game mechanics work
+- Bug reporting with specific path IDs ("I found an issue on path abc12345")
+- Sharing specific story paths between readers
 
 **Output:** `dist/index.html`
 **Live URL:** `https://michaelansel.github.io/NaNoWriMo2025/`
