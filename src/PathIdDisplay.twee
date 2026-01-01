@@ -1,4 +1,5 @@
 :: PathIdDisplay [footer]
+
 <!-- Store history for JavaScript - always rendered -->
 <span id="harlowe-history-data" style="display:none">(text: ...(history:))</span>
 <span class="path-id-container"></span>
