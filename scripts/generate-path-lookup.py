@@ -95,13 +95,15 @@ function getFullPath() {
     console.log('[PathID] Current passage:', currentPassage);
 
     // Get history from footer element (past passages only)
+    // History is delimited by ||| since Harlowe doesn't have a join macro
     var historyEl = document.getElementById('harlowe-history-data');
     var pastPassages = [];
     if (historyEl) {
         var text = historyEl.textContent.trim();
         // Filter out unevaluated macro text
-        if (text && !text.includes('(history:)') && !text.includes('(joined:')) {
-            pastPassages = text.split(', ').filter(function(s) { return s && s.length > 0; });
+        if (text && !text.includes('(history:)') && !text.includes('(for:')) {
+            // Split by ||| delimiter, filter empty strings
+            pastPassages = text.split('|||').filter(function(s) { return s && s.length > 0; });
         }
     }
     console.log('[PathID] Past passages:', pastPassages);
