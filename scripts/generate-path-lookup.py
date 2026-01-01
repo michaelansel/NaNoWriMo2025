@@ -79,9 +79,7 @@ window.getPathId = function(history) {
     output_path = current_project_dir / 'src' / 'PathIdLookup.twee'
 
     twee_content = f""":: PathIdLookup [script]
-<script>
 {full_js}
-</script>
 """
 
     with open(output_path, 'w', encoding='utf-8') as f:

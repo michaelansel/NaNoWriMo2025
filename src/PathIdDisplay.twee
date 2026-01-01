@@ -10,10 +10,9 @@
 -->
 {
 (set: $currentPassage to (passage:)'s name)
-(set: $hasLinks to (passage:)'s links's length > 0)
 
 <!-- Only display on ending passages (no outgoing links) -->
-(if: not $hasLinks)[
+(if: (passage:)'s links's length is 0)[
 <!-- Store history in hidden element for JavaScript to read -->
 <span id="harlowe-history-data" style="display:none">(text: ...(history:))</span>
 <span class="path-id-container"></span>
