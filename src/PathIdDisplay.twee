@@ -1,5 +1,6 @@
 :: PathIdDisplay [footer]
 
-<!-- Store history for JavaScript - always rendered -->
+<!-- Store history and current passage for JavaScript -->
 <span id="harlowe-history-data" style="display:none">(joined: ", ", ...(history:))</span>
+<span id="harlowe-current-passage" style="display:none">(print: (passage:)'s name)</span>
 <span class="path-id-container"></span>

@@ -71,13 +71,23 @@ window.getPathId = function(fullPath) {
     return window.pathIdLookup[route] || null;
 };
 
+// Get current passage name from footer element
+function getCurrentPassage() {
+    var el = document.getElementById('harlowe-current-passage');
+    if (el) {
+        var text = el.textContent.trim();
+        // Filter out unevaluated macro text
+        if (text && !text.includes('(') && !text.includes(':')) {
+            return text;
+        }
+    }
+    return null;
+}
+
 // Get full path: history (past passages) + current passage
 function getFullPath() {
-    var passage = document.querySelector('tw-story tw-passage');
-    if (!passage) return null;
-
-    // Get current passage name from tw-passage element
-    var currentPassage = passage.getAttribute('name');
+    // Get current passage from footer
+    var currentPassage = getCurrentPassage();
     if (!currentPassage) {
         console.log('[PathID] Could not get current passage name');
         return null;
@@ -90,7 +100,7 @@ function getFullPath() {
     if (historyEl) {
         var text = historyEl.textContent.trim();
         // Filter out unevaluated macro text
-        if (text && !text.includes('(history:)') && !text.includes('(text:')) {
+        if (text && !text.includes('(history:)') && !text.includes('(joined:')) {
             pastPassages = text.split(', ').filter(function(s) { return s && s.length > 0; });
         }
     }
@@ -113,8 +123,13 @@ function getFullPath() {
             return;
         }
 
-        var currentPassage = passage.getAttribute('name');
-        if (!currentPassage) return;
+        // Get current passage from footer element
+        var currentPassage = getCurrentPassage();
+        console.log('[PathID] Checking passage:', currentPassage);
+        if (!currentPassage) {
+            console.log('[PathID] Current passage not available yet');
+            return;
+        }
 
         // Skip if already processed this passage
         if (currentPassage === lastDisplayedPassage) return;
