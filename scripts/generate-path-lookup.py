@@ -167,11 +167,14 @@ function getFullPath() {
         // Check if already displayed
         if (passage.querySelector('.path-id-display')) return;
 
-        // Create and append display
+        // Create and append display with path ID and route
         var div = document.createElement('div');
         div.className = 'path-id-display';
         div.style.cssText = 'margin-top: 2em; padding-top: 1em; border-top: 1px solid #666; font-size: 0.9em; color: #888;';
-        div.innerHTML = '<p style="font-family: monospace; margin: 0;">Path ID: ' + pathId + '</p>';
+        // Format route with arrows for display
+        var routeDisplay = fullPath.join(' → ');
+        div.innerHTML = '<p style="font-family: monospace; margin: 0;">Path ID: ' + pathId + '</p>' +
+                        '<p style="font-size: 0.85em; margin: 0.5em 0 0 0; opacity: 0.8;">(' + routeDisplay + ')</p>';
         passage.appendChild(div);
         console.log('[PathID] Displayed path ID successfully');
     }

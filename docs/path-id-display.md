@@ -173,21 +173,50 @@ If path IDs don't appear or show incorrectly:
    ```javascript
    document.getElementById('harlowe-history-data').textContent
    ```
-   - Should show comma-separated passage names like "Start, Left, End1"
+   - Should show `|||`-delimited passage names like "Start|||Left|||"
+   - Also check current passage: `document.getElementById('harlowe-current-passage').textContent`
 
 3. **Check lookup key**: In browser console:
    ```javascript
    var h = document.getElementById('harlowe-history-data').textContent;
-   var route = h.split(', ').join('→');
+   var c = document.getElementById('harlowe-current-passage').textContent;
+   var past = h.split('|||').filter(s => s);
+   var route = past.concat([c]).join('→');
    console.log(route, window.pathIdLookup[route]);
    ```
    - Should show the route and its path ID
 
 4. **Check for mismatches**: Compare history to lookup keys
    - Passage names must match exactly
+   - History uses `|||` delimiter (not commas)
    - Arrow character must be `→` (U+2192) not `->` (ASCII)
 
 ## Testing
+
+### Quick Validation (recommended before commits)
+
+```bash
+# Run after build:core to validate JavaScript parsing logic and generated files
+npm run test:path-id
+```
+
+This validates:
+- JavaScript parsing logic (history delimiter handling)
+- Generated PathIdLookup.twee structure
+- PathIdDisplay.twee footer structure
+
+### Local Browser Testing
+
+```bash
+# Build locally for fast iteration
+npm run build:core
+tweego src -o tmp/play.html -f harlowe-3
+
+# Open tmp/play.html in browser
+# Navigate to an ending and check console for [PathID] logs
+```
+
+### Python Unit Tests
 
 ```bash
 # Test path ID lookup generation
@@ -195,10 +224,6 @@ python3 -m pytest formats/allpaths/modules/test_path_id_lookup.py -v
 
 # Test script integration
 python3 -m pytest scripts/test_generate_path_lookup.py -v
-
-# Full build test (requires tweego)
-npm run build:core
-cat src/PathIdLookup.twee  # Verify generated lookup
 ```
 
 ## Performance
