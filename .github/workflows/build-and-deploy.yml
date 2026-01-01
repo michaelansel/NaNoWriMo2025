@@ -76,6 +76,22 @@ jobs:
           mv dotgraph-temp/dotgraph-2 storyformats/
           rm -rf dotgraph-temp dotgraph.zip
 
+      - name: Fetch base branch and calculate merge base for PR categorization
+        if: github.event_name == 'pull_request'
+        run: |
+          # Fetch the base branch so git comparisons work for path categorization
+          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
+          # Calculate merge base to isolate PR changes from concurrent main changes
+          MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
+          echo "Base branch: origin/${{ github.base_ref }}"
+          echo "Merge base: $MERGE_BASE"
+          echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
+
+      - name: Build Core Library artifacts
+        run: |
+          chmod +x scripts/build-core.sh
+          ./scripts/build-core.sh
+
       - name: Build Harlowe version (playable story)
         run: |
           mkdir -p dist
@@ -92,22 +108,6 @@ jobs:
       - name: Build DotGraph version (visualization)
         run: |
           tweego src -o dist/graph.html -f dotgraph-2
-
-      - name: Fetch base branch and calculate merge base for PR categorization
-        if: github.event_name == 'pull_request'
-        run: |
-          # Fetch the base branch so git comparisons work for path categorization
-          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-          # Calculate merge base to isolate PR changes from concurrent main changes
-          MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
-          echo "Base branch: origin/${{ github.base_ref }}"
-          echo "Merge base: $MERGE_BASE"
-          echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
-
-      - name: Build Core Library artifacts
-        run: |
-          chmod +x scripts/build-core.sh
-          ./scripts/build-core.sh
 
       - name: Build AllPaths version (AI continuity checking)
         env:
