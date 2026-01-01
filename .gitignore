@@ -1,5 +1,8 @@
 # Build output
 dist/
+
+# Generated source files (created during build)
+src/PathIdLookup.twee
 # Intermediate debugging artifacts (allpaths)
 dist/allpaths-intermediate/
 
@@ -24,3 +27,4 @@ Thumbs.db
 *.tmp
 *.bak
 __pycache__/
+tmp/

@@ -13,7 +13,8 @@
     "metrics": "python3 scripts/calculate-metrics.py",
     "dev": "tweego src -o dist/index.html --format=harlowe-3.3.9 --watch",
     "dev:proofread": "tweego src -o dist/proofread.html --format=paperthin-1.0.0 --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test:path-id": "node scripts/test-path-id-lookup.js"
   },
   "keywords": [
     "twine",

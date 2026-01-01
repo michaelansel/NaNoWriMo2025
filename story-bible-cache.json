@@ -14876,6 +14876,21 @@
       "chunks_processed": 1,
       "passage_name": "wait for travelers to approach",
       "passage_length": 1132
+    },
+    "PathIdDisplay": {
+      "content_hash": "c176cd1e6d5b8948",
+      "extracted_at": "2026-01-01T22:50:04.279289",
+      "entities": {
+        "characters": [],
+        "locations": [],
+        "items": [],
+        "organizations": [],
+        "concepts": []
+      },
+      "facts": [],
+      "chunks_processed": 1,
+      "passage_name": "PathIdDisplay",
+      "passage_length": 293
     }
   },
   "summarized_facts": {
@@ -28521,7 +28536,7 @@
     "conflicts": []
   },
   "summarization_status": "success",
-  "summarization_time_seconds": 0.012220621109008789,
+  "summarization_time_seconds": 0.00953817367553711,
   "categorized_facts": {
     "constants": {
       "world_rules": [
@@ -42419,13 +42434,17 @@
       "wait for travelers to approach": {
         "passage_name": "wait for travelers to approach",
         "facts": []
+      },
+      "PathIdDisplay": {
+        "passage_name": "PathIdDisplay",
+        "facts": []
       }
     }
   },
   "extraction_stats": {
-    "total_passages": 64,
+    "total_passages": 65,
     "passages_with_facts": 0,
-    "passages_with_no_facts": 64,
+    "passages_with_no_facts": 65,
     "average_facts_per_passage": 0.0,
     "character_coverage": 30,
     "fact_distribution": {
@@ -42438,8 +42457,8 @@
     "deduplication_effectiveness": 0.0
   },
   "meta": {
-    "last_extracted": "2025-12-02T16:57:25.727393",
-    "total_passages_extracted": 64,
+    "last_extracted": "2026-01-01T22:50:04.841350",
+    "total_passages_extracted": 65,
     "total_facts": 565
   }
 }
