@@ -174,7 +174,7 @@ function getFullPath() {
         // Format route with arrows for display
         var routeDisplay = fullPath.join(' → ');
         // Create clickable link to clean path file
-        var pathLink = '<a href="allpaths-clean/path-' + pathId + '.txt" target="_blank" style="color: #88f; text-decoration: none;">' + pathId + '</a>';
+        var pathLink = '<a href="allpaths-clean/path-' + pathId + '.txt" target="_blank" rel="noopener" style="color: #88f; text-decoration: none;">' + pathId + '</a>';
         div.innerHTML = '<p style="font-family: monospace; margin: 0;">Path ID: ' + pathLink + '</p>' +
                         '<p style="font-size: 0.85em; margin: 0.5em 0 0 0; opacity: 0.8;">(' + routeDisplay + ')</p>';
         passage.appendChild(div);
