@@ -173,7 +173,9 @@ function getFullPath() {
         div.style.cssText = 'margin-top: 2em; padding-top: 1em; border-top: 1px solid #666; font-size: 0.9em; color: #888;';
         // Format route with arrows for display
         var routeDisplay = fullPath.join(' → ');
-        div.innerHTML = '<p style="font-family: monospace; margin: 0;">Path ID: ' + pathId + '</p>' +
+        // Create clickable link to clean path file
+        var pathLink = '<a href="allpaths-clean/path-' + pathId + '.txt" target="_blank" style="color: #88f; text-decoration: none;">' + pathId + '</a>';
+        div.innerHTML = '<p style="font-family: monospace; margin: 0;">Path ID: ' + pathLink + '</p>' +
                         '<p style="font-size: 0.85em; margin: 0.5em 0 0 0; opacity: 0.8;">(' + routeDisplay + ')</p>';
         passage.appendChild(div);
         console.log('[PathID] Displayed path ID successfully');

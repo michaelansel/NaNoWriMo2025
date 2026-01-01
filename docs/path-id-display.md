@@ -127,9 +127,8 @@ This means the ID changes when:
 
 A passage is an "ending" if:
 - It has zero outgoing links
-- `(passage:)'s links's length` equals 0
 
-The `PathIdDisplay.twee` footer uses Harlowe's `(if: not $hasLinks)` to only display on endings.
+The path ID display uses JavaScript to detect endings by checking `querySelectorAll('tw-link').length === 0`, which counts clickable links in the rendered passage. This check runs after Harlowe finishes rendering the passage content.
 
 ### Harlowe History Bridge
 
