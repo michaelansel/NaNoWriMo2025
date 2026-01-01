@@ -37,11 +37,16 @@ python3 "$PROJECT_DIR/lib/core/extract_passages.py" \
 echo
 
 # Build mappings
-echo "Step 4/4: Building passage mappings..."
+echo "Step 4/5: Building passage mappings..."
 python3 "$PROJECT_DIR/lib/core/build_mappings.py" \
   "$PROJECT_DIR/lib/artifacts/story_graph.json" \
   "$PROJECT_DIR/lib/artifacts/passage_mapping.json" \
   --src "$PROJECT_DIR/src"
+echo
+
+# Generate path ID lookup for Harlowe runtime
+echo "Step 5/5: Generating path ID lookup..."
+python3 "$PROJECT_DIR/scripts/generate-path-lookup.py"
 echo
 
 echo "=== Core Artifacts Complete ==="
@@ -49,4 +54,5 @@ echo "Generated:"
 echo "  - lib/artifacts/story_graph.json"
 echo "  - lib/artifacts/passages_deduplicated.json"
 echo "  - lib/artifacts/passage_mapping.json"
+echo "  - src/PathIdLookup.twee (path ID runtime lookup)"
 echo

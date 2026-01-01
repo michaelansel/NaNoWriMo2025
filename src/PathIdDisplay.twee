@@ -1,0 +1,60 @@
+:: PathIdDisplay [footer]
+<!--
+  Path ID Display
+
+  This passage is automatically included as a footer on all passages.
+  It displays the unique path ID when the player reaches an ending.
+
+  An ending is defined as a passage with no outgoing links.
+-->
+{
+(set: $currentPassage to (passage:)'s name)
+(set: $hasLinks to (passage:)'s links's length > 0)
+
+<!-- Only display on ending passages (no outgoing links) -->
+(if: not $hasLinks)[
+<!-- Store history in hidden element for JavaScript to read -->
+<span id="harlowe-history-data" style="display:none">(text: ...(history:))</span>
+<span class="path-id-container"></span>
+<script>
+(function() {
+  // Read history from Harlowe-generated hidden element
+  var historyEl = document.getElementById('harlowe-history-data');
+  if (!historyEl) {
+    return; // No history element found
+  }
+
+  // Parse the history array (Harlowe outputs as "A, B, C")
+  var historyText = historyEl.textContent.trim();
+  var history = historyText.split(', ').filter(function(s) { return s; });
+
+  // Guard against empty history
+  if (history.length === 0) {
+    return; // No valid history to look up
+  }
+
+  // Build the route key for lookup
+  var route = history.join('→');
+
+  // Get path ID from precomputed lookup table
+  var pathId = window.pathIdLookup && window.pathIdLookup[route];
+
+  // Display the path ID if found
+  if (pathId) {
+    var container = document.querySelector('.path-id-container');
+    if (container) {
+      var div = document.createElement('div');
+      div.style.cssText = 'margin-top: 2em; padding-top: 1em; border-top: 1px solid #ccc; font-size: 0.9em; color: #666;';
+
+      var p = document.createElement('p');
+      p.style.cssText = 'font-family: monospace; font-size: 0.95em; margin-top: 0.5em;';
+      p.textContent = 'Path ID: ' + pathId;
+
+      div.appendChild(p);
+      container.appendChild(div);
+    }
+  }
+})();
+</script>
+]
+}
