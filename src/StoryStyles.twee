@@ -71,13 +71,13 @@ tw-sidebar {
 	/* display: none; */ /* Uncomment to hide sidebar */
 }
 
-tw-icon[alt] {
+tw-icon {
 	opacity: 1 !important;
 	margin: 0 0 1rem;
 	font-size: 3rem;
 }
 
-tw-icon[alt]:hover {
+tw-icon:hover {
 	opacity: 1 !important;
 }
 
