@@ -71,13 +71,14 @@ tw-sidebar {
 	/* display: none; */ /* Uncomment to hide sidebar */
 }
 
-tw-icon {
+/* Navigation icons within sidebar - scoped to avoid affecting other tw-icon elements */
+tw-sidebar tw-icon {
 	opacity: 1 !important;
 	margin: 0 0 1rem;
 	font-size: 3rem;
 }
 
-tw-icon:hover {
+tw-sidebar tw-icon:hover {
 	opacity: 1 !important;
 }
 
