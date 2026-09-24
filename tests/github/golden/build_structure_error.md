@@ -25,5 +25,3 @@
 | Story map | `graph.html` | missing |
 
 **Preview:** download the `story-preview` artifact from [run #4242](https://github.com/owner/story/actions/runs/4242), unzip it, and open `dist/index.html`.
-
-Story Bible freshness: not computed yet (arrives with Story Bible v2).

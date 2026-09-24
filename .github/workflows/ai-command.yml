@@ -2,7 +2,7 @@ name: AI commands
 
 # Slash commands in pull-request comments, collaborators only:
 #   /check-continuity [all] [passage=<name>]   re-run the AI editors
-#   /extract-story-bible                        (Phase 3; replies with a note)
+#   /extract-story-bible                        (not available yet; replies with a note)
 #   /dismiss f-xxxxxxxx [reason]                record a dismissal on main, re-render comments
 # Anything else is ignored. This workflow always runs from the default branch; pull-request
 # code only ever runs in the `build` job, whose token is read-only.
@@ -117,7 +117,7 @@ jobs:
         if: steps.cmd.outputs.command == 'extract-story-bible'
         run: |
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
-            --body "Story Bible extraction lands in Phase 3. Nothing ran."
+            --body "\`/extract-story-bible\` isn't available yet. Nothing ran."
 
   build:
     name: build

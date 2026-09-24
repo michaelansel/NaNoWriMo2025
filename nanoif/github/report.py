@@ -44,7 +44,6 @@ BUILD_OUTPUTS = (
     ("Story Bible", "story-bible.html"),
     ("Passage index", "passages.html"),
 )
-FRESHNESS_PLACEHOLDER = "Story Bible freshness: not computed yet (arrives with Story Bible v2)."
 STRUCTURE_CHECK = "Structure"
 _ANNOTATION_LEVEL = {"error": "failure", "warning": "warning", "info": "notice"}
 
@@ -490,7 +489,6 @@ def render_build(
         "infos": by_level["info"][:MAX_LISTED],
         "infos_overflow": max(0, infos - MAX_LISTED),
         "sizes": [] if stats is None else [(label, name, _kb(s)) for label, name, s in stats.sizes],
-        "freshness": FRESHNESS_PLACEHOLDER,
     }
     body = _environment().get_template("build.md.jinja2").render(**context)
     title = (
