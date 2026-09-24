@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/changes.schema.json",
+  "title": "Changes",
+  "description": "Which passages are new, changed or removed against a base commit, as written by `nanoif build allpaths`",
+  "type": "object",
+  "required": ["base_ref", "base_sha", "changed", "new", "removed"],
+  "additionalProperties": false,
+  "properties": {
+    "base_ref": { "type": "string", "minLength": 1 },
+    "base_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "changed": {
+      "type": "array",
+      "description": "Passage names whose text differs from the base (new passages included), sorted",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "new": {
+      "type": "array",
+      "description": "Passage names the base did not have, sorted",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "removed": {
+      "type": "array",
+      "description": "Passage names the base had that the working tree does not, sorted",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    }
+  }
+}

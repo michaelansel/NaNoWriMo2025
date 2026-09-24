@@ -1,0 +1,64 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/allpaths_index.schema.json",
+  "title": "AllPaths Index",
+  "description": "Every path and passage of a build, with categories against a base commit, as written by `nanoif build allpaths`",
+  "type": "object",
+  "required": ["base_ref", "base_sha", "story_title", "paths", "passages", "broken_links", "cycles"],
+  "additionalProperties": false,
+  "definitions": {
+    "hex8": { "type": "string", "pattern": "^[a-f0-9]{8}$" },
+    "hex12": { "type": "string", "pattern": "^[a-f0-9]{12}$" },
+    "isoDate": { "type": ["string", "null"], "description": "ISO 8601 author date, or null for an uncommitted file" }
+  },
+  "properties": {
+    "base_ref": { "type": "string", "minLength": 1 },
+    "base_sha": { "type": "string", "pattern": "^[a-f0-9]{40}$" },
+    "story_title": { "type": "string" },
+    "paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "route", "passage_ids", "category", "files", "created", "modified"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/definitions/hex8" },
+          "route": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "passage_ids": { "type": "array", "items": { "$ref": "#/definitions/hex12" }, "minItems": 1 },
+          "category": { "type": "string", "enum": ["new", "modified", "unchanged"] },
+          "files": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+          "created": { "$ref": "#/definitions/isoDate" },
+          "modified": { "$ref": "#/definitions/isoDate" }
+        }
+      }
+    },
+    "passages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "id", "file", "changed_vs_base", "new_vs_base"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "id": { "$ref": "#/definitions/hex12" },
+          "file": { "type": ["string", "null"], "description": "Repository-relative source file, or null if not found in the source tree" },
+          "changed_vs_base": { "type": "boolean" },
+          "new_vs_base": { "type": "boolean" }
+        }
+      }
+    },
+    "broken_links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to"],
+        "additionalProperties": false,
+        "properties": { "from": { "type": "string" }, "to": { "type": "string" } }
+      }
+    },
+    "cycles": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "string" }, "minItems": 2 }
+    }
+  }
+}

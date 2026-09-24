@@ -283,7 +283,7 @@
 
     <div class="container">
 {% for path_data in paths_with_metadata %}
-        <div class="path" data-created-date="{{ path_data.created_date }}" data-commit-date="{{ path_data.commit_date }}">
+        <div class="path" data-created-date="{{ path_data.created_date }}" data-commit-date="{{ path_data.commit_date }}" data-category="{{ path_data.category }}">
             <div class="path-header">
                 <div class="path-title">Path {{ loop.index }} of {{ total_paths }}</div>
                 <div class="path-meta">
@@ -315,7 +315,7 @@
 {% set next_passage = path_data.path[loop.index] if loop.index < path_data.path|length else none %}
                 <div class="passage">
                     <div class="passage-title" style="font-size: 0.9rem; opacity: 0.7; font-style: italic;">[Passage: {{ passage_name }}]</div>
-                    <div class="passage-text">{{ format_passage_text(passage.text, next_passage) }}</div>
+                    <div class="passage-text">{{ display_text(passage.content, next_passage) }}</div>
                 </div>
 {% else %}
                 <div class="passage">
