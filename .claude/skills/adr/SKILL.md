@@ -8,18 +8,16 @@ arguments: slug
 
 Existing ADRs (the next number is one past the highest):
 
-!`ls /home/user/NaNoWriMo2025/architecture/ 2>/dev/null | grep -E '^[0-9]{3}-' | sort | tail -5`
+!`ls "${CLAUDE_PROJECT_DIR}"/architecture/ 2>/dev/null | grep -E '^[0-9]{3}-' | sort | tail -5`
 
-Write `architecture/NNN-$ARGUMENTS.md` using the template below. Read `ARCHITECTURE.md` and any ADR this one touches first. If this decision replaces an earlier ADR, add `Superseded by ADR-NNN` under that ADR's Status and leave the rest of it alone.
+Write `architecture/NNN-$ARGUMENTS.md` using the template below. Read `ARCHITECTURE.md` and any ADR this one touches first. If this decision replaces an earlier ADR, change that ADR's `Status:` line to `Superseded by ADR-NNN` and leave the rest of it alone. `nanoif intent check --repo .` must pass afterwards.
 
 ## Template
 
 ```markdown
 # ADR-{number}: {Title}
 
-## Status
-
-{Proposed | Accepted | Deprecated | Superseded}
+Status: {Proposed | Accepted | Superseded by ADR-NNN}
 
 ## Context
 
