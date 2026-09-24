@@ -27,6 +27,7 @@ def test_enumerate_missing_start_is_an_error():
         enumerate_paths({"A": []}, "Start")
 
 
+@pytest.mark.intent("AC-output-formats-9", "ADR-017")
 def test_enumerate_reports_broken_link_and_does_not_treat_it_as_an_ending():
     graph = {"Start": ["Missing", "End"], "End": []}
     result = enumerate_paths(graph, "Start")
@@ -35,12 +36,14 @@ def test_enumerate_reports_broken_link_and_does_not_treat_it_as_an_ending():
     assert result.cycles == []
 
 
+@pytest.mark.intent("AC-output-formats-9")
 def test_enumerate_passage_with_only_broken_links_ends_the_path():
     result = enumerate_paths({"Start": ["Gone"]}, "Start")
     assert result.paths == [["Start"]]
     assert result.broken_links == [("Start", "Gone")]
 
 
+@pytest.mark.intent("AC-output-formats-9")
 def test_enumerate_reports_each_broken_link_once():
     graph = {"Start": ["A", "B"], "A": ["Gone"], "B": ["Gone"]}
     result = enumerate_paths(graph, "Start")
@@ -49,6 +52,7 @@ def test_enumerate_reports_each_broken_link_once():
     assert enumerate_paths(graph_same_source, "Start").broken_links == [("A", "Gone")]
 
 
+@pytest.mark.intent("AC-output-formats-9")
 def test_enumerate_reports_cycle_and_still_reaches_the_ending():
     graph = {"Start": ["Loop"], "Loop": ["Start", "End"], "End": []}
     result = enumerate_paths(graph, "Start")
@@ -70,12 +74,14 @@ def test_enumerate_same_passage_on_two_branches_is_not_a_cycle():
     assert result.cycles == []
 
 
+@pytest.mark.intent("AC-output-formats-17", "ADR-017")
 def test_path_hash_is_md5_of_name_and_text_lines():
     content = {"Start": "Welcome", "End": "Bye"}
     expected = hashlib.md5(b"Start:Welcome\nEnd:Bye").hexdigest()[:8]
     assert path_hash(["Start", "End"], content) == expected
 
 
+@pytest.mark.intent("AC-output-formats-17")
 def test_path_hash_changes_with_content_and_structure():
     base = path_hash(["Start", "End"], {"Start": "Original", "End": "End"})
     assert path_hash(["Start", "End"], {"Start": "Modified", "End": "End"}) != base

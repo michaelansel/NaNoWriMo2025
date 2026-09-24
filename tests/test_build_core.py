@@ -54,6 +54,7 @@ def test_build_core_missing_src_is_an_error(project):
         build_core(project / "dist" / "story-paperthin.html", project / "nope", project / "out", project / "x.twee")
 
 
+@pytest.mark.intent("ADR-015")
 def test_cli_build_core_derives_paths_from_repo(project, capsys):
     assert main(["build", "core", "--repo", str(project)]) == 0
     out = capsys.readouterr().out
@@ -75,6 +76,7 @@ def test_cli_build_core_accepts_explicit_paths(project, tmp_path):
     assert (other / "Lookup.twee").exists()
 
 
+@pytest.mark.intent("ADR-015")
 def test_cli_build_core_error_is_reported_not_raised(project, capsys):
     argv = ["build", "core", "--repo", str(project), "--html", str(project / "nope.html")]
     assert main(argv) == 1

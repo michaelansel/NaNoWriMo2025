@@ -147,6 +147,7 @@ def test_load_cache_missing_is_none(tmp_path):
     assert load_cache(tmp_path / "story-bible-cache.json") is None
 
 
+@pytest.mark.intent("AC-story-bible-2")
 @pytest.mark.parametrize("content", ["{not json", "[]", '{"meta": {}}', '{"categorized_facts": []}'])
 def test_load_cache_unusable_is_an_error(tmp_path, content):
     cache = tmp_path / "story-bible-cache.json"
@@ -158,6 +159,7 @@ def test_load_cache_unusable_is_an_error(tmp_path, content):
 # --- rendering -----------------------------------------------------------------------
 
 
+@pytest.mark.intent("AC-story-bible-3")
 def test_render_html_with_entity_data():
     facts = {
         "metadata": {"view_type": "entity_first", "generation_mode": "ai"},
@@ -210,6 +212,7 @@ def test_render_html_shows_statistics_from_the_data():
     assert stats.groups() == ("765", "8", "36")
 
 
+@pytest.mark.intent("AC-story-bible-4")
 def test_render_html_escapes_quotes_from_the_cache():
     facts = {"constants": {"setting": [{"fact": "<script>alert(1)</script>", "evidence": []}]}, "metadata": {}}
     html = render_html(facts, "T", SHA, WHEN)
@@ -247,6 +250,7 @@ def _config(repo: Path) -> StoryBibleConfig:
     )
 
 
+@pytest.mark.intent("AC-story-bible-1", "AC-story-bible-3")
 def test_build_without_cache_renders_placeholder(story_repo):
     _artifacts(story_repo)
     result = build_story_bible(_config(story_repo))
@@ -277,6 +281,7 @@ def test_build_with_cache_renders_summary(story_repo):
     assert document["meta"]["generated"] == WHEN.isoformat()
 
 
+@pytest.mark.intent("AC-story-bible-2")
 def test_build_with_corrupt_cache_fails(story_repo):
     _artifacts(story_repo)
     (story_repo / "story-bible-cache.json").write_text("{", encoding="utf-8")
@@ -290,6 +295,7 @@ def test_build_without_core_artifacts_fails(story_repo):
         build_story_bible(_config(story_repo))
 
 
+@pytest.mark.intent("AC-story-bible-1")
 def test_cli_build_story_bible(story_repo, capsys):
     from nanoif.cli import main
 

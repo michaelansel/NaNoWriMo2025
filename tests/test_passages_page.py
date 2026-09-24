@@ -12,6 +12,7 @@ from nanoif.twee.files import ProseFileName, parse_prose_file_name, passage_loca
 from nanoif.twee.parse import parse_twee_dir
 
 
+@pytest.mark.intent("AC-web-editing-1", "AC-web-editing-2")
 @pytest.mark.parametrize(
     ("name", "expected"),
     [
@@ -47,6 +48,7 @@ def story(tmp_path):
     return tmp_path
 
 
+@pytest.mark.intent("AC-output-formats-15")
 def test_rows_sorted_by_file_then_line_with_inferred_writer_date_and_day(story):
     graph = parse_twee_dir(story / "src")
     rows = passage_rows(graph, passage_locations(story / "src"), story)
@@ -67,6 +69,7 @@ def test_rows_sorted_by_file_then_line_with_inferred_writer_date_and_day(story):
     assert [r.anchor for r in rows] == ["p1", "p2", "p3", "p4", "p5", "p6"]
 
 
+@pytest.mark.intent("AC-output-formats-15")
 def test_rows_have_outgoing_and_incoming_links_and_word_counts(story):
     graph = parse_twee_dir(story / "src")
     by_name = {r.name: r for r in passage_rows(graph, passage_locations(story / "src"), story)}
@@ -78,6 +81,7 @@ def test_rows_have_outgoing_and_incoming_links_and_word_counts(story):
     assert by_name["Start"].words == 8
 
 
+@pytest.mark.intent("AC-output-formats-16", "ADR-018")
 def test_build_passages_writes_escaped_filterable_page(story):
     result = build_passages(
         story / "src", story / "lib" / "artifacts" / "story_graph.json", story / "dist", datetime(2026, 11, 2, 9, 30)
@@ -103,6 +107,7 @@ def test_cli_build_passages(story, capsys):
     assert (story / "dist" / "passages.html").exists()
 
 
+@pytest.mark.intent("AC-output-formats-11", "AC-output-formats-16")
 def test_passage_names_are_escaped(tmp_path):
     graph = {
         "passages": {

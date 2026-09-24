@@ -44,6 +44,7 @@ def codes(findings, level=None):
     return [f.code for f in findings if level is None or f.level == level]
 
 
+@pytest.mark.intent("AC-structure-check-9", "AC-web-editing-6")
 def test_valid_story_has_only_the_expected_dead_end(tmp_path):
     findings = check_structure(make_story(tmp_path))
     assert findings == [
@@ -52,6 +53,7 @@ def test_valid_story_has_only_the_expected_dead_end(tmp_path):
     ]
 
 
+@pytest.mark.intent("AC-structure-check-1", "ADR-018")
 def test_broken_link_is_an_error_with_file_and_line(tmp_path):
     src = make_story(tmp_path)
     write(src / "CD-20261101.twee", ":: Day 1 CD\n\nEvening.\n\nThen [[go on->Nowhere]].\n")
@@ -63,12 +65,14 @@ def test_broken_link_is_an_error_with_file_and_line(tmp_path):
     ]
 
 
+@pytest.mark.intent("AC-structure-check-2")
 def test_broken_link_in_harlowe_macro(tmp_path):
     src = make_story(tmp_path)
     write(src / "CD-20261101.twee", ':: Day 1 CD\n\n(link-goto: "Leave", "Gone")\n')
     assert [(f.code, f.line) for f in check_structure(src) if f.level == "error"] == [("broken-link", 3)]
 
 
+@pytest.mark.intent("AC-structure-check-3")
 def test_duplicate_passage_is_an_error(tmp_path):
     src = make_story(tmp_path)
     write(src / "CD-20261102.twee", ":: Day 2 CD\n\n[[Stay]]\n\n:: Stay\n\nA second Stay.\n")
@@ -79,6 +83,7 @@ def test_duplicate_passage_is_an_error(tmp_path):
     ]
 
 
+@pytest.mark.intent("AC-structure-check-7")
 def test_orphan_is_a_warning_but_footer_and_stylesheet_are_not(tmp_path):
     src = make_story(tmp_path)
     write(src / "CD-20261102.twee", ":: Day 2 CD\n\nNobody links here.\n")
@@ -87,24 +92,28 @@ def test_orphan_is_a_warning_but_footer_and_stylesheet_are_not(tmp_path):
     assert all(f.passage not in {"Footer", "PathIdDisplay", "StoryStylesheet"} for f in findings)
 
 
+@pytest.mark.intent("AC-structure-check-7")
 def test_passages_reached_only_through_orphans_are_orphans(tmp_path):
     src = make_story(tmp_path)
     write(src / "CD-20261102.twee", ":: Day 2 CD\n\n[[Deeper]]\n\n:: Deeper [ending]\n\nx\n")
     assert sorted(f.passage for f in check_structure(src) if f.code == "orphan-passage") == ["Day 2 CD", "Deeper"]
 
 
+@pytest.mark.intent("AC-structure-check-8")
 def test_orphans_are_measured_from_story_data_start(tmp_path):
     data = {**STORY_DATA, "start": "Day 1 CD"}
     findings = check_structure(make_story(tmp_path, story_data=data))
     assert sorted(f.passage for f in findings if f.code == "orphan-passage") == ["Day 1 AB", "Start", "Stay"]
 
 
+@pytest.mark.intent("AC-structure-check-9")
 def test_dead_end_tagged_ending_is_not_reported(tmp_path):
     src = make_story(tmp_path)
     write(src / "CD-20261101.twee", ":: Day 1 CD [ending]\n\nEvening.\n")
     assert codes(check_structure(src)) == []
 
 
+@pytest.mark.intent("AC-structure-check-4")
 @pytest.mark.parametrize(
     ("story_data_text", "message"),
     [
@@ -128,6 +137,7 @@ def test_invalid_story_data_is_an_error(tmp_path, story_data_text, message):
     assert errors[0].file == "src/StoryData.twee" and errors[0].line == 1
 
 
+@pytest.mark.intent("AC-structure-check-5")
 def test_missing_story_data_is_an_error_and_start_defaults_to_start(tmp_path):
     src = make_story(tmp_path)
     (src / "StoryData.twee").unlink()
@@ -136,17 +146,20 @@ def test_missing_story_data_is_an_error_and_start_defaults_to_start(tmp_path):
     assert "orphan-passage" not in codes(findings)
 
 
+@pytest.mark.intent("AC-structure-check-6")
 def test_unknown_story_style_key_is_a_warning(tmp_path):
     data = {**STORY_DATA, "storyStyle": {**STORY_DATA["storyStyle"], "mood": "grim"}}
     findings = check_structure(make_story(tmp_path, story_data=data))
     assert [(f.level, f.code) for f in findings if f.code.startswith("story")] == [("warning", "story-style-unknown-key")]
 
 
+@pytest.mark.intent("AC-structure-check-6")
 def test_story_data_without_story_style_is_valid(tmp_path):
     data = {k: v for k, v in STORY_DATA.items() if k != "storyStyle"}
     assert codes(check_structure(make_story(tmp_path, story_data=data)), "error") == []
 
 
+@pytest.mark.intent("AC-structure-check-10")
 @pytest.mark.parametrize("name", ["chapter-one.twee", "AB-2026110.twee", "AB-20261341.twee", "AB_20261101.twee", "Notes.twee"])
 def test_file_naming_drift_is_a_warning(tmp_path, name):
     src = make_story(tmp_path)
@@ -155,12 +168,14 @@ def test_file_naming_drift_is_a_warning(tmp_path, name):
     assert [(f.level, f.file) for f in naming] == [("warning", f"src/{name}")]
 
 
+@pytest.mark.intent("AC-structure-check-10")
 def test_infra_and_generated_files_are_not_naming_drift(tmp_path):
     src = make_story(tmp_path)
     write(src / "PathIdLookup.twee", ":: PathIdLookup [script]\nwindow.x = 1;\n")
     assert "file-naming" not in codes(check_structure(src))
 
 
+@pytest.mark.intent("AC-structure-check-11")
 def test_prose_file_without_day_passage_is_a_warning(tmp_path):
     src = make_story(tmp_path)
     write(src / "AB-20261102.twee", ":: The next morning\n\nx\n")
@@ -172,6 +187,7 @@ def test_prose_file_without_day_passage_is_a_warning(tmp_path):
     ]
 
 
+@pytest.mark.intent("AC-structure-check-12")
 def test_unreadable_file_is_an_error(tmp_path):
     src = make_story(tmp_path)
     (src / "AB-20261102.twee").write_bytes(b":: Day 2 AB\n\n\xff\xfe\n")
@@ -181,6 +197,7 @@ def test_unreadable_file_is_an_error(tmp_path):
 # --- overrides -----------------------------------------------------------------------
 
 
+@pytest.mark.intent("AC-structure-check-13")
 def test_parse_overrides_accepts_every_directive_and_skips_comments():
     text = (
         "# writer overrides\n"
@@ -201,6 +218,7 @@ def test_parse_overrides_accepts_every_directive_and_skips_comments():
     )
 
 
+@pytest.mark.intent("AC-structure-check-13")
 def test_parse_overrides_reports_bad_lines_with_numbers():
     text = "alias: A = B\nrename: A -> B\njust some words\npin:\n: nothing\n"
     overrides, errors = parse_overrides(text)
@@ -213,6 +231,7 @@ def test_parse_overrides_reports_bad_lines_with_numbers():
     ]
 
 
+@pytest.mark.intent("AC-structure-check-13")
 def test_overrides_errors_are_structure_errors(tmp_path):
     src = make_story(tmp_path)
     overrides = tmp_path / "story-overrides.txt"
@@ -223,6 +242,7 @@ def test_overrides_errors_are_structure_errors(tmp_path):
     ]
 
 
+@pytest.mark.intent("AC-structure-check-13")
 def test_missing_overrides_file_is_fine(tmp_path):
     assert codes(check_structure(make_story(tmp_path), overrides_path=tmp_path / "story-overrides.txt"), "error") == []
 
@@ -246,6 +266,7 @@ def test_format_text():
     assert format_findings([], "text") == ""
 
 
+@pytest.mark.intent("AC-structure-check-16")
 def test_format_github_annotations_are_escaped():
     assert format_findings(SAMPLE, "github").splitlines() == [
         "::error file=src/AB-20261101.twee,line=5,title=broken-link::'Day 1 AB' links to 'X, y: z', which does not exist",
@@ -254,6 +275,7 @@ def test_format_github_annotations_are_escaped():
     ]
 
 
+@pytest.mark.intent("ADR-018")
 def test_format_json_matches_schema():
     document = json.loads(format_findings(SAMPLE, "json"))
     validate_artifact(document, "structure_findings")
@@ -273,6 +295,7 @@ def test_format_unknown_is_an_error():
         format_findings(SAMPLE, "xml")
 
 
+@pytest.mark.intent("AC-structure-check-15")
 def test_findings_are_sorted_errors_first(tmp_path):
     src = make_story(tmp_path)
     write(src / "notes.twee", ":: Loose\n\n[[Nowhere]]\n")
@@ -281,6 +304,7 @@ def test_findings_are_sorted_errors_first(tmp_path):
     assert levels[0] == "error"
 
 
+@pytest.mark.intent("AC-structure-check-14", "ADR-018")
 def test_cli_exits_1_on_errors_and_0_with_exit_zero(tmp_path, capsys):
     src = make_story(tmp_path)
     write(src / "CD-20261101.twee", ":: Day 1 CD\n\n[[Nowhere]]\n")
@@ -292,6 +316,7 @@ def test_cli_exits_1_on_errors_and_0_with_exit_zero(tmp_path, capsys):
     assert "::error file=src/CD-20261101.twee,line=3,title=broken-link::" in capsys.readouterr().out
 
 
+@pytest.mark.intent("AC-structure-check-14")
 def test_cli_warnings_only_exit_0(tmp_path, capsys):
     src = make_story(tmp_path)
     write(src / "chapter.twee", ":: Loose [ending]\n\nx\n")
@@ -300,6 +325,7 @@ def test_cli_warnings_only_exit_0(tmp_path, capsys):
     assert {f["code"] for f in document} == {"file-naming", "orphan-passage", "dead-end"}
 
 
+@pytest.mark.intent("AC-structure-check-13")
 def test_cli_default_overrides_path_is_next_to_src(tmp_path, capsys):
     src = make_story(tmp_path)
     write(tmp_path / "story-overrides.txt", "nonsense line\n")

@@ -13,6 +13,7 @@ from nanoif.twee.links import (
 )
 
 
+@pytest.mark.intent("AC-web-editing-4")
 @pytest.mark.parametrize(
     ("inner", "expected"),
     [
@@ -48,6 +49,7 @@ def test_find_links_allows_close_bracket_inside_text():
     assert [(link.text, link.target) for link in links] == [("the box [red]", "Red Box")]
 
 
+@pytest.mark.intent("AC-web-editing-5")
 @pytest.mark.parametrize(
     ("text", "expected"),
     [

@@ -128,6 +128,7 @@ class TestIsSpecialPassage:
 class TestPassageHeaderSpacing:
     """Tests for passage-header-spacing rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_missing_space(self, tmp_path):
         """Test detection of missing space after ::"""
         test_file = tmp_path / "test.twee"
@@ -165,6 +166,7 @@ class TestPassageHeaderSpacing:
 class TestBlankLineAfterHeader:
     """Tests for blank-line-after-header rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_missing_blank_line(self, tmp_path):
         """Test detection of missing blank line after header."""
         test_file = tmp_path / "test.twee"
@@ -186,6 +188,7 @@ class TestBlankLineAfterHeader:
         content = test_file.read_text()
         assert content == ":: Start\n\nSome text\n"
 
+    @pytest.mark.intent("AC-structure-check-25")
     def test_special_passage_no_blank_line_needed(self, tmp_path):
         """Test that special passages don't need blank line."""
         test_file = tmp_path / "test.twee"
@@ -195,6 +198,7 @@ class TestBlankLineAfterHeader:
         # Should not have blank-line-after-header violation
         assert not any('blank-line-after-header' in v for v in violations)
 
+    @pytest.mark.intent("AC-structure-check-25")
     def test_stylesheet_tag_no_blank_line_needed(self, tmp_path):
         """Test that passages with stylesheet tag don't need blank line."""
         test_file = tmp_path / "test.twee"
@@ -208,6 +212,7 @@ class TestBlankLineAfterHeader:
 class TestBlankLineBetweenPassages:
     """Tests for blank-line-between-passages rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_missing_blank_line(self, tmp_path):
         """Test detection of missing blank line between passages."""
         test_file = tmp_path / "test.twee"
@@ -251,6 +256,7 @@ class TestBlankLineBetweenPassages:
 class TestTrailingWhitespace:
     """Tests for trailing-whitespace rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_trailing_spaces(self, tmp_path):
         """Test detection of trailing spaces."""
         test_file = tmp_path / "test.twee"
@@ -283,6 +289,7 @@ class TestTrailingWhitespace:
 class TestFinalNewline:
     """Tests for final-newline rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_missing_final_newline(self, tmp_path):
         """Test detection of missing final newline."""
         test_file = tmp_path / "test.twee"
@@ -327,6 +334,7 @@ class TestFinalNewline:
 class TestSingleBlankLines:
     """Tests for single-blank-lines rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_multiple_blank_lines(self, tmp_path):
         """Test detection of multiple consecutive blank lines."""
         test_file = tmp_path / "test.twee"
@@ -364,6 +372,7 @@ class TestSingleBlankLines:
 class TestLinkBlockSpacing:
     """Tests for link-block-spacing rule."""
 
+    @pytest.mark.intent("AC-structure-check-22")
     def test_detect_missing_blank_before_link_block(self, tmp_path):
         """Test detection of missing blank line before link block."""
         test_file = tmp_path / "test.twee"
@@ -605,6 +614,7 @@ class TestIntegration:
 class TestSmartQuotesAreAllowed:
     """The 2025 smart-quotes rule rewrote prose; it is removed."""
 
+    @pytest.mark.intent("AC-structure-check-24", "ADR-018")
     def test_curly_quotes_are_not_reported(self, tmp_path):
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n", encoding="utf-8")
@@ -615,6 +625,7 @@ class TestSmartQuotesAreAllowed:
 
 
 class TestViolation:
+    @pytest.mark.intent("AC-structure-check-22")
     def test_text_and_github_forms(self):
         violation = Violation(Path("src/AB-20251101.twee"), 3, "trailing-whitespace", "Line has trailing whitespace")
         assert str(violation) == "src/AB-20251101.twee:3: [trailing-whitespace] Line has trailing whitespace"
@@ -671,6 +682,7 @@ class TestLintPath:
 
 
 class TestLintCli:
+    @pytest.mark.intent("AC-structure-check-23")
     def test_reports_without_editing_and_exits_1(self, tmp_path, capsys):
         test_file = tmp_path / "test.twee"
         test_file.write_text("::Start\nText\n")
@@ -690,6 +702,7 @@ class TestLintCli:
         assert main(["lint", str(tmp_path), "--format", "github"]) == 1
         assert capsys.readouterr().out.startswith("::warning file=")
 
+    @pytest.mark.intent("AC-structure-check-23", "ADR-018")
     def test_there_is_no_fix_flag(self, tmp_path, capsys):
         (tmp_path / "test.twee").write_text("::Start\n")
         with pytest.raises(SystemExit) as exc:

@@ -37,6 +37,7 @@ def config(repo: Path, **overrides) -> AllPathsConfig:
     return AllPathsConfig(**{**defaults, **overrides})
 
 
+@pytest.mark.intent("AC-output-formats-18", "AC-output-formats-4", "AC-output-formats-7", "AC-output-formats-8")
 def test_run_writes_every_output_for_an_unchanged_story(story_repo):
     write_story_graph(story_repo)
     result = run(config(story_repo))
@@ -67,6 +68,7 @@ def test_run_writes_every_output_for_an_unchanged_story(story_repo):
     assert not (story_repo / "allpaths-validation-status.json").exists()
 
 
+@pytest.mark.intent("AC-output-formats-5", "ADR-017")
 def test_run_index_and_changes_match_their_schemas_and_the_diff(story_repo):
     (story_repo / "src" / "AB-20251102.twee").write_text(
         ":: End1\nLeft ending, revised.\n\n:: End2\nRight ending. [[Bonus]]\n\n:: Bonus\nAn extra scene.\n",
@@ -123,6 +125,7 @@ def test_run_uncommitted_file_has_no_dates(story_repo):
     validate_artifact(index, "allpaths_index")
 
 
+@pytest.mark.intent("AC-output-formats-9")
 def test_run_reports_broken_links_and_cycles(story_repo):
     (story_repo / "src" / "AB-20251102.twee").write_text(
         ":: End1\nLeft ending. [[Nowhere]]\n\n:: End2\nRight ending. [[Start]]\n", encoding="utf-8"
@@ -137,6 +140,7 @@ def test_run_reports_broken_links_and_cycles(story_repo):
     assert index["cycles"] == [["Start", "Right", "End2", "Start"]]
 
 
+@pytest.mark.intent("AC-output-formats-6")
 def test_run_categorizes_against_an_explicit_base_ref(story_repo):
     first = git(story_repo, "rev-list", "--max-parents=0", "HEAD").strip()
     write_story_graph(story_repo)
@@ -147,6 +151,7 @@ def test_run_categorizes_against_an_explicit_base_ref(story_repo):
     assert changes["new"] == ["End1", "End2"] and changes["base_ref"] == first
 
 
+@pytest.mark.intent("AC-output-formats-6")
 def test_run_with_a_base_that_has_no_story_marks_everything_new(story_repo):
     (story_repo / "notes.md").write_text("x", encoding="utf-8")
     git(story_repo, "checkout", "-q", "--orphan", "empty")
@@ -193,6 +198,7 @@ def test_run_src_outside_repo_is_an_error(story_repo, tmp_path):
         run(config(story_repo, src_dir=tmp_path))
 
 
+@pytest.mark.intent("AC-output-formats-6", "ADR-017")
 def test_resolve_base_ref_env_contract():
     assert resolve_base_ref({}) == "HEAD"
     assert resolve_base_ref({"GITHUB_MERGE_BASE": "abc123", "GITHUB_BASE_REF": "main"}) == "abc123"
@@ -203,6 +209,7 @@ def test_resolve_base_ref_env_contract():
         resolve_base_ref({"GITHUB_BASE_REF": "main", "GITHUB_MERGE_BASE": "  "})
 
 
+@pytest.mark.intent("AC-output-formats-9")
 def test_cli_build_allpaths_after_build_core(story_repo, capsys, monkeypatch):
     monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
     monkeypatch.delenv("GITHUB_MERGE_BASE", raising=False)

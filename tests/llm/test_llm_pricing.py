@@ -43,6 +43,7 @@ def test_exe_profile_reuses_the_model_rate():
     assert via_exe.usd == pytest.approx(0.036)
 
 
+@pytest.mark.intent("ADR-016")
 def test_unknown_model_is_zero_and_flagged():
     est = estimate_usd("mystery-model", Usage(prompt_tokens=1000, completion_tokens=1000))
     assert est.usd == 0.0

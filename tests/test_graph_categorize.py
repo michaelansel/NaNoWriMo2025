@@ -78,25 +78,30 @@ def _comparison(routes, **changes):
     return BaseComparison(SHA, frozenset(routes), passages, [])
 
 
+@pytest.mark.intent("AC-output-formats-5")
 def test_categorize_route_existed_unchanged():
     assert categorize_route(["Start", "Left", "End1"], _comparison([("Start", "Left", "End1")])) == "unchanged"
 
 
+@pytest.mark.intent("AC-output-formats-5", "ADR-017")
 def test_categorize_route_existed_with_any_change_is_modified_never_new():
     comparison = _comparison([("Start", "Left", "End1")], End1=(False, True, True))
     assert categorize_route(["Start", "Left", "End1"], comparison) == "modified"
 
 
+@pytest.mark.intent("AC-output-formats-5")
 def test_categorize_new_route_with_new_passage_is_new():
     comparison = _comparison([("Start", "End1")], Left=(True, True, True))
     assert categorize_route(["Start", "Left", "End1"], comparison) == "new"
 
 
+@pytest.mark.intent("AC-output-formats-5")
 def test_categorize_new_route_with_changed_prose_is_new():
     comparison = _comparison([("Start", "End1")], Start=(False, True, True))
     assert categorize_route(["Start", "Left", "End1"], comparison) == "new"
 
 
+@pytest.mark.intent("AC-output-formats-5", "ADR-017")
 def test_categorize_new_route_with_only_link_changes_is_modified():
     comparison = _comparison([("Start", "End1")], Start=(False, True, False))
     assert categorize_route(["Start", "Left", "End1"], comparison) == "modified"

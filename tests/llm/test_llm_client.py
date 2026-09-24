@@ -103,6 +103,7 @@ def test_prompt_mode_embeds_schema_and_sends_no_response_format():
     assert '"answer"' in request.messages[0]["content"]
 
 
+@pytest.mark.intent("AC-continuity-review-21", "ADR-016")
 def test_truncation_raises_and_is_accounted():
     client, _, lines = make([ok('{"answer": "ye', finish="length")])
     with pytest.raises(LLMTruncatedError, match="finish_reason=length"):
@@ -115,12 +116,14 @@ def test_truncation_raises_and_is_accounted():
     assert log["tag"] == "cut"
 
 
+@pytest.mark.intent("AC-continuity-review-23")
 def test_transport_error_propagates_untouched():
     client, _, _ = make([LLMTransportError("boom", status=503)])
     with pytest.raises(LLMTransportError, match="boom"):
         client.complete(system="s", user="u")
 
 
+@pytest.mark.intent("ADR-016")
 def test_400_on_response_format_falls_back_to_json_object_once():
     rejected = LLMTransportError(
         "provider returned HTTP 400: response_format json_schema unsupported", status=400
@@ -149,6 +152,7 @@ def test_400_unrelated_to_response_format_is_raised():
         client.complete(system="s", user="u", schema=SCHEMA)
 
 
+@pytest.mark.intent("AC-continuity-review-22")
 def test_repair_round_appends_validation_error_and_previous_output():
     client, transport, _ = make(
         [ok("I think the answer is: {oops"), ok('{"answer": "fixed"}', usage=Usage(20, 8, 0))]
@@ -166,6 +170,7 @@ def test_repair_round_appends_validation_error_and_previous_output():
     assert "Validation errors:" in repair[3]["content"]
 
 
+@pytest.mark.intent("AC-continuity-review-22")
 def test_schema_violation_triggers_repair_with_readable_error():
     client, transport, _ = make([ok('{"reply": 1}'), ok('{"answer": "ok"}')])
     client.complete(system="s", user="u", schema=SCHEMA)
@@ -173,6 +178,7 @@ def test_schema_violation_triggers_repair_with_readable_error():
     assert "'answer' is a required property" in error_block
 
 
+@pytest.mark.intent("AC-continuity-review-22", "ADR-016")
 def test_schema_failure_after_repair_raises_schema_error():
     client, _, lines = make([ok("nope"), ok("still nope")])
     with pytest.raises(LLMSchemaError, match="after one repair round"):
@@ -183,6 +189,7 @@ def test_schema_failure_after_repair_raises_schema_error():
     assert client.usage_summary()["prompt_tokens"] == 20
 
 
+@pytest.mark.intent("AC-continuity-review-24", "ADR-016")
 def test_budget_is_checked_before_the_call_that_would_exceed_it():
     client, transport, _ = make(
         [ok("a", usage=Usage(900, 50, 0)), ok("b")], max_tokens_per_job=1000
@@ -195,6 +202,7 @@ def test_budget_is_checked_before_the_call_that_would_exceed_it():
     assert len(transport.requests) == 1
 
 
+@pytest.mark.intent("AC-continuity-review-24")
 def test_budget_blocks_an_oversized_first_prompt():
     client, transport, _ = make([ok("a")], max_tokens_per_job=50)
     with pytest.raises(LLMBudgetExceeded):
@@ -202,6 +210,7 @@ def test_budget_blocks_an_oversized_first_prompt():
     assert transport.requests == []
 
 
+@pytest.mark.intent("AC-continuity-review-25")
 def test_usage_summary_sums_calls_and_prices_them():
     client, _, _ = make([ok("a", usage=Usage(1000, 2000, 500)), ok("b", usage=Usage(500, 100, 0))])
     client.complete(system="s", user="u")
@@ -219,6 +228,7 @@ def test_usage_summary_sums_calls_and_prices_them():
     assert summary["profile"] == "exe"
 
 
+@pytest.mark.intent("AC-continuity-review-25")
 def test_unknown_model_flags_usd_unknown():
     client, _, _ = make([ok("a", model="mystery-7b")], model="mystery-7b")
     client.complete(system="s", user="u")
@@ -383,6 +393,7 @@ def test_openai_transport_omits_optional_parameters_when_absent():
     assert "reasoning_effort" not in sent
 
 
+@pytest.mark.intent("AC-continuity-review-23")
 def test_openai_transport_maps_status_errors_with_status_and_body():
     err = _http_error(openai.BadRequestError, 400, "response_format is not supported")
     transport = OpenAITransport(Settings(), client=_StubSDK(err))
@@ -393,6 +404,7 @@ def test_openai_transport_maps_status_errors_with_status_and_body():
     assert info.value.body["error"]["message"] == "response_format is not supported"
 
 
+@pytest.mark.intent("AC-continuity-review-23")
 def test_openai_transport_maps_connection_and_timeout_errors():
     request = httpx2.Request("POST", "http://x/v1/chat/completions")
     for err in (
@@ -433,6 +445,7 @@ def test_repair_round_instructs_the_model_from_the_packaged_template():
     assert "{{" not in repair and "{%" not in repair
 
 
+@pytest.mark.intent("ADR-016")
 def test_json_object_fallback_rechecks_the_budget_before_resending():
     rejected = LLMTransportError(
         "provider returned HTTP 400: response_format json_schema unsupported", status=400

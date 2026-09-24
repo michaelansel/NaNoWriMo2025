@@ -117,11 +117,13 @@ def test_feature_note_without_criteria_is_an_error(intent_repo):
     assert "no-criteria" in codes(check_repo(intent_repo))
 
 
+@pytest.mark.intent("ADR-021")
 def test_adr_superseded_by_a_missing_adr_is_an_error(intent_repo):
     _write(intent_repo, "architecture/003-x.md", "# ADR-003: X\n\nStatus: Superseded by ADR-009\n")
     assert "dangling-supersede" in codes(check_repo(intent_repo))
 
 
+@pytest.mark.intent("ADR-021")
 def test_adr_without_status_is_an_error(intent_repo):
     _write(intent_repo, "architecture/004-y.md", "# ADR-004: Y\n\nNo status here.\n")
     assert "adr-status" in codes(check_repo(intent_repo))
@@ -147,6 +149,7 @@ def test_path_classification():
     assert intent == ["features/a.md", "PRIORITIES.md"]
 
 
+@pytest.mark.intent("ADR-021")
 def test_code_change_without_intent_or_trailer_is_rejected():
     result = check_commit("fix: tweak parser\n", ["nanoif/a.py"])
     assert not result.ok
@@ -162,6 +165,7 @@ def test_code_change_with_unchanged_trailer_and_reason_passes():
     assert check_commit(msg, ["nanoif/a.py"]).ok
 
 
+@pytest.mark.intent("ADR-021")
 def test_trailer_without_reason_is_rejected():
     assert not check_commit("fix: x\n\nIntent: unchanged\n", ["nanoif/a.py"]).ok
     assert not check_commit("fix: x\n\nIntent: unchanged ()\n", ["nanoif/a.py"]).ok
@@ -183,6 +187,7 @@ def test_cli_commit_msg_uses_staged_files(intent_repo, capsys):
     assert main(["intent", "commit-msg", str(msg), "--repo", str(intent_repo)]) == 0
 
 
+@pytest.mark.intent("ADR-021")
 def test_cli_range_checks_each_non_merge_commit(intent_repo, capsys):
     base = git(intent_repo, "rev-parse", "HEAD").strip()
     _write(intent_repo, "nanoif/thing.py", "X = 3\n")
@@ -214,6 +219,7 @@ def test_planned_criteria_need_no_test_and_are_reported_as_info(intent_repo):
     assert load_index(intent_repo).criteria["AC-structure-check-4"].verify == "planned"
 
 
+@pytest.mark.intent("ADR-021")
 def test_duplicate_adr_numbers_are_an_error(intent_repo):
     _write(intent_repo, "architecture/002-other-thing.md", "# ADR-002: Other\n\nStatus: Accepted\n")
     assert "duplicate-adr" in codes(check_repo(intent_repo))

@@ -2,6 +2,8 @@
 
 import json
 
+import pytest
+
 from nanoif.cli import main
 from nanoif.schemas.artifacts import validate_artifact
 from nanoif.twee.parse import parse_twee_dir
@@ -25,6 +27,7 @@ def paperthin(repo):
     )
 
 
+@pytest.mark.intent("AC-build-and-deploy-2", "AC-output-formats-19")
 def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
     monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
     monkeypatch.delenv("GITHUB_MERGE_BASE", raising=False)
@@ -56,6 +59,7 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
     assert (story_repo / "src" / "PathIdLookup.twee").is_file()
 
 
+@pytest.mark.intent("AC-build-and-deploy-3", "ADR-015")
 def test_build_all_stops_at_the_first_failure(story_repo, capsys):
     assert main(["build", "all", "--repo", str(story_repo)]) == 1
     captured = capsys.readouterr()

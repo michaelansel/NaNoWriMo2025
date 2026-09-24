@@ -18,6 +18,7 @@ from nanoif.llm.profiles import (
 )
 
 
+@pytest.mark.intent("ADR-016")
 def test_empty_env_gives_exe_defaults():
     s = Settings.from_env({})
     assert s.profile == "exe"
@@ -45,6 +46,7 @@ def test_fireworks_reads_key_from_provider_env_or_nanoif_env():
     assert s2.api_key == "k"
 
 
+@pytest.mark.intent("ADR-016")
 def test_ollama_forces_concurrency_one_and_prompt_json_mode():
     s = Settings.from_env({"NANOIF_LLM_PROFILE": "ollama", "NANOIF_LLM_MAX_CONCURRENCY": "8"})
     assert s.base_url == OLLAMA_BASE_URL

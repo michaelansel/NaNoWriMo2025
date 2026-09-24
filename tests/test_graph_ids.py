@@ -3,6 +3,8 @@
 import hashlib
 import json
 
+import pytest
+
 from nanoif.graph.ids import (
     javascript_lookup,
     passage_id_mapping,
@@ -34,6 +36,7 @@ def test_passage_id_mapping_is_stable_md5_prefix_sorted_by_name():
     assert all(len(v) == 12 and set(v) <= set("0123456789abcdef") for v in mapping.values())
 
 
+@pytest.mark.intent("AC-output-formats-18")
 def test_path_id_lookup_keys_are_arrow_joined_routes():
     content = {"Start": "Begin", "Left": "Go left", "End1": "Left ending"}
     lookup = path_id_lookup([["Start", "Left", "End1"]], content)
@@ -55,6 +58,7 @@ def test_javascript_lookup_is_a_single_statement_with_unescaped_unicode():
     assert javascript_lookup({}) == "window.pathIdLookup = {};"
 
 
+@pytest.mark.intent("AC-output-formats-19")
 def test_render_path_id_lookup_is_a_script_passage_with_every_route():
     twee, count = render_path_id_lookup(STORY_GRAPH)
     assert count == 2

@@ -26,6 +26,7 @@ def test_not_a_repository_is_an_error(tmp_path):
         GitService(tmp_path).rev_parse("HEAD")
 
 
+@pytest.mark.intent("ADR-017")
 def test_file_dates_created_and_modified_from_one_log(story_repo):
     (story_repo / "src" / "AB-20251101.twee").write_text(
         ":: Start\nMorning, again. [[Go left->Left]] or [[Go right->Right]]\n\n"

@@ -64,6 +64,7 @@ def test_path_text_with_metadata_has_header_markers_and_selected_links():
     assert "Start" not in text.replace("This is the start", "")
 
 
+@pytest.mark.intent("AC-output-formats-8")
 def test_path_text_clean_has_no_metadata():
     text = path_text(RECORD, CONTENT, 3, include_metadata=False)
     assert text == "This is the start. Middle or [unselected]\n\nYou are in the middle. End\n\nThis is the end.\n"
@@ -76,6 +77,7 @@ def test_path_text_raw_keeps_link_markup():
     assert "[[End]]" in text
 
 
+@pytest.mark.intent("AC-output-formats-4", "AC-output-formats-7")
 def test_render_html_lists_paths_with_names_dates_and_category():
     html = render_html("Test Story", [RECORD], PASSAGES, datetime(2026, 1, 2, 3, 4, 5))
     assert "<title>All Paths - Test Story</title>" in html
@@ -91,6 +93,7 @@ def test_render_html_lists_paths_with_names_dates_and_category():
     assert "validated" not in html.lower()
 
 
+@pytest.mark.intent("AC-output-formats-11")
 def test_render_html_escapes_passage_text():
     passages = {"Start": {"content": "<b>bold</b> & [[End]]", "links": ["End"]}, "End": {"content": "x", "links": []}}
     record = PathRecord(1, "deadbeef", ("Start", "End"), ("a" * 12, "b" * 12), "unchanged", (), None, None)

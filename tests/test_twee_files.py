@@ -58,6 +58,7 @@ def test_split_twee_empty_passage_body():
     assert first.text == "" and first.body_line == first.line == 1
 
 
+@pytest.mark.intent("AC-web-editing-3")
 def test_find_twee_files_is_recursive_and_sorted(tmp_path):
     (tmp_path / "b.twee").write_text(":: B\n")
     (tmp_path / "sub").mkdir()

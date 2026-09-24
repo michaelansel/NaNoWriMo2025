@@ -42,6 +42,7 @@ def test_validate_artifact_rejects_bad_graph(mutate):
         validate_artifact(graph, "story_graph")
 
 
+@pytest.mark.intent("ADR-015")
 def test_write_artifact_validates_before_writing(tmp_path):
     target = tmp_path / "nested" / "story_graph.json"
     write_artifact(target, GOOD_GRAPH, "story_graph")

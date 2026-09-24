@@ -70,6 +70,7 @@ def test_cost_metrics_have_a_tolerance():
     assert [r["metric"] for r in diff_against_baseline(cheaper, base())["improvements"]] == ["usd"]
 
 
+@pytest.mark.intent("AC-continuity-review-26")
 def test_metric_missing_from_scores_is_not_ok():
     current = {k: v for k, v in base()["metrics"].items() if k != "fact_recall"}
     diff = diff_against_baseline({"metrics": current}, base())

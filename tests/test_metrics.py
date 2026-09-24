@@ -15,6 +15,7 @@ from nanoif.twee.prose import prose_text, word_count
 # --- prose and word counts -----------------------------------------------------------
 
 
+@pytest.mark.intent("AC-output-formats-12")
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
@@ -32,6 +33,7 @@ def test_word_count(text, expected):
     assert word_count(text) == expected
 
 
+@pytest.mark.intent("AC-output-formats-12")
 def test_prose_text_uses_link_display_text():
     assert prose_text("It's [[sunny->Day 30 AB]] or [[raining]].") == "It's sunny or raining."
 
@@ -39,6 +41,7 @@ def test_prose_text_uses_link_display_text():
 # --- statistics ----------------------------------------------------------------------
 
 
+@pytest.mark.intent("AC-output-formats-13")
 def test_statistics_and_distribution():
     assert statistics([]) == {"min": 0, "mean": 0.0, "median": 0.0, "max": 0}
     assert statistics([1, 2, 6]) == {"min": 1, "mean": 3, "median": 2, "max": 6}
@@ -69,6 +72,7 @@ def story(tmp_path):
     return tmp_path
 
 
+@pytest.mark.intent("AC-output-formats-12", "AC-output-formats-13")
 def test_calculate_metrics_counts_prose_and_files(story):
     graph = parse_twee_dir(story / "src")
     metrics = calculate_metrics(graph, passage_locations(story / "src"), top_n=2)
@@ -86,12 +90,14 @@ def test_calculate_metrics_counts_prose_and_files(story):
     assert metrics["passage_distribution"]["101-300"] == 1
 
 
+@pytest.mark.intent("AC-output-formats-12")
 def test_calculate_metrics_excludes_footer_passages(story):
     graph = parse_twee_dir(story / "src")
     names = {p["name"] for p in calculate_metrics(graph, passage_locations(story / "src"), top_n=50)["top_passages"]}
     assert "PathIdDisplay" not in names and "Footer" not in names
 
 
+@pytest.mark.intent("AC-output-formats-14")
 def test_calculate_metrics_include_and_exclude_filters(story):
     graph = parse_twee_dir(story / "src")
     locations = passage_locations(story / "src")
@@ -102,6 +108,7 @@ def test_calculate_metrics_include_and_exclude_filters(story):
     assert [f["name"] for f in no_cd["files"]] == ["AB-20251101.twee"]
 
 
+@pytest.mark.intent("AC-output-formats-13")
 def test_build_metrics_writes_page(story):
     graph = parse_twee_dir(story / "src")
     write(story / "lib" / "artifacts" / "story_graph.json", json.dumps(graph))
@@ -123,6 +130,7 @@ def test_build_metrics_missing_graph_is_an_error(story):
         build_metrics(MetricsConfig(story / "src", story / "missing.json", story / "dist"))
 
 
+@pytest.mark.intent("AC-output-formats-14")
 def test_cli_build_metrics(story, capsys):
     write(story / "lib" / "artifacts" / "story_graph.json", json.dumps(parse_twee_dir(story / "src")))
     assert main(["build", "metrics", "--repo", str(story), "--exclude", "CD-"]) == 0

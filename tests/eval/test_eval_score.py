@@ -85,6 +85,7 @@ def test_perfect_results_score_perfectly(truth):
     assert scores["entities"]["by_type"]["character"] == {"expected": 8, "found": 8, "recall": 1.0}
 
 
+@pytest.mark.intent("AC-continuity-review-26")
 def test_empty_results_score_zero_without_crashing(truth):
     scores = run_scoring(truth, {})
     m = scores["metrics"]
