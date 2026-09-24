@@ -1,29 +1,34 @@
-#!/usr/bin/env python3
-"""
-Unit tests for Twee passage formatting linter.
+"""Tests for ``nanoif.twee.lint`` (ported from the 2025 scripts/test_lint_twee.py).
 
-Tests all linting rules including:
-1. passage-header-spacing
-2. blank-line-after-header
-3. blank-line-between-passages
-4. trailing-whitespace
-5. final-newline
-6. single-blank-lines
-7. link-block-spacing
-8. smart-quotes
-
-Each test covers detection (check mode) and fixing (fix mode), and verifies
-idempotency (running fix twice produces the same result).
+Each rule is tested in check mode (``lint_file``), fix mode (``fix_file``),
+and for idempotency. The 2025 smart-quotes rule is gone; one test proves
+curly quotes are no longer reported.
 """
+
+from pathlib import Path
 
 import pytest
-from pathlib import Path
-from lint_twee import (
+
+from nanoif.cli import main
+from nanoif.errors import LintError
+from nanoif.twee.lint import (
+    Violation,
+    fix_file,
+    fix_text,
     is_block_link,
-    parse_passage_header,
     is_special_passage,
     lint_file,
+    lint_path,
+    parse_passage_header,
 )
+
+
+def lint(path, fix=False):
+    """Check or fix a file; return (violations as text, whether the file was rewritten)."""
+    if fix:
+        fixed = fix_file(path)
+        return [str(v) for v in fixed], bool(fixed)
+    return [str(v) for v in lint_file(path)], False
 
 
 class TestIsBlockLink:
@@ -128,7 +133,7 @@ class TestPassageHeaderSpacing:
         test_file = tmp_path / "test.twee"
         test_file.write_text("::Start\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert len(violations) == 1
         assert 'passage-header-spacing' in violations[0]
         assert modified is False
@@ -138,7 +143,7 @@ class TestPassageHeaderSpacing:
         test_file = tmp_path / "test.twee"
         test_file.write_text("::Start\n")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert len(violations) == 1
         assert modified is True
 
@@ -151,8 +156,8 @@ class TestPassageHeaderSpacing:
         test_file = tmp_path / "test.twee"
         test_file.write_text("::Start\n")
 
-        lint_file(test_file, fix=True)
-        violations2, modified2 = lint_file(test_file, fix=True)
+        lint(test_file, fix=True)
+        violations2, modified2 = lint(test_file, fix=True)
         assert len(violations2) == 0
         assert modified2 is False
 
@@ -165,7 +170,7 @@ class TestBlankLineAfterHeader:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\nSome text\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('blank-line-after-header' in v for v in violations)
         assert modified is False
 
@@ -174,7 +179,7 @@ class TestBlankLineAfterHeader:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\nSome text\n")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -186,7 +191,7 @@ class TestBlankLineAfterHeader:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: StoryData\n{}\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should not have blank-line-after-header violation
         assert not any('blank-line-after-header' in v for v in violations)
 
@@ -195,7 +200,7 @@ class TestBlankLineAfterHeader:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: MyStyles [stylesheet]\nbody { }\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should not have blank-line-after-header violation
         assert not any('blank-line-after-header' in v for v in violations)
 
@@ -208,7 +213,7 @@ class TestBlankLineBetweenPassages:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n:: Next\n\nMore text\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('blank-line-between-passages' in v for v in violations)
 
     def test_fix_missing_blank_line(self, tmp_path):
@@ -216,7 +221,7 @@ class TestBlankLineBetweenPassages:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n:: Next\n\nMore text\n")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -228,7 +233,7 @@ class TestBlankLineBetweenPassages:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\n:: Next\n\nMore text\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Will be caught by either blank-line-between-passages or single-blank-lines
         assert len(violations) > 0
 
@@ -237,7 +242,7 @@ class TestBlankLineBetweenPassages:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\n:: Next\n\nMore text\n")
 
-        lint_file(test_file, fix=True)
+        lint(test_file, fix=True)
         content = test_file.read_text()
         # Should have exactly one blank line between passages
         assert "Text\n\n:: Next" in content
@@ -251,7 +256,7 @@ class TestTrailingWhitespace:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText with spaces   \n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('trailing-whitespace' in v for v in violations)
 
     def test_fix_trailing_spaces(self, tmp_path):
@@ -259,7 +264,7 @@ class TestTrailingWhitespace:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText with spaces   \n")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -271,7 +276,7 @@ class TestTrailingWhitespace:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText with tabs\t\t\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('trailing-whitespace' in v for v in violations)
 
 
@@ -283,7 +288,7 @@ class TestFinalNewline:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('final-newline' in v for v in violations)
 
     def test_fix_missing_final_newline(self, tmp_path):
@@ -291,7 +296,7 @@ class TestFinalNewline:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -303,7 +308,7 @@ class TestFinalNewline:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('final-newline' in v for v in violations)
 
     def test_fix_multiple_trailing_newlines(self, tmp_path):
@@ -311,7 +316,7 @@ class TestFinalNewline:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\n")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -327,10 +332,10 @@ class TestSingleBlankLines:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\nMore text\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Note: In check mode, this rule only reports in fix mode
         # So we need to run in fix mode to detect
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert any('single-blank-lines' in v for v in violations)
 
     def test_fix_multiple_blank_lines(self, tmp_path):
@@ -338,7 +343,7 @@ class TestSingleBlankLines:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\nMore text\n")
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -350,8 +355,8 @@ class TestSingleBlankLines:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n\nText\n\n\nMore text\n")
 
-        lint_file(test_file, fix=True)
-        violations2, modified2 = lint_file(test_file, fix=True)
+        lint(test_file, fix=True)
+        violations2, modified2 = lint(test_file, fix=True)
         assert len(violations2) == 0
         assert modified2 is False
 
@@ -368,7 +373,7 @@ class TestLinkBlockSpacing:
             "[[Continue]]\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('link-block-spacing' in v and 'before' in v for v in violations)
 
     def test_fix_missing_blank_before_link_block(self, tmp_path):
@@ -380,7 +385,7 @@ class TestLinkBlockSpacing:
             "[[Continue]]\n"
         )
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -397,7 +402,7 @@ class TestLinkBlockSpacing:
             "More text.\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('link-block-spacing' in v and 'after' in v for v in violations)
 
     def test_fix_missing_blank_after_link_block(self, tmp_path):
@@ -410,7 +415,7 @@ class TestLinkBlockSpacing:
             "More text.\n"
         )
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -427,7 +432,7 @@ class TestLinkBlockSpacing:
             "[[Option 2]]\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert any('link-block-spacing' in v and 'between' in v for v in violations)
 
     def test_fix_blank_between_block_links(self, tmp_path):
@@ -440,7 +445,7 @@ class TestLinkBlockSpacing:
             "[[Option 2]]\n"
         )
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert modified is True
 
         # Verify fix
@@ -459,7 +464,7 @@ class TestLinkBlockSpacing:
             "More text.\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should have no link-block-spacing violations
         assert not any('link-block-spacing' in v for v in violations)
 
@@ -471,7 +476,7 @@ class TestLinkBlockSpacing:
             "You can [[continue]] or [[go back]].\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should have no link-block-spacing violations
         assert not any('link-block-spacing' in v for v in violations)
 
@@ -483,7 +488,7 @@ class TestLinkBlockSpacing:
             "[[Continue]]\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should have no link-block-spacing violations (no narrative before)
         assert not any('link-block-spacing' in v for v in violations)
 
@@ -498,7 +503,7 @@ class TestLinkBlockSpacing:
             "More text.\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should have no link-block-spacing violations
         # (passage boundary handles spacing)
         assert not any('link-block-spacing' in v for v in violations)
@@ -516,7 +521,7 @@ class TestLinkBlockSpacing:
             "[[Choice D]]\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should have no link-block-spacing violations
         assert not any('link-block-spacing' in v for v in violations)
 
@@ -531,184 +536,10 @@ class TestLinkBlockSpacing:
             "More text.\n"
         )
 
-        lint_file(test_file, fix=True)
-        violations2, modified2 = lint_file(test_file, fix=True)
+        lint(test_file, fix=True)
+        violations2, modified2 = lint(test_file, fix=True)
         assert len(violations2) == 0
         assert modified2 is False
-
-
-class TestSmartQuotes:
-    """Tests for smart-quotes rule."""
-
-    def test_detect_left_double_quote(self, tmp_path):
-        """Test detection of left double quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHello world\u201d\n')
-
-        violations, modified = lint_file(test_file, fix=False)
-        assert any('smart-quotes' in v for v in violations)
-        assert modified is False
-
-    def test_detect_right_double_quote(self, tmp_path):
-        """Test detection of right double quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHello world\u201d\n')
-
-        violations, modified = lint_file(test_file, fix=False)
-        assert any('smart-quotes' in v for v in violations)
-        assert modified is False
-
-    def test_detect_left_single_quote(self, tmp_path):
-        """Test detection of left single quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(":: Start\n\n\u2018Hello world\u2019\n")
-
-        violations, modified = lint_file(test_file, fix=False)
-        assert any('smart-quotes' in v for v in violations)
-        assert modified is False
-
-    def test_detect_right_single_quote(self, tmp_path):
-        """Test detection of right single quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(":: Start\n\n\u2018Hello world\u2019\n")
-
-        violations, modified = lint_file(test_file, fix=False)
-        assert any('smart-quotes' in v for v in violations)
-        assert modified is False
-
-    def test_detect_all_smart_quote_types(self, tmp_path):
-        """Test detection of all smart quote types in one line."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n')
-
-        violations, modified = lint_file(test_file, fix=False)
-        assert any('smart-quotes' in v and '4' in v for v in violations)
-        assert modified is False
-
-    def test_fix_left_double_quote(self, tmp_path):
-        """Test fixing left double quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHello\u201d\n')
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify fix
-        content = test_file.read_text()
-        assert '\u201c' not in content
-        assert '\u201d' not in content
-        assert '"Hello"' in content
-
-    def test_fix_right_double_quote(self, tmp_path):
-        """Test fixing right double quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHello\u201d\n')
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify fix
-        content = test_file.read_text()
-        assert '\u201c' not in content
-        assert '\u201d' not in content
-        assert '"Hello"' in content
-
-    def test_fix_left_single_quote(self, tmp_path):
-        """Test fixing left single quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(":: Start\n\n\u2018Hello\u2019\n")
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify fix
-        content = test_file.read_text()
-        assert '\u2018' not in content
-        assert '\u2019' not in content
-        assert "'Hello'" in content
-
-    def test_fix_right_single_quote(self, tmp_path):
-        """Test fixing right single quotation mark."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(":: Start\n\n\u2018Hello\u2019\n")
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify fix
-        content = test_file.read_text()
-        assert '\u2018' not in content
-        assert '\u2019' not in content
-        assert "'Hello'" in content
-
-    def test_fix_all_smart_quote_types(self, tmp_path):
-        """Test fixing all smart quote types in one line."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n')
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify fix
-        content = test_file.read_text()
-        assert '\u201c' not in content
-        assert '\u201d' not in content
-        assert '\u2018' not in content
-        assert '\u2019' not in content
-        assert '"He said, \'Yes\'"' in content
-
-    def test_mixed_smart_and_regular_quotes(self, tmp_path):
-        """Test that regular quotes are preserved."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cSmart\u201d and "regular" quotes\n')
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify fix - smart quotes replaced, regular quotes preserved
-        content = test_file.read_text()
-        assert '\u201c' not in content
-        assert '\u201d' not in content
-        assert '"Smart" and "regular" quotes' in content
-
-    def test_no_smart_quotes(self, tmp_path):
-        """Test that lines without smart quotes have no violations."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n"Hello" and \'world\'\n')
-
-        violations, modified = lint_file(test_file, fix=False)
-        # Should have no smart-quotes violations
-        assert not any('smart-quotes' in v for v in violations)
-
-    def test_idempotent_fix(self, tmp_path):
-        """Test that fixing twice produces same result."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(':: Start\n\n\u201cHello world\u201d\n')
-
-        lint_file(test_file, fix=True)
-        violations2, modified2 = lint_file(test_file, fix=True)
-        # Should have no violations after first fix
-        assert len(violations2) == 0
-        assert modified2 is False
-
-    def test_smart_quotes_in_multiple_lines(self, tmp_path):
-        """Test detection and fixing of smart quotes in multiple lines."""
-        test_file = tmp_path / "test.twee"
-        test_file.write_text(
-            ':: Start\n\n'
-            '\u201cFirst line with smart quotes\u201d\n'
-            '\u201cSecond line with smart quotes\u201d\n'
-        )
-
-        violations, modified = lint_file(test_file, fix=True)
-        assert modified is True
-
-        # Verify both lines fixed
-        content = test_file.read_text()
-        assert '\u201c' not in content
-        assert '\u201d' not in content
-        assert '"First line with smart quotes"' in content
-        assert '"Second line with smart quotes"' in content
 
 
 class TestIntegration:
@@ -726,12 +557,12 @@ class TestIntegration:
             "[[Link2]]"  # Missing final newline
         )
 
-        violations, modified = lint_file(test_file, fix=True)
+        violations, modified = lint(test_file, fix=True)
         assert len(violations) > 0
         assert modified is True
 
         # Verify all issues fixed
-        violations2, modified2 = lint_file(test_file, fix=True)
+        violations2, modified2 = lint(test_file, fix=True)
         assert len(violations2) == 0
         assert modified2 is False
 
@@ -747,7 +578,7 @@ class TestIntegration:
             "More text.\n"
         )
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert len(violations) == 0
         assert modified is False
 
@@ -756,7 +587,7 @@ class TestIntegration:
         test_file = tmp_path / "test.twee"
         test_file.write_text("")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         assert len(violations) == 0
         assert modified is False
 
@@ -765,7 +596,107 @@ class TestIntegration:
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\n")
 
-        violations, modified = lint_file(test_file, fix=False)
+        violations, modified = lint(test_file, fix=False)
         # Should have violations for missing content structure
         # But should not crash
         assert isinstance(violations, list)
+
+
+class TestSmartQuotesAreAllowed:
+    """The 2025 smart-quotes rule rewrote prose; it is removed."""
+
+    def test_curly_quotes_are_not_reported(self, tmp_path):
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n", encoding="utf-8")
+        violations, modified = lint(test_file, fix=False)
+        assert violations == []
+        assert fix_file(test_file) == []
+        assert "\u201c" in test_file.read_text(encoding="utf-8")
+
+
+class TestViolation:
+    def test_text_and_github_forms(self):
+        violation = Violation(Path("src/AB-20251101.twee"), 3, "trailing-whitespace", "Line has trailing whitespace")
+        assert str(violation) == "src/AB-20251101.twee:3: [trailing-whitespace] Line has trailing whitespace"
+        assert violation.github() == (
+            "::warning file=src/AB-20251101.twee,line=3,title=trailing-whitespace::Line has trailing whitespace"
+        )
+
+    def test_violation_fields(self, tmp_path):
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\n\nText   \n")
+        assert lint_file(test_file) == [
+            Violation(test_file, 3, "trailing-whitespace", "Line has trailing whitespace")
+        ]
+
+
+class TestFixText:
+    def test_returns_input_unchanged_when_clean(self):
+        text = ":: Start\n\nClean.\n"
+        assert fix_text(text, Path("x.twee")) == (text, [])
+
+    def test_crlf_is_normalized_when_fixing(self):
+        fixed, violations = fix_text(":: Start\r\nText\r\n", Path("x.twee"))
+        assert fixed == ":: Start\n\nText\n"
+        assert [v.rule for v in violations] == ["blank-line-after-header"]
+
+
+class TestLintPath:
+    def test_directory_is_recursive_and_sorted(self, tmp_path):
+        (tmp_path / "b.twee").write_text("::B\n")
+        (tmp_path / "sub").mkdir()
+        (tmp_path / "sub" / "a.twee").write_text(":: A\n\nText  \n")
+        (tmp_path / "notes.txt").write_text("::not twee  \n")
+        violations = lint_path(tmp_path)
+        assert [(v.file.name, v.rule) for v in violations] == [
+            ("b.twee", "passage-header-spacing"),
+            ("a.twee", "trailing-whitespace"),
+        ]
+
+    def test_missing_path_is_an_error(self, tmp_path):
+        with pytest.raises(LintError, match="does not exist"):
+            lint_path(tmp_path / "nope.twee")
+
+    def test_non_twee_file_is_an_error(self, tmp_path):
+        other = tmp_path / "notes.txt"
+        other.write_text("x")
+        with pytest.raises(LintError, match="not a .twee file"):
+            lint_path(other)
+
+    def test_undecodable_file_is_an_error(self, tmp_path):
+        bad = tmp_path / "bad.twee"
+        bad.write_bytes(b":: Start\n\n\xff\xfe\n")
+        with pytest.raises(LintError, match="cannot read"):
+            lint_path(bad)
+
+
+class TestLintCli:
+    def test_reports_without_editing_and_exits_1(self, tmp_path, capsys):
+        test_file = tmp_path / "test.twee"
+        test_file.write_text("::Start\nText\n")
+        assert main(["lint", str(tmp_path)]) == 1
+        captured = capsys.readouterr()
+        assert "[passage-header-spacing]" in captured.out
+        assert "2 formatting issue(s) in 1 file(s)" in captured.err
+        assert test_file.read_text() == "::Start\nText\n"
+
+    def test_clean_tree_exits_0(self, tmp_path, capsys):
+        (tmp_path / "test.twee").write_text(":: Start\n\nText\n")
+        assert main(["lint", str(tmp_path)]) == 0
+        assert "0 formatting issue(s)" in capsys.readouterr().err
+
+    def test_github_format(self, tmp_path, capsys):
+        (tmp_path / "test.twee").write_text(":: Start\n\nText \n")
+        assert main(["lint", str(tmp_path), "--format", "github"]) == 1
+        assert capsys.readouterr().out.startswith("::warning file=")
+
+    def test_there_is_no_fix_flag(self, tmp_path, capsys):
+        (tmp_path / "test.twee").write_text("::Start\n")
+        with pytest.raises(SystemExit) as exc:
+            main(["lint", str(tmp_path), "--fix"])
+        assert exc.value.code == 2
+        assert (tmp_path / "test.twee").read_text() == "::Start\n"
+
+    def test_missing_path_reports_error(self, tmp_path, capsys):
+        assert main(["lint", str(tmp_path / "nope")]) == 1
+        assert "error:" in capsys.readouterr().err

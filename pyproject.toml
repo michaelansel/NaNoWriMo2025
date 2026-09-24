@@ -31,7 +31,7 @@ include = ["nanoif*"]
 nanoif = ["templates/**/*", "prompts/**/*", "schemas/**/*"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "scripts/test_lint_twee.py"]
+testpaths = ["tests"]
 addopts = "-q"
 markers = ["slow: needs network, git history, or an LLM profile"]
 

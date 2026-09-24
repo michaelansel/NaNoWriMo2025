@@ -29,3 +29,7 @@ class GitError(NanoifError):
 
 class BuildError(NanoifError):
     """A build step could not run because an input was missing or inconsistent."""
+
+
+class LintError(NanoifError):
+    """A path given to the linter does not exist, is not a ``.twee`` file, or cannot be read."""
