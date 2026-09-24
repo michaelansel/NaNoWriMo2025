@@ -1,59 +1,49 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://nanowrimo2025.example.com/schemas/story_graph.json",
+  "$id": "https://nanoif.invalid/schemas/artifacts/story_graph.schema.json",
   "title": "Story Graph",
-  "description": "Complete story structure with passages, links, and metadata",
+  "description": "Complete story structure with passages, links, and metadata, as written by `nanoif build core`",
   "type": "object",
   "required": ["passages", "start_passage", "metadata"],
+  "additionalProperties": false,
   "properties": {
     "passages": {
       "type": "object",
-      "description": "Map of passage names to passage data",
-      "patternProperties": {
-        ".*": {
-          "type": "object",
-          "required": ["content", "links"],
-          "properties": {
-            "content": {
-              "type": "string",
-              "description": "Raw passage content with Twee markup"
-            },
-            "links": {
-              "type": "array",
-              "description": "List of passage names this passage links to",
-              "items": {
-                "type": "string"
-              }
-            }
+      "description": "Map of passage names to passage data (StoryTitle and StoryData excluded)",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["content", "links"],
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Raw passage content with Twee markup"
+          },
+          "links": {
+            "type": "array",
+            "description": "Passage names this passage links to, in order of first appearance",
+            "items": { "type": "string" },
+            "uniqueItems": true
           }
         }
       }
     },
     "start_passage": {
       "type": "string",
-      "description": "Name of the starting passage"
+      "description": "Name of the starting passage",
+      "minLength": 1
     },
     "metadata": {
       "type": "object",
-      "description": "Story metadata from Tweego HTML",
+      "description": "Story metadata from Tweego HTML or StoryData",
       "required": ["story_title", "ifid", "format", "format_version"],
+      "additionalProperties": true,
       "properties": {
-        "story_title": {
-          "type": "string",
-          "description": "Title of the story"
-        },
-        "ifid": {
-          "type": "string",
-          "description": "Interactive Fiction ID"
-        },
-        "format": {
-          "type": "string",
-          "description": "Story format (e.g., Harlowe)"
-        },
-        "format_version": {
-          "type": "string",
-          "description": "Story format version"
-        }
+        "story_title": { "type": "string", "description": "Title of the story" },
+        "ifid": { "type": "string", "description": "Interactive Fiction ID" },
+        "format": { "type": "string", "description": "Story format (e.g., Harlowe)" },
+        "format_version": { "type": "string", "description": "Story format version" }
       }
     }
   }

@@ -14,12 +14,12 @@ fail() { printf '%s\n%s\n' "$1" "$2" | tail -60 >&2; exit 2; }
 case "$rel" in
   nanoif/*.py|tests/*.py|pyproject.toml)
     command -v ruff   >/dev/null 2>&1 || skip "ruff not installed (pip install -e \".[dev]\")"
-    command -v pytest >/dev/null 2>&1 || skip "pytest not installed (pip install -e \".[dev]\")"
+    python3 -c "import pytest" >/dev/null 2>&1 || skip "pytest not installed (pip install -e \".[dev]\")"
     if [ "$rel" != pyproject.toml ]; then
       out=$(ruff check "$file" 2>&1) || fail "ruff check $rel failed:" "$out"
     fi
     [ -d "$root/tests" ] || skip "no tests/ directory yet"
-    out=$(cd "$root" && pytest -q -x -p no:cacheprovider -m "not slow" tests 2>&1) || fail "pytest failed after editing $rel:" "$out"
+    out=$(cd "$root" && python3 -m pytest -q -x -p no:cacheprovider -m "not slow" tests 2>&1) || fail "pytest failed after editing $rel:" "$out"
     echo "ruff + pytest ok ($rel)"
     ;;
   src/*.twee)

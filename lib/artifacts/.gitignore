@@ -1,4 +1,3 @@
-# Ignore all generated artifacts except cache
+# Ignore all generated artifacts
 *
 !.gitignore
-!cache/

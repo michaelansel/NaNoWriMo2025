@@ -101,7 +101,7 @@ def generate_html_output(story_data: Dict, passages: Dict, all_paths: List[List[
     paths_with_metadata.sort(key=lambda x: x['created_date'] if x['created_date'] else '0', reverse=True)
 
     # Set up Jinja2 environment
-    template_dir = Path(__file__).parent.parent / 'templates'
+    template_dir = Path(__file__).resolve().parents[3] / 'nanoif' / 'templates' / 'html'
     env = Environment(loader=FileSystemLoader(str(template_dir)))
 
     # Register format_passage_text as a global function for the template
