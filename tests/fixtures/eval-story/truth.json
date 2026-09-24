@@ -1,0 +1,305 @@
+{
+  "version": 1,
+  "story": {
+    "title": "The Lantern Crossing",
+    "initials": "EV",
+    "protagonist": "Wren Halloway",
+    "perspective": "third-person",
+    "tense": "past",
+    "entry_passages": ["Day 1 EV", "Day 2 EV", "Day 3 EV", "Day 4 EV"]
+  },
+  "entities": [
+    {
+      "id": "wren",
+      "name": "Wren Halloway",
+      "type": "character",
+      "aliases": ["Wren", "Tam's girl"],
+      "reference_kinds": ["direct", "pronoun"],
+      "passages": [
+        "Day 1 EV", "The crossing", "The chapel path", "Day 2 EV", "Hollin Reach",
+        "The widow's door", "Back at the ferry", "Day 3 EV", "The dark crossing",
+        "The warden's ledger", "The weir", "Day 4 EV", "The toll", "Gull Chapel at dusk",
+        "The last ferry"
+      ],
+      "notes": "Protagonist. Referred to by pronoun across whole paragraphs in Day 1 EV and The weir."
+    },
+    {
+      "id": "tam",
+      "name": "Tamsin Reeve",
+      "type": "character",
+      "aliases": ["Old Tam", "Tam"],
+      "reference_kinds": ["direct", "nickname", "pronoun"],
+      "passages": [
+        "Day 1 EV", "The crossing", "The chapel path", "Day 2 EV", "Hollin Reach",
+        "The widow's door", "Back at the ferry", "Day 3 EV", "The dark crossing",
+        "The warden's ledger", "The weir", "Day 4 EV", "Gull Chapel at dusk", "The last ferry"
+      ],
+      "notes": "Nickname/alias pair: Old Tam is Tamsin Reeve. Misspelled Tamsin Reave once (defect d-typo)."
+    },
+    {
+      "id": "ilex",
+      "name": "Brother Ilex",
+      "type": "character",
+      "aliases": ["Ilex", "the chapel keeper", "the bell-ringer"],
+      "reference_kinds": ["titled", "indirect", "direct", "pronoun"],
+      "passages": ["Day 1 EV", "The chapel path", "Hollin Reach", "Day 3 EV", "Gull Chapel at dusk", "The last ferry"],
+      "notes": "Indirect mention only in Day 1 EV (the chapel keeper, the bell-ringer); named from The chapel path on."
+    },
+    {
+      "id": "maud",
+      "name": "Maud Pellow",
+      "type": "character",
+      "aliases": ["Maud"],
+      "reference_kinds": ["possessive_only"],
+      "passages": ["Day 1 EV", "Back at the ferry"],
+      "notes": "Only ever appears as a possessive: Maud Pellow's stew, Maud's stew."
+    },
+    {
+      "id": "corvin",
+      "name": "Corvin Ashby",
+      "type": "character",
+      "aliases": [],
+      "reference_kinds": ["dialogue_only"],
+      "passages": ["The crossing"],
+      "notes": "Mentioned once, inside Captain Marsh's dialogue; never on stage."
+    },
+    {
+      "id": "marsh",
+      "name": "Oriel Marsh",
+      "type": "character",
+      "aliases": ["Captain Oriel Marsh", "Captain Marsh", "Marsh", "the captain"],
+      "reference_kinds": ["titled", "direct", "pronoun"],
+      "passages": ["The crossing", "The chapel path", "Day 3 EV", "The warden's ledger", "The weir", "The toll"],
+      "notes": "Titled name. Drowns in The weir and reappears in The toll (defect d-marsh-alive)."
+    },
+    {
+      "id": "pip",
+      "name": "Pip Halloway",
+      "type": "character",
+      "aliases": ["Pip"],
+      "reference_kinds": ["direct", "pronoun"],
+      "passages": [
+        "Day 1 EV", "The chapel path", "Day 2 EV", "Hollin Reach", "The widow's door",
+        "Day 3 EV", "The dark crossing", "The warden's ledger", "The weir", "The toll",
+        "Gull Chapel at dusk", "The last ferry"
+      ],
+      "notes": "Wren's brother. Twelve on one branch, eleven on the other (contradiction c-pip-age)."
+    },
+    {
+      "id": "widow",
+      "name": "Widow Kestle",
+      "type": "character",
+      "aliases": ["the Widow Kestle", "the widow"],
+      "reference_kinds": ["titled", "direct", "pronoun"],
+      "passages": ["The chapel path", "The widow's door", "Back at the ferry", "Gull Chapel at dusk"],
+      "notes": "Titled name. Says she was never anyone's wife: the intentional mystery c-widow-never-wife."
+    },
+    {
+      "id": "saltmarrow",
+      "name": "Saltmarrow",
+      "type": "location",
+      "aliases": [],
+      "reference_kinds": ["direct"],
+      "passages": ["Day 1 EV", "The chapel path", "The weir", "Day 4 EV", "The toll", "The last ferry"]
+    },
+    {
+      "id": "hollin-reach",
+      "name": "Hollin Reach",
+      "type": "location",
+      "aliases": ["the Reach"],
+      "reference_kinds": ["direct"],
+      "passages": ["Day 1 EV", "The crossing", "Hollin Reach", "The widow's door", "Back at the ferry", "The dark crossing", "The weir"]
+    },
+    {
+      "id": "gull-chapel",
+      "name": "Gull Chapel",
+      "type": "location",
+      "aliases": ["the chapel"],
+      "reference_kinds": ["direct"],
+      "passages": ["Day 1 EV", "The chapel path", "Gull Chapel at dusk"]
+    },
+    {
+      "id": "weir-house",
+      "name": "Weir House",
+      "type": "location",
+      "aliases": ["the old mill", "the mill"],
+      "reference_kinds": ["direct"],
+      "passages": ["The chapel path", "Day 2 EV", "Hollin Reach", "The widow's door", "The dark crossing", "The toll"],
+      "notes": "Referred to two ways: the wardens call it the Weir House; the town calls it the old mill."
+    },
+    {
+      "id": "lantern",
+      "name": "brass lantern",
+      "type": "item",
+      "aliases": ["the lantern"],
+      "reference_kinds": ["direct"],
+      "passages": ["Day 1 EV", "The crossing", "Back at the ferry", "Day 3 EV", "The dark crossing", "Day 4 EV", "The last ferry"],
+      "owner": "Tamsin Reeve"
+    },
+    {
+      "id": "key",
+      "name": "iron key",
+      "type": "item",
+      "aliases": ["the key"],
+      "reference_kinds": ["direct"],
+      "passages": ["The chapel path", "Day 2 EV", "Hollin Reach", "The widow's door", "The dark crossing"]
+    },
+    {
+      "id": "ledger",
+      "name": "wardens' ledger",
+      "type": "item",
+      "aliases": ["the ledger", "the toll book", "the book"],
+      "reference_kinds": ["direct"],
+      "passages": ["The crossing", "Day 2 EV", "Day 3 EV", "The warden's ledger", "The weir", "The toll", "Gull Chapel at dusk"]
+    },
+    {
+      "id": "wardens",
+      "name": "River Wardens",
+      "type": "group",
+      "aliases": ["the wardens", "warden"],
+      "reference_kinds": ["direct"],
+      "passages": [
+        "Day 1 EV", "The crossing", "The chapel path", "Day 2 EV", "Hollin Reach",
+        "Back at the ferry", "Day 3 EV", "The dark crossing", "The warden's ledger", "The weir",
+        "Day 4 EV", "The toll", "Gull Chapel at dusk"
+      ]
+    }
+  ],
+  "facts": [
+    {"id": "f01", "entity": "Wren Halloway", "claim": "Wren is seventeen", "passage": "Day 1 EV", "kind": "trait", "evidence_phrase": "since her seventeenth spring"},
+    {"id": "f02", "entity": "Tamsin Reeve", "claim": "Tam has a grey braid", "passage": "Day 1 EV", "kind": "trait", "evidence_phrase": "her grey braid"},
+    {"id": "f03", "entity": "brass lantern", "claim": "The brass lantern has hung in the ferry house for forty years", "passage": "Day 1 EV", "kind": "world", "evidence_phrase": "where it had hung for forty years"},
+    {"id": "f04", "entity": "Tamsin Reeve", "claim": "Tamsin Reeve has carried the lantern across the river for forty years", "passage": "Day 1 EV", "kind": "event", "evidence_phrase": "every working day of those forty years"},
+    {"id": "f05", "entity": "brass lantern", "claim": "The ferry never crosses without a lit lantern", "passage": "Day 1 EV", "kind": "world", "evidence_phrase": "no crossing without a lit lantern"},
+    {"id": "f06", "entity": "Maud Pellow", "claim": "Maud Pellow makes the stew left at the ferry house", "passage": "Day 1 EV", "kind": "relationship", "evidence_phrase": "Maud Pellow's stew"},
+    {"id": "f07", "entity": "Hollin Reach", "claim": "Hollin Reach lies across the water from the ferry house", "passage": "Day 1 EV", "kind": "location", "evidence_phrase": "Across the water, Hollin Reach"},
+    {"id": "f08", "entity": "Gull Chapel", "claim": "Gull Chapel is up the hill behind Saltmarrow", "passage": "Day 1 EV", "kind": "location", "evidence_phrase": "Up the hill behind Saltmarrow"},
+    {"id": "f09", "entity": "River Wardens", "claim": "The River Wardens fly a green pennant", "passage": "The crossing", "kind": "trait", "evidence_phrase": "the green pennant of the River Wardens"},
+    {"id": "f10", "entity": "Oriel Marsh", "claim": "Oriel Marsh is a captain of the River Wardens", "passage": "The crossing", "kind": "relationship", "evidence_phrase": "Captain Oriel Marsh stood in the stern"},
+    {"id": "f11", "entity": "wardens' ledger", "claim": "The wardens' ledger is bound in green cloth", "passage": "The crossing", "kind": "trait", "evidence_phrase": "a ledger bound in green cloth"},
+    {"id": "f12", "entity": "Corvin Ashby", "claim": "Corvin Ashby owes the wardens the spring toll", "passage": "The crossing", "kind": "relationship", "evidence_phrase": "Corvin Ashby still owes the wardens the spring toll"},
+    {"id": "f13", "entity": "River Wardens", "claim": "The wardens' ferry toll is two copper bits", "passage": "The crossing", "kind": "world", "evidence_phrase": "the two copper bits"},
+    {"id": "f14", "entity": "Brother Ilex", "claim": "Brother Ilex keeps Gull Chapel and its bell", "passage": "The chapel path", "kind": "relationship", "evidence_phrase": "he had kept the chapel and its bell"},
+    {"id": "f15", "entity": "Brother Ilex", "claim": "Brother Ilex is a small man with ink on his fingers", "passage": "The chapel path", "kind": "trait", "evidence_phrase": "a small man with ink on every finger"},
+    {"id": "f16", "entity": "iron key", "claim": "The iron key is as long as Wren's hand", "passage": "The chapel path", "kind": "trait", "evidence_phrase": "an iron key as long as Wren's hand"},
+    {"id": "f17", "entity": "Weir House", "claim": "There are three keys to the Weir House", "passage": "The chapel path", "kind": "world", "evidence_phrase": "There are three keys to the Weir House"},
+    {"id": "f18", "entity": "Pip Halloway", "claim": "Pip is Wren's brother", "passage": "The chapel path", "kind": "relationship", "evidence_phrase": "Your brother came through here"},
+    {"id": "f19", "entity": "Pip Halloway", "claim": "Pip is twelve", "passage": "Hollin Reach", "kind": "trait", "evidence_phrase": "Wren's brother was twelve"},
+    {"id": "f20", "entity": "Wren Halloway", "claim": "Wren's oilskin coat has a torn pocket and was cut down for her by Tam", "passage": "Hollin Reach", "kind": "possession", "evidence_phrase": "the oilskin one with the torn pocket that Tam had cut down for her"},
+    {"id": "f21", "entity": "Weir House", "claim": "The Weir House is the old mill at the head of the reach beside the weir", "passage": "Hollin Reach", "kind": "location", "evidence_phrase": "The old mill stood at the head of the reach where the weir cut the river in half"},
+    {"id": "f22", "entity": "Widow Kestle", "claim": "The Widow Kestle's door is painted the blue of a jay's wing", "passage": "The widow's door", "kind": "possession", "evidence_phrase": "painted the blue of a jay's wing"},
+    {"id": "f23", "entity": "Widow Kestle", "claim": "The Widow Kestle has short white hair", "passage": "The widow's door", "kind": "trait", "evidence_phrase": "white hair cropped short"},
+    {"id": "f24", "entity": "Widow Kestle", "claim": "The Widow Kestle's room is full of stopped clocks", "passage": "The widow's door", "kind": "possession", "evidence_phrase": "full of clocks, none of them running"},
+    {"id": "f25", "entity": "Weir House", "claim": "The Weir House has one oak door banded in iron that faces the water", "passage": "Day 2 EV", "kind": "trait", "evidence_phrase": "one door, oak, banded in iron"}
+  ],
+  "contradictions": [
+    {
+      "id": "c-tam-years",
+      "passages": ["Day 1 EV", "Back at the ferry"],
+      "quotes": ["every working day of those forty years", "Thirty years I've poled this river"],
+      "intentional": false,
+      "type": "number",
+      "scope": "same_path",
+      "description": "Forty years on the river in Day 1 EV, thirty in Back at the ferry, on the same route."
+    },
+    {
+      "id": "c-pip-age",
+      "passages": ["Hollin Reach", "The widow's door"],
+      "quotes": ["Wren's brother was twelve", "Eleven years old and out after the bell"],
+      "intentional": false,
+      "type": "number",
+      "scope": "cross_branch",
+      "description": "Pip is twelve on the ferry branch and eleven on the chapel branch; no single path sees both."
+    },
+    {
+      "id": "c-widow-never-wife",
+      "passages": ["The widow's door"],
+      "quotes": ["The Widow Kestle lived in the last house", "I was never anyone's wife"],
+      "intentional": true,
+      "type": "identity",
+      "scope": "within_passage",
+      "description": "A widow who says she was never a wife: the writer's planted mystery, listed in story-overrides.txt."
+    }
+  ],
+  "pronoun_cases": [
+    {"id": "p1", "passage": "Day 1 EV", "sentence": "as she had every morning since her seventeenth spring", "pronoun": "she", "expected": "Wren Halloway"},
+    {"id": "p2", "passage": "Day 1 EV", "sentence": "her grey braid tucked into the collar", "pronoun": "her", "expected": "Tamsin Reeve"},
+    {"id": "p3", "passage": "The crossing", "sentence": "the way he always stood", "pronoun": "he", "expected": "Oriel Marsh"},
+    {"id": "p4", "passage": "The chapel path", "sentence": "He came down the ladder slowly.", "pronoun": "He", "expected": "Brother Ilex"},
+    {"id": "p5", "passage": "Hollin Reach", "sentence": "He was shivering under his bravado.", "pronoun": "He", "expected": "Pip Halloway"},
+    {"id": "p6", "passage": "The widow's door", "sentence": "She went back to her apple.", "pronoun": "She", "expected": "Widow Kestle"},
+    {"id": "p7", "passage": "The warden's ledger", "sentence": "Marsh looked at Pip, and he said nothing for a long moment.", "pronoun": "he", "expected": null},
+    {"id": "p8", "passage": "The widow's door", "sentence": "The widow looked at Wren for a long moment, and she did not look away.", "pronoun": "she", "expected": null}
+  ],
+  "distractors": [
+    {"phrase": "no one", "passage": "The crossing", "sentence": "to no one in particular"},
+    {"phrase": "the man", "passage": "The widow's door", "sentence": "Ask the man who built the weir"},
+    {"phrase": "thirteen people", "passage": "Day 3 EV", "sentence": "Thirteen people have drowned at that weir in my time"}
+  ],
+  "scene_state": [
+    {"passage": "Day 1 EV", "statement": "had gone cold and thick", "entity": "Maud Pellow"},
+    {"passage": "The crossing", "statement": "The fog lay on the river like wool.", "entity": "Wren Halloway"},
+    {"passage": "Hollin Reach", "statement": "Pip was waiting on the jetty", "entity": "Pip Halloway"},
+    {"passage": "Day 2 EV", "statement": "the smell, which was of a lamp lately blown out", "entity": "Weir House"}
+  ],
+  "defects": [
+    {
+      "id": "d-typo",
+      "type": "name_typo",
+      "passages": ["Back at the ferry"],
+      "quotes": ["Tamsin Reave"],
+      "expected_severity": "minor",
+      "description": "Tamsin Reeve spelled Reave."
+    },
+    {
+      "id": "d-marsh-alive",
+      "type": "death_then_alive",
+      "passages": ["The weir", "The toll"],
+      "quotes": ["She saw him go over.", "Captain Marsh stood in the stern with one boot on the gunwale, the way he always stood, dry, with his hat on."],
+      "expected_severity": "critical",
+      "description": "Marsh drowns at the weir and collects the toll the next morning with no remark."
+    },
+    {
+      "id": "d-lantern-rule",
+      "type": "world_rule",
+      "passages": ["Day 1 EV", "The dark crossing"],
+      "quotes": ["she had never once let it go out on the water", "A hundred nights I've crossed like this"],
+      "expected_severity": "major",
+      "description": "Day 1 establishes that Tam never crossed without the lantern; the dark-crossing branch says she has done it a hundred times."
+    },
+    {
+      "id": "d-timeline",
+      "type": "timeline",
+      "passages": ["The weir", "The toll"],
+      "quotes": ["It was the second morning since Wren had left Saltmarrow", "That night, the first since leaving Saltmarrow"],
+      "expected_severity": "major",
+      "description": "The second morning is followed by the first night."
+    },
+    {
+      "id": "d-pov",
+      "type": "pov_slip",
+      "passages": ["Gull Chapel at dusk"],
+      "quotes": ["I could hear the bell still humming in the beams above us"],
+      "expected_severity": "minor",
+      "description": "One paragraph slips into first person in a third-person story."
+    },
+    {
+      "id": "d-tense",
+      "type": "tense_slip",
+      "passages": ["The last ferry"],
+      "quotes": ["Wren steps aboard and takes the pole from Tam's hands"],
+      "expected_severity": "minor",
+      "description": "One paragraph slips into present tense in a past-tense story."
+    }
+  ],
+  "clean_paths": [
+    {
+      "id": "clean-crossing",
+      "route": ["Start", "Day 1 EV", "The crossing", "Hollin Reach", "Day 2 EV", "The warden's ledger", "Day 3 EV", "Day 4 EV"]
+    },
+    {
+      "id": "clean-widow",
+      "route": ["Start", "Day 1 EV", "The chapel path", "The widow's door", "Day 2 EV", "The warden's ledger", "Day 3 EV", "Day 4 EV"]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+:: Day 1 EV
+
+Wren Halloway woke before the bell, as she had every morning since her seventeenth spring. The ferry house smelled of tar and river damp. Old Tam was already up, coaxing the stove, her grey braid tucked into the collar of a coat that had been patched more often than it had been washed.
+
+"Fog's down," Tam said without turning. "You'll take the lantern."
+
+The brass lantern hung on its hook by the door, where it had hung for forty years, long before Wren was born. Tamsin Reeve had carried it across the river every working day of those forty years, and she had never once let it go out on the water. That was the first rule of the ferry, older than the wardens' toll and older than the chapel bell: no crossing without a lit lantern.
+
+Wren ate standing up. Maud Pellow's stew, left on the step the night before, had gone cold and thick, but she ate it anyway. Across the water, Hollin Reach was a smear of darker grey. Up the hill behind Saltmarrow, the chapel keeper would be ringing the first bell soon.
+
+"Pip's over there," Tam said. "Went across with the fish carts last night and never came back. You'll fetch him, or you'll go up the hill and ask what the bell-ringer knows. Your choice."
+
+[[Take the ferry across->The crossing]]
+[[Walk up to Gull Chapel->The chapel path]]
+
+:: The crossing
+
+Wren lit the lantern from the stove and carried it down to the jetty. The fog lay on the river like wool. She set the lantern in its bracket at the bow, took up the pole, and pushed off into grey nothing.
+
+Halfway across, a shape came out of the fog: the wardens' long boat, black-hulled, with the green pennant of the River Wardens hanging limp at its mast. Captain Oriel Marsh stood in the stern with one boot on the gunwale, the way he always stood, as if the river belonged to him.
+
+"Toll," he said.
+
+"Old Tam paid the month on the first."
+
+"Old Tam paid for Old Tam. You're not Old Tam." He held out a gloved hand. Wren dug the two copper bits from her coat and dropped them into it. Marsh made a mark in a ledger bound in green cloth. "Corvin Ashby still owes the wardens the spring toll," he said, to no one in particular. "Tell him, if you see him. Tell him the captain remembers."
+
+He let her pass. The far jetty came up out of the fog, and behind it the low roofs of Hollin Reach.
+
+[[Hollin Reach]]
+
+:: The chapel path
+
+The path to Gull Chapel climbed the hill in switchbacks, slick with last night's rain. Wren went up it with her hands in her pockets and her hood up. Below her the fog covered the river entirely, so that Saltmarrow looked like a town at the edge of the world.
+
+Brother Ilex was in the bell tower. He was a small man with ink on every finger, and he had kept the chapel and its bell for as long as Wren had been alive. He came down the ladder slowly.
+
+"Your brother came through here last evening," he said. "Asked me for the key to the Weir House. I gave it to him. I should not have."
+
+"Why not?"
+
+"Because the last one who went in there, the wardens carried out a week later." He took a second key from the ring at his belt, an iron key as long as Wren's hand, and pressed it into her palm. "There are three keys to the Weir House. Tam keeps the third. Do not tell the captain I gave you this."
+
+Wren turned the key over. It was cold and heavier than it looked.
+
+"The Widow Kestle saw him last," Brother Ilex said. "If you want to know where Pip went after, ask her. Or go back to the ferry and let Tam decide. I would not blame you."
+
+[[Ask at the Widow Kestle's door->The widow's door]]
+[[Go back down to the ferry->Back at the ferry]]

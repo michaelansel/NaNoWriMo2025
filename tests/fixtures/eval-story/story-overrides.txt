@@ -1,0 +1,14 @@
+# Story Bible overrides for the eval story. One line per directive: `directive: payload`.
+# Lines starting with # are comments. Bad lines become Structure-check notes.
+
+# Merge the ferrymaster's nickname into her canonical entry.
+alias: Tamsin Reeve = Old Tam, Tam
+
+# The widow's dead weir-builder is a figure of speech, not a cast member.
+not-entity: the man who built the weir
+
+# A fact the checker must always see, even if extraction misses it.
+pin: River Wardens = The River Wardens fly a green pennant | "the green pennant of the River Wardens" @ The crossing
+
+# The widow calling herself no one's wife is a mystery the writer planted on purpose.
+intentional-conflict: c-widow-never-wife
