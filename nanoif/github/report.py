@@ -12,6 +12,9 @@ Honesty rules the rendering enforces:
 * An editor with status ``error`` or ``skipped`` opens with "unavailable" or
   "partially unavailable", names the reason, lists every passage it could not check,
   and its check run concludes ``failure``.
+* A ``passage`` mode review (a single-passage re-check with no earlier review of the same
+  commit to merge into, see :mod:`nanoif.github.merge`) is labelled partial and its check
+  run is never ``success``.
 """
 
 from __future__ import annotations
@@ -127,18 +130,22 @@ def _plural(count: int, word: str, plural: str | None = None) -> str:
 # -- AI editors ------------------------------------------------------------------------
 
 
-def editor_conclusion(editor: Mapping[str, Any]) -> str:
+def editor_conclusion(editor: Mapping[str, Any], mode: str | None = None) -> str:
     """Map an editor result to a check-run conclusion.
 
     Args:
         editor: One entry of ``ai-review.json`` ``editors``.
+        mode: The review's mode. A ``passage`` review re-checked only some passages, so
+            it is never ``success``.
 
     Returns:
-        ``success`` for ok with no findings, ``neutral`` for ok with findings,
-        ``failure`` for ``error`` or ``skipped``.
+        ``success`` for ok with no findings, ``neutral`` for ok with findings or a
+        partial (``passage``) review, ``failure`` for ``error`` or ``skipped``.
     """
     if editor["status"] != "ok":
         return "failure"
+    if mode == "passage":
+        return "neutral"
     return "neutral" if editor["findings"] else "success"
 
 
@@ -178,6 +185,20 @@ def _unit_reason(editor: Mapping[str, Any]) -> str:
     return "no reason recorded"
 
 
+def _partial(units: Sequence[Mapping[str, Any]], count: int) -> tuple[str, str]:
+    """Headline and lead for a single-passage re-check with no earlier review to merge into."""
+    names = list(dict.fromkeys(sanitize(unit["passage"], 200) for unit in units))
+    were = "was" if len(names) == 1 else "were"
+    it = "it" if len(names) == 1 else "them"
+    outcome = "; the findings are below" if count else f", and nothing in {it} needs a look"
+    lead = (
+        f"Only {', '.join(f'*{name}*' for name in names)} {were} re-checked{outcome}. "
+        "No full review of this commit was available to merge it into, so the other "
+        f"passages are not shown. Reply `{RETRY}` to review every changed passage."
+    )
+    return f"partial: only {', '.join(names)} {were} re-checked", lead
+
+
 def _status(editor: Mapping[str, Any], mode: str) -> tuple[str, str]:
     """Return (headline, lead paragraph) for an editor."""
     title = EDITORS[editor["name"]].title
@@ -204,6 +225,8 @@ def _status(editor: Mapping[str, Any], mode: str) -> tuple[str, str]:
             f"a pass. Retry with `{RETRY}`.",
         )
     count = len(editor["findings"])
+    if mode == "passage" and units:
+        return _partial(units, count)
     if count:
         return _plural(count, "finding"), ""
     if not units:
@@ -287,7 +310,7 @@ def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> 
     body = _environment().get_template("editor.md.jinja2").render(**context)
     check = CheckPayload(
         name=spec.title,
-        conclusion=editor_conclusion(editor),
+        conclusion=editor_conclusion(editor, review["mode"]),
         title=f"{spec.title}: {headline}",
         summary=f"{header}\n\n{lead}".strip(),
         text=body.removeprefix(spec.marker).lstrip("\n"),

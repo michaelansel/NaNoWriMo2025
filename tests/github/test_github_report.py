@@ -115,7 +115,13 @@ def _cases():
             "style", status="skipped", units=[], reason="StoryData has no storyStyle block"
         ),
     )
+    rechecked = make_review(
+        make_editor(units=[UNITS_PARTIAL[0]]),
+        make_editor("style", units=[UNITS_PARTIAL[0]]),
+        mode="passage",
+    )
     return {
+        "continuity_partial_passage": (rechecked, "continuity"),
         "continuity_ok_clean": (clean, "continuity"),
         "continuity_ok_findings": (findings, "continuity"),
         "continuity_partial_error": (partial, "continuity"),
@@ -215,6 +221,27 @@ def test_check_run_conclusion_mapping(status, findings, conclusion):
     assert editor_conclusion(editor) == conclusion
     review = make_review(editor, make_editor("style"))
     assert render_editor(review, "continuity", RUN).check.conclusion == conclusion
+
+
+@pytest.mark.intent("AC-continuity-review-7")
+@pytest.mark.parametrize(
+    "status, findings, conclusion",
+    [("ok", [], "neutral"), ("ok", [make_finding()], "neutral"), ("error", [], "failure")],
+)
+def test_single_passage_recheck_is_partial_and_never_success(status, findings, conclusion):
+    units = [{"passage": "Day 1 EV", "status": "reviewed", "reason": None, "tokens": 9}]
+    if status == "error":
+        units = [{"passage": "Day 1 EV", "status": "error", "reason": "HTTP 502", "tokens": None}]
+    editor = make_editor(status=status, units=units, findings=findings)
+    assert editor_conclusion(editor, mode="passage") == conclusion
+    review = make_review(editor, make_editor("style"), mode="passage")
+    rendered = render_editor(review, "continuity", RUN)
+    assert rendered.check.conclusion == conclusion
+    if status == "ok":
+        assert rendered.body.splitlines()[1] == (
+            "### Continuity Editor: partial: only Day 1 EV was re-checked"
+        )
+        assert "No findings" not in rendered.body
 
 
 @pytest.mark.intent("AC-continuity-review-8")

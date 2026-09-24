@@ -49,6 +49,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write # reaction and short replies
+      actions: read # find the PR's last ai-review artifact for a passage re-check
     env:
       GITHUB_TOKEN: ${{ github.token }}
       GH_TOKEN: ${{ github.token }}
@@ -68,6 +69,7 @@ jobs:
       same_repo: ${{ steps.pr.outputs.same_repo }}
       base_ref: ${{ steps.pr.outputs.base_ref }}
       head_sha: ${{ steps.pr.outputs.head_sha }}
+      previous_run: ${{ steps.previous.outputs.run_id }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -99,6 +101,19 @@ jobs:
             "same_repo=\(.head.repo.full_name == .base.repo.full_name)",
             "base_ref=\(.base.ref)",
             "head_sha=\(.head.sha)"' >> "$GITHUB_OUTPUT"
+
+      # A passage re-check is merged into the PR's last review (found the same way
+      # /dismiss finds it), so one clean passage cannot hide findings on the others.
+      - name: Find the last AI review of this pull request
+        id: previous
+        if: steps.cmd.outputs.command == 'check-continuity' && steps.cmd.outputs.mode == 'passage' && steps.pr.outputs.same_repo == 'true'
+        run: |
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=ai-review-pr-${PR_NUMBER}&per_page=20" \
+            --jq '[.artifacts[] | select(.expired | not)] | sort_by(.created_at) | last | .workflow_run.id // empty')
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          if [ -z "$run_id" ]; then
+            echo "No earlier AI review of PR #${PR_NUMBER}; the passage re-check will be published as partial." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Reply with the usage
         if: steps.cmd.outputs.error != ''
@@ -181,6 +196,7 @@ jobs:
       contents: read
       pull-requests: write
       checks: write
+      actions: read # download the PR's last ai-review artifact for a passage re-check
     env:
       GITHUB_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ needs.parse.outputs.pr }}
@@ -205,6 +221,7 @@ jobs:
           pr: ${{ needs.parse.outputs.pr }}
           head-sha: ${{ needs.parse.outputs.head_sha }}
           artifact-name: ai-review-pr-${{ needs.parse.outputs.pr }}
+          previous-run-id: ${{ needs.parse.outputs.previous_run }}
           llm-profile: ${{ vars.LLM_PROFILE || 'exe' }}
           llm-model: ${{ vars.LLM_MODEL }}
           python-version: ${{ env.PYTHON_VERSION }}

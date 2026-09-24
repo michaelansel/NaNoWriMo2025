@@ -117,7 +117,7 @@ Most days you need none of these.
 | `/dismiss <id> [reason]` | Hides a finding you disagree with |
 | `/check-continuity` | Runs the editors again on your changed passages |
 | `/check-continuity all` | Reviews the whole story; the comment shows what it cost |
-| `/check-continuity passage=<name>` | Reviews one passage |
+| `/check-continuity passage=<name>` | Reviews one passage again; the comments keep the other passages' results |
 
 ## The pages
 

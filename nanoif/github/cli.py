@@ -25,6 +25,7 @@ from nanoif.github.dismiss import (
     build_record,
     load_dismissals,
 )
+from nanoif.github.merge import HEAD_SHA_FILE, merge_passage_review
 from nanoif.github.report import (
     EDITORS,
     Rendered,
@@ -164,6 +165,48 @@ def _build_report(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _earlier_review(folder: Path | None, head_sha: str | None) -> tuple[dict | None, str]:
+    """Return the earlier review to merge into, or ``None`` and why it is not usable."""
+    review_path = folder / "ai-review.json" if folder is not None else None
+    if review_path is None or not review_path.is_file():
+        return None, "no earlier AI review of this pull request is available"
+    sha_path = folder / HEAD_SHA_FILE
+    recorded = sha_path.read_text(encoding="utf-8").strip() if sha_path.is_file() else ""
+    if not recorded or not head_sha:
+        return None, "the earlier AI review does not say which commit it reviewed"
+    if recorded != head_sha:
+        return None, (
+            f"the earlier AI review is for commit {recorded[:7]}, not {head_sha[:7]}"
+        )
+    try:
+        return load_artifact(review_path, "ai_review"), ""
+    except (BuildError, ArtifactValidationError) as exc:
+        print(f"warning: cannot read the earlier AI review: {exc}", file=sys.stderr)
+        return None, "the earlier AI review could not be read"
+
+
+def _merge_review(args: argparse.Namespace) -> int:
+    try:
+        update = load_artifact(args.review, "ai_review")
+    except (BuildError, ArtifactValidationError) as exc:
+        return _usage(str(exc))
+    if update["mode"] != "passage":
+        return _usage(f"{args.review} is a mode {update['mode']!r} review, not mode 'passage'")
+    previous, why = _earlier_review(args.previous_dir, args.head_sha)
+    if previous is None:
+        result = update
+        print(f"{why}; publishing the re-check of {args.passage!r} as partial")
+    else:
+        try:
+            result = merge_passage_review(previous, update, args.passage)
+        except ArtifactValidationError as exc:
+            return _usage(f"merged review is invalid: {exc}")
+        print(f"merged the re-check of {args.passage!r} into the earlier AI review")
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    return EXIT_OK
+
+
 def _authorize(args: argparse.Namespace) -> int:
     role = api_factory().get_collaborator_permission(args.user)
     allowed = role in WRITE_ROLES
@@ -265,6 +308,20 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     build.add_argument("--head-sha")
     build.set_defaults(handler=_build_report)
+
+    merge = commands.add_parser(
+        "merge-review", help="merge a passage re-check into the PR's last AI review"
+    )
+    merge.add_argument("--review", type=Path, required=True, help="the mode passage review")
+    merge.add_argument("--passage", required=True, help="the re-checked passage")
+    merge.add_argument(
+        "--previous-dir",
+        type=Path,
+        help=f"the last ai-review artifact (ai-review.json and {HEAD_SHA_FILE})",
+    )
+    merge.add_argument("--head-sha", help="the pull request head the re-check reviewed")
+    merge.add_argument("--out", type=Path, required=True, help="where to write the result")
+    merge.set_defaults(handler=_merge_review)
 
     authorize = commands.add_parser("authorize", help="exit 0 if the user has write access")
     authorize.add_argument("--user", required=True)

@@ -191,6 +191,32 @@ def _findings_block(
     return shown, suppressed, unverified
 
 
+def editor_status(units: Sequence[Mapping[str, Any]]) -> tuple[str, str | None]:
+    """Compute an editor's ``status`` and ``reason`` from its unit entries.
+
+    Used by the runner and by the merge of a single-passage re-check into an earlier
+    review, so both state coverage the same way.
+
+    Args:
+        units: The editor's ``units`` entries (``status`` and ``reason`` are read).
+
+    Returns:
+        ``("ok", None)`` when every unit was reviewed, ``("ok", "no passages to review")``
+        for no units, else ``("error", "N of M unit(s) not reviewed (<causes>)")``.
+    """
+    missed = [unit for unit in units if unit["status"] != "reviewed"]
+    if not units:
+        return "ok", "no passages to review"
+    if not missed:
+        return "ok", None
+    causes = Counter(
+        "error" if unit["status"] == "error" else (unit.get("reason") or "skipped")
+        for unit in missed
+    )
+    detail = ", ".join(f"{count} {cause}" for cause, count in sorted(causes.items()))
+    return "error", f"{len(missed)} of {len(units)} unit(s) not reviewed ({detail})"
+
+
 def _editor_entry(
     name: str,
     skip_reason: str | None,
@@ -209,31 +235,21 @@ def _editor_entry(
             "unverified": [],
         }
     shown, suppressed, unverified = _findings_block(outcomes, dismissals)
-    missed = [outcome for outcome in outcomes if outcome.status != "reviewed"]
-    if not units:
-        reason: str | None = "no passages to review"
-    elif missed:
-        causes = Counter(
-            "error" if outcome.status == "error" else (outcome.reason or "skipped")
-            for outcome in missed
-        )
-        detail = ", ".join(f"{count} {cause}" for cause, count in sorted(causes.items()))
-        reason = f"{len(missed)} of {len(units)} unit(s) not reviewed ({detail})"
-    else:
-        reason = None
+    unit_entries = [
+        {
+            "passage": unit.passage,
+            "status": outcome.status,
+            "reason": outcome.reason,
+            "tokens": unit.tokens,
+        }
+        for unit, outcome in zip(units, outcomes, strict=True)
+    ]
+    status, reason = editor_status(unit_entries)
     return {
         "name": name,
-        "status": "error" if missed else "ok",
+        "status": status,
         "reason": reason,
-        "units": [
-            {
-                "passage": unit.passage,
-                "status": outcome.status,
-                "reason": outcome.reason,
-                "tokens": unit.tokens,
-            }
-            for unit, outcome in zip(units, outcomes, strict=True)
-        ],
+        "units": unit_entries,
         "findings": [finding.to_dict() for finding in shown],
         "suppressed": [finding.to_dict() for finding in suppressed],
         "unverified": [finding.to_dict() for finding in unverified],
