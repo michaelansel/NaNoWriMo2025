@@ -1,8 +1,10 @@
-# ADR-007: Service Documentation Discoverability
+# ADR-013: Service Documentation Discoverability
 
 ## Status
 
-Accepted
+Status: Superseded by ADR-014
+
+This record was filed as a second ADR-007; it was renumbered to keep ids unique.
 
 ## Context
 

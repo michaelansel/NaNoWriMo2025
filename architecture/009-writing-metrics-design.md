@@ -1,6 +1,6 @@
 # Architecture Design: Writing Metrics & Statistics
 
-**Status:** Approved
+Status: Superseded by ADR-015
 **Date:** 2025-11-28
 **Related PRD:** `features/writing-metrics.md`
 

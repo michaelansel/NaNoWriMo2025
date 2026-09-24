@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Status: Superseded by ADR-015
 
 ## Context
 

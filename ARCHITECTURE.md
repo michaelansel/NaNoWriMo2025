@@ -1,989 +1,172 @@
-# System Architecture
+# Architecture
 
-## Overview
+Writers add Twee passages to `src/` through pull requests. GitHub Actions builds a playable
+story and reading aids, runs deterministic checks, and runs AI editors that read only the new
+and changed passages. Every result lands on the PR as one sticky comment and one check run per
+check type, and nothing a check could not do is ever shown as a pass.
 
-NaNoWriMo2025 is an interactive fiction project built using Twee3/Tweego with Harlowe 3.3.9. The project implements a sophisticated build, validation, and deployment pipeline that combines:
+Decisions are recorded in [`architecture/`](architecture/); this page describes the system as
+it is and links the ADR that explains each part. Superseded ADRs are kept for their record.
 
-- **Interactive Fiction Development**: Twee source files compiled with Tweego
-- **Multi-Format Output**: HTML playable story, static site deployment, and AllPaths format
-- **AI-Powered Validation**: Automated continuity checking using Ollama
-- **CI/CD Pipeline**: GitHub Actions for build, test, and deployment
-- **Webhook Service**: Real-time AI validation feedback on pull requests
-- **Core Library Separation**: Reusable parsing and graph construction shared across formats (see ADR-012)
-- **Constraint-Based Pipeline Categories**: Tools categorized by constraints (CI Build, Webhook AI, Local Dev)
+## Components
 
-## System Components
+| Component | What it is | Decided in |
+|---|---|---|
+| `src/` | Writer prose `<INITIALS>-<YYYYMMDD>.twee` plus infrastructure passages (`Start`, `StoryData`, `StoryTitle`, `StoryStyles`, `PathIdDisplay`) | [018](architecture/018-structure-check-and-report-only-lint.md) |
+| `story-overrides.txt` | Writer-editable Story Bible corrections, syntax-checked on every build | [020](architecture/020-story-bible-v2.md) |
+| `nanoif/` | The one Python package and `nanoif` CLI | [015](architecture/015-nanoif-package.md) |
+| `.github/workflows/` | `build-and-deploy.yml`, `ai-command.yml`, `ai-maintenance.yml`, `intent.yml` | [014](architecture/014-actions-automation-exe-runner.md), [021](architecture/021-intent-gate.md) |
+| exe runner | Self-hosted Actions runner on an exe.dev VM, label `exe`; runs only AI jobs; `deploy/exe/`, `docs/exe-runner.md` | [014](architecture/014-actions-automation-exe-runner.md) |
+| LLM gateway | OpenAI-compatible endpoint reached from the exe runner with no key | [016](architecture/016-llm-client-and-prompt-contract.md) |
+| `ai/` | State written only by Actions jobs on `main` | [014](architecture/014-actions-automation-exe-runner.md), [019](architecture/019-ai-review-contract.md), [020](architecture/020-story-bible-v2.md) |
+| `dist/` | Build output; uploaded as `story-preview` on PRs, deployed to Pages from `main`; never committed | [017](architecture/017-git-based-categorization.md) |
+| `landing/` | Static landing page copied to `dist/index.html` | [011](architecture/011-landing-page-design.md) |
 
-### 1. Source Files (Twee3)
+## Build pipeline
 
-**Location**: `/src/*.twee`
-
-Story content is written in Twee3 format, a plain-text markup language for interactive fiction:
-
-- **Format**: Twee3 with Harlowe 3.3.9 macros
-- **Structure**: Passages (story nodes) with links between them
-- **Metadata**: StoryData passage defines title, IFID, and start passage
-- **Organization**: Separate .twee files for different story branches or days
-
-### 2. Build System
-
-**Location**: `/scripts/build-*.sh`, `package.json`
-
-#### Primary Build Pipeline
-
-**Script**: `scripts/build-allpaths.sh`
-
-1. **Tweego Compilation**: Compiles Twee source to intermediate HTML
-   - Uses `paperthin-1` format to extract story data
-   - Produces temporary HTML with passage graph
-
-2. **AllPaths Generation**: Python generator creates multiple outputs
-   - Browersable HTML interface
-   - Clean prose text files
-   - Metadata-enriched text files for AI
-   - Validation status cache
-
-3. **Resource Generation**: Automated passage tracking
-   - Script: `scripts/generate-resources.sh`
-   - Extracts passage names and links from source files
-   - Generates `Resource-Passage Names` reference file
-
-#### Build Outputs
-
-**Constraint Category: CI Build** - All outputs are generated deterministically without Ollama
+Runs on a hosted runner for every PR and every push to `main`, and locally with the same commands.
 
 ```
-dist/
-├── index.html                         # Harlowe playable story (main output)
-├── proofread.html                     # Paperthin format for proofreading
-├── allpaths.html                      # Interactive browser for all story paths
-├── allpaths-clean/*.txt               # Clean prose (public deployment)
-├── allpaths-metadata/*.txt            # With metadata (AI validation)
-├── allpaths-passage-mapping.json      # Random ID to passage name mapping
-├── metrics.html                       # Writing metrics and statistics
-├── story-bible.html                   # Story Bible (rendered from cache)
-└── landing/index.html                 # Landing page with links to all formats
-
-allpaths-validation-status.json        # Validation cache (repository root)
+src/*.twee
+  ├─ tweego -f paperthin ─→ dist/story-paperthin.html
+  │     └─ nanoif build core ─→ lib/artifacts/story_graph.json
+  │                             lib/artifacts/passages_deduplicated.json
+  │                             src/PathIdLookup.twee (generated, git-ignored)
+  ├─ tweego -f harlowe   ─→ dist/play.html        (includes the path-id lookup)
+  ├─ tweego -f paperthin ─→ dist/proofread.html
+  ├─ tweego -f dotgraph  ─→ dist/graph.html
+  └─ story_graph.json + git base
+        ├─ nanoif build allpaths    ─→ allpaths.html, allpaths-{clean,metadata,raw}/,
+        │                              allpaths-index.json, changes.json
+        ├─ nanoif build metrics     ─→ metrics.html
+        ├─ nanoif build passages    ─→ passages.html
+        └─ nanoif build story-bible ─→ story-bible.html, story-bible.json (from the cache, no model)
 ```
 
-### 3. AllPaths Format Generator
-
-**Location**: `/formats/allpaths/generator.py`, `/formats/allpaths/modules/`
-
-**Purpose**: Generate all possible story paths for AI-based validation and analysis
-
-**Architecture**: 5-Stage Modular Processing Pipeline
-
-The AllPaths generator implements a modular pipeline that transforms Tweego HTML output into multiple formats through five distinct processing stages. Each stage has well-defined inputs/outputs and can be tested independently.
-
-**Pipeline Stages**:
-
-1. **Stage 1: Parse & Extract** (`modules/parser.py`)
-   - Input: HTML from Tweego (paperthin format)
-   - Output: `story_graph.json` - Clean story structure
-   - Responsibility: Extract passages, links, and metadata from HTML
-   - **Note**: Candidate for core library extraction (see ADR-012)
-
-2. **Stage 2: Generate Paths** (`modules/path_generator.py`)
-   - Input: `story_graph.json`
-   - Output: `paths.json` - All possible story paths
-   - Responsibility: DFS traversal to enumerate paths, generate stable IDs
-   - **Note**: Candidate for core library extraction (see ADR-012)
-
-3. **Stage 3: Enrich with Git Data** (`modules/git_enricher.py`)
-   - Input: `paths.json` + git repository
-   - Output: `paths_enriched.json` - Paths with git metadata
-   - Responsibility: Add file associations, commit dates, passage-to-file mapping
-   - **Note**: Candidate for core library extraction (see ADR-012)
-
-4. **Stage 4: Categorize Paths** (`modules/categorizer.py`)
-   - Input: `paths_enriched.json` + validation cache
-   - Output: `paths_categorized.json` - Classified paths
-   - Responsibility: Classify as new/modified/unchanged using git-based detection
-   - **Note**: AllPaths-specific, remains in format module
-
-5. **Stage 5: Generate Outputs** (`modules/output_generator.py`)
-   - Input: `paths_categorized.json`
-   - Output: HTML browser, clean text, metadata text, updated cache
-   - Responsibility: Create all output formats with random ID substitution
-   - **Note**: AllPaths-specific, remains in format module
-
-**Orchestrator**: `generator.py` coordinates all five stages and manages the pipeline flow.
-
-**Key Features**:
-- **Modular Design**: Each stage is independently testable (32+ tests, >80% coverage per module)
-- **Intermediate Artifacts**: Four JSON artifacts with documented schemas for debugging
-- **Git-based Change Detection**: Uses git diff for accurate path categorization
-- **Path Categorization**: Classifies paths as new/modified/unchanged
-- **Random ID Substitution**: Replaces passage names with random hex IDs for AI
-- **Passage Mapping**: Maintains bidirectional ID-to-name mapping
-- **Debugging Support**: `--write-intermediate` flag writes all 4 intermediate artifacts
-
-**Module Structure**:
-```
-formats/allpaths/
-├── generator.py              # Main orchestrator
-├── modules/
-│   ├── parser.py             # Stage 1: HTML → story_graph.json
-│   ├── path_generator.py     # Stage 2: story_graph.json → paths.json
-│   ├── git_enricher.py       # Stage 3: Add git metadata
-│   ├── categorizer.py        # Stage 4: Classify paths
-│   └── output_generator.py   # Stage 5: Generate all outputs
-├── schemas/                  # JSON schemas for all 4 intermediate artifacts
-├── lib/git_service.py        # Git abstraction layer
-└── tests/                    # Comprehensive test suite
-```
-
-**Data Flow**:
-```
-Tweego HTML
-    ↓
-Stage 1: Parse → story_graph.json
-    ↓
-Stage 2: Generate Paths → paths.json
-    ↓
-Stage 3: Git Enrich → paths_enriched.json
-    ↓
-Stage 4: Categorize → paths_categorized.json
-    ↓
-Stage 5: Generate Outputs → HTML browser, text files, cache
-```
-
-**Algorithm**:
-```
-Input: Story graph from Tweego
-Process:
-  1. Parse HTML into structured graph (Stage 1)
-  2. DFS traversal from start to all end nodes (Stage 2)
-  3. Enrich paths with git metadata (Stage 3)
-  4. Use git diff to categorize paths (Stage 4)
-  5. Generate outputs in multiple formats (Stage 5)
-Output: HTML browser, text files, validation cache
-```
-
-**Time Complexity**: O(V + E) where V = passages, E = links
-**Space Complexity**: O(V) for recursion stack
-**Performance**: <20 seconds for 30 paths (within target)
-
-See `architecture/008-allpaths-processing-pipeline.md` for complete architecture documentation and design rationale.
-
-### 4. AI Validation Pipeline
-
-**Location**: `/scripts/check-story-continuity.py`, `/services/lib/story_bible_validator.py`, `/services/lib/interactive_fiction_validator.py`
-
-**Purpose**: AI-powered multi-layer validation of story paths using Ollama
-
-**Architecture**:
-- **Validation Modes**: Supports new-only, modified, and all modes
-- **Ollama Integration**: HTTP API calls to local Ollama instance
-- **Multiple Validators**: Three validation layers with specialized focus
-- **Progress Tracking**: Real-time callbacks for incremental updates
-- **Cancellation Support**: Threading events for job cancellation
-- **Result Caching**: Persistent validation status
-- **Configuration-Driven**: Story style config from StoryData.twee customizes validation behavior
-
-**Story Style Configuration**
-
-**Location**: `src/StoryData.twee`
-
-The story's writing style is defined in the StoryData passage as JSON configuration:
-
-```json
-{
-  "ifid": "...",
-  "format": "Harlowe",
-  "format-version": "3.3.9",
-  "start": "Start",
-  "storyStyle": {
-    "perspective": "third-person|first-person|second-person",
-    "protagonist": "Character Name or null",
-    "tense": "past|present"
-  }
-}
-```
-
-**Configuration Fields**:
-- **perspective**: Narrative point of view (defaults to "second-person" for CYOA)
-- **protagonist**: Character name (for first/third-person), null for second-person
-- **tense**: Narrative tense (defaults to "present" for CYOA immediacy)
-
-The webhook service extracts this configuration and passes it to validators that customize their AI prompts based on the story's specific style requirements.
-
-**Validation Modes**:
-1. **new-only** (default): Only brand new paths
-2. **modified**: New and modified paths
-3. **all**: Full validation of all paths
-
-**Three-Layer Validation Pipeline**
-
-**Layer 1: Path Continuity Validation**
-- **Purpose**: Detect logical inconsistencies and contradiction within story paths
-- **Module**: `check_paths_with_progress()` in `check-story-continuity.py`
-- **Checks**: Passage references, timeline consistency, variable state validity
-- **Always Runs**: Applied to all paths in specified validation mode
-
-**Layer 2: Story Bible Validation**
-- **Purpose**: Validate new content against established world constants
-- **Module**: `validate_story_bible()` in `story_bible_validator.py`
-- **Checks**: World rules, setting facts, timeline compatibility, character consistency
-- **Prerequisite**: Requires populated Story Bible (extracted during previous validations)
-- **Config**: Uses default Ollama model and timeout
-- **Returns**: Optional (skips gracefully if Story Bible unavailable)
-
-**Layer 3: Interactive Fiction Style Validation**
-- **Purpose**: Validate CYOA writing style conformance for print-format books
-- **Module**: `validate_interactive_fiction_style()` in `interactive_fiction_validator.py`
-- **Checks**: POV/tense consistency, protagonist immersion, choice quality, pacing, ending satisfaction
-- **Config**: Customized via `storyStyle` from StoryData.twee
-  - Adapts to first/second/third person perspectives
-  - Adjusts for named vs. unnamed protagonists
-  - Validates tense consistency (past vs. present)
-- **Returns**: Optional (skips gracefully with non-blocking timeout)
-
-**Data Flow**:
-```
-src/StoryData.twee (story style config)
-    ↓
-Webhook extracts storyStyle field
-    ↓
-Text files (allpaths-metadata/) + Validation cache
-    ↓
-Categorize paths (new/modified/unchanged)
-    ↓
-Filter by validation mode
-    ↓
-For each path:
-  - Load story text
-  - Layer 1: Path consistency check → path_result
-  - Layer 2: Story Bible validation → world_result (if available)
-  - Layer 3: Interactive Fiction style → if_result (if story_style present)
-  - Merge results with severity escalation
-  - Update validation cache
-    ↓
-Return aggregated results
-```
-
-**Result Merging**:
-- Each validation layer produces independent results with severity (none/minor/major/critical)
-- Results are merged with highest severity becoming the combined severity
-- Each layer's findings are preserved for detailed reporting
-- Non-blocking failures (timeouts, missing dependencies) degrade gracefully
-
-**Security Features**:
-- **Prompt Injection Protection**: Validates AI responses for suspicious patterns
-- **Content Sanitization**: Removes malicious markdown/XSS from AI output
-- **Text-only Processing**: Never executes code from story content
-- **Config Validation**: Story style values validated against allowed options
-
-### 5. Story Bible Generation
-
-**Location**: `/formats/story-bible/`, `/services/lib/story_bible_extractor.py`
-
-**Purpose**: AI-powered extraction of world constants, variables, and character information
-
-**Architecture**: Two-Phase Model (see ADR-012)
-
-The Story Bible implements a two-phase architecture:
-- **Render Phase (CI Build)**: Deterministic HTML generation from cache, no Ollama required
-- **Extract Phase (Webhook AI)**: Async AI extraction updates cache for future renders
-
-This allows fast CI builds while still leveraging AI benefits. The generator consumes core library artifacts (`passages_deduplicated.json`) instead of depending on AllPaths format output.
-
-**Two-Phase Pipeline**:
-
-**Phase 1: Render (CI Build - Deterministic)**
-1. **Load Cache** - Read validated_nouns.json (persistent cache)
-2. **Render HTML** - Generate story-bible.html using Jinja2 template
-3. **Output** - Deploy story-bible.html to GitHub Pages
-
-**Phase 2: Extract (Webhook AI - Async)**
-1. **Load Passages** - Read from core library artifact `passages_deduplicated.json`
-2. **AI Extraction** - Call Ollama to extract constants, variables, character states (per passage)
-3. **AI Summarization** - Deduplicate and merge facts across passages
-4. **Update Cache** - Write validated_nouns.json for next render
-5. **Commit Cache** - PR commit triggers next CI build with updated cache
-
-**Data Flow**:
-```
-CI Build (Render Phase):
-  validated_nouns.json (cache)
-    ↓
-  Jinja2 template
-    ↓
-  story-bible.html (deployed)
-
-Webhook (Extract Phase):
-  passages_deduplicated.json (core library artifact)
-    ↓
-  Ollama AI extraction
-    ↓
-  AI summarization & deduplication
-    ↓
-  validated_nouns.json (updated cache)
-```
-
-**Cache Structure**:
-```json
-{
-  "passage_extractions": { "passage_id": { "facts": [...] } },
-  "summarized_facts": { "constants": {...}, "characters": {...} },
-  "categorized_facts": { "...", "per_passage": {...} }
-}
-```
-
-**Key Features**:
-- **Two-level cache**: Per-passage (detailed) + summarized (unified)
-- **Evidence preservation**: Every fact cites source passages with quotes
-- **Conservative deduplication**: When uncertain, keep facts separate
-- **Conflict detection**: Contradictions flagged, not auto-resolved
-- **Cache-first build**: HTML renders from cache, no Ollama in CI
-- **Graceful fallback**: Uses per-passage data if summarization fails
-
-**Ollama Configuration**:
-- Model: `gpt-oss:20b-fullcontext`
-- Thinking mode: `think: "low"` (reduces token consumption)
-- Extraction timeout: 120 seconds per passage
-- Summarization timeout: 300 seconds
-
-See `architecture/010-story-bible-design.md` for complete design documentation.
-
-### 6. Writing Metrics & Statistics
-
-**Location**: `/scripts/calculate-metrics.py`, `/formats/metrics/`
-
-**Purpose**: Word count statistics and writing progress tracking
-
-**Constraint Category**: CI Build (deterministic, no Ollama)
-
-**Features**:
-- Total word count across Twee source files
-- Passage statistics (min/mean/median/max words per passage)
-- File statistics (min/mean/median/max words per file)
-- Distribution buckets (0-100, 101-300, 301-500, 501-1000, 1000+ words)
-- Top N longest passages
-- CLI output (text) and HTML output (metrics.html)
-
-**Future Enhancement**: Will consume `story_graph.json` from core library (see ADR-012)
-
-See `architecture/009-writing-metrics-design.md` for complete design documentation.
-
-### 7. Landing Page
-
-**Location**: `/formats/landing/`
-
-**Purpose**: Central navigation hub linking to all output formats
-
-**Constraint Category**: CI Build (static HTML generation)
-
-**Features**:
-- Links to all formats (Harlowe story, AllPaths, Metrics, Story Bible, Proofread)
-- Descriptions of each format and its intended use
-- Consistent styling with other formats
-
-See `architecture/011-landing-page-design.md` for complete design documentation.
-
-### 8. Twee Linter
-
-**Location**: `/scripts/lint-twee.py` (planned)
-
-**Purpose**: Static analysis and quality checks for Twee source files
-
-**Constraint Category**: CI Build (gating check that blocks merge)
-
-**Planned Features**:
-- Passage name validation
-- Dead-end detection (passages with no links)
-- Unreachable passage detection
-- Duplicate passage detection
-- Link target validation (ensure all link targets exist)
-- Style consistency checks
-
-See `architecture/twee-linter-design.md` for design documentation.
-
----
-
-### 9. Webhook Service
-
-**Location**: `/services/continuity-webhook.py`
-
-**Purpose**: GitHub webhook receiver for automated AI validation on PRs
-
-**Architecture**:
-- **Flask Web Service**: Listens on port 5000 (configurable)
-- **Asynchronous Processing**: Background threads for long-running checks
-- **GitHub Integration**: Downloads artifacts, posts comments
-- **Job Management**: Tracks active jobs, cancels superseded checks
-
-**Security**:
-- **Webhook Signature Verification**: HMAC-SHA256 validation
-- **Artifact Validation**: Structure and size checks before processing
-- **Path Traversal Protection**: Validates ZIP file extraction paths
-- **SSRF Prevention**: Validates artifact URLs are from GitHub
-- **Authorization**: Only collaborators can approve paths
-
-**Data Flow**:
-```
-GitHub Actions → Workflow completes → Sends webhook
-    ↓
-Webhook Service receives event
-    ↓
-Verify HMAC signature
-    ↓
-Download story-preview artifact (ZIP)
-    ↓
-Extract and validate artifact structure
-    ↓
-Load validation cache and passage mapping
-    ↓
-Determine paths to check (based on mode)
-    ↓
-Post initial comment with path list
-    ↓
-For each path (with cancellation checks):
-  - Run AI continuity check
-  - Post progress update to PR
-    ↓
-Post final summary comment
-    ↓
-Update job metrics
-```
-
-**Endpoints**:
-- `POST /webhook`: Receives GitHub webhooks
-- `GET /health`: Health check (token status, config validation)
-- `GET /status`: Live metrics (active jobs, statistics)
-
-**GitHub App Support**:
-- Primary authentication via GitHub App (JWT + installation token)
-- Fallback to Personal Access Token
-- Token caching with automatic refresh
-
-**PR Commands**:
-- `/check-continuity [mode]`: Trigger validation with specific mode
-- `/approve-path <id1> <id2> ...`: Mark paths as validated
-- `/approve-path all`: Approve all checked paths
-- `/approve-path new`: Approve all new paths
-
-### 10. GitHub Actions Pipeline
-
-**Location**: `/.github/workflows/build-and-deploy.yml`
-
-**Trigger Events**:
-- Push to main branch
-- Pull requests
-- Manual workflow dispatch
-
-**Build Steps**:
-1. **Checkout**: Clone repository
-2. **Setup**: Install dependencies (Node.js, Tweego)
-3. **Build Story**: Compile Twee to playable HTML
-4. **Build AllPaths**: Generate all story paths
-5. **Upload Artifacts**: Package build outputs
-6. **Deploy**: GitHub Pages deployment (main branch only)
-7. **Webhook**: Triggers continuity check service
-
-**Artifact Structure**:
-```
-story-preview/
-├── dist/
-│   ├── allpaths.html
-│   ├── allpaths-clean/
-│   ├── allpaths-metadata/
-│   └── allpaths-passage-mapping.json
-└── allpaths-validation-status.json
-```
-
-## Data Flow
-
-### Development Workflow
+- Tweego versions and story formats are pinned in the workflow; `scripts/build-*.sh` are thin
+  wrappers around tweego and `nanoif` ([015](architecture/015-nanoif-package.md)).
+- `nanoif build core` parses once; every format reads the core artifacts and never another
+  format's output ([015](architecture/015-nanoif-package.md)).
+- Categories (new / modified / unchanged) and `changes.json` come from comparing the working
+  tree with the PR's merge base in git; there is no validation cache
+  ([017](architecture/017-git-based-categorization.md)).
+- `nanoif check structure src/` and `nanoif lint src/` report on the same source; neither
+  writes to it ([018](architecture/018-structure-check-and-report-only-lint.md)).
+
+## Pull request flow
+
+The Actions integration below is being implemented; the workflows currently in the tree are the
+earlier single build workflow plus `intent.yml`.
 
 ```
-Developer writes story (.twee files)
-    ↓
-Commit and push to feature branch
-    ↓
-Open pull request
-    ↓
-GitHub Actions runs build
-    ↓
-Uploads story-preview artifact
-    ↓
-Workflow completes successfully
-    ↓
-GitHub sends webhook to continuity service
-    ↓
-Service downloads artifacts
-    ↓
-Runs AI validation (new-only mode)
-    ↓
-Posts real-time progress comments
-    ↓
-Posts final summary
-    ↓
-Developer reviews feedback
-    ↓
-Developer can run /check-continuity modified for broader check
-    ↓
-Developer approves paths with /approve-path
-    ↓
-Service commits updated cache to PR branch
-    ↓
-Merge to main when ready
-    ↓
-Deploy to GitHub Pages
+PR opened / pushed
+  ├─ build   (hosted, contents: read) → story-preview artifact, Structure check run,
+  │                                     <!-- nano:build --> comment
+  ├─ test    (hosted) → pytest + ruff, required
+  ├─ Intent  (hosted) → nanoif intent check + intent range, required
+  ├─ probe   (hosted) → curl EXE_HEALTH_URL → runner = exe | hosted
+  └─ ai-review (needs build, probe; same-repo PRs only; timeout 45 min)
+        runner=exe:    nanoif ai review --mode changed → ai-review.json
+                       → <!-- nano:continuity --> and <!-- nano:style --> comments + check runs
+        runner=hosted: "AI review unavailable" comment, failing check, no model call
 ```
 
-### Validation Cache Lifecycle
+- One sticky comment per check type, found by its HTML marker and edited in place; one check
+  run per type (success = pass, neutral = findings, failure = could not run)
+  ([014](architecture/014-actions-automation-exe-runner.md)).
+- `ai-review.json` is the only contract between the editors and the GitHub reporter; it
+  records per-editor and per-unit status so "could not check" is always visible
+  ([019](architecture/019-ai-review-contract.md)).
+- Review units are built per changed passage from `story_graph.json` and `changes.json`;
+  findings have stable keys `f-<8 hex>` so a contradiction is reported once and can be
+  dismissed ([019](architecture/019-ai-review-contract.md)).
+- Slash commands on a PR (`/check-continuity [all] [passage=<name>]`, `/extract-story-bible`,
+  `/dismiss <key> [reason]`) run in `ai-command.yml` only for owners, members and
+  collaborators ([014](architecture/014-actions-automation-exe-runner.md)).
+
+## Main branch flow
 
 ```
-Build starts
-    ↓
-Load existing allpaths-validation-status.json
-    ↓
-Generate all paths with DFS
-    ↓
-For each path:
-  - Calculate content fingerprint
-  - Compare with cached fingerprint
-  - Categorize as new/modified/unchanged
-  - Preserve validated status if unchanged
-    ↓
-Save updated cache with all paths
-    ↓
-Include cache in build artifacts
-    ↓
-AI validation uses cache to filter paths
-    ↓
-AI updates cache with validation results
-    ↓
-Developer approves paths (updates cache)
-    ↓
-Cache committed back to repository
+push to main
+  ├─ build (hosted)
+  ├─ bible-extract (exe, contents: write) → nanoif bible extract --incremental
+  │                                        → commit ai/story-bible-cache.json if changed
+  └─ render-and-deploy (hosted, always runs) → rebuild with the current cache → Pages
 ```
 
-## Design Principles and Patterns
-
-### 1. Content-Based Hashing
-
-**Principle**: Path identity and change detection based on content, not structure
-
-**Implementation**:
-- **Path ID**: MD5 hash of passage route (8-char hex)
-- **Content Fingerprint**: Hash of prose content (excluding link text)
-- **Raw Content Fingerprint**: Hash including link text
-
-**Benefits**:
-- Stable IDs across builds
-- Automatic change detection
-- Efficient incremental validation
-
-### 2. Separation of Concerns
-
-**Structure**:
-- **Source**: Twee files (story content only)
-- **Build**: Scripts (transformation logic)
-- **Validation**: Separate service (quality assurance)
-- **Deployment**: GitHub Actions (automation)
-
-**Benefits**:
-- Clear responsibilities
-- Testable components
-- Independent scaling
-
-### 3. Progressive Enhancement
-
-**Layers**:
-1. **Core Story**: Playable in browser
-2. **AllPaths Browser**: Enhanced review interface
-3. **AI Validation**: Automated quality checks
-4. **Webhook Integration**: Real-time PR feedback
-
-**Benefits**:
-- Works at every layer
-- Optional enhancements
-- Graceful degradation
-
-### 4. Asynchronous Processing
-
-**Pattern**: Fire-and-forget with status tracking
-
-**Implementation**:
-- Webhook returns 202 Accepted immediately
-- Processing happens in background thread
-- Real-time progress updates via PR comments
-- Status endpoint for monitoring
-
-**Benefits**:
-- Webhook timeouts avoided
-- Better user experience
-- Resource management
-
-### 5. Validation Modes
-
-**Pattern**: Selective processing based on change category
-
-**Implementation**:
-- **new-only**: Fast feedback during development
-- **modified**: Pre-merge validation
-- **all**: Full audit after major changes
-
-**Benefits**:
-- Faster validation cycles
-- Efficient resource usage
-- Flexible quality gates
-
-### 6. Security in Depth
-
-**Layers**:
-1. **Webhook Signature Verification**: Prevent spoofing
-2. **Artifact Validation**: Check structure and size
-3. **Path Traversal Protection**: Validate ZIP extraction
-4. **SSRF Prevention**: Validate artifact URLs
-5. **Content Sanitization**: Clean AI output
-6. **Authorization**: Verify collaborator status
-
-**Benefits**:
-- Multiple failure points for attacks
-- Reduced attack surface
-- Safe PR processing
-
-## Deployment Architecture
-
-### Production Environment
-
-**GitHub Pages**:
-- **URL**: `https://<username>.github.io/NaNoWriMo2025/`
-- **Content**: Static HTML story files
-- **Updates**: Automatic on main branch push
-- **SSL**: GitHub-provided HTTPS
-
-**Webhook Service**:
-- **Host**: Self-hosted server (user systemd service)
-- **Runtime**: Gunicorn WSGI server
-- **Reverse Proxy**: Nginx or Caddy for HTTPS
-- **SSL**: Let's Encrypt automatic renewal
-- **Monitoring**: `/health` and `/status` endpoints
-
-**Ollama Service**:
-- **Host**: Same server as webhook service
-- **Model**: gpt-oss:20b-fullcontext
-- **API**: HTTP on localhost:11434
-- **Timeout**: 300 seconds per path
-
-### Development Environment
-
-**Local Build**:
-```bash
-npm install          # Install dependencies
-npm run build        # Build playable story
-npm run build:allpaths  # Generate all paths
-```
-
-**Local Validation**:
-```bash
-python3 scripts/check-story-continuity.py \
-  dist/allpaths-metadata \
-  allpaths-validation-status.json
-```
-
-**Service Development**:
-```bash
-cd services
-source venv/bin/activate
-python3 continuity-webhook.py  # Run webhook service locally
-```
-
-## Technology Choices and Rationale
-
-### Twee3 + Tweego
-
-**Choice**: Twee3 format with Tweego compiler
-
-**Rationale**:
-- Plain text format works well with git
-- No proprietary tools required
-- Supports Harlowe (accessible, natural-language macro system)
-- Command-line compilation for CI/CD
-- Open source and actively maintained
-
-**Alternatives Considered**:
-- Twine GUI: Not suitable for version control
-- Ink: Different syntax, less macro support
-- ChoiceScript: Proprietary, limited customization
-
-### Python for Build Tools
-
-**Choice**: Python 3.12+ for generator and validation scripts
-
-**Rationale**:
-- Excellent JSON/HTML parsing libraries
-- Simple DFS implementation
-- Cross-platform compatibility
-- Good HTTP client libraries (requests)
-- Native regex and hashing support
-
-**Alternatives Considered**:
-- JavaScript/Node.js: Already used for Tweego, avoid mixing
-- Bash: Too complex for graph algorithms
-- Go: Overkill for scripting tasks
-
-### Flask for Webhook Service
-
-**Choice**: Flask lightweight web framework
-
-**Rationale**:
-- Simple webhook receiver pattern
-- Easy background threading
-- Built-in request parsing
-- Minimal dependencies
-- Well-documented
-
-**Alternatives Considered**:
-- FastAPI: Overkill for simple webhooks
-- Django: Too heavy for this use case
-- Direct socket server: More complex
-
-### GitHub Actions
-
-**Choice**: GitHub Actions for CI/CD
-
-**Rationale**:
-- Native GitHub integration
-- Free for public repositories
-- Built-in artifact storage
-- Webhook event integration
-- Secret management
-
-**Alternatives Considered**:
-- Jenkins: Requires self-hosting
-- GitLab CI: Not using GitLab
-- Travis CI: Less integrated with GitHub
-
-### Ollama for AI
-
-**Choice**: Ollama local inference engine
-
-**Rationale**:
-- Self-hosted (data privacy)
-- HTTP API (simple integration)
-- Multiple model support
-- No API costs
-- Works offline
-
-**Alternatives Considered**:
-- OpenAI API: Cost, data privacy concerns
-- Claude API: Cost, rate limits
-- HuggingFace: More complex setup
-
-### MD5 for Path Hashing
-
-**Choice**: MD5 for path identification
-
-**Rationale**:
-- Not used for security (collision resistance not critical)
-- Fast computation
-- Stable across platforms
-- Short 8-char hex IDs
-- Standard library support
-
-**Alternatives Considered**:
-- SHA256: Overkill, longer output
-- UUID: Non-deterministic
-- Sequential numbering: Unstable across builds
-
-## Scalability Considerations
-
-### Current Limitations
-
-- **Single-threaded AI validation**: One path at a time per PR
-- **Ollama local inference**: Limited by local hardware
-- **In-memory job tracking**: Lost on service restart
-- **No job queue**: PRs processed as webhooks arrive
-
-### Future Scalability
-
-**If path count grows significantly**:
-- Parallel AI validation with worker pool
-- Distributed Ollama instances
-- Redis for job queue and state
-- Database for validation history
-
-**If PR volume increases**:
-- Job queue with priority
-- Multiple webhook service instances
-- Load balancer for distribution
-- Shared cache storage (S3/Redis)
-
-## Dependencies
-
-### Runtime Dependencies
-
-**Build System**:
-- Node.js (package management)
-- Tweego (story compilation)
-- Python 3.12+ (generators and scripts)
-
-**Webhook Service**:
-- Python 3.12+
-- Flask (web framework)
-- requests (HTTP client)
-- PyJWT (GitHub App authentication)
-- Ollama (AI inference)
-
-**Deployment**:
-- GitHub Actions (CI/CD)
-- GitHub Pages (hosting)
-- Nginx/Caddy (reverse proxy)
-- systemd (service management)
-
-### Development Dependencies
-
-- git (version control)
-- npm (package management)
-- OpenSSL (webhook secret generation)
-- Let's Encrypt (SSL certificates)
-
-## Monitoring and Observability
-
-### Webhook Service
-
-**Health Check**:
-```bash
-curl https://your-server.com/health
-```
-
-**Live Metrics**:
-```bash
-curl https://your-server.com/status
-```
-
-**Logs**:
-```bash
-journalctl --user -u continuity-webhook -f
-```
-
-### GitHub Actions
-
-**Workflow Status**: Repository Actions tab
-**Artifact Downloads**: Available from workflow runs
-**Deployment Status**: GitHub Pages settings
-
-### AI Validation
-
-**Progress Updates**: Real-time PR comments
-**Final Summary**: Comprehensive PR comment with all results
-**Validation Cache**: Git-tracked status file
-
-## Error Handling
-
-### Build Failures
-
-**Tweego compilation errors**:
-- Fail workflow immediately
-- Show error in GitHub Actions log
-- No artifacts uploaded
-
-**Python script errors**:
-- Logged to stderr
-- Return non-zero exit code
-- Workflow fails, no deployment
-
-### Webhook Service Errors
-
-**Signature verification failure**:
-- Return 401 Unauthorized
-- Log security warning
-- No processing occurs
-
-**Artifact download failure**:
-- Log error
-- No PR comment posted
-- Job marked as failed
-
-**AI validation errors**:
-- Catch per-path exceptions
-- Post generic error to PR
-- Continue with remaining paths
-- Update job metrics
-
-### Recovery Mechanisms
-
-**Service restart**:
-- Active jobs lost (by design)
-- Re-run checks manually with `/check-continuity`
-
-**Cache corruption**:
-- Delete `allpaths-validation-status.json`
-- Next build recreates with all paths as "new"
-
-**Ollama timeout**:
-- Per-path 300s timeout
-- Skip path, continue with others
-- Report timeout in PR comment
-
-## Testing Strategy
-
-### Build Testing
-
-**Local testing**:
-```bash
-npm run build
-npm run build:allpaths
-```
-
-**Validation**:
-- Check dist/ outputs exist
-- Verify allpaths.html opens
-- Review validation cache structure
-
-### Webhook Service Testing
-
-**Health check**:
-```bash
-curl http://localhost:5000/health
-```
-
-**Local AI check**:
-```bash
-python3 scripts/check-story-continuity.py \
-  dist/allpaths-metadata \
-  allpaths-validation-status.json
-```
-
-**Simulated webhook**:
-- Generate HMAC signature
-- POST to /webhook endpoint
-- Monitor logs for processing
-
-### Integration Testing
-
-**PR workflow**:
-1. Create test branch
-2. Modify passage
-3. Open PR
-4. Verify workflow runs
-5. Check webhook receives event
-6. Verify PR comments posted
-7. Test approval flow
-
-## Documentation
-
-### User Documentation
-
-- **README.md**: Project overview and setup
-- **features/*.md**: Feature specifications
-- **formats/allpaths/README.md**: AllPaths format guide
-- **services/README.md**: Webhook service setup
-
-### Developer Documentation
-
-- **ARCHITECTURE.md**: This document
-- **STANDARDS.md**: Coding and documentation standards
-- **architecture/*.md**: Architecture decision records
-
-### API Documentation
-
-- **Webhook service**: Inline docstrings in Python
-- **Generator**: Inline comments in generator.py
-- **Build scripts**: Header comments in shell scripts
+- A failed extraction still deploys, with the previous cache and a freshness notice
+  ([020](architecture/020-story-bible-v2.md), Proposed; the current renderer reads the
+  earlier cache format per [010](architecture/010-story-bible-design.md)).
+- `ai-maintenance.yml` (manual, and a daily `runner-check` in November) runs `extract-full`,
+  `check-all`, `eval` and `runner-check`; `pr-closed` records finding outcomes on merge.
+
+## State
+
+| File | Written by | Read by |
+|---|---|---|
+| `ai/story-bible-cache.json` (v2) | `bible-extract` on main | `nanoif build story-bible`, canon pack |
+| `ai/dismissals.jsonl` | `/dismiss` job on main | `nanoif ai review` (suppression) |
+| `ai/outcomes.jsonl` | `pr-closed` on main | false-positive review |
+| `story-overrides.txt` | writers | `nanoif check structure`, Story Bible |
+| `dist/**`, `lib/artifacts/**` | every build | pages, AI jobs via `story-preview` |
+
+Only those three `main` jobs have `contents: write`, and only for `ai/`. No automation commits
+to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)). Until Story Bible v2
+lands, the renderer reads the earlier cache format from `story-bible-cache.json` at the
+repository root ([010](architecture/010-story-bible-design.md)).
+
+## Data contracts
+
+Every JSON artifact that crosses a job or process boundary has a schema in
+`nanoif/schemas/artifacts/` and is validated when written and when read
+([015](architecture/015-nanoif-package.md)).
+
+| Artifact | Schema | Producer → consumer |
+|---|---|---|
+| `story_graph.json` | `story_graph` | `build core` → every format, review units |
+| `passages_deduplicated.json` | `passages_deduplicated` | `build core` → Story Bible |
+| `allpaths-index.json` | `allpaths_index` | `build allpaths` → pages, tools ([017](architecture/017-git-based-categorization.md)) |
+| `changes.json` | `changes` | `build allpaths` → `ai review --mode changed` ([017](architecture/017-git-based-categorization.md)) |
+| `structure --format json` | `structure_findings` | `check structure` → Structure check run ([018](architecture/018-structure-check-and-report-only-lint.md)) |
+| `ai-review.json` | `ai_review` | `ai review` → GitHub reporter, `/dismiss` ([019](architecture/019-ai-review-contract.md)) |
+| model output | `nanoif/prompts/<name>.schema.json` | model → editors ([016](architecture/016-llm-client-and-prompt-contract.md)) |
+
+Other contracts: comment markers `<!-- nano:build -->` and `<!-- nano:<editor> -->`, env
+`NANOIF_LLM_*` and `NANOIF_REVIEW_UNIT_BUDGET`, repository variables `LLM_PROFILE`,
+`LLM_MODEL`, `EXE_HEALTH_URL`, `AI_RUNNER`.
+
+## Where each concern lives in `nanoif/`
+
+| Module | Concern |
+|---|---|
+| `cli.py` | `nanoif` commands; every path derived from `--repo` or an explicit argument |
+| `errors.py` | package error hierarchy (`NanoifError`) |
+| `twee/` | the one header regex (`files`), link parser (`links`), story parser (`parse`), prose and word counts, passage hashes, report-only linter (`lint`) |
+| `graph/` | path enumeration (`paths`), base comparison and categories (`categorize`), passage ids and the path-id lookup (`ids`) |
+| `git/` | the one `git` service: cached, timed, one `git log` per build |
+| `build/` | repository layout (`paths`) and `build core` |
+| `formats/` | `allpaths`, `metrics`, `passages`, `story_bible` pages from core artifacts; HTML in `templates/html/` |
+| `check/` | `structure` checks and the `story-overrides.txt` syntax parser |
+| `schemas/` | artifact schemas and write/read validation |
+| `llm/` | client, profiles, schema parsing, pricing, test doubles ([016](architecture/016-llm-client-and-prompt-contract.md)) |
+| `prompts/` | Jinja prompts with sibling output schemas |
+| `review/` | review units, Continuity and Style editors, finding keys (being built, [019](architecture/019-ai-review-contract.md)) |
+| `bible/` | Story Bible v2 stages and canon pack (planned, [020](architecture/020-story-bible-v2.md)) |
+| `eval/` | scoring against `tests/fixtures/eval-story/truth.json` and baseline diffs |
+| `intent/` | criterion and ADR index, citation check, commit gate ([021](architecture/021-intent-gate.md)) |
+
+## Failure handling
+
+- A build step that cannot read or validate its input raises a typed error; the CLI prints one
+  `error:` line and exits 1, and the job fails.
+- An AI job that cannot reach its runner or model says "unavailable" or marks the unit `error`;
+  an editor reports zero findings as a pass only when every unit was reviewed.
+- No `|| true`, `exit 0` or `continue-on-error` hides a failure; report-only steps still leave
+  annotations, a check run or a step-summary line.
+- The token budget per job (`NANOIF_LLM_MAX_TOKENS_PER_JOB`) stops a runaway job with an error.
+
+## Intent
+
+Feature notes (`features/`), ADRs and this page are checked by `nanoif intent check`, and
+governed code changes carry an intent update or an `Intent: unchanged (...)` trailer
+([021](architecture/021-intent-gate.md)).

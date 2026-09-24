@@ -2,7 +2,7 @@
 
 ## Status
 
-**Approved** - Ready for implementation
+Status: Accepted
 
 **Created:** 2025-11-30
 **Author:** Architect

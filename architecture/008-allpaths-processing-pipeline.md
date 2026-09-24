@@ -2,7 +2,7 @@
 
 ## Status
 
-**Accepted and Implemented**
+Status: Superseded by ADR-017
 
 ## Context
 
