@@ -31,3 +31,10 @@ tmp/
 
 # Agent worktrees
 .claude/worktrees/
+
+# Python packaging and tooling
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+build/
