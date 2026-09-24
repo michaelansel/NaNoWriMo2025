@@ -39,7 +39,7 @@ markers = ["slow: needs network, git history, or an LLM profile"]
 line-length = 100
 target-version = "py311"
 # Legacy trees are migrated into nanoif/ during Phase 1 and deleted; they are not linted.
-extend-exclude = ["formats", "services", "scripts", "lib"]
+extend-exclude = ["services", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "I"]
