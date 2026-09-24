@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "nanoif/schemas/llm/truth.schema.json",
+  "title": "Eval story ground truth",
+  "description": "Manifest for tests/fixtures/eval-story/truth.json: what the extractor, resolver, and editors must get right on the canonical test story.",
+  "type": "object",
+  "required": [
+    "version",
+    "story",
+    "entities",
+    "facts",
+    "contradictions",
+    "pronoun_cases",
+    "distractors",
+    "scene_state",
+    "defects",
+    "clean_paths"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "const": 1 },
+    "story": {
+      "type": "object",
+      "required": ["title", "initials", "protagonist", "perspective", "tense", "entry_passages"],
+      "additionalProperties": false,
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "initials": { "type": "string", "pattern": "^[A-Z]{2,4}$" },
+        "protagonist": { "type": "string", "minLength": 1 },
+        "perspective": { "enum": ["first-person", "second-person", "third-person"] },
+        "tense": { "enum": ["past", "present"] },
+        "entry_passages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/passageName" } }
+      }
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "type", "aliases", "reference_kinds", "passages"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["character", "location", "item", "group", "world"] },
+          "aliases": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "reference_kinds": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "enum": ["direct", "dialogue_only", "possessive_only", "indirect", "titled", "nickname", "pronoun"]
+            }
+          },
+          "passages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/passageName" } },
+          "owner": { "type": ["string", "null"], "description": "Owning entity name for an owned item." },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "facts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "entity", "claim", "passage", "kind", "evidence_phrase"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "entity": { "type": "string", "minLength": 1 },
+          "claim": { "type": "string", "minLength": 1 },
+          "passage": { "$ref": "#/$defs/passageName" },
+          "kind": { "enum": ["trait", "relationship", "possession", "world", "event", "location"] },
+          "evidence_phrase": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Verbatim substring of the passage text."
+          }
+        }
+      }
+    },
+    "contradictions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "passages", "quotes", "intentional", "type", "scope"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "passages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/passageName" } },
+          "quotes": { "type": "array", "minItems": 2, "items": { "type": "string", "minLength": 1 } },
+          "intentional": { "type": "boolean" },
+          "type": { "type": "string", "minLength": 1 },
+          "scope": { "enum": ["same_path", "cross_branch", "within_passage"] },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "pronoun_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "passage", "sentence", "pronoun", "expected"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "passage": { "$ref": "#/$defs/passageName" },
+          "sentence": { "type": "string", "minLength": 1 },
+          "pronoun": { "type": "string", "minLength": 1 },
+          "expected": {
+            "type": ["string", "null"],
+            "description": "Entity name the pronoun resolves to, or null when genuinely ambiguous."
+          }
+        }
+      }
+    },
+    "distractors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phrase", "passage", "sentence"],
+        "additionalProperties": false,
+        "properties": {
+          "phrase": { "type": "string", "minLength": 1 },
+          "passage": { "$ref": "#/$defs/passageName" },
+          "sentence": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "scene_state": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["passage", "statement", "entity"],
+        "additionalProperties": false,
+        "properties": {
+          "passage": { "$ref": "#/$defs/passageName" },
+          "statement": { "type": "string", "minLength": 1 },
+          "entity": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "defects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "passages", "quotes", "expected_severity"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "type": {
+            "enum": ["name_typo", "death_then_alive", "world_rule", "timeline", "pov_slip", "tense_slip"]
+          },
+          "passages": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/passageName" } },
+          "quotes": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+          "expected_severity": { "enum": ["critical", "major", "minor"] },
+          "description": { "type": "string" }
+        }
+      }
+    },
+    "clean_paths": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "route"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "route": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/passageName" } }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "passageName": { "type": "string", "minLength": 1 }
+  }
+}
