@@ -712,4 +712,16 @@ class TestLintCli:
 
     def test_missing_path_reports_error(self, tmp_path, capsys):
         assert main(["lint", str(tmp_path / "nope")]) == 1
+
+    @pytest.mark.intent("ADR-018")
+    def test_exit_zero_reports_issues_but_succeeds(self, tmp_path, capsys):
+        (tmp_path / "test.twee").write_text("::Start\nText\n")
+        assert main(["lint", str(tmp_path), "--format", "github", "--exit-zero"]) == 0
+        captured = capsys.readouterr()
+        assert captured.out.startswith("::warning file=")
+        assert "2 formatting issue(s)" in captured.err
+
+    @pytest.mark.intent("ADR-018")
+    def test_exit_zero_still_fails_when_the_linter_cannot_run(self, tmp_path, capsys):
+        assert main(["lint", str(tmp_path / "nope"), "--exit-zero"]) == 1
         assert "error:" in capsys.readouterr().err

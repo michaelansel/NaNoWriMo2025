@@ -18,12 +18,6 @@ SCHEMA = {
 }
 
 
-def test_schema_dir_points_at_package_schemas():
-    assert SCHEMA_DIR.name == "llm"
-    assert SCHEMA_DIR.parent.name == "schemas"
-    assert SCHEMA_DIR.parent.parent.name == "nanoif"
-
-
 def test_load_schema_reads_and_checks_the_file(tmp_path):
     (tmp_path / "thing.schema.json").write_text(json.dumps(SCHEMA), encoding="utf-8")
     assert load_schema("thing", tmp_path) == SCHEMA
@@ -40,8 +34,25 @@ def test_load_schema_errors_are_typed(tmp_path):
         load_schema("invalid", tmp_path)
 
 
-def test_truth_schema_ships_in_the_package():
-    schema = load_schema("truth")
+@pytest.mark.intent("ADR-016")
+def test_default_schema_dir_is_next_to_the_prompts():
+    assert SCHEMA_DIR.name == "prompts"
+    for name in ("continuity", "style"):
+        assert load_schema(name)["type"] == "object"
+
+
+@pytest.mark.intent("ADR-016")
+def test_every_prompt_has_a_sibling_schema():
+    prompts = sorted(SCHEMA_DIR.glob("*.md"))
+    assert prompts, "no prompt templates found"
+    for prompt in prompts:
+        assert prompt.with_name(prompt.stem + ".schema.json").is_file(), prompt.name
+
+
+def test_truth_schema_ships_with_the_eval_package():
+    from nanoif.eval import TRUTH_SCHEMA
+
+    schema = load_schema("truth", TRUTH_SCHEMA.parent)
     assert schema["type"] == "object"
     assert "entities" in schema["required"]
 

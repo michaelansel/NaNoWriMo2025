@@ -15,7 +15,8 @@ from jsonschema import Draft202012Validator
 
 from nanoif.llm.errors import LLMConfigError, LLMSchemaError
 
-SCHEMA_DIR = Path(__file__).resolve().parent.parent / "schemas" / "llm"
+SCHEMA_DIR = Path(__file__).resolve().parent.parent / "prompts"
+"""Output schemas live beside the prompt templates that produce them (ADR-016)."""
 
 
 def load_schema(name: str, schema_dir: Path | None = None) -> dict[str, Any]:
@@ -23,7 +24,7 @@ def load_schema(name: str, schema_dir: Path | None = None) -> dict[str, Any]:
 
     Args:
         name: Schema name without the ``.schema.json`` suffix.
-        schema_dir: Directory to read from; defaults to ``nanoif/schemas/llm``.
+        schema_dir: Directory to read from; defaults to ``nanoif/prompts``.
 
     Returns:
         The parsed schema.

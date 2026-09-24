@@ -77,17 +77,11 @@ jobs:
 
       - name: Lint twee formatting (report-only)
         # Issues become warning annotations and a step-summary line; nothing edits the
-        # writer's files. Exit 1 with the summary line means "issues found"; anything
-        # else is the linter failing, which fails the job.
+        # writer's files. --exit-zero keeps issues from failing the job, while a linter
+        # error (unreadable path, crash) still exits non-zero and fails it (ADR-018).
         run: |
-          set +e
-          nanoif lint src/ --format github 2> "$RUNNER_TEMP/lint.txt"
-          code=$?
-          set -e
+          nanoif lint src/ --format github --exit-zero 2> "$RUNNER_TEMP/lint.txt"
           cat "$RUNNER_TEMP/lint.txt"
-          if [ "$code" -ne 0 ] && ! grep -q "formatting issue" "$RUNNER_TEMP/lint.txt"; then
-            exit "$code"
-          fi
           echo "Twee formatting (report-only): $(tail -n 1 "$RUNNER_TEMP/lint.txt")" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check story structure

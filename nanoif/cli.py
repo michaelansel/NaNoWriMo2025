@@ -165,7 +165,7 @@ def _lint(args: argparse.Namespace) -> int:
         print(violation.github() if args.format == "github" else str(violation))
     files = len({violation.file for violation in violations})
     print(f"{len(violations)} formatting issue(s) in {files} file(s)", file=sys.stderr)
-    return 1 if violations else 0
+    return 1 if violations and not args.exit_zero else 0
 
 
 def _check_structure(args: argparse.Namespace) -> int:
@@ -326,6 +326,11 @@ def build_parser() -> argparse.ArgumentParser:
     lint = subparsers.add_parser("lint", help="report Twee formatting issues (never edits files)")
     lint.add_argument("path", type=Path, help=".twee file or directory")
     lint.add_argument("--format", choices=["text", "github"], default="text")
+    lint.add_argument(
+        "--exit-zero",
+        action="store_true",
+        help="report issues but exit 0; a linter error still exits 1 (report-only CI)",
+    )
     lint.set_defaults(handler=_lint)
 
     check = subparsers.add_parser("check", help="deterministic story checks")

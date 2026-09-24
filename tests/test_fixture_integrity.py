@@ -18,7 +18,7 @@ import pytest
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "eval-story"
 SRC = FIXTURE / "src"
 SCHEMA_PATH = (
-    Path(__file__).resolve().parent.parent / "nanoif" / "schemas" / "llm" / "truth.schema.json"
+    Path(__file__).resolve().parent.parent / "nanoif" / "eval" / "truth.schema.json"
 )
 
 HEADER = re.compile(r"^:: *(?P<name>[^\[\{]+?)\s*(\[[^\]]*\])?\s*(\{.*\})?\s*$")

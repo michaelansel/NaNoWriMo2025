@@ -5,7 +5,7 @@ import hashlib
 import pytest
 
 from nanoif.errors import GraphError
-from nanoif.graph.paths import PathEnumeration, enumerate_paths, path_hash, route_hash
+from nanoif.graph.paths import PathEnumeration, enumerate_paths, path_hash
 
 
 def test_enumerate_linear_story_has_one_path():
@@ -92,6 +92,3 @@ def test_path_hash_missing_passage_is_marked():
     assert path_hash(["Gone"], {}) == hashlib.md5(b"Gone:MISSING").hexdigest()[:8]
 
 
-def test_route_hash_depends_on_names_only():
-    assert route_hash(["Start", "Middle", "End"]) == hashlib.md5("Start → Middle → End".encode()).hexdigest()[:8]
-    assert route_hash(["Start", "End"]) != route_hash(["Start", "Middle", "End"])

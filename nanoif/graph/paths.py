@@ -92,14 +92,3 @@ def path_hash(route: Sequence[str], content: Mapping[str, str]) -> str:
     parts = [f"{name}:{content[name]}" if name in content else f"{name}:MISSING" for name in route]
     return hashlib.md5("\n".join(parts).encode("utf-8")).hexdigest()[:8]
 
-
-def route_hash(route: Sequence[str]) -> str:
-    """Return the 8-character id of a route; it depends on passage names only.
-
-    Args:
-        route: Passage names in order.
-
-    Returns:
-        The first 8 hex digits of the MD5 of the arrow-joined route.
-    """
-    return hashlib.md5(" → ".join(route).encode("utf-8")).hexdigest()[:8]

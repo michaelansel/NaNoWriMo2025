@@ -6,9 +6,11 @@ default-shaped success when something went wrong.
 
 from __future__ import annotations
 
+from nanoif.errors import NanoifError
 
-class LLMError(Exception):
-    """Base class for every error raised by ``nanoif.llm``."""
+
+class LLMError(NanoifError):
+    """Base class for every error raised by ``nanoif.llm``; a :class:`NanoifError`."""
 
 
 class LLMConfigError(LLMError):
