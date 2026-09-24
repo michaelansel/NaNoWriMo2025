@@ -11,7 +11,7 @@ paths:
 - `issue_comment` handlers check `author_association` in `OWNER, MEMBER, COLLABORATOR` before anything that spends tokens.
 - Sticky comments are found by HTML marker (`<!-- nano:build -->`, `<!-- nano:continuity -->`, `<!-- nano:style -->`) and edited in place; one per check type per PR.
 - Concurrency: `ci-pr-${{ github.event.number }}` and `ai-cmd-pr-N`, cancel-in-progress on PRs; never on main.
-- Pin tool versions in `env:` (tweego, dotgraph) and actions by major tag. Python 3.13 with pip cache; `pip install -e ".[dev]"`, never rely on the runner image.
+- Pin tool versions in one top-level `env:` block (tweego, Harlowe URL + sha256, dotgraph) and actions by major tag. Python 3.13 with pip cache on hosted runners (the exe VM uses a venv); `pip install -e ".[dev]"`, never rely on the runner image.
 - Every workflow has `workflow_dispatch`. Maintenance tasks are inputs to `ai-maintenance.yml`, not new workflows.
 - No `pull_request_target`. No secrets in the AI jobs; the exe profile needs none.
 - A workflow change is tested by a PR that exercises the changed path, and the PR description links the run.

@@ -1,0 +1,240 @@
+name: AI maintenance
+
+# Manual tasks (workflow_dispatch input `task`):
+#   check-all    review every passage on the exe runner; result in the step summary + artifact
+#   eval         score the prompts against tests/fixtures/eval-story on the exe runner
+#   runner-check probe the exe runner's healthz; open/update/close the "exe runner offline" issue
+# Scheduled: runner-check daily at 14:00 UTC, acting only in November (date guard in the job).
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: Maintenance task
+        required: true
+        type: choice
+        default: runner-check
+        options:
+          - check-all
+          - eval
+          - runner-check
+  schedule:
+    - cron: "0 14 * * *"
+
+permissions: {}
+
+concurrency:
+  group: ai-maintenance-${{ inputs.task || 'runner-check' }}
+  cancel-in-progress: false
+
+env:
+  PYTHON_VERSION: "3.13"
+  TWEEGO_VERSION: "2.1.1"
+  HARLOWE_VERSION: "3.3.9"
+  # Twine 2.10.0 bundles Harlowe 3.3.9; see .github/actions/build-story for why this URL.
+  HARLOWE_URL: "https://raw.githubusercontent.com/klembot/twinejs/2.10.0/public/story-formats/harlowe-3.3.9/format.js"
+  HARLOWE_SHA256: "803a0d9d4fb8c3c1c99eaf16f37db6feaad72e36fc7e5f6c5a168465419895f3"
+  DOTGRAPH_VERSION: "2.2.0"
+
+jobs:
+  runner-check:
+    name: runner-check
+    if: github.event_name == 'schedule' || inputs.task == 'runner-check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EXE_HEALTH_URL: ${{ vars.EXE_HEALTH_URL }}
+      TITLE: exe runner offline
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: November guard
+        id: guard
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = schedule ] && [ "$(date -u +%m)" != 11 ]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            echo "Scheduled runner-check acts only in November; nothing checked today." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Probe healthz
+        id: health
+        if: steps.guard.outputs.active == 'true'
+        run: |
+          if [ -z "$EXE_HEALTH_URL" ]; then
+            echo "healthy=false" >> "$GITHUB_OUTPUT"
+            echo "detail=vars.EXE_HEALTH_URL is not set" >> "$GITHUB_OUTPUT"
+          elif curl -fsS --max-time 10 "$EXE_HEALTH_URL"; then
+            echo "healthy=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "healthy=false" >> "$GITHUB_OUTPUT"
+            echo "detail=healthz did not answer 200 within 10 s" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Find the open tracking issue
+        id: issue
+        if: steps.guard.outputs.active == 'true'
+        run: |
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --label ops \
+            --json number,title --jq "[.[] | select(.title == \"$TITLE\")][0].number // empty")
+          echo "number=$number" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update the tracking issue
+        if: steps.guard.outputs.active == 'true' && steps.health.outputs.healthy != 'true'
+        env:
+          DETAIL: ${{ steps.health.outputs.detail }}
+          NUMBER: ${{ steps.issue.outputs.number }}
+        run: |
+          body="Runner health check failed at $(date -u +%Y-%m-%dT%H:%MZ): ${DETAIL}.
+          Until it recovers, every AI review posts \"AI review unavailable\" and fails its check.
+          Runbook: docs/exe-runner.md. Run: ${RUN_URL}"
+          if [ -n "$NUMBER" ]; then
+            gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh label create ops --repo "$GITHUB_REPOSITORY" --force \
+              --color B60205 --description "Runner and infrastructure"
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --label ops --body "$body"
+          fi
+          echo "::error::exe runner offline: ${DETAIL}"
+          exit 1
+
+      - name: Close the tracking issue
+        if: steps.guard.outputs.active == 'true' && steps.health.outputs.healthy == 'true' && steps.issue.outputs.number != ''
+        env:
+          NUMBER: ${{ steps.issue.outputs.number }}
+        run: |
+          gh issue close "$NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --comment "Runner healthy again at $(date -u +%Y-%m-%dT%H:%MZ). Run: ${RUN_URL}"
+
+  probe:
+    name: probe
+    if: github.event_name == 'workflow_dispatch' && (inputs.task == 'check-all' || inputs.task == 'eval')
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      runner: ${{ steps.probe.outputs.runner }}
+      reason: ${{ steps.probe.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+          persist-credentials: false
+      - id: probe
+        uses: ./.github/actions/probe-runner
+        with:
+          health-url: ${{ vars.EXE_HEALTH_URL }}
+          override: ${{ vars.AI_RUNNER }}
+
+  build:
+    name: build
+    if: github.event_name == 'workflow_dispatch' && inputs.task == 'check-all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/build-story
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: story-preview
+          path: |
+            dist/
+            lib/artifacts/
+          retention-days: 7
+
+  check-all:
+    name: check-all
+    needs: [probe, build]
+    if: github.event_name == 'workflow_dispatch' && inputs.task == 'check-all'
+    runs-on: ${{ needs.probe.outputs.runner == 'exe' && fromJSON('["self-hosted","exe"]') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ai-review
+        with:
+          runner: ${{ needs.probe.outputs.runner }}
+          unavailable-reason: ${{ needs.probe.outputs.reason }}
+          mode: all
+          artifact-name: ai-review-all
+          llm-profile: ${{ vars.LLM_PROFILE || 'exe' }}
+          llm-model: ${{ vars.LLM_MODEL }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+  eval:
+    name: eval
+    needs: probe
+    if: github.event_name == 'workflow_dispatch' && inputs.task == 'eval'
+    runs-on: ${{ needs.probe.outputs.runner == 'exe' && fromJSON('["self-hosted","exe"]') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Eval unavailable
+        if: needs.probe.outputs.runner != 'exe'
+        env:
+          REASON: ${{ needs.probe.outputs.reason }}
+        run: |
+          echo "Eval unavailable: ${REASON:-exe runner offline}. Nothing was scored." >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Eval unavailable: ${REASON:-exe runner offline}"
+          exit 1
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Python venv
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Run the eval
+        id: eval
+        env:
+          NANOIF_LLM_PROFILE: ${{ vars.LLM_PROFILE || 'exe' }}
+          NANOIF_LLM_MODEL: ${{ vars.LLM_MODEL }}
+          NANOIF_RUNNER: exe
+        run: |
+          mkdir -p dist
+          # Capture the code so the results are published before the job fails on it.
+          set +e
+          nanoif ai eval --out dist/eval-results.json --markdown dist/eval-results.md
+          code=$?
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ -f dist/eval-results.md ]; then
+            cat dist/eval-results.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "nanoif ai eval exited $code without writing results." >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() && hashFiles('dist/eval-results.json') != '' }}
+        with:
+          name: eval-results
+          path: |
+            dist/eval-results.json
+            dist/eval-results.md
+          retention-days: 90
+      - name: Fail when the eval failed
+        env:
+          CODE: ${{ steps.eval.outputs.exit_code }}
+        run: |
+          if [ "$CODE" != "0" ]; then
+            echo "::error::nanoif ai eval exited $CODE"
+            exit 1
+          fi

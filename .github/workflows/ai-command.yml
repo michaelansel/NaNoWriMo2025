@@ -1,0 +1,290 @@
+name: AI commands
+
+# Slash commands in pull-request comments, collaborators only:
+#   /check-continuity [all] [passage=<name>]   re-run the AI editors
+#   /extract-story-bible                        (Phase 3; replies with a note)
+#   /dismiss f-xxxxxxxx [reason]                record a dismissal on main, re-render comments
+# Anything else is ignored. This workflow always runs from the default branch; pull-request
+# code only ever runs in the `build` job, whose token is read-only.
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: number
+      command:
+        description: The slash command, for example "/check-continuity all"
+        required: true
+        type: string
+
+permissions: {}
+
+# No workflow-level concurrency: every PR comment starts a run, and a plain "LGTM" must not
+# cancel a review in progress. The AI and dismiss jobs set their own groups.
+
+env:
+  PYTHON_VERSION: "3.13"
+  TWEEGO_VERSION: "2.1.1"
+  HARLOWE_VERSION: "3.3.9"
+  # Twine 2.10.0 bundles Harlowe 3.3.9; see .github/actions/build-story for why this URL.
+  HARLOWE_URL: "https://raw.githubusercontent.com/klembot/twinejs/2.10.0/public/story-formats/harlowe-3.3.9/format.js"
+  HARLOWE_SHA256: "803a0d9d4fb8c3c1c99eaf16f37db6feaad72e36fc7e5f6c5a168465419895f3"
+  DOTGRAPH_VERSION: "2.2.0"
+
+jobs:
+  parse:
+    name: parse
+    # author_association gates everything that could spend tokens or write state.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+       startsWith(github.event.comment.body, '/'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write # reaction and short replies
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.issue.number || inputs.pr }}
+      COMMENT_BODY: ${{ github.event.comment.body || inputs.command }}
+      COMMENT_ID: ${{ github.event.comment.id }}
+      ACTOR: ${{ github.event.comment.user.login || github.actor }}
+    outputs:
+      command: ${{ steps.cmd.outputs.command }}
+      mode: ${{ steps.cmd.outputs.mode }}
+      passage: ${{ steps.cmd.outputs.passage }}
+      key: ${{ steps.cmd.outputs.key }}
+      reason: ${{ steps.cmd.outputs.reason }}
+      error: ${{ steps.cmd.outputs.error }}
+      pr: ${{ env.PR_NUMBER }}
+      actor: ${{ env.ACTOR }}
+      same_repo: ${{ steps.pr.outputs.same_repo }}
+      base_ref: ${{ steps.pr.outputs.base_ref }}
+      head_sha: ${{ steps.pr.outputs.head_sha }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install package
+        run: python -m pip install -e .
+
+      - name: Parse the command
+        id: cmd
+        run: printf '%s' "$COMMENT_BODY" | nanoif github parse-command --github-output "$GITHUB_OUTPUT"
+
+      - name: Authorize (write access or better)
+        if: steps.cmd.outputs.command != 'none'
+        run: nanoif github authorize --user "$ACTOR"
+
+      - name: Acknowledge
+        if: steps.cmd.outputs.command != 'none' && env.COMMENT_ID != ''
+        run: nanoif github react --comment-id "$COMMENT_ID" --content eyes
+
+      - name: Look up the pull request
+        id: pr
+        if: steps.cmd.outputs.command != 'none'
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '
+            "same_repo=\(.head.repo.full_name == .base.repo.full_name)",
+            "base_ref=\(.base.ref)",
+            "head_sha=\(.head.sha)"' >> "$GITHUB_OUTPUT"
+
+      - name: Reply with the usage
+        if: steps.cmd.outputs.error != ''
+        env:
+          ERROR: ${{ steps.cmd.outputs.error }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "Nothing ran: $ERROR"
+
+      - name: Reply that fork pull requests are not reviewed
+        if: steps.cmd.outputs.command == 'check-continuity' && steps.pr.outputs.same_repo != 'true'
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --body "Nothing ran: AI review runs only for branches in this repository, not forks."
+
+      - name: Reply to /extract-story-bible
+        if: steps.cmd.outputs.command == 'extract-story-bible'
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --body "Story Bible extraction lands in Phase 3. Nothing ran."
+
+  build:
+    name: build
+    needs: parse
+    if: needs.parse.outputs.command == 'check-continuity' && needs.parse.outputs.error == '' && needs.parse.outputs.same_repo == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # This job runs pull-request code: read-only token, no pip cache (cache poisoning).
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refs/pull/${{ needs.parse.outputs.pr }}/head
+          fetch-depth: 0
+      - uses: ./.github/actions/build-story
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          pip-cache: ""
+          base-ref: ${{ needs.parse.outputs.base_ref }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: story-preview
+          path: |
+            dist/
+            lib/artifacts/
+          retention-days: 7
+
+  probe:
+    name: probe
+    needs: parse
+    if: needs.parse.outputs.command == 'check-continuity' && needs.parse.outputs.error == '' && needs.parse.outputs.same_repo == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      runner: ${{ steps.probe.outputs.runner }}
+      reason: ${{ steps.probe.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+          persist-credentials: false
+      - id: probe
+        uses: ./.github/actions/probe-runner
+        with:
+          health-url: ${{ vars.EXE_HEALTH_URL }}
+          override: ${{ vars.AI_RUNNER }}
+
+  ai-review:
+    name: ai-review
+    needs: [parse, build, probe]
+    if: needs.parse.outputs.command == 'check-continuity' && needs.parse.outputs.error == '' && needs.parse.outputs.same_repo == 'true'
+    runs-on: ${{ needs.probe.outputs.runner == 'exe' && fromJSON('["self-hosted","exe"]') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    concurrency:
+      group: ai-cmd-pr-${{ needs.parse.outputs.pr }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ needs.parse.outputs.pr }}
+    steps:
+      # Tooling from the default branch; only the story data comes from the pull request,
+      # so no pull-request code runs with this job's write token.
+      - uses: actions/checkout@v7
+      - name: Take the story files from the pull request
+        run: |
+          git fetch --no-tags --depth=1 origin "+refs/pull/${PR_NUMBER}/head:refs/remotes/pr/head"
+          rm -rf src
+          git checkout refs/remotes/pr/head -- src
+          if git cat-file -e refs/remotes/pr/head:story-overrides.txt 2>/dev/null; then
+            git checkout refs/remotes/pr/head -- story-overrides.txt
+          fi
+      - uses: ./.github/actions/ai-review
+        with:
+          runner: ${{ needs.probe.outputs.runner }}
+          unavailable-reason: ${{ needs.probe.outputs.reason }}
+          mode: ${{ needs.parse.outputs.mode }}
+          passage: ${{ needs.parse.outputs.passage }}
+          pr: ${{ needs.parse.outputs.pr }}
+          head-sha: ${{ needs.parse.outputs.head_sha }}
+          artifact-name: ai-review-pr-${{ needs.parse.outputs.pr }}
+          llm-profile: ${{ vars.LLM_PROFILE || 'exe' }}
+          llm-model: ${{ vars.LLM_MODEL }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+  dismiss:
+    name: dismiss
+    needs: parse
+    if: needs.parse.outputs.command == 'dismiss' && needs.parse.outputs.error == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # One writer of ai/ on main at a time; never cancelled.
+    concurrency:
+      group: ai-state-main
+      cancel-in-progress: false
+    permissions:
+      contents: write # append ai/dismissals.jsonl on the default branch only
+      pull-requests: write
+      checks: write
+      actions: read # find and download the PR's last ai-review artifact
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ needs.parse.outputs.pr }}
+      KEY: ${{ needs.parse.outputs.key }}
+      REASON: ${{ needs.parse.outputs.reason }}
+      ACTOR: ${{ needs.parse.outputs.actor }}
+      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install package
+        run: python -m pip install -e .
+
+      - name: Fetch the last AI review of this pull request
+        id: artifact
+        run: |
+          run_id=$(gh api "repos/$GITHUB_REPOSITORY/actions/artifacts?name=ai-review-pr-${PR_NUMBER}&per_page=20" \
+            --jq '[.artifacts[] | select(.expired | not)] | sort_by(.created_at) | last | .workflow_run.id // empty')
+          if [ -z "$run_id" ]; then
+            echo "::error::No unexpired ai-review-pr-${PR_NUMBER} artifact; nothing recorded."
+            exit 1
+          fi
+          gh run download "$run_id" --repo "$GITHUB_REPOSITORY" \
+            --name "ai-review-pr-${PR_NUMBER}" --dir "$RUNNER_TEMP/review"
+          echo "review=$RUNNER_TEMP/review/ai-review.json" >> "$GITHUB_OUTPUT"
+
+      # Refuses (exit 1, nothing written) when the key is not in that review: a line
+      # without passage hashes would suppress the finding even after the passages change.
+      - name: Record the dismissal
+        id: record
+        env:
+          REVIEW: ${{ steps.artifact.outputs.review }}
+        run: |
+          nanoif github dismiss --key "$KEY" --by "$ACTOR" --pr "$PR_NUMBER" \
+            --reason "$REASON" --review "$REVIEW" --out ai/dismissals.jsonl
+
+      - name: Commit to the default branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ai/dismissals.jsonl
+          git commit -m "chore: record dismissal of ${KEY} from PR #${PR_NUMBER}"
+          if ! git push origin "HEAD:${DEFAULT_BRANCH}"; then
+            echo "Push rejected; rebasing once onto the new ${DEFAULT_BRANCH}"
+            git pull --rebase origin "$DEFAULT_BRANCH"
+            git push origin "HEAD:${DEFAULT_BRANCH}"
+          fi
+
+      - name: Re-render the AI comments (no LLM)
+        env:
+          REVIEW: ${{ steps.artifact.outputs.review }}
+        run: nanoif github report --pr "$PR_NUMBER" --review "$REVIEW" --dismissals ai/dismissals.jsonl
+
+      - name: Reply when nothing could be recorded
+        if: failure() && (steps.artifact.outcome == 'failure' || steps.record.outcome == 'failure')
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Could not dismiss \`${KEY}\`: no review result for this pull request is available, or the key is not in it. Nothing was recorded. Run \`/check-continuity\`, then \`/dismiss\` again."

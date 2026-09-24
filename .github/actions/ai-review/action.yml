@@ -1,0 +1,151 @@
+name: AI review
+description: >-
+  Run the Continuity and Style editors on the exe runner and publish the result, or, when
+  the probe chose "hosted", publish "AI review unavailable" and fail. Expects the repository
+  checked out and a story-preview artifact (dist/, lib/artifacts/) in this workflow run.
+  The job must export GITHUB_TOKEN for the GitHub calls.
+
+inputs:
+  runner:
+    description: The probe's decision, exe or hosted.
+    required: true
+  unavailable-reason:
+    description: The probe's reason when runner is hosted.
+    default: ""
+  mode:
+    description: changed, all or passage.
+    default: changed
+  passage:
+    description: Passage name for mode=passage.
+    default: ""
+  pr:
+    description: Pull request number; empty publishes to the step summary only.
+    default: ""
+  head-sha:
+    description: Commit for the check runs (default resolved from the pull request).
+    default: ""
+  artifact-name:
+    description: Name for the uploaded ai-review.json artifact.
+    required: true
+  llm-profile:
+    description: NANOIF_LLM_PROFILE (vars.LLM_PROFILE, default exe).
+    default: exe
+  llm-model:
+    description: NANOIF_LLM_MODEL (vars.LLM_MODEL); empty uses the profile default.
+    default: ""
+  python-version:
+    description: Python for the hosted path (the exe VM uses its own python3 in a venv).
+    default: "3.13"
+
+runs:
+  using: composite
+  steps:
+    - name: Python venv (exe runner)
+      if: inputs.runner == 'exe'
+      shell: bash
+      run: |
+        # actions/setup-python needs a hosted-style tool cache; the VM's python3 (3.12)
+        # meets requires-python >= 3.11, so a fresh venv per job is enough.
+        python3 -m venv "$RUNNER_TEMP/venv"
+        echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+    - name: Set up Python (hosted)
+      if: inputs.runner != 'exe'
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: pip
+
+    - name: Install nanoif
+      shell: bash
+      run: python -m pip install -e .
+
+    - name: Report AI review unavailable
+      if: inputs.runner != 'exe'
+      shell: bash
+      env:
+        PR: ${{ inputs.pr }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        REASON: ${{ inputs.unavailable-reason }}
+      run: |
+        args=(--reason "${REASON:-exe runner offline}")
+        if [ -n "$PR" ]; then args+=(--pr "$PR"); fi
+        if [ -n "$HEAD_SHA" ]; then args+=(--head-sha "$HEAD_SHA"); fi
+        nanoif github unavailable "${args[@]}"
+        echo "::error::AI review unavailable: ${REASON:-exe runner offline}"
+        exit 1
+
+    - name: Download the build output
+      if: inputs.runner == 'exe'
+      uses: actions/download-artifact@v8
+      with:
+        name: story-preview
+        path: .
+
+    - name: Mark the AI comments as running
+      if: inputs.runner == 'exe' && inputs.pr != ''
+      shell: bash
+      env:
+        PR: ${{ inputs.pr }}
+      run: nanoif github pending --pr "$PR"
+
+    - name: Run the editors
+      id: review
+      if: inputs.runner == 'exe'
+      shell: bash
+      env:
+        NANOIF_LLM_PROFILE: ${{ inputs.llm-profile }}
+        NANOIF_LLM_MODEL: ${{ inputs.llm-model }}
+        NANOIF_RUNNER: exe
+        MODE: ${{ inputs.mode }}
+        PASSAGE: ${{ inputs.passage }}
+      run: |
+        args=(--repo . --mode "$MODE" --out dist/ai-review.json)
+        if [ "$MODE" = passage ]; then args+=(--passage "$PASSAGE"); fi
+        rm -f dist/ai-review.json
+        # Capture the exit code instead of failing here: the result (or its absence) is
+        # published first, and the last step fails the job on a non-zero code.
+        set +e
+        nanoif ai review "${args[@]}"
+        code=$?
+        set -e
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+        echo "nanoif ai review --mode $MODE exited $code" >> "$GITHUB_STEP_SUMMARY"
+
+    - name: Publish the review
+      if: ${{ !cancelled() && inputs.runner == 'exe' && steps.review.outcome == 'success' }}
+      shell: bash
+      env:
+        PR: ${{ inputs.pr }}
+        HEAD_SHA: ${{ inputs.head-sha }}
+        CODE: ${{ steps.review.outputs.exit_code }}
+      run: |
+        target=()
+        if [ -n "$PR" ]; then target+=(--pr "$PR"); fi
+        if [ -n "$HEAD_SHA" ]; then target+=(--head-sha "$HEAD_SHA"); fi
+        if [ -f dist/ai-review.json ]; then
+          # Suppressed findings come from the review itself (it read ai/dismissals.jsonl).
+          nanoif github report "${target[@]}" --review dist/ai-review.json
+        else
+          nanoif github unavailable "${target[@]}" \
+            --reason "nanoif ai review exited $CODE before writing ai-review.json"
+        fi
+
+    - name: Upload ai-review.json
+      if: ${{ !cancelled() && inputs.runner == 'exe' && hashFiles('dist/ai-review.json') != '' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: dist/ai-review.json
+        retention-days: 90
+
+    - name: Fail when the review failed
+      if: inputs.runner == 'exe'
+      shell: bash
+      env:
+        CODE: ${{ steps.review.outputs.exit_code }}
+      run: |
+        if [ "$CODE" != "0" ]; then
+          echo "::error::nanoif ai review exited $CODE; the AI comments say what could not be checked"
+          exit 1
+        fi

@@ -1,0 +1,55 @@
+name: Probe AI runner
+description: >-
+  Decide where AI jobs run. Outputs runner=exe when the exe.dev runner's healthz answers
+  within 5 seconds, else runner=hosted, which AI jobs turn into an "AI review unavailable"
+  comment and a failed check (there is no fallback provider). vars.AI_RUNNER forces either.
+
+inputs:
+  health-url:
+    description: The runner's healthz URL (vars.EXE_HEALTH_URL). Empty means not configured.
+    default: ""
+  override:
+    description: vars.AI_RUNNER; "exe" or "hosted" skips the probe.
+    default: ""
+
+outputs:
+  runner:
+    description: exe or hosted
+    value: ${{ steps.probe.outputs.runner }}
+  reason:
+    description: Why the runner is hosted (empty for exe)
+    value: ${{ steps.probe.outputs.reason }}
+
+runs:
+  using: composite
+  steps:
+    - id: probe
+      shell: bash
+      env:
+        HEALTH_URL: ${{ inputs.health-url }}
+        OVERRIDE: ${{ inputs.override }}
+      run: |
+        reason=""
+        case "$OVERRIDE" in
+          exe)
+            runner=exe ;;
+          hosted)
+            runner=hosted
+            reason="AI runner forced to hosted by vars.AI_RUNNER" ;;
+          "")
+            if [ -z "$HEALTH_URL" ]; then
+              runner=hosted
+              reason="exe runner not configured (vars.EXE_HEALTH_URL is empty)"
+            elif curl -fsS --max-time 5 "$HEALTH_URL"; then
+              runner=exe
+            else
+              runner=hosted
+              reason="exe runner offline (healthz did not answer within 5 s)"
+            fi ;;
+          *)
+            echo "::error::vars.AI_RUNNER must be exe or hosted, got '$OVERRIDE'"
+            exit 1 ;;
+        esac
+        echo "runner=$runner" >> "$GITHUB_OUTPUT"
+        echo "reason=$reason" >> "$GITHUB_OUTPUT"
+        echo "AI runner: **$runner**${reason:+ ($reason)}" >> "$GITHUB_STEP_SUMMARY"

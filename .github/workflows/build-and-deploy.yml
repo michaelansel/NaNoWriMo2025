@@ -1,216 +1,217 @@
-name: Build and Deploy to GitHub Pages
+name: Build and deploy
+
+# Pull requests: test, build + Structure check, probe, AI review (exe runner).
+# Main: test, build, (Story Bible extraction, Phase 3), deploy to Pages.
+# Nothing here pushes to a pull request branch.
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-permissions:
-  contents: write
-  pages: write
-  id-token: write
-  pull-requests: write
+permissions: {}
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.event_name == 'pull_request' && format('ci-pr-{0}', github.event.pull_request.number) || 'pages' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  PYTHON_VERSION: "3.13"
+  TWEEGO_VERSION: "2.1.1"
+  HARLOWE_VERSION: "3.3.9"
+  # Twine 2.10.0 bundles Harlowe 3.3.9; see .github/actions/build-story for why this URL.
+  HARLOWE_URL: "https://raw.githubusercontent.com/klembot/twinejs/2.10.0/public/story-formats/harlowe-3.3.9/format.js"
+  HARLOWE_SHA256: "803a0d9d4fb8c3c1c99eaf16f37db6feaad72e36fc7e5f6c5a168465419895f3"
+  DOTGRAPH_VERSION: "2.2.0"
 
 jobs:
   test:
+    name: test
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
       - name: Install package
-        run: pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev]"
       - name: Lint
         run: ruff check nanoif tests
       - name: Test
         run: pytest
 
   build:
+    name: build
     runs-on: ubuntu-latest
-
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write # Build & Structure sticky comment (PRs only)
+      checks: write # Structure check run (PRs only)
+    env:
+      # Fork PRs get a read-only token: they report to the step summary only.
+      PR_NUMBER: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.number || '' }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
-          # For pull_request events, this checks out the merge commit (PR merged with base)
-          # This ensures scripts from main are available even if PR branch is old
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Fetch full git history so date collection can find file creation dates
+          # Full history: path categorization and file dates read git log.
           fetch-depth: 0
 
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
 
       - name: Install package
-        run: pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev]"
 
       - name: Lint twee formatting (report-only)
-        # Formatting issues are shown as warning annotations on the PR; they never
-        # block the build and nothing rewrites the writer's files.
-        continue-on-error: true
-        run: nanoif lint src/ --format github
-
-      - name: Check story structure (report-only)
-        # Phase 1 rollout: every finding is annotated on the PR but the step exits 0.
-        # Structure errors (broken links, duplicate passages, invalid StoryData,
-        # story-overrides.txt syntax) become blocking in Phase 2: drop --exit-zero then.
-        run: nanoif check structure src/ --format github --exit-zero
-
-      - name: Download and install tweego
+        # Issues become warning annotations and a step-summary line; nothing edits the
+        # writer's files. Exit 1 with the summary line means "issues found"; anything
+        # else is the linter failing, which fails the job.
         run: |
-          wget https://github.com/tmedwards/tweego/releases/download/v2.1.1/tweego-2.1.1-linux-x64.zip
-          unzip tweego-2.1.1-linux-x64.zip -d tweego-files
-          chmod +x tweego-files/tweego
-          sudo mv tweego-files/tweego /usr/local/bin/
-          # Keep storyformats in the repository root for tweego to find
-          mv tweego-files/storyformats .
+          set +e
+          nanoif lint src/ --format github 2> "$RUNNER_TEMP/lint.txt"
+          code=$?
+          set -e
+          cat "$RUNNER_TEMP/lint.txt"
+          if [ "$code" -ne 0 ] && ! grep -q "formatting issue" "$RUNNER_TEMP/lint.txt"; then
+            exit "$code"
+          fi
+          echo "Twee formatting (report-only): $(tail -n 1 "$RUNNER_TEMP/lint.txt")" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Download dotgraph format
-        run: |
-          wget https://github.com/mcdemarco/dotgraph/releases/download/v2.2.0/release.zip -O dotgraph.zip
-          unzip -q dotgraph.zip -d dotgraph-temp
-          # Move the online dotgraph-2 folder (not the offline version) to storyformats
-          mv dotgraph-temp/dotgraph-2 storyformats/
-          rm -rf dotgraph-temp dotgraph.zip
-
-      - name: Fetch base branch and calculate merge base for PR categorization
-        if: github.event_name == 'pull_request'
-        run: |
-          # Fetch the base branch so git comparisons work for path categorization
-          git fetch origin ${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}
-          # Calculate merge base to isolate PR changes from concurrent main changes
-          MERGE_BASE=$(git merge-base HEAD origin/${{ github.base_ref }})
-          echo "Base branch: origin/${{ github.base_ref }}"
-          echo "Merge base: $MERGE_BASE"
-          echo "GITHUB_MERGE_BASE=$MERGE_BASE" >> $GITHUB_ENV
-
-      - name: Build Core Library artifacts
-        run: |
-          chmod +x scripts/build-core.sh
-          ./scripts/build-core.sh
-
-      - name: Build Harlowe version (playable story)
+      - name: Check story structure
+        id: structure
+        # --exit-zero: errors are reported by the Structure check run (failure on PRs) and
+        # the step summary on main, and must not skip the build below.
         run: |
           mkdir -p dist
-          tweego src -o dist/play.html -f harlowe-3
+          nanoif check structure src/ --format json --exit-zero > dist/structure.json
+          if [ -z "$PR_NUMBER" ]; then
+            nanoif check structure src/ --format github --exit-zero
+          fi
 
-      - name: Copy landing page
-        run: |
-          cp landing/index.html dist/index.html
+      - name: Build story
+        id: build
+        uses: ./.github/actions/build-story
+        with:
+          install-python: "false"
+          base-ref: ${{ github.base_ref }}
 
-      - name: Build Paperthin version (proofread)
-        run: |
-          tweego src -o dist/proofread.html -f paperthin-1
-
-      - name: Build DotGraph version (visualization)
-        run: |
-          tweego src -o dist/graph.html -f dotgraph-2
-
-      - name: Build AllPaths version (AI continuity checking)
+      - name: Build & Structure report
+        if: ${{ !cancelled() && steps.structure.outcome == 'success' }}
         env:
-          GITHUB_BASE_REF: ${{ github.base_ref }}
-          GITHUB_MERGE_BASE: ${{ env.GITHUB_MERGE_BASE }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
         run: |
-          chmod +x scripts/build-allpaths.sh
-          ./scripts/build-allpaths.sh
+          args=(--structure dist/structure.json --dist dist --build-outcome "$BUILD_OUTCOME")
+          if [ -n "$PR_NUMBER" ]; then args+=(--pr "$PR_NUMBER" --head-sha "$HEAD_SHA"); fi
+          nanoif github build-report "${args[@]}"
 
-      - name: Build Metrics version (writing statistics)
-        run: |
-          chmod +x scripts/build-metrics.sh
-          ./scripts/build-metrics.sh
-
-      - name: Build Story Bible (world consistency tracking)
-        run: |
-          chmod +x scripts/build-story-bible.sh
-          ./scripts/build-story-bible.sh
-
-      - name: Build passage index
-        run: |
-          chmod +x scripts/build-passages.sh
-          ./scripts/build-passages.sh
-
-      - name: Upload build artifacts (for PR preview and continuity checking)
-        if: github.event_name == 'pull_request'
+      - name: Upload story preview
+        if: steps.build.outcome == 'success'
         uses: actions/upload-artifact@v7
         with:
           name: story-preview
-          # dist/ includes passages.html, allpaths-index.json and changes.json
           path: |
             dist/
             lib/artifacts/
-            src/StoryData.twee
           retention-days: 30
 
-      - name: Comment on PR with preview instructions
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v9
+  probe:
+    name: probe
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: read
+    outputs:
+      runner: ${{ steps.probe.outputs.runner }}
+      reason: ${{ steps.probe.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v7
         with:
-          script: |
-            const fs = require('fs');
-            const playSize = fs.statSync('dist/play.html').size;
-            const proofreadSize = fs.statSync('dist/proofread.html').size;
-            const graphSize = fs.statSync('dist/graph.html').size;
-            const allpathsSize = fs.statSync('dist/allpaths.html').size;
-            const metricsSize = fs.statSync('dist/metrics.html').size;
-
-            // Count AllPaths text files
-            const allpathsTextFiles = fs.readdirSync('dist/allpaths-clean').filter(f => f.endsWith('.txt'));
-            const pathCount = allpathsTextFiles.length;
-
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `## ✅ Build Successful
-
-            Your story has been built successfully!
-
-            **📊 Build Stats:**
-            - Playable story: ${(playSize / 1024).toFixed(2)} KB
-            - Paperthin version: ${(proofreadSize / 1024).toFixed(2)} KB
-            - DotGraph version: ${(graphSize / 1024).toFixed(2)} KB
-            - AllPaths version: ${(allpathsSize / 1024).toFixed(2)} KB (${pathCount} paths)
-            - Metrics version: ${(metricsSize / 1024).toFixed(2)} KB
-
-            **🎮 Preview Your Changes:**
-            1. Download the \`story-preview\` artifact from the [workflow run](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-            2. Extract the zip file
-            3. Open \`index.html\` (landing page) to access all output formats
-
-            **💡 Tip:** Once merged to main, this will be live at:
-            - https://${context.repo.owner}.github.io/${context.repo.repo}/ (landing page with links to all formats)`
-            });
-
-      - name: Save build artifacts for deployment
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-pages-artifact@v5
+          sparse-checkout: .github
+          persist-credentials: false
+      - id: probe
+        uses: ./.github/actions/probe-runner
         with:
-          path: './dist'
+          health-url: ${{ vars.EXE_HEALTH_URL }}
+          override: ${{ vars.AI_RUNNER }}
+
+  ai-review:
+    name: ai-review
+    needs: [build, probe]
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ needs.probe.outputs.runner == 'exe' && fromJSON('["self-hosted","exe"]') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      pull-requests: write # Continuity and Style sticky comments
+      checks: write # Continuity Editor and Style Editor check runs
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/ai-review
+        with:
+          runner: ${{ needs.probe.outputs.runner }}
+          unavailable-reason: ${{ needs.probe.outputs.reason }}
+          mode: changed
+          pr: ${{ github.event.pull_request.number }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
+          artifact-name: ai-review-pr-${{ github.event.pull_request.number }}
+          llm-profile: ${{ vars.LLM_PROFILE || 'exe' }}
+          llm-model: ${{ vars.LLM_MODEL }}
+          python-version: ${{ env.PYTHON_VERSION }}
+
+  bible-extract:
+    # PLACEHOLDER until Phase 3. The real job runs `nanoif bible extract --incremental` on
+    # [self-hosted, exe] behind the probe, with contents: write, and commits
+    # ai/story-bible-cache.json to main (pull --rebase retry once). Off unless
+    # vars.BIBLE_EXTRACT == 'true'.
+    name: bible-extract
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.BIBLE_EXTRACT == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Placeholder
+        run: echo "Story Bible extraction lands in Phase 3" | tee -a "$GITHUB_STEP_SUMMARY"
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: build
+    name: deploy
+    needs: [build, bible-extract]
+    # Deploy even when extraction failed or was skipped: the site renders the previous cache.
+    if: ${{ always() && needs.build.result == 'success' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
-
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Setup Pages
-        uses: actions/configure-pages@v6
-
-      - name: Deploy to GitHub Pages
-        id: deployment
+      - uses: actions/download-artifact@v8
+        with:
+          name: story-preview
+          path: site
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
+      - id: deployment
         uses: actions/deploy-pages@v5
