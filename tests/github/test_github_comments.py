@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from github_fakes import API, BOT, REPO, USER, FakeGitHub
 
 from nanoif.github.api import GitHubAPI
@@ -14,6 +15,7 @@ from nanoif.github.comments import (
 )
 
 
+@pytest.mark.intent("AC-build-and-deploy-6", "AC-continuity-review-2")
 def test_first_upsert_creates_then_second_edits_in_place(api, fake):
     first = upsert_sticky(api, 5, MARKER_CONTINUITY, "### Continuity Editor: 1 finding")
     second = upsert_sticky(api, 5, MARKER_CONTINUITY, "### Continuity Editor: No findings")
@@ -29,6 +31,7 @@ def test_identical_body_is_left_unchanged(api, fake):
     assert [r.method for r in fake.writes()] == ["POST"]
 
 
+@pytest.mark.intent("AC-build-and-deploy-6", "AC-continuity-review-2")
 def test_each_marker_gets_its_own_comment(api, fake):
     for marker in (MARKER_BUILD, MARKER_CONTINUITY, MARKER_STYLE):
         upsert_sticky(api, 5, marker, "body")
@@ -40,6 +43,7 @@ def test_each_marker_gets_its_own_comment(api, fake):
     ]
 
 
+@pytest.mark.intent("AC-build-and-deploy-6", "AC-continuity-review-2")
 def test_a_user_comment_containing_the_marker_is_never_edited(api, fake):
     user_comment = fake.add_comment(5, USER, f"{MARKER_CONTINUITY}\nI pasted the bot's comment")
     result = upsert_sticky(api, 5, MARKER_CONTINUITY, "bot body")
@@ -48,6 +52,7 @@ def test_a_user_comment_containing_the_marker_is_never_edited(api, fake):
     assert len(fake.bodies(5)) == 2
 
 
+@pytest.mark.intent("AC-continuity-review-2")
 def test_a_bot_comment_that_only_mentions_the_marker_later_is_not_sticky(api, fake):
     fake.add_comment(5, BOT, f"Recorded dismissal. Footer mentions {MARKER_CONTINUITY} here.")
     fake.add_comment(5, BOT, "Reply `/check-continuity` to re-run")  # footer text only
@@ -55,6 +60,7 @@ def test_a_bot_comment_that_only_mentions_the_marker_later_is_not_sticky(api, fa
     assert result.action == "created"
 
 
+@pytest.mark.intent("AC-build-and-deploy-6", "AC-continuity-review-2")
 def test_sticky_on_a_later_page_is_found():
     fake = FakeGitHub(page_size=3)
     for index in range(7):

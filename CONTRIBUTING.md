@@ -65,9 +65,10 @@ see before it goes live):
 
 Go back to your pull request. Within a few minutes you will see:
 
-- **A green or red check.** Red means the build failed; click it to see where.
-- **A Build comment** with instructions for the **preview**: download `story-preview`, unzip it,
-  open `index.html`, and play through your new passage.
+- **Checks**, each green, grey or red. A red `build` check means the build failed; click it to
+  see where.
+- **A Build & Structure comment** with instructions for the **preview**: download
+  `story-preview`, unzip it, open `dist/index.html`, and play through your new passage.
 - **Notes on your lines** in the **Files changed** tab. An error such as a broken link (a link to
   a passage name that does not exist) is worth fixing before you merge. Warnings are advice.
 - **Comments from the Continuity Editor and the Style Editor** pointing out anything that seems

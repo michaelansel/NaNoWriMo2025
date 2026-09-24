@@ -48,10 +48,13 @@ trailing whitespace; exactly one final newline; no runs of blank lines; a blank 
 block of one-per-line choices and none inside it. Curly quotes are the writer's choice and are
 never reported. The linter has no fix mode.
 
-**Where the writer sees it.** Each finding is an annotation on its file and line in the pull
-request's "Files changed" view and in the run summary. A `Structure` check run and a summary in
-the Build comment ([build-and-deploy](build-and-deploy.md)) are planned. Findings never stop the
-preview from being built, so the writer can still play the branch.
+**Where the writer sees it.** A `Structure` check run on the pull request carries each finding
+as an annotation on its file and line, shown in the "Files changed" view. The Build & Structure
+comment ([build-and-deploy](build-and-deploy.md)) counts errors, warnings and notes, lists each
+error with its file and line, and collapses the rest. Formatting notes are warning annotations
+and a line in the run summary. Findings never stop the preview from being built, so the writer
+can still play the branch. On `main` and for pull requests from forks, findings go to the run
+summary and annotations only.
 
 ## Acceptance criteria
 - AC-structure-check-1: A link to a missing passage is an error on the line of the link, naming the passage it is in and the missing target.
@@ -70,11 +73,11 @@ preview from being built, so the writer can still play the branch.
 - AC-structure-check-14: `nanoif check structure` exits 1 when there is an error and 0 when there are only warnings and info.
 - AC-structure-check-15: Findings are listed errors first, then warnings, then info.
 - AC-structure-check-16: In GitHub format each finding is one annotation of the matching level (error, warning, notice) carrying its file and line, with commas, colons and newlines escaped.
-- AC-structure-check-17: On a pull request, every structure finding appears as an annotation on its file and line. (verify: workflow)
+- AC-structure-check-17: On a pull request, every structure finding that names a file appears as an annotation on its file and line, and one that names no file appears in the Build comment. (verify: workflow)
 - AC-structure-check-18: If the structure check cannot run, the pull request shows a failed step; it never shows an empty list of findings. (verify: workflow)
 - AC-structure-check-19: Structure findings, errors included, never stop the pull request preview from being built. (verify: workflow)
-- AC-structure-check-20: Every pull request has a `Structure` check run whose conclusion is failure when there is an error, neutral when there are only warnings or info, and success when there are no findings. (verify: planned)
-- AC-structure-check-21: The Build comment lists the number of structure errors, warnings and info notes, and each error with its file and line. (verify: planned)
+- AC-structure-check-20: Every pull request from a branch of this repository has a `Structure` check run whose conclusion is failure when there is an error, neutral when there are warnings and no error, and success when there are only info notes or no findings.
+- AC-structure-check-21: The Build comment lists the number of structure errors, warnings and info notes, and each error with its file and line.
 - AC-structure-check-22: The linter reports each of its seven rules as `file:line: [rule] message`.
 - AC-structure-check-23: The linter never changes a file, and `nanoif lint --fix` is rejected as an unknown option.
 - AC-structure-check-24: Curly quotes and apostrophes are never reported by the linter.

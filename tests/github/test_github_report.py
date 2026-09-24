@@ -125,6 +125,7 @@ def _cases():
 CASES = _cases()
 
 
+@pytest.mark.intent("AC-continuity-review-3", "AC-continuity-review-5")
 @pytest.mark.parametrize("name", sorted(CASES))
 def test_editor_comment_matches_golden(name):
     review, editor = CASES[name]
@@ -133,6 +134,7 @@ def test_editor_comment_matches_golden(name):
     assert rendered.body == (GOLDEN / f"{name}.md").read_text(encoding="utf-8")
 
 
+@pytest.mark.intent("AC-continuity-review-9")
 def test_unavailable_matches_golden():
     rendered = render_unavailable("continuity", "exe runner offline", RUN)
     assert rendered.body == (GOLDEN / "continuity_unavailable.md").read_text(encoding="utf-8")
@@ -140,16 +142,19 @@ def test_unavailable_matches_golden():
     assert rendered.check.name == "Continuity Editor"
 
 
+@pytest.mark.intent("AC-build-and-deploy-5", "AC-structure-check-21")
 def test_build_comment_matches_golden():
     rendered = render_build(STRUCTURE, STATS, RUN, build_ok=True)
     assert rendered.body == (GOLDEN / "build_structure_error.md").read_text(encoding="utf-8")
 
 
+@pytest.mark.intent("AC-build-and-deploy-7")
 def test_build_failed_comment_matches_golden():
     rendered = render_build([], None, RUN, build_ok=False)
     assert rendered.body == (GOLDEN / "build_failed.md").read_text(encoding="utf-8")
 
 
+@pytest.mark.intent("AC-continuity-review-7")
 @pytest.mark.parametrize(
     "status, findings, conclusion",
     [
@@ -167,6 +172,7 @@ def test_check_run_conclusion_mapping(status, findings, conclusion):
     assert render_editor(review, "continuity", RUN).check.conclusion == conclusion
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_no_findings_appears_only_for_a_clean_ok_editor():
     for name, (review, editor) in CASES.items():
         body = render_editor(review, editor, RUN).body
@@ -176,6 +182,7 @@ def test_no_findings_appears_only_for_a_clean_ok_editor():
     assert "No findings" not in render_pending("style", RUN)
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_error_editor_first_visible_line_says_unavailable_and_how_to_retry():
     review, _ = CASES["continuity_partial_error"]
     body = render_editor(review, "continuity", RUN).body
@@ -187,6 +194,7 @@ def test_error_editor_first_visible_line_says_unavailable_and_how_to_retry():
     assert "*The dark crossing*: could not check (skipped): too long" in body
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_all_units_failed_is_unavailable_not_partial():
     units = [{"passage": "The weir", "status": "error", "reason": "HTTP 502", "tokens": None}]
     review = make_review(make_editor(status="error", units=units), make_editor("style"))
@@ -194,6 +202,7 @@ def test_all_units_failed_is_unavailable_not_partial():
     assert body.splitlines()[1] == "### Continuity Editor: unavailable"
 
 
+@pytest.mark.intent("AC-continuity-review-6")
 def test_header_line_follows_contract_f():
     review, _ = CASES["continuity_ok_findings"]
     editor = review["editors"][0]
@@ -204,6 +213,7 @@ def test_header_line_follows_contract_f():
     )
 
 
+@pytest.mark.intent("AC-continuity-review-6")
 def test_unknown_cost_is_said_not_guessed():
     review = make_review()
     review["llm"]["usd_known"] = False
@@ -242,6 +252,7 @@ def test_pending_body_has_marker_and_run_link():
     assert "run #4242" in body
 
 
+@pytest.mark.intent("AC-structure-check-20")
 def test_structure_conclusion_is_failure_only_on_errors():
     assert structure_conclusion(STRUCTURE) == "failure"
     assert structure_conclusion(STRUCTURE[1:]) == "neutral"
@@ -249,6 +260,7 @@ def test_structure_conclusion_is_failure_only_on_errors():
     assert structure_conclusion([]) == "success"
 
 
+@pytest.mark.intent("AC-structure-check-20")
 def test_structure_annotations_map_levels_and_skip_fileless_findings():
     annotations = structure_annotations(STRUCTURE)
     assert annotations == [
@@ -274,6 +286,7 @@ def test_structure_annotations_map_levels_and_skip_fileless_findings():
     assert render_build([], STATS, RUN, True).body.startswith(MARKER_BUILD)
 
 
+@pytest.mark.intent("AC-build-and-deploy-5")
 def test_collect_build_stats_reads_sizes_and_index(tmp_path):
     (tmp_path / "play.html").write_bytes(b"x" * 2048)
     index = {

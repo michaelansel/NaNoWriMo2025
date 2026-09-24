@@ -82,12 +82,12 @@ your branch.
 
 | What | Where you see it | What to do |
 |---|---|---|
-| **Build** | A green or red check, and a **Build** comment | Red: open the check to see which step failed |
-| **Preview** | `story-preview` on the build's run page | Download, unzip, open `index.html`, play your branch |
-| **Structure notes** | Notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
+| **Build** | The `build` check, and a **Build & Structure** comment | Red: open the check to see which step failed |
+| **Preview** | `story-preview`, linked from the Build & Structure comment | Download, unzip, open `dist/index.html`, play your branch |
+| **Structure notes** | The `Structure` check, the Build & Structure comment, and notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
 | **Formatting notes** | Notes on your lines in **Files changed** | Optional: spacing suggestions only |
-| **Continuity Editor** | One comment, updated on every push | Read the quotes; fix, or dismiss (below) |
-| **Style Editor** | One comment, updated on every push | Checks point of view, tense and main character |
+| **Continuity Editor** | One comment and a `Continuity Editor` check, updated on every push | Read the quotes; fix, or dismiss (below) |
+| **Style Editor** | One comment and a `Style Editor` check, updated on every push | Checks point of view, tense and main character |
 
 **Structure errors** are the ones to fix before merging: a link to a passage that does not exist,
 a passage name someone else already used, or a problem in `StoryData`. **Warnings** include a
@@ -102,6 +102,9 @@ decide. If the editor is wrong, reply on the pull request:
 
 using the id shown on the finding. It will not come back unless one of those passages changes.
 
+An editor's check is grey when it has findings and red when it could not read some passages; it
+never blocks merging.
+
 **"AI review unavailable"** means the editors could not read your passages this time. It is not
 an all-clear. Your pull request still builds and can still be merged.
 
@@ -113,19 +116,21 @@ Most days you need none of these.
 |---|---|
 | `/dismiss <id> [reason]` | Hides a finding you disagree with |
 | `/check-continuity` | Runs the editors again on your changed passages |
-| `/check-continuity all` | Reviews the whole story (says the cost first) |
-| `/extract-story-bible` | Shows what the Story Bible would learn from your pull request |
+| `/check-continuity all` | Reviews the whole story; the comment shows what it cost |
+| `/check-continuity passage=<name>` | Reviews one passage |
 
 ## The pages
 
 After merging, the story's site has a landing page linking to: **Play**, **Proofread** (all the
 text on one page), **All paths** (every route through the story), **Metrics** (word counts),
 **Passages** (every passage name, its file, and its links: handy for linking), **Story Bible**
-(the cast, places and rules so far), and **Graph** (a map of the story).
+(the cast, places and rules; a placeholder until the Bible is first extracted), and **Graph** (a
+map of the story).
 
-To teach the Story Bible something (two names for one person, a word that is not a character, a
-deliberate mystery), edit `story-overrides.txt` at the top of the repository. The
-[Story Bible note](features/story-bible.md#behavior) shows one example of each kind of line.
+`story-overrides.txt` at the top of the repository is where you will teach the Story Bible
+things (two names for one person, a word that is not a character, a deliberate mystery). For now
+the build only checks that each line is written correctly. The [Story Bible note](features/story-bible.md#behavior) shows one
+example of each kind of line.
 
 ## Checklist
 

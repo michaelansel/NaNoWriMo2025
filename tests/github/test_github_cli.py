@@ -33,6 +33,7 @@ def _write_review(tmp_path, review):
     return path
 
 
+@pytest.mark.intent("AC-continuity-review-2", "AC-continuity-review-7")
 def test_report_upserts_both_comments_and_check_runs_on_the_pr_head(wired, tmp_path):
     review = make_review(make_editor(findings=[make_finding()]), make_editor("style"))
     path = _write_review(tmp_path, review)
@@ -49,6 +50,7 @@ def test_report_upserts_both_comments_and_check_runs_on_the_pr_head(wired, tmp_p
     assert "run #99" in (tmp_path / "summary.md").read_text()
 
 
+@pytest.mark.intent("AC-continuity-review-12")
 def test_report_reapplies_dismissals(wired, tmp_path):
     review = make_review(make_editor(findings=[make_finding()]), make_editor("style"))
     path = _write_review(tmp_path, review)
@@ -106,6 +108,7 @@ def test_api_failure_exits_1_with_message(wired, tmp_path, capsys):
     assert "HTTP 502" in capsys.readouterr().err
 
 
+@pytest.mark.intent("AC-continuity-review-9")
 def test_unavailable_posts_both_editors_as_failures(wired):
     assert main(["github", "unavailable", "--pr", "12", "--reason", "exe runner offline"]) == 0
     assert all("AI review unavailable: exe runner offline" in b for b in wired.bodies(12))
@@ -125,6 +128,7 @@ def test_pending_replaces_stale_comment_without_check_runs(wired):
     assert wired.check_runs == []
 
 
+@pytest.mark.intent("AC-build-and-deploy-6", "AC-structure-check-20", "AC-structure-check-21")
 def test_build_report_posts_comment_and_structure_check(wired, tmp_path):
     structure = tmp_path / "structure.json"
     structure.write_text(
@@ -161,6 +165,7 @@ def test_build_report_posts_comment_and_structure_check(wired, tmp_path):
     assert run["output"]["annotations"][0]["path"] == "src/EV-20261103.twee"
 
 
+@pytest.mark.intent("AC-build-and-deploy-7")
 def test_build_report_with_failed_build_and_no_dist(wired, tmp_path):
     structure = tmp_path / "structure.json"
     structure.write_text("[]")
@@ -196,6 +201,7 @@ def test_build_report_with_unreadable_structure_is_usage_error(wired, tmp_path):
     assert main(args) == 2
 
 
+@pytest.mark.intent("AC-continuity-review-10")
 @pytest.mark.parametrize(
     "role, code", [("admin", 0), ("maintain", 0), ("write", 0), ("triage", 1), ("read", 1)]
 )
@@ -204,6 +210,7 @@ def test_authorize_requires_write_or_better(wired, role, code):
     assert main(["github", "authorize", "--user", "wren-writer"]) == code
 
 
+@pytest.mark.intent("AC-continuity-review-10")
 def test_authorize_non_collaborator_is_denied(wired):
     assert main(["github", "authorize", "--user", "stranger"]) == 1
 
@@ -243,6 +250,7 @@ def test_parse_command_not_a_command(tmp_path, monkeypatch):
     assert _outputs(out) == {"command": "none"}
 
 
+@pytest.mark.intent("AC-continuity-review-12")
 def test_dismiss_appends_record_with_hashes(tmp_path):
     review = make_review(make_editor(findings=[make_finding()]), make_editor("style"))
     path = _write_review(tmp_path, review)
@@ -268,6 +276,7 @@ def test_dismiss_appends_record_with_hashes(tmp_path):
     assert record["hashes"] == ["h1", "h2"] and record["by"] == "wren-writer"
 
 
+@pytest.mark.intent("AC-continuity-review-12")
 def test_dismiss_without_artifact_is_refused_and_writes_nothing(tmp_path, capsys):
     out = tmp_path / "dismissals.jsonl"
     args = [

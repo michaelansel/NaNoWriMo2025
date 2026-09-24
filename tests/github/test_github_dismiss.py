@@ -68,6 +68,7 @@ def test_corrupt_line_is_an_error_with_its_line_number(tmp_path):
         load_dismissals(path)
 
 
+@pytest.mark.intent("AC-continuity-review-12")
 def test_matching_dismissal_moves_finding_to_suppressed_without_mutating_input():
     review = _review()
     record = build_record("f-1a2b3c4d", "w", 1, "", review, NOW)
@@ -77,6 +78,7 @@ def test_matching_dismissal_moves_finding_to_suppressed_without_mutating_input()
     assert review["editors"][0]["findings"][0]["key"] == "f-1a2b3c4d"
 
 
+@pytest.mark.intent("AC-continuity-review-13")
 def test_dismissal_lapses_when_a_cited_passage_changed():
     review = _review()
     record = build_record("f-1a2b3c4d", "w", 1, "", review, NOW)
@@ -85,6 +87,7 @@ def test_dismissal_lapses_when_a_cited_passage_changed():
     assert [f["key"] for f in result["editors"][0]["findings"]] == ["f-1a2b3c4d"]
 
 
+@pytest.mark.intent("AC-continuity-review-13")
 def test_a_line_without_hashes_never_suppresses():
     record = {
         "key": "f-1a2b3c4d",

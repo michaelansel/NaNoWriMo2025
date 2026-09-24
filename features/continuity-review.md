@@ -29,14 +29,16 @@ says so (see Edge cases).
 - **Continuity Editor** reads the passage with the passages that lead to it on its routes and the
   Story Bible facts for the people, places and things it mentions ([story-bible](story-bible.md)).
   It reports contradictions between the passage and one earlier passage or one established fact.
+  Until the Story Bible is extracted, it has earlier passages only.
 - **Style Editor** checks the passage's point of view, tense and protagonist against `storyStyle`
   in `StoryData`.
 
 **What the writer sees.** One comment per editor on the pull request, edited in place on every
-push, and one check run per editor (`Continuity`, `Style`).
+push, and one check run per editor (`Continuity Editor`, `Style Editor`). While a review runs,
+each comment says "running" instead of showing the previous result.
 
-- The header: passages reviewed, findings, suppressed findings, model, tokens, estimated cost,
-  and the commit reviewed.
+- The header: passages reviewed, findings, suppressed findings, model, the tokens and estimated
+  cost of the whole review run, and a link to that run.
 - Each finding: its id (`f-` and 8 hex digits), severity, confidence, one sentence, the quotes that
   disagree with the passage name for each, and the exact `/dismiss` command for it. Severity:
   *critical* = impossible on this route; *major* = a reader will notice; *minor* = a careful
@@ -58,40 +60,45 @@ collaborators are obeyed, and nobody else's comment costs anything):
   section. No model is called.
 
 ## Acceptance criteria
-- AC-continuity-review-1: On every push to a pull request from a branch of this repository, each new or changed passage is reviewed once by the Continuity Editor and once by the Style Editor. (verify: planned)
-- AC-continuity-review-2: A pull request has exactly one Continuity Editor comment and one Style Editor comment, each found by its HTML marker and edited in place on every run. (verify: planned)
-- AC-continuity-review-3: Each finding shows its `f-` id, severity, confidence, a one-sentence description, a quote with its passage name from each passage involved, and the `/dismiss` command for that id. (verify: planned)
-- AC-continuity-review-4: The same contradiction between the same two passages, seen from several routes, appears as one finding. (verify: planned)
-- AC-continuity-review-5: A finding whose quotes are not found verbatim in the cited passages is listed only in the collapsed "unverified" section and is not counted as a finding. (verify: planned)
-- AC-continuity-review-6: Each comment's header shows the passages reviewed, findings, suppressed findings, model, input and output tokens, estimated cost, and the commit reviewed. (verify: planned)
-- AC-continuity-review-7: Each editor's check run is success when every passage was reviewed with no findings, neutral when there are findings, and failure when any passage could not be reviewed. (verify: planned)
-- AC-continuity-review-8: A passage that could not be reviewed (provider error after one retry, or too long for the model) is listed by name with the reason, and its editor's comment never reports "no issues" for it. (verify: planned)
-- AC-continuity-review-9: When the exe.dev runner is offline, each editor's comment says "AI review unavailable" with the reason and its check run fails, while the build and structure check still run. (verify: planned)
-- AC-continuity-review-10: `/check-continuity`, `/check-continuity all` and `/check-continuity passage=<name>` from an owner, member or collaborator start the matching review; the same comment from anyone else starts no job and spends no tokens. (verify: planned)
+- AC-continuity-review-1: On every push to a pull request from a branch of this repository, each new or changed passage is reviewed once by the Continuity Editor and once by the Style Editor. (verify: workflow)
+- AC-continuity-review-2: A pull request has exactly one Continuity Editor comment and one Style Editor comment, each found by its HTML marker and edited in place on every run.
+- AC-continuity-review-3: Each finding shows its `f-` id, severity, confidence, a one-sentence description, a quote with its passage name from each passage involved, and the `/dismiss` command for that id.
+- AC-continuity-review-4: The same contradiction between the same two passages, seen from several routes, appears as one finding.
+- AC-continuity-review-5: A finding whose quotes are not found verbatim in the cited passages is listed only in the collapsed "unverified" section and is not counted as a finding.
+- AC-continuity-review-6: Each comment's header shows the passages reviewed, findings, suppressed findings, model, the input and output tokens and estimated cost of the whole review run, and a link to that run.
+- AC-continuity-review-7: Each editor's check run is success when every passage was reviewed with no findings, neutral when there are findings, and failure when any passage could not be reviewed.
+- AC-continuity-review-8: A passage that could not be reviewed (provider error after one retry, or too long for the model) is listed by name with the reason, and its editor's comment never reports "no issues" for it.
+- AC-continuity-review-9: When the exe.dev runner is offline, each editor's comment says "AI review unavailable" with the reason and its check run fails, while the build and structure check still run.
+- AC-continuity-review-10: `/check-continuity`, `/check-continuity all` and `/check-continuity passage=<name>` from an owner, member or collaborator start the matching review; the same comment from anyone else starts no job and spends no tokens.
 - AC-continuity-review-11: `/check-continuity all` posts its estimated cost before the run and the actual cost in the finished comment. (verify: planned)
-- AC-continuity-review-12: `/dismiss f-xxxxxxxx [reason]` from a collaborator records the dismissal on `main` and re-renders the comment with that finding in the suppressed section, without calling a model. (verify: planned)
-- AC-continuity-review-13: A dismissed finding stays suppressed on later runs while both of its passages are unchanged, and is reported again when either passage changes. (verify: planned)
+- AC-continuity-review-12: `/dismiss f-xxxxxxxx [reason]` from a collaborator records the dismissal on `main` and re-renders the comment with that finding in the suppressed section, without calling a model.
+- AC-continuity-review-13: A dismissed finding stays suppressed on later runs while both of its passages are unchanged, and is reported again when either passage changes.
 - AC-continuity-review-14: A contradiction listed as `intentional-conflict:` in `story-overrides.txt` is never reported as a finding; on the eval story, `c-widow-never-wife` is never reported. (verify: planned)
-- AC-continuity-review-15: Run over the eval story, the Continuity Editor reports the contradictions `c-tam-years` and `c-pip-age`. (verify: planned)
-- AC-continuity-review-16: Run over the eval story, the Continuity Editor reports at least two of the planted defects `d-marsh-alive`, `d-lantern-rule` and `d-timeline`. (verify: planned)
-- AC-continuity-review-17: Run over the eval story, both editors together report at most one finding across the clean routes `clean-crossing` and `clean-widow`. (verify: planned)
-- AC-continuity-review-18: Run over the eval story, the Style Editor reports `d-pov` and `d-tense`, each as minor. (verify: planned)
-- AC-continuity-review-19: Of pull requests that change up to three passages, 95 in 100 are reviewed within 10 minutes of their build finishing, and each costs under $0.25. (verify: planned)
-- AC-continuity-review-20: `/check-continuity all` on a story of up to 100 passages uses at most 1.5M input tokens and costs under $5. (verify: planned)
+- AC-continuity-review-15: Run over the eval story, the Continuity Editor reports the contradictions `c-tam-years` and `c-pip-age`. (verify: workflow)
+- AC-continuity-review-16: Run over the eval story, the Continuity Editor reports at least two of the planted defects `d-marsh-alive`, `d-lantern-rule` and `d-timeline`. (verify: workflow)
+- AC-continuity-review-17: Run over the eval story, both editors together report at most one finding across the clean routes `clean-crossing` and `clean-widow`. (verify: workflow)
+- AC-continuity-review-18: Run over the eval story, the Style Editor reports `d-pov` and `d-tense`, each as minor. (verify: workflow)
+- AC-continuity-review-19: Of pull requests that change up to three passages, 95 in 100 are reviewed within 10 minutes of their build finishing, and each costs under $0.25. (verify: manual)
+- AC-continuity-review-20: `/check-continuity all` on a story of up to 100 passages uses at most 1.5M input tokens and costs under $5. (verify: workflow)
 - AC-continuity-review-21: A model answer cut off by the length limit is an error for that call, never an empty result.
 - AC-continuity-review-22: A model answer that still fails its schema after one repair round is an error for that call; the repair round tells the model what was wrong.
 - AC-continuity-review-23: A provider that is unreachable, times out, or answers with an HTTP error produces an error for that call, never a result.
 - AC-continuity-review-24: A call that would take the job past its token budget is refused before it is sent.
 - AC-continuity-review-25: The cost figures behind the comment header total the tokens and estimated cost of every call in the run, and mark the cost as unknown, not zero, for a model with no known price.
 - AC-continuity-review-26: Scoring an empty result against the eval story gives zero on every recall metric, and an eval run missing a metric is a regression, never a pass.
-- AC-continuity-review-27: The regression fixtures for two known false-positive patterns (a narrator correcting a count mid-sentence; one person described in different words on two routes) produce no finding. (verify: planned)
+- AC-continuity-review-27: Run over the regression fixtures for two known false-positive patterns, `height-sitting-vs-standing` (a size given sitting and standing) and `sword-hand-after-fall` (a position that changes after an event), the Continuity Editor reports no finding. (verify: planned)
+- AC-continuity-review-28: When a push's build fails or its review cannot start, each editor's comment says the review did not run for that push and shows no earlier result as current, and its check run on that commit is failure. (verify: planned)
 
 ## Edge cases
 - **Runner offline or gateway out of tokens**: "AI review unavailable" with the reason, a failed
   check run, and no findings shown as if the review happened (AC-continuity-review-9).
-- **Passage too long for the model**: listed as "not reviewed: too long", check run failure.
-- **Pull request from a fork**: the editors do not run; the check run summary says the review is
-  skipped for forks. No paid inference runs for a fork.
+- **Passage too long for the model**: listed as "could not check (skipped): too long", check run
+  failure.
+- **Build failed**: the review has nothing to read; the comments must say it did not run for that
+  push (AC-continuity-review-28).
+- **Pull request from a fork**: the editors do not run and post nothing; the `ai-review` check
+  shows as skipped, and `/check-continuity` replies that forks are not reviewed. No paid inference
+  runs for a fork.
 - **No passages changed** (for example only `story-overrides.txt`): the comments say nothing
   needed review; the check runs succeed.
 - **Passage not yet in the Story Bible**: it is still reviewed against earlier passages; the

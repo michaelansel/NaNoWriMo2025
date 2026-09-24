@@ -29,8 +29,9 @@ commit:
 3. Builds every page into `dist/` ([output-formats](output-formats.md)): play, proofread, graph,
    all paths, metrics, Story Bible, passages, and the landing page.
 4. Uploads `dist/` as the `story-preview` artifact, kept for 30 days.
-5. Posts the Build comment: the size of each page, the number of story paths, and how to open the
-   preview (download `story-preview` from the run, unzip, open `index.html`).
+5. Posts the Build & Structure comment: the structure summary, the size of each page, the number
+   of passages and story paths, and how to open the preview (download `story-preview` from the
+   run, unzip, open `dist/index.html`).
 
 A separate `test` job runs the package tests and lint on every pull request and every push to
 `main`.
@@ -48,8 +49,8 @@ main-branch jobs that record the `ai/` state files (AC-build-and-deploy-10).
 
 | When | Where | What |
 |---|---|---|
-| Pull request opened or pushed | Checks list on the pull request | `build` and `test`, pending then green or red |
-| Build finished | Pull request conversation | The Build comment with the preview steps |
+| Pull request opened or pushed | Checks list on the pull request | `test`, `build` and `Structure`, pending then green, grey or red; the editors' checks ([continuity-review](continuity-review.md)) |
+| Build finished | Pull request conversation | The Build & Structure comment with the preview steps |
 | Build finished | Run page, Artifacts | `story-preview`, a zip of every page |
 | Build finished | Files changed view | Structure and formatting annotations ([structure-check](structure-check.md)) |
 | Merged | GitHub Pages | The landing page and every page, updated |
@@ -62,13 +63,13 @@ The live site's address is the repository's GitHub Pages address; the landing pa
 - AC-build-and-deploy-2: `nanoif build all --repo <repo>` writes `allpaths.html`, `allpaths-index.json`, `changes.json`, `metrics.html`, `story-bible.html`, `story-bible.json` and `passages.html` to `dist/`, `story_graph.json` to `lib/artifacts/`, and a fresh `src/PathIdLookup.twee`.
 - AC-build-and-deploy-3: When the compiled story is missing, `nanoif build all` exits non-zero with an error naming it and writes none of the later pages.
 - AC-build-and-deploy-4: When any build step fails, the pull request's build check is red and the run log names the failing step; a failed build never shows as passed. (verify: workflow)
-- AC-build-and-deploy-5: The Build comment states the size of each output page, the number of story paths, and the steps to download and open the preview. (verify: workflow)
-- AC-build-and-deploy-6: A pull request has exactly one Build comment, found by the HTML marker `<!-- nano:build -->` and edited in place on every push. (verify: planned)
-- AC-build-and-deploy-7: When the build fails, the Build comment says it failed and links the failed run instead of keeping the last successful numbers. (verify: planned)
+- AC-build-and-deploy-5: The Build comment states the size of each output page, the number of story paths, and the steps to download and open the preview.
+- AC-build-and-deploy-6: A pull request has exactly one Build comment, found by the HTML marker `<!-- nano:build -->` and edited in place on every push.
+- AC-build-and-deploy-7: When the build fails, the Build comment says it failed and links the failed run instead of keeping the last successful numbers.
 - AC-build-and-deploy-8: A push to `main` deploys `dist/` to GitHub Pages with no manual step, and the deployed landing page serves the merged content within 5 minutes of the merge. (verify: workflow)
 - AC-build-and-deploy-9: No workflow step commits or pushes to a pull request branch; after any number of automated runs, a pull request branch holds only its author's commits. (verify: workflow)
-- AC-build-and-deploy-10: Jobs triggered by a pull request have read-only access to repository contents; only the main-branch jobs that write `ai/` state can push, and only to `main`. (verify: planned)
-- AC-build-and-deploy-11: A new push to a pull request cancels that pull request's run in progress, and runs for different pull requests never queue behind each other. (verify: planned)
+- AC-build-and-deploy-10: Jobs triggered by a pull request have read-only access to repository contents; only the main-branch jobs that write `ai/` state can push, and only to `main`. (verify: workflow)
+- AC-build-and-deploy-11: A new push to a pull request cancels that pull request's run in progress, and runs for different pull requests never queue behind each other. (verify: workflow)
 - AC-build-and-deploy-12: The `test` job runs the package tests and lint on every pull request and every push to `main`, and a failure turns its check red. (verify: workflow)
 
 ## Edge cases
@@ -81,7 +82,8 @@ The live site's address is the repository's GitHub Pages address; the landing pa
   Checks tab to get a fresh one.
 - **Preview on a phone**: the zip usually cannot be opened; the writer merges and plays the live
   story, or asks another writer to check the preview.
-- **Pull request from a fork**: the build runs only after a maintainer approves the run.
+- **Pull request from a fork**: the build runs only after a maintainer approves the run, and its
+  results go to the run summary only: no Build comment and no `Structure` check run.
 - **Empty story** (only the infrastructure files and the `Start` stub): the build passes and every
   page renders, including the Story Bible placeholder.
 - **Pull request that changes no story file** (for example `story-overrides.txt` only): the build

@@ -7,6 +7,7 @@ import pytest
 from nanoif.github.commands import Command, parse_command, write_github_output
 
 
+@pytest.mark.intent("AC-continuity-review-10")
 @pytest.mark.parametrize(
     "body, expected",
     [
@@ -35,6 +36,7 @@ def test_known_commands(body, expected):
     assert parse_command(body) == expected
 
 
+@pytest.mark.intent("AC-continuity-review-10")
 @pytest.mark.parametrize(
     "body",
     [
@@ -52,6 +54,7 @@ def test_anything_else_is_not_a_command(body):
     assert parse_command(body) is None
 
 
+@pytest.mark.intent("AC-continuity-review-10")
 @pytest.mark.parametrize(
     "body, fragment",
     [

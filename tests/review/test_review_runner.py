@@ -84,6 +84,7 @@ def test_output_validates_and_records_shas_usage_and_runner(repo):
     assert finding["routes_seen"] == 1
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_transport_error_then_success_is_reviewed(repo):
     fake = FakeLLM({f"continuity:{TOLL}": [FakeLLM.transport_error(), marsh_answer(repo)]})
     artifact = run(repo, fake, passage=TOLL, editors=("continuity",))
@@ -94,6 +95,7 @@ def test_transport_error_then_success_is_reviewed(repo):
     assert len(fake.calls) == 2
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_error_twice_marks_the_unit_and_the_editor_error(repo):
     fake = FakeLLM(
         {f"continuity:{TOLL}": [FakeLLM.transport_error("down"), FakeLLM.truncated()]}
@@ -127,6 +129,7 @@ def test_budget_exhausted_mid_run_skips_the_remaining_units(repo):
     assert len(calls) == 3
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_unit_over_budget_after_truncation_is_skipped_too_long(repo):
     env = {**ENV, "NANOIF_REVIEW_UNIT_BUDGET": "5"}
     fake = FakeLLM({})
@@ -173,6 +176,7 @@ def passage_hash(repo: Path, name: str) -> str:
     return content_hash(graph["passages"][name]["content"])
 
 
+@pytest.mark.intent("AC-continuity-review-13")
 def test_dismissal_suppresses_only_when_both_hashes_match(repo):
     toll, weir = passage_hash(repo, TOLL), passage_hash(repo, WEIR)
     write_dismissal(repo, toll, weir)
@@ -199,6 +203,7 @@ def test_corrupt_dismissals_file_is_an_error(tmp_path):
     assert load_dismissals(tmp_path / "absent.jsonl") == {}
 
 
+@pytest.mark.intent("AC-continuity-review-4")
 def test_same_key_from_every_route_unit_is_one_finding(repo):
     env = {**ENV, "NANOIF_REVIEW_UNIT_BUDGET": "1800"}
 

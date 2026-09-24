@@ -125,6 +125,7 @@ def test_verified_finding_maps_ids_back_to_names_and_hashes(eval_story, unit):
     assert finding.key == finding_key("number", P, OTHER)
 
 
+@pytest.mark.intent("AC-continuity-review-5")
 def test_fabricated_quote_moves_the_finding_to_unverified(eval_story, unit):
     p_id, other_id = ids(eval_story, P, OTHER)
     data = answer(
@@ -135,6 +136,7 @@ def test_fabricated_quote_moves_the_finding_to_unverified(eval_story, unit):
     assert len(out.unverified) == 1
 
 
+@pytest.mark.intent("AC-continuity-review-5")
 def test_finding_without_a_quote_from_the_other_passage_is_unverified(eval_story, unit):
     p_id, other_id = ids(eval_story, P, OTHER)
     out = continuity.postprocess(eval_story, unit, answer(path_finding(other_id, [(p_id, P_QUOTE)])))
@@ -168,6 +170,7 @@ def test_finding_not_involving_the_passage_under_review_is_dropped(eval_story, u
     assert out.dropped == 4
 
 
+@pytest.mark.intent("AC-continuity-review-3")
 def test_severity_is_computed_by_code_from_the_type(eval_story, unit):
     p_id, other_id = ids(eval_story, P, OTHER)
     quotes = [(p_id, P_QUOTE), (other_id, OTHER_QUOTE)]
@@ -204,6 +207,7 @@ def test_canon_finding_uses_the_facts_passage(eval_story, unit):
 # -- keys and merging ------------------------------------------------------------------
 
 
+@pytest.mark.intent("AC-continuity-review-3", "AC-continuity-review-4")
 def test_finding_key_is_stable_and_order_independent():
     expected = "f-" + hashlib.sha256(b"number|Back at the ferry|Day 1 EV").hexdigest()[:8]
     assert finding_key("number", P, OTHER) == expected
@@ -224,6 +228,7 @@ def _finding(key: str, severity: str, quote: str, confidence: str = "medium") ->
     )
 
 
+@pytest.mark.intent("AC-continuity-review-4")
 def test_same_contradiction_from_three_units_merges_into_one():
     key = finding_key("death_then_alive", "The toll", "The weir")
     per_unit = [
@@ -251,6 +256,7 @@ def test_merge_orders_by_severity_then_first_seen():
     assert [f.key for f in merge_findings([[a, b], [c]])] == ["f-bbbbbbbb", "f-aaaaaaaa", "f-cccccccc"]
 
 
+@pytest.mark.intent("AC-continuity-review-13")
 def test_is_dismissed_needs_every_hash_to_match():
     finding = _finding("f-aaaaaaaa", "major", "x")
     both = {"The toll": "a" * 16, "The weir": "b" * 16}
@@ -295,6 +301,7 @@ def test_style_finding_is_single_passage_with_verified_quote(eval_story):
     assert finding.editor == "style"
 
 
+@pytest.mark.intent("AC-continuity-review-5")
 def test_style_fabricated_quote_is_unverified_and_severity_clamped(eval_story):
     unit = style_unit(eval_story, "Gull Chapel at dusk")
     out = style.postprocess(eval_story, unit, style_answer("pov_slip", "I rang the bell myself"))

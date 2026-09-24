@@ -22,7 +22,7 @@ Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego
 4. Commit to a new branch and create a pull request
 5. GitHub will automatically build and validate your changes
 6. Download the `story-preview` artifact linked from the Build comment to test
-7. Merge when ready - goes live in ~2 minutes!
+7. Merge when ready - goes live a few minutes later
 
 ### Option 2: Local Development
 

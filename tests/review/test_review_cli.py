@@ -56,6 +56,7 @@ def test_exit_0_when_every_editor_is_ok(repo, capsys, no_llm_env):
     assert artifact["mode"] == "passage"
 
 
+@pytest.mark.intent("AC-continuity-review-8")
 def test_exit_1_when_an_editor_errors(repo, capsys, no_llm_env):
     fake = FakeLLM(lambda call: FakeLLM.transport_error("gateway down"))
     out_path = repo / "out" / "review.json"
