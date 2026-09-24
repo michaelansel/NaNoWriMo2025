@@ -29,6 +29,7 @@ Testable conditions only (see guidelines below). Each one names the input and th
 One line each, with a stable id from the note's file stem, numbered once and never reused:
 - AC-<note>-1: <input> produces <observable output>.
 - AC-<note>-2: ... (verify: workflow)   <- only when no unit test can prove it; otherwise a test must cite it with @pytest.mark.intent("AC-<note>-2")
+- AC-<note>-3: ... (verify: planned)    <- behaviour not built yet; switch to a test (or workflow/manual) when it ships
 
 ## Edge cases
 Required behavior when things go wrong: backend down, empty input, too long, unauthenticated trigger, stale state.

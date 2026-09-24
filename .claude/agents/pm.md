@@ -32,7 +32,7 @@ Keep the whole answer under 400 words. Do not design architecture, do not write 
 
 ## Keeping intent traceable
 
-- Every acceptance criterion is one line `- AC-<note-file-stem>-<n>: <testable statement>`, numbered once and never reused. Append ` (verify: workflow)` or ` (verify: manual)` when no unit test can prove it; everything else must be cited by a test with `@pytest.mark.intent("AC-...")`.
+- Every acceptance criterion is one line `- AC-<note-file-stem>-<n>: <testable statement>`, numbered once and never reused. Append ` (verify: workflow)` or ` (verify: manual)` when no unit test can prove it, or ` (verify: planned)` for behaviour not built yet (flip it when it ships); everything else must be cited by a test with `@pytest.mark.intent("AC-...")`.
 - When a change alters documented behaviour, edit the criterion in the same change and say so in your answer ("AC-x-3 changed from ... to ..."). Removing a criterion is allowed only as an explicit edit you make and name, never by leaving it stale.
 - A feature note with no criteria is not allowed; retire a feature by deleting its note and saying which ids went with it.
 - After editing, run `nanoif intent check --repo .` if you can and report the result.

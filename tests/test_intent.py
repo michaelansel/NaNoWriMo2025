@@ -199,3 +199,21 @@ def test_cli_check_exit_codes(intent_repo, capsys):
     _write(intent_repo, "tests/test_other.py", TEST_OK.replace("check-1", "check-99"))
     assert main(["intent", "check", "--repo", str(intent_repo)]) == 1
     assert "unknown-citation" in capsys.readouterr().out
+
+
+def test_planned_criteria_need_no_test_and_are_reported_as_info(intent_repo):
+    _write(
+        intent_repo,
+        "features/structure-check.md",
+        FEATURE + "- AC-structure-check-4: Orphans are reported. (verify: planned)\n",
+    )
+    findings = check_repo(intent_repo)
+    planned = [f for f in findings if f.code == "planned-criterion"]
+    assert [f.level for f in planned] == ["info"]
+    assert not [f for f in findings if f.level == "error"]
+    assert load_index(intent_repo).criteria["AC-structure-check-4"].verify == "planned"
+
+
+def test_duplicate_adr_numbers_are_an_error(intent_repo):
+    _write(intent_repo, "architecture/002-other-thing.md", "# ADR-002: Other\n\nStatus: Accepted\n")
+    assert "duplicate-adr" in codes(check_repo(intent_repo))

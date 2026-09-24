@@ -50,6 +50,11 @@ def check_repo(repo: Path) -> list[Finding]:
                 Finding("error", "criterion-prefix", criterion.file, criterion.line,
                         f"{criterion.id} must be named AC-{expected}-<n> in this file")
             )
+        if criterion.verify == "planned":
+            findings.append(
+                Finding("info", "planned-criterion", criterion.file, criterion.line,
+                        f"{criterion.id} is planned; switch it to a test once the behaviour ships")
+            )
         if criterion.verify == "test" and criterion.id not in citations:
             findings.append(
                 Finding("error", "untested-criterion", criterion.file, criterion.line,
@@ -71,6 +76,12 @@ def check_repo(repo: Path) -> list[Finding]:
                 Finding("error", "unknown-citation", site.file, site.line,
                         f"{site.test} cites {cited}, which no feature note or ADR declares")
             )
+    for adr in index.adr_duplicates:
+        first = index.adrs[adr.id]
+        findings.append(
+            Finding("error", "duplicate-adr", adr.file, None,
+                    f"{adr.id} is already used by {first.file}; renumber or retire one")
+        )
     for adr in index.adrs.values():
         if not adr.status:
             findings.append(Finding("error", "adr-status", adr.file, None,

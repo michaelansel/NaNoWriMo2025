@@ -10,7 +10,7 @@ from pathlib import Path
 CRITERION_RE = re.compile(
     r"^\s*[-*]\s+(?P<id>AC-(?P<slug>[a-z0-9]+(?:-[a-z0-9]+)*)-(?P<n>\d+))\s*:\s*(?P<text>.+?)\s*$"
 )
-VERIFY_RE = re.compile(r"\(verify:\s*(?P<how>test|workflow|manual)\)\s*$")
+VERIFY_RE = re.compile(r"\(verify:\s*(?P<how>test|workflow|manual|planned)\)\s*$")
 ADR_FILE_RE = re.compile(r"^(?P<n>\d{3})-[a-z0-9-]+\.md$")
 ADR_STATUS_RE = re.compile(r"^\s*\**Status\**\s*:\s*\**\s*(?P<status>.+?)\s*\**\s*$", re.MULTILINE)
 SUPERSEDED_RE = re.compile(r"Superseded by (?P<id>ADR-\d{3})")
@@ -55,6 +55,7 @@ class IntentIndex:
     Attributes:
         criteria: Criterion id to its first declaration.
         duplicates: Later declarations of an id already seen.
+        adr_duplicates: ADR files that reuse a number already taken.
         feature_files: Every ``features/*.md`` path with the number of criteria in it.
         adrs: ADR id to record.
     """
@@ -63,6 +64,7 @@ class IntentIndex:
     duplicates: list[Criterion] = field(default_factory=list)
     feature_files: dict[str, int] = field(default_factory=dict)
     adrs: dict[str, Adr] = field(default_factory=dict)
+    adr_duplicates: list[Adr] = field(default_factory=list)
 
 
 def load_index(repo: Path) -> IntentIndex:
@@ -110,12 +112,16 @@ def load_index(repo: Path) -> IntentIndex:
         status_text = status["status"] if status else None
         superseded = SUPERSEDED_RE.search(status_text or "")
         adr_id = f"ADR-{match['n']}"
-        index.adrs[adr_id] = Adr(
+        adr = Adr(
             id=adr_id,
             file=path.relative_to(repo).as_posix(),
             status=status_text,
             superseded_by=superseded["id"] if superseded else None,
         )
+        if adr_id in index.adrs:
+            index.adr_duplicates.append(adr)
+        else:
+            index.adrs[adr_id] = adr
     return index
 
 
