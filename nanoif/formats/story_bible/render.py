@@ -18,7 +18,7 @@ from typing import Any
 from nanoif.errors import BuildError
 from nanoif.formats.common import format_date_for_display, html_environment
 from nanoif.git.service import GitService
-from nanoif.schemas.artifacts import validate_artifact, write_artifact
+from nanoif.schemas.artifacts import load_artifact, write_artifact
 
 Facts = dict[str, Any]
 
@@ -329,15 +329,6 @@ def story_bible_document(facts: Facts, commit: str, generated_at: datetime) -> d
     }
 
 
-def _read_json(path: Path, what: str) -> Any:
-    if not path.is_file():
-        raise BuildError(f"{what} not found: {path} (run `nanoif build core` first)")
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise BuildError(f"{what} is not valid JSON: {path}: {exc}") from exc
-
-
 def build_story_bible(config: StoryBibleConfig) -> StoryBibleResult:
     """Write ``story-bible.html`` and ``story-bible.json``.
 
@@ -352,12 +343,10 @@ def build_story_bible(config: StoryBibleConfig) -> StoryBibleResult:
         GitError: If the source commit cannot be resolved.
         ArtifactValidationError: If ``story-bible.json`` does not match its schema.
     """
-    story_graph = _read_json(config.story_graph_path, "story graph")
-    validate_artifact(story_graph, "story_graph")
+    story_graph = load_artifact(config.story_graph_path, "story_graph")
     cache = load_cache(config.cache_path)
     if cache is None:
-        passages = _read_json(config.passages_path, "passage list")
-        validate_artifact(passages, "passages_deduplicated")
+        passages = load_artifact(config.passages_path, "passages_deduplicated")
         facts = placeholder_facts(len(passages["passages"]))
     else:
         facts = select_facts(cache)

@@ -286,7 +286,7 @@ def test_build_with_corrupt_cache_fails(story_repo):
 
 
 def test_build_without_core_artifacts_fails(story_repo):
-    with pytest.raises(BuildError, match="story graph not found"):
+    with pytest.raises(BuildError, match="story_graph not found"):
         build_story_bible(_config(story_repo))
 
 

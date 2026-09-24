@@ -176,7 +176,7 @@ def test_run_unresolvable_base_ref_is_an_error(story_repo):
 
 
 def test_run_missing_story_graph_is_an_error(story_repo):
-    with pytest.raises(BuildError, match="story graph not found"):
+    with pytest.raises(BuildError, match="story_graph not found"):
         run(config(story_repo))
 
 

@@ -9,7 +9,7 @@ from typing import Any
 
 import jsonschema
 
-from nanoif.errors import ArtifactValidationError
+from nanoif.errors import ArtifactValidationError, BuildError
 
 SCHEMA_DIR = Path(__file__).resolve().parent
 
@@ -64,3 +64,27 @@ def write_artifact(path: Path, data: Any, name: str) -> None:
     validate_artifact(data, name)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def load_artifact(path: Path, name: str) -> Any:
+    """Read an artifact written by an earlier build step and validate it.
+
+    Args:
+        path: The artifact file.
+        name: The artifact name whose schema applies.
+
+    Returns:
+        The parsed artifact.
+
+    Raises:
+        BuildError: If the file is missing or not valid JSON.
+        ArtifactValidationError: If it does not conform to its schema.
+    """
+    if not path.is_file():
+        raise BuildError(f"{name} not found: {path} (run the step that writes it first)")
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise BuildError(f"{name} is not valid JSON: {path}: {exc}") from exc
+    validate_artifact(data, name)
+    return data

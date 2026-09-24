@@ -35,7 +35,7 @@ from nanoif.graph.categorize import (
 )
 from nanoif.graph.ids import passage_id_mapping
 from nanoif.graph.paths import enumerate_paths, path_hash
-from nanoif.schemas.artifacts import validate_artifact, write_artifact
+from nanoif.schemas.artifacts import load_artifact, write_artifact
 from nanoif.twee.files import passage_locations, relative_file
 from nanoif.twee.parse import StoryGraph, build_graph, parse_twee_dir
 
@@ -139,17 +139,6 @@ def _latest(dates: list[str]) -> str | None:
     if not dates:
         return None
     return max(dates, key=lambda value: datetime.fromisoformat(value))
-
-
-def _load_story_graph(path: Path) -> StoryGraph:
-    if not path.is_file():
-        raise BuildError(f"story graph not found: {path} (run `nanoif build core` first)")
-    try:
-        story_graph = json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as exc:
-        raise BuildError(f"story graph is not valid JSON: {path}: {exc}") from exc
-    validate_artifact(story_graph, "story_graph")
-    return story_graph
 
 
 def _build_records(
@@ -265,7 +254,7 @@ def run(config: AllPathsConfig) -> AllPathsResult:
     except ValueError as exc:
         raise BuildError(f"{src_dir} is not inside the repository {repo_root}") from exc
 
-    story_graph = _load_story_graph(config.story_graph_path)
+    story_graph = load_artifact(config.story_graph_path, "story_graph")
     enumeration = enumerate_paths(build_graph(story_graph), story_graph["start_passage"])
 
     head = parse_twee_dir(src_dir)
