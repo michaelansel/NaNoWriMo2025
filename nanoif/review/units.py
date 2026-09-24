@@ -699,6 +699,8 @@ def continuity_units(
         else []
     )
     if not routes:
+        if len(order) <= TRUNCATE_KEEP:
+            return [full]
         return [_truncated(story, target, order, branch, union_selected, budget, None, None)]
     units: list[ReviewUnit] = []
     for index, route in enumerate(routes, start=1):
@@ -708,7 +710,7 @@ def continuity_units(
             story, "continuity", target, context, branch, selected, budget, "route",
             route_index=index, route_count=len(routes),
         )
-        if unit.over_budget:
+        if unit.over_budget and len(context) > TRUNCATE_KEEP:
             unit = _truncated(story, target, context, branch, selected, budget, index, len(routes))
         units.append(unit)
     return units

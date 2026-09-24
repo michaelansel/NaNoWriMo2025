@@ -187,3 +187,38 @@ class GitService:
             contents[path] = output[cursor : cursor + size].decode("utf-8")
             cursor += size + 1
         return contents
+
+
+SNAPSHOT_IDENTITY = ("-c", "user.name=nanoif", "-c", "user.email=nanoif@example.invalid")
+"""Committer identity for throwaway snapshot repositories (never used on a real repo)."""
+
+
+def snapshot_repository(root: Path, message: str, timeout_s: float = 60.0) -> tuple[str, str]:
+    """Turn a directory into a fresh repository: an empty base commit, then everything in it.
+
+    Used to evaluate a fixture story in a temporary directory so that every passage is
+    ``changed`` against the base. Never call this on a working repository.
+
+    Args:
+        root: A directory that is not yet a git repository.
+        message: Message of the commit holding the directory's contents.
+        timeout_s: Seconds each git command may run.
+
+    Returns:
+        ``(base_sha, head_sha)``.
+
+    Raises:
+        GitError: ``root`` is already a repository, or a git command failed.
+    """
+    root = Path(root).resolve()
+    if (root / ".git").exists():
+        raise GitError(f"{root} is already a git repository")
+    service = GitService(root, timeout_s=timeout_s)
+    flags = (*SNAPSHOT_IDENTITY, "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null")
+    service._run("init", "-q", "-b", "main")
+    service._run(*flags, "commit", "-q", "--allow-empty", "-m", "empty base")
+    base = service._run("rev-parse", "HEAD").decode().strip()
+    service._run("add", "-A")
+    service._run(*flags, "commit", "-q", "--allow-empty", "-m", message)
+    head = service._run("rev-parse", "HEAD").decode().strip()
+    return base, head

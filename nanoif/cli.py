@@ -12,10 +12,14 @@ import os
 import sys
 from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from nanoif import __version__
 from nanoif.build.paths import ProjectPaths
 from nanoif.errors import NanoifError
+
+if TYPE_CHECKING:
+    from nanoif.llm.client import Completer
 
 Handler = Callable[[argparse.Namespace], int]
 
@@ -179,6 +183,76 @@ def _check_structure(args: argparse.Namespace) -> int:
     return 1 if errors and not args.exit_zero else 0
 
 
+def _ai_review(args: argparse.Namespace) -> int:
+    from nanoif.llm.errors import LLMConfigError
+    from nanoif.review.runner import review, summary_lines
+    from nanoif.schemas.artifacts import write_artifact
+
+    mode = args.mode or ("passage" if args.passage else "changed")
+    if args.passage and mode != "passage":
+        print("ai review could not run: --passage needs --mode passage", file=sys.stderr)
+        return 2
+    editors = tuple(name.strip() for name in args.editors.split(",") if name.strip())
+    try:
+        artifact = review(args.repo, mode, args.passage, editors, client=args.llm_client)
+    except (LLMConfigError, NanoifError) as exc:
+        print(f"ai review could not run: {exc}", file=sys.stderr)
+        return 2
+    out = args.out or args.repo / "dist" / "ai-review.json"
+    write_artifact(out, artifact, "ai_review")
+    for line in summary_lines(artifact):
+        print(line)
+    print(f"Wrote {out}")
+    return 0 if all(editor["status"] == "ok" for editor in artifact["editors"]) else 1
+
+
+def _ai_eval(args: argparse.Namespace) -> int:
+    import json
+    import tempfile
+
+    from nanoif.eval.report import to_json
+    from nanoif.eval.run import run_eval
+    from nanoif.llm.client import LLMClient
+    from nanoif.llm.errors import LLMConfigError
+    from nanoif.llm.profiles import Settings
+    from nanoif.schemas.artifacts import write_artifact
+
+    def could_not_run(reason: object) -> int:
+        print(f"eval could not run: {reason}", file=sys.stderr)
+        return 2
+
+    try:
+        client = args.llm_client or LLMClient(Settings.from_env())
+    except LLMConfigError as exc:
+        return could_not_run(exc)
+    baseline = None
+    if args.baseline is not None:
+        try:
+            baseline = json.loads(args.baseline.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return could_not_run(f"baseline {args.baseline} is unreadable: {exc}")
+    fixture = args.fixture or args.repo / "tests" / "fixtures" / "eval-story"
+    with tempfile.TemporaryDirectory(prefix="nanoif-eval-") as scratch:
+        try:
+            outcome = run_eval(fixture, client, Path(scratch) / "story", baseline)
+        except (LLMConfigError, NanoifError) as exc:
+            return could_not_run(exc)
+    out = args.out or args.repo / "dist" / "eval-results.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(to_json(outcome.scores), encoding="utf-8")
+    markdown_path = out.with_suffix(".md")
+    markdown_path.write_text(outcome.markdown, encoding="utf-8")
+    review_path = out.with_name("eval-ai-review.json")
+    write_artifact(review_path, outcome.review, "ai_review")
+    print(outcome.markdown)
+    if not outcome.review_ok:
+        print("eval incomplete: an editor did not review every unit", file=sys.stderr)
+    if outcome.diff is not None and not outcome.diff["ok"]:
+        print("eval below baseline", file=sys.stderr)
+    print(f"Wrote {out}, {markdown_path} and {review_path}")
+    return 0 if outcome.ok else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Return the top-level argument parser."""
     parser = argparse.ArgumentParser(prog="nanoif", description=__doc__.splitlines()[0])
@@ -239,13 +313,60 @@ def build_parser() -> argparse.ArgumentParser:
     )
     structure.set_defaults(handler=_check_structure)
     check.set_defaults(handler=lambda _args: (check.print_help(), 2)[1])
+
+    ai = subparsers.add_parser("ai", help="AI editors (paid inference)")
+    ai_commands = ai.add_subparsers(dest="ai_command")
+    ai_review = ai_commands.add_parser(
+        "review",
+        help="run the Continuity and Style editors; exit 1 when an editor could not finish",
+    )
+    ai_review.add_argument("--repo", type=Path, required=True, help="repository root (built)")
+    ai_review.add_argument(
+        "--mode",
+        choices=["changed", "all", "passage"],
+        default=None,
+        help="changed (default), all, or passage (with --passage)",
+    )
+    ai_review.add_argument("--passage", default=None, help="passage name for --mode passage")
+    ai_review.add_argument(
+        "--editors", default="continuity,style", help="comma-separated: continuity,style"
+    )
+    ai_review.add_argument(
+        "--out", type=Path, default=None, help="default: <repo>/dist/ai-review.json"
+    )
+    ai_review.set_defaults(handler=_ai_review)
+    ai_eval = ai_commands.add_parser(
+        "eval", help="review the eval story and score the editors against truth.json"
+    )
+    ai_eval.add_argument("--repo", type=Path, required=True, help="repository root")
+    ai_eval.add_argument(
+        "--fixture", type=Path, default=None, help="default: <repo>/tests/fixtures/eval-story"
+    )
+    ai_eval.add_argument(
+        "--out", type=Path, default=None, help="default: <repo>/dist/eval-results.json"
+    )
+    ai_eval.add_argument(
+        "--baseline", type=Path, default=None, help="tests/eval/baselines/<profile>.json"
+    )
+    ai_eval.set_defaults(handler=_ai_eval)
+    ai.set_defaults(handler=lambda _args: (ai.print_help(), 2)[1])
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Run the CLI and return an exit status."""
+def main(argv: list[str] | None = None, *, client: Completer | None = None) -> int:
+    """Run the CLI and return an exit status.
+
+    Args:
+        argv: Arguments without the program name; defaults to ``sys.argv[1:]``.
+        client: Completer for the ``ai`` commands instead of one built from the
+            ``NANOIF_LLM_*`` settings (tests inject a fake here).
+
+    Returns:
+        The exit status.
+    """
     parser = build_parser()
     args = parser.parse_args(argv)
+    args.llm_client = client
     if args.command is None:
         parser.print_help()
         return 0

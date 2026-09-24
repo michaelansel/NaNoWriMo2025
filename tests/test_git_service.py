@@ -85,3 +85,16 @@ def test_read_files_handles_unicode_sizes(story_repo):
     contents = GitService(story_repo).read_files("HEAD", ["src/AB-20251103.twee", "src/StoryTitle.twee"])
     assert contents["src/AB-20251103.twee"] == ":: Café\nDéjà vu → “quotes”\n"
     assert contents["src/StoryTitle.twee"] == ":: StoryTitle\nTest Story\n"
+
+
+def test_snapshot_repository_commits_on_an_empty_base(tmp_path):
+    from nanoif.git.service import snapshot_repository
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "Start.twee").write_text(":: Start\nHello.\n", encoding="utf-8")
+    base, head = snapshot_repository(tmp_path, "story")
+    service = GitService(tmp_path)
+    assert service.list_files(base, "src") == []
+    assert service.list_files(head, "src") == ["src/Start.twee"]
+    with pytest.raises(GitError, match="already a git repository"):
+        snapshot_repository(tmp_path, "again")

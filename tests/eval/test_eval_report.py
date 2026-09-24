@@ -112,3 +112,28 @@ def test_json_is_deterministic_and_round_trips(truth):
     assert text.endswith("}\n")
     assert json.loads(text) == json.loads(to_json(json.loads(text)))
     assert json.loads(text)["metrics"]["fact_recall"] == 0.04
+
+
+def test_skipped_sections_are_reported_as_skipped_not_missing_or_zero(truth):
+    from nanoif.eval.run import EXTRACTION_SKIPPED, mark_extraction_skipped
+
+    scores = mark_extraction_skipped(run_scoring(truth, {"findings": []}))
+    assert "entity_recall" not in scores["metrics"]
+    diff = diff_against_baseline(scores, base())
+    assert diff["skipped"] == ["entity_recall", "fact_recall"]
+    assert "entity_recall" not in diff["missing"]
+    markdown = render_markdown(scores, base())
+    assert f"Entities: skipped ({EXTRACTION_SKIPPED})." in markdown
+    assert f"Facts: skipped ({EXTRACTION_SKIPPED})." in markdown
+    assert f"Pronouns: skipped ({EXTRACTION_SKIPPED})." in markdown
+    assert "| Entity recall |" not in markdown
+    assert "Skipped metrics: entity_recall" in markdown
+
+
+def test_unknown_missing_metric_still_fails_the_diff(truth):
+    from nanoif.eval.run import mark_extraction_skipped
+
+    scores = mark_extraction_skipped(run_scoring(truth, {"findings": []}))
+    diff = diff_against_baseline(scores, base(new_metric=1))
+    assert diff["missing"] == ["new_metric"]
+    assert not diff["ok"]

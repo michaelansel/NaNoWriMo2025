@@ -162,6 +162,12 @@ def test_route_over_budget_keeps_last_passages_with_a_note():
     assert "8 earlier passage(s) omitted for length" in unit.note
 
 
+def test_short_route_over_budget_is_not_relabelled_truncated(diamond):
+    units = continuity_units(diamond, "The weir", budget=5)
+    assert [unit.kind for unit in units] == ["route", "route"]
+    assert all(unit.over_budget and unit.omitted == 0 for unit in units)
+
+
 def test_unit_still_too_long_after_truncation_is_over_budget():
     story = ReviewStory.from_graph(graph_of(_chain(20)))
     units = continuity_units(story, "The weir", budget=10)

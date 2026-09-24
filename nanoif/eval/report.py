@@ -79,17 +79,20 @@ def diff_against_baseline(scores: Mapping[str, Any], baseline: Mapping[str, Any]
     Returns:
         ``ok`` (no regressions), ``regressions``, ``improvements``, ``unchanged`` (each a
         list of ``{metric, baseline, current}``), and ``missing`` metrics the baseline has
-        but the scores lack.
+        but the scores lack. Metrics the scores list under ``skipped_metrics`` (a section
+        that was not run, with its reason) go to ``skipped`` instead and do not fail ``ok``.
     """
     current = dict(scores.get("metrics", scores))
+    skipped_reasons = scores.get("skipped_metrics", {}) if "metrics" in scores else {}
     base = baseline_metrics(baseline)
     regressions: list[dict[str, Any]] = []
     improvements: list[dict[str, Any]] = []
     unchanged: list[dict[str, Any]] = []
     missing: list[str] = []
+    skipped: list[str] = []
     for metric, previous in base.items():
         if metric not in current:
-            missing.append(metric)
+            (skipped if metric in skipped_reasons else missing).append(metric)
             continue
         value = current[metric]
         row = {"metric": metric, "baseline": previous, "current": value}
@@ -114,6 +117,7 @@ def diff_against_baseline(scores: Mapping[str, Any], baseline: Mapping[str, Any]
         "improvements": improvements,
         "unchanged": unchanged,
         "missing": missing,
+        "skipped": skipped,
     }
 
 
@@ -155,12 +159,17 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
             row += f" {_fmt(previous) if previous is not None else '-'} | {flags.get(metric, '')} |"
         lines.append(row)
 
+    entities, facts = scores["entities"], scores["facts"]
     detail = [
-        f"Entities: {scores['entities']['recall']:.0%} recall, "
-        f"missed {', '.join(scores['entities']['missed']) or 'none'}; "
-        f"spurious {', '.join(scores['entities']['spurious']) or 'none'}.",
-        f"Facts: {len(scores['facts']['recalled'])}/{scores['facts']['expected']} recalled; "
-        f"missed {', '.join(scores['facts']['missed']) or 'none'}.",
+        f"Entities: skipped ({entities['skipped']})."
+        if "skipped" in entities
+        else f"Entities: {entities['recall']:.0%} recall, "
+        f"missed {', '.join(entities['missed']) or 'none'}; "
+        f"spurious {', '.join(entities['spurious']) or 'none'}.",
+        f"Facts: skipped ({facts['skipped']})."
+        if "skipped" in facts
+        else f"Facts: {len(facts['recalled'])}/{facts['expected']} recalled; "
+        f"missed {', '.join(facts['missed']) or 'none'}.",
         f"Conflicts: found {', '.join(scores['conflicts']['found']) or 'none'}; "
         f"missed {', '.join(scores['conflicts']['missed']) or 'none'}.",
         "Defects: "
@@ -173,8 +182,25 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
         + ("" if totals.get("usd_known") else " (rate unknown)")
         + f" on {totals.get('profile') or '?'} ({totals.get('model') or '?'}).",
     ]
-    if not scores.get("pronouns", {}).get("scored", False):
+    pronouns = scores.get("pronouns", {})
+    if "skipped" in pronouns:
+        detail.append(f"Pronouns: skipped ({pronouns['skipped']}).")
+    elif not pronouns.get("scored", False):
         detail.append("Pronouns: not scored (no resolutions reported).")
+    for editor in scores.get("review", {}).get("editors", []):
+        line = (
+            f"Review {editor['name']}: {editor['status']}, {editor['reviewed']} of "
+            f"{editor['units']} units reviewed, {editor['findings']} finding(s), "
+            f"{editor['unverified']} unverified"
+        )
+        if editor.get("reason"):
+            line += f" ({editor['reason']})"
+        detail.append(line + ".")
+    if scores.get("skipped_metrics"):
+        reasons = sorted(set(scores["skipped_metrics"].values()))
+        detail.append(
+            f"Skipped metrics: {', '.join(scores['skipped_metrics'])} ({'; '.join(reasons)})."
+        )
     if diff is not None:
         if diff["ok"]:
             detail.append("Baseline: no metric below baseline.")
