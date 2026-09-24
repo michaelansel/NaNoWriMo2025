@@ -1,0 +1,83 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest*)",
+      "Bash(python -m pytest*)",
+      "Bash(python3 -m pytest*)",
+      "Bash(ruff *)",
+      "Bash(nanoif *)",
+      "Bash(tweego *)",
+      "Bash(pip install -e *)",
+      "Bash(actionlint*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(git blame*)",
+      "Bash(git grep*)",
+      "Bash(git ls-files*)",
+      "Bash(gh pr view*)",
+      "Bash(gh pr list*)",
+      "Bash(gh pr checks*)",
+      "Bash(gh pr diff*)",
+      "Bash(gh run view*)",
+      "Bash(gh run list*)",
+      "Bash(gh issue view*)",
+      "Bash(gh issue list*)",
+      "Bash(gh variable list*)"
+    ],
+    "ask": [
+      "Bash(nanoif ai review*)",
+      "Bash(nanoif ai eval*)",
+      "Bash(nanoif bible extract*)",
+      "Bash(git push*)",
+      "Bash(gh pr merge*)",
+      "Edit(ai/**)"
+    ],
+    "deny": [
+      "Edit(src/*-*.twee)",
+      "Edit(src/PathIdLookup.twee)",
+      "Edit(dist/**)",
+      "Bash(nanoif lint --fix*)",
+      "Bash(nanoif lint * --fix*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-edit-prompt-guard.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-edit.sh",
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}

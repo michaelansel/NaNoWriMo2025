@@ -11,7 +11,6 @@ Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego
 - **[Contributing](CONTRIBUTING.md)** - How to contribute story content
 - **[Writing Workflow](WRITING-WORKFLOW.md)** - Daily writing checklist
 - **[Development Guide](CLAUDE.md)** - For developers working on the codebase
-- **[Documentation Map](DOCUMENTATION.md)** - Complete documentation guide
 
 ## Quick Start: Contributing
 
