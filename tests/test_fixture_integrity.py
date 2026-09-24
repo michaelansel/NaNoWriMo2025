@@ -17,7 +17,9 @@ import pytest
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "eval-story"
 SRC = FIXTURE / "src"
-SCHEMA_PATH = Path(__file__).resolve().parent.parent / "nanoif" / "schemas" / "llm" / "truth.schema.json"
+SCHEMA_PATH = (
+    Path(__file__).resolve().parent.parent / "nanoif" / "schemas" / "llm" / "truth.schema.json"
+)
 
 HEADER = re.compile(r"^:: *(?P<name>[^\[\{]+?)\s*(\[[^\]]*\])?\s*(\{.*\})?\s*$")
 LINK = re.compile(r"\[\[(?P<inner>.+?)\]\]")
@@ -98,7 +100,14 @@ def test_truth_validates_against_its_schema(truth):
 
 
 def test_ids_are_unique(truth):
-    for section in ("entities", "facts", "contradictions", "pronoun_cases", "defects", "clean_paths"):
+    for section in (
+        "entities",
+        "facts",
+        "contradictions",
+        "pronoun_cases",
+        "defects",
+        "clean_paths",
+    ):
         ids = [item["id"] for item in truth[section]]
         assert len(ids) == len(set(ids)), f"duplicate ids in {section}"
     assert len(entity_names(truth)) == len(truth["entities"])
@@ -108,7 +117,9 @@ def test_ids_are_unique(truth):
 
 
 def test_prose_files_follow_the_naming_convention(files, truth):
-    prose_files = [name for name in files if name not in ("Start.twee", "StoryData.twee", "StoryTitle.twee")]
+    prose_files = [
+        name for name in files if name not in ("Start.twee", "StoryData.twee", "StoryTitle.twee")
+    ]
     assert prose_files, "no prose files"
     entries = []
     for name in prose_files:
@@ -168,7 +179,9 @@ def test_story_has_two_endings_and_branching(prose):
 def test_twee_formatting_rules(files):
     for file_name, _ in files.items():
         text = (SRC / file_name).read_text(encoding="utf-8")
-        assert text.endswith("\n") and not text.endswith("\n\n"), f"{file_name}: one trailing newline"
+        assert text.endswith("\n") and not text.endswith("\n\n"), (
+            f"{file_name}: one trailing newline"
+        )
         lines = text.split("\n")[:-1]
         for i, line in enumerate(lines):
             assert line == line.rstrip(), f"{file_name}:{i + 1} trailing whitespace"
@@ -184,7 +197,9 @@ def test_twee_formatting_rules(files):
             if line.startswith("[[") and i > 0 and not lines[i - 1].startswith("[["):
                 assert lines[i - 1] == "", f"{file_name}:{i + 1} blank line before link block"
             if line.startswith("[[") and i + 1 < len(lines) and lines[i + 1] != "":
-                assert lines[i + 1].startswith("[["), f"{file_name}:{i + 1} link block must be contiguous"
+                assert lines[i + 1].startswith("[["), (
+                    f"{file_name}:{i + 1} link block must be contiguous"
+                )
 
 
 def test_no_names_from_a_real_writing_year(passages):
@@ -206,14 +221,25 @@ def test_entity_counts(truth):
 
 def test_reference_kinds_are_all_covered(truth):
     kinds = {k for e in by_type(truth, "character") for k in e["reference_kinds"]}
-    assert {"dialogue_only", "possessive_only", "indirect", "titled", "nickname", "pronoun"} <= kinds
+    assert {
+        "dialogue_only",
+        "possessive_only",
+        "indirect",
+        "titled",
+        "nickname",
+        "pronoun",
+    } <= kinds
     protagonist = next(e for e in truth["entities"] if e["name"] == truth["story"]["protagonist"])
     assert "pronoun" in protagonist["reference_kinds"]
     nicknamed = [e for e in by_type(truth, "character") if "nickname" in e["reference_kinds"]]
     assert all(e["aliases"] for e in nicknamed)
-    dialogue_only = [e for e in by_type(truth, "character") if e["reference_kinds"] == ["dialogue_only"]]
+    dialogue_only = [
+        e for e in by_type(truth, "character") if e["reference_kinds"] == ["dialogue_only"]
+    ]
     assert len(dialogue_only) == 1
-    possessive_only = [e for e in by_type(truth, "character") if e["reference_kinds"] == ["possessive_only"]]
+    possessive_only = [
+        e for e in by_type(truth, "character") if e["reference_kinds"] == ["possessive_only"]
+    ]
     assert len(possessive_only) == 1
 
 
@@ -228,7 +254,11 @@ def test_fact_contradiction_pronoun_distractor_scene_defect_and_path_counts(trut
     assert len(truth["facts"]) == 25
     assert len(truth["contradictions"]) == 3
     assert sum(c["intentional"] for c in truth["contradictions"]) == 1
-    assert {c["scope"] for c in truth["contradictions"]} == {"same_path", "cross_branch", "within_passage"}
+    assert {c["scope"] for c in truth["contradictions"]} == {
+        "same_path",
+        "cross_branch",
+        "within_passage",
+    }
     resolvable = [p for p in truth["pronoun_cases"] if p["expected"] is not None]
     ambiguous = [p for p in truth["pronoun_cases"] if p["expected"] is None]
     assert (len(resolvable), len(ambiguous)) == (6, 2)
