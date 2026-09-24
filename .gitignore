@@ -28,3 +28,6 @@ Thumbs.db
 *.bak
 __pycache__/
 tmp/
+
+# Agent worktrees
+.claude/worktrees/
