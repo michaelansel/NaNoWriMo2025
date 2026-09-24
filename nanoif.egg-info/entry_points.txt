@@ -1,0 +1,2 @@
+[console_scripts]
+nanoif = nanoif.cli:main

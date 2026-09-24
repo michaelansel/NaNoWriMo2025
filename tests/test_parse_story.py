@@ -7,7 +7,6 @@ into story_graph.json format.
 """
 
 import sys
-import json
 from pathlib import Path
 
 # Add lib to path for imports
