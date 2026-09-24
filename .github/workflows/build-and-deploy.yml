@@ -1,6 +1,7 @@
 name: Build and deploy
 
-# Pull requests: test, build + Structure check, probe, AI review (exe runner).
+# Pull requests: test, build + Structure check, probe, AI review (exe runner), or a
+# "did not run" notice on the editors when the build or probe failed.
 # Main: test, build, (Story Bible extraction, Phase 3), deploy to Pages.
 # Nothing here pushes to a pull request branch.
 
@@ -179,6 +180,52 @@ jobs:
           llm-profile: ${{ vars.LLM_PROFILE || 'exe' }}
           llm-model: ${{ vars.LLM_MODEL }}
           python-version: ${{ env.PYTHON_VERSION }}
+
+  ai-review-not-run:
+    # The review never started for this push (the build failed, or the probe failed, for
+    # example on an invalid vars.AI_RUNNER), so ai-review was skipped. Replace both editor
+    # comments and fail both editor checks on this commit, so an earlier result is never
+    # shown as current (AC-continuity-review-28). !cancelled() rather than always(): a
+    # newer push cancels this run, and its comments must not be overwritten.
+    name: ai-review-not-run
+    needs: [build, probe]
+    if: >-
+      !cancelled() && github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      (needs.build.result != 'success' || needs.probe.result != 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write # Continuity and Style sticky comments
+      checks: write # Continuity Editor and Style Editor check runs
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BUILD_RESULT: ${{ needs.build.result }}
+      PROBE_RESULT: ${{ needs.probe.result }}
+      PROBE_REASON: ${{ needs.probe.outputs.reason }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Say the AI review did not run for this push
+        run: |
+          if [ "$BUILD_RESULT" != success ]; then
+            reason="the build did not finish (${BUILD_RESULT}), so there was nothing to review; the Build & Structure comment says why"
+          else
+            reason="the AI runner check failed: ${PROBE_REASON:-the probe job (${PROBE_RESULT}) log says why}"
+          fi
+          nanoif github not-run --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$reason"
+          echo "::error::AI review did not run: $reason"
+          exit 1
 
   bible-extract:
     # PLACEHOLDER until Phase 3. The real job runs `nanoif bible extract --incremental` on

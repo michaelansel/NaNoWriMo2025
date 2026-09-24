@@ -209,6 +209,53 @@ jobs:
           llm-model: ${{ vars.LLM_MODEL }}
           python-version: ${{ env.PYTHON_VERSION }}
 
+  ai-review-not-run:
+    # The requested review never started (the pull request's build failed, or the probe
+    # failed, for example on an invalid vars.AI_RUNNER), so ai-review was skipped. Replace
+    # both editor comments and fail both editor checks on the head commit, so an earlier
+    # result is never shown as current (AC-continuity-review-28).
+    name: ai-review-not-run
+    needs: [parse, build, probe]
+    if: >-
+      !cancelled() && needs.parse.result == 'success' &&
+      needs.parse.outputs.command == 'check-continuity' && needs.parse.outputs.error == '' &&
+      needs.parse.outputs.same_repo == 'true' &&
+      (needs.build.result != 'success' || needs.probe.result != 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ needs.parse.outputs.pr }}
+      HEAD_SHA: ${{ needs.parse.outputs.head_sha }}
+      BUILD_RESULT: ${{ needs.build.result }}
+      PROBE_RESULT: ${{ needs.probe.result }}
+      PROBE_REASON: ${{ needs.probe.outputs.reason }}
+    steps:
+      # Default-branch tooling only; no pull-request code runs with this token.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install package
+        run: python -m pip install -e .
+      - name: Say the AI review did not run for this request
+        run: |
+          if [ "$BUILD_RESULT" != success ]; then
+            reason="the build did not finish (${BUILD_RESULT}), so there was nothing to review; the build job's log in this run says why"
+          else
+            reason="the AI runner check failed: ${PROBE_REASON:-the probe job (${PROBE_RESULT}) log says why}"
+          fi
+          nanoif github not-run --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$reason"
+          echo "::error::AI review did not run: $reason"
+          exit 1
+
   dismiss:
     name: dismiss
     needs: parse

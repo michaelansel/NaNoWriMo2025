@@ -115,6 +115,29 @@ def test_unavailable_posts_both_editors_as_failures(wired):
     assert [r["conclusion"] for r in wired.check_runs] == ["failure", "failure"]
 
 
+@pytest.mark.intent("AC-continuity-review-28")
+def test_not_run_replaces_stale_results_and_fails_both_checks_on_the_commit(wired):
+    wired.add_comment(12, BOT, f"{MARKER_CONTINUITY}\n### Continuity Editor: No findings")
+    wired.add_comment(12, BOT, f"{MARKER_STYLE}\n### Style Editor: 1 finding")
+    args = ["github", "not-run", "--pr", "12", "--reason", "the build failed"]
+    assert main([*args, "--head-sha", "d" * 40]) == 0
+    bodies = wired.bodies(12)
+    assert len(bodies) == 2
+    assert all("did not run for commit `ddddddd`: the build failed" in b for b in bodies)
+    assert not any("No findings" in b or "1 finding" in b for b in bodies)
+    runs = [(r["name"], r["conclusion"], r["head_sha"]) for r in wired.check_runs]
+    assert runs == [
+        ("Continuity Editor", "failure", "d" * 40),
+        ("Style Editor", "failure", "d" * 40),
+    ]
+
+
+def test_not_run_requires_the_commit(wired):
+    with pytest.raises(SystemExit) as excinfo:
+        main(["github", "not-run", "--pr", "12", "--reason", "x"])
+    assert excinfo.value.code == 2
+
+
 def test_unavailable_rejects_unknown_editor(wired):
     with pytest.raises(SystemExit) as excinfo:
         main(["github", "unavailable", "--pr", "12", "--reason", "x", "--editors", "world"])

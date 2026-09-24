@@ -9,7 +9,9 @@ inputs:
     description: The runner's healthz URL (vars.EXE_HEALTH_URL). Empty means not configured.
     default: ""
   override:
-    description: vars.AI_RUNNER; "exe" or "hosted" skips the probe.
+    description: >-
+      vars.AI_RUNNER; "exe" or "hosted" skips the probe. Any other non-empty value fails
+      the probe with a message naming it.
     default: ""
 
 outputs:
@@ -47,7 +49,12 @@ runs:
               reason="exe runner offline (healthz did not answer within 5 s)"
             fi ;;
           *)
-            echo "::error::vars.AI_RUNNER must be exe or hosted, got '$OVERRIDE'"
+            # Never a silent skip: the probe fails, and the ai-review-not-run job turns
+            # that into "did not run" comments and failed editor checks on this commit.
+            reason="vars.AI_RUNNER is '$OVERRIDE', but it must be empty, exe or hosted"
+            echo "reason=$reason" >> "$GITHUB_OUTPUT"
+            echo "::error::$reason. Fix it under Settings > Secrets and variables > Actions > Variables; the AI review did not run."
+            echo "AI runner: **probe failed** ($reason)" >> "$GITHUB_STEP_SUMMARY"
             exit 1 ;;
         esac
         echo "runner=$runner" >> "$GITHUB_OUTPUT"

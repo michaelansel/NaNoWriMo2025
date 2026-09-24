@@ -20,6 +20,7 @@ from nanoif.github.report import (
     header_line,
     render_build,
     render_editor,
+    render_not_run,
     render_pending,
     render_unavailable,
     structure_annotations,
@@ -142,6 +143,25 @@ def test_unavailable_matches_golden():
     assert rendered.check.name == "Continuity Editor"
 
 
+@pytest.mark.intent("AC-continuity-review-28")
+def test_not_run_matches_golden():
+    rendered = render_not_run("continuity", "the build failed", "d" * 40, RUN)
+    assert rendered.body == (GOLDEN / "continuity_not_run.md").read_text(encoding="utf-8")
+    check = rendered.check
+    assert (check.name, check.conclusion) == ("Continuity Editor", "failure")
+    assert check.title == "Continuity Editor: did not run"
+    assert "commit ddddddd: the build failed" in check.summary
+    assert MARKER_CONTINUITY not in check.text
+
+
+@pytest.mark.intent("AC-continuity-review-28")
+def test_not_run_shows_no_earlier_result_as_current():
+    body = render_not_run("style", "the AI runner check failed", "d" * 40, RUN).body
+    assert body.startswith(MARKER_STYLE + "\n### Style Editor: did not run\n")
+    assert "finding" not in body.lower()
+    assert "No earlier result is shown" in body
+
+
 @pytest.mark.intent("AC-build-and-deploy-5", "AC-structure-check-21")
 def test_build_comment_matches_golden():
     rendered = render_build(STRUCTURE, STATS, RUN, build_ok=True)
@@ -205,6 +225,7 @@ def test_no_findings_appears_only_for_a_clean_ok_editor():
         assert ("No findings" in body) is clean, name
     assert "No findings" not in render_unavailable("style", "x", RUN).body
     assert "No findings" not in render_pending("style", RUN)
+    assert "No findings" not in render_not_run("style", "x", "d" * 40, RUN).body
 
 
 @pytest.mark.intent("AC-continuity-review-8")

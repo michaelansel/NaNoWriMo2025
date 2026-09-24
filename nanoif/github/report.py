@@ -328,6 +328,44 @@ def render_unavailable(editor_name: str, reason: str, run: RunInfo) -> Rendered:
     return Rendered(spec.marker, body, check)
 
 
+def render_not_run(editor_name: str, reason: str, head_sha: str, run: RunInfo) -> Rendered:
+    """Render the comment and failed check run for a push whose review never started.
+
+    Used when the build failed or the runner probe failed, so the review job was skipped.
+    The comment replaces the previous result, which may not match this commit.
+
+    Args:
+        editor_name: ``continuity`` or ``style``.
+        reason: Why the review did not run (for example ``the build failed``).
+        head_sha: The commit the review did not run for.
+        run: The workflow run.
+
+    Returns:
+        The comment body and a ``failure`` check payload.
+    """
+    spec = EDITORS[editor_name]
+    context = {
+        "marker": spec.marker,
+        "title": spec.title,
+        "reason": sanitize(reason, 300) or "no reason recorded",
+        "sha": sanitize(head_sha, 40)[:7],
+        "run": run.label,
+        "retry": RETRY,
+    }
+    body = _environment().get_template("not_run.md.jinja2").render(**context)
+    check = CheckPayload(
+        name=spec.title,
+        conclusion="failure",
+        title=f"{spec.title}: did not run",
+        summary=(
+            f"The AI review did not run for commit {context['sha']}: "
+            f"{context['reason']}. Nothing was checked."
+        ),
+        text=body.removeprefix(spec.marker).lstrip("\n"),
+    )
+    return Rendered(spec.marker, body, check)
+
+
 def render_pending(editor_name: str, run: RunInfo) -> str:
     """Render the "review running" body that replaces a stale comment at job start.
 

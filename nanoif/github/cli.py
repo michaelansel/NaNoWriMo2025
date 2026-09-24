@@ -32,6 +32,7 @@ from nanoif.github.report import (
     collect_build_stats,
     render_build,
     render_editor,
+    render_not_run,
     render_pending,
     render_unavailable,
 )
@@ -115,6 +116,13 @@ def _editor_names(value: str) -> list[str]:
 def _unavailable(args: argparse.Namespace) -> int:
     run = RunInfo.from_env()
     rendered = [render_unavailable(name, args.reason, run) for name in args.editors]
+    _publish(rendered, args.pr, args.head_sha)
+    return EXIT_OK
+
+
+def _not_run(args: argparse.Namespace) -> int:
+    run = RunInfo.from_env()
+    rendered = [render_not_run(name, args.reason, args.head_sha, run) for name in args.editors]
     _publish(rendered, args.pr, args.head_sha)
     return EXIT_OK
 
@@ -223,6 +231,17 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     unavailable.add_argument("--head-sha")
     unavailable.set_defaults(handler=_unavailable)
+
+    not_run = commands.add_parser(
+        "not-run", help="AI review never started for this commit (build or probe failed)"
+    )
+    not_run.add_argument("--pr", type=int, required=True)
+    not_run.add_argument("--reason", required=True)
+    not_run.add_argument("--head-sha", required=True, help="the commit it did not run for")
+    not_run.add_argument(
+        "--editors", type=_editor_names, default=list(EDITORS), help="comma-separated"
+    )
+    not_run.set_defaults(handler=_not_run)
 
     pending = commands.add_parser("pending", help="mark AI comments as running")
     pending.add_argument("--pr", type=int, required=True)

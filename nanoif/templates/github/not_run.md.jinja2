@@ -1,0 +1,6 @@
+{{ marker }}
+### {{ title }}: did not run
+<sub>{{ title }} · not run for `{{ sha }}` · {{ run }}</sub>
+
+The AI review did not run for commit `{{ sha }}`: {{ reason }}. No earlier result is shown, because it may not match this commit. Nothing was checked, so this is not a pass.
+Once the reason above is fixed, push again or reply `{{ retry }}`.
