@@ -163,22 +163,21 @@ def _parse_command(args: argparse.Namespace) -> int:
 
 
 def _dismiss(args: argparse.Namespace) -> int:
-    review = None
-    if args.review is not None and args.review.is_file():
-        try:
-            review = load_artifact(args.review, "ai_review")
-        except (BuildError, ArtifactValidationError) as exc:
-            return _usage(str(exc))
+    # No review result means no passage hashes: refuse rather than write a key-only line.
+    if args.review is None or not args.review.is_file():
+        print(f"error: no AI review result for PR #{args.pr}; nothing recorded", file=sys.stderr)
+        return EXIT_API
+    try:
+        review = load_artifact(args.review, "ai_review")
+    except (BuildError, ArtifactValidationError) as exc:
+        return _usage(str(exc))
     try:
         record = build_record(args.key, args.by, args.pr, args.reason, review)
     except DismissalError as exc:
-        print(f"error: {exc}", file=sys.stderr)
+        print(f"error: {exc}; nothing recorded", file=sys.stderr)
         return EXIT_API
     append_record(args.out, record)
-    print(
-        f"recorded {args.key} for PR #{args.pr}"
-        + (f" ({record['note']})" if record["note"] else "")
-    )
+    print(f"recorded {args.key} for PR #{args.pr}")
     return EXIT_OK
 
 
@@ -243,6 +242,6 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     dismiss.add_argument("--by", required=True)
     dismiss.add_argument("--pr", type=int, required=True)
     dismiss.add_argument("--reason", default="")
-    dismiss.add_argument("--review", type=Path, help="the PR's last ai-review.json, if any")
+    dismiss.add_argument("--review", type=Path, help="the PR's last ai-review.json")
     dismiss.add_argument("--out", type=Path, required=True, help="ai/dismissals.jsonl")
     dismiss.set_defaults(handler=_dismiss)

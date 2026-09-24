@@ -53,9 +53,16 @@ def test_report_reapplies_dismissals(wired, tmp_path):
     review = make_review(make_editor(findings=[make_finding()]), make_editor("style"))
     path = _write_review(tmp_path, review)
     dismissals = tmp_path / "dismissals.jsonl"
-    dismissals.write_text(
-        json.dumps({"key": "f-1a2b3c4d", "passages": None, "hashes": None}) + "\n"
-    )
+    record = {
+        "key": "f-1a2b3c4d",
+        "passages": ["Day 1 EV", "Back at the ferry"],
+        "hashes": ["h1", "h2"],
+        "by": "w",
+        "pr": 12,
+        "at": "2026-11-03T09:30:00Z",
+        "reason": "",
+    }
+    dismissals.write_text(json.dumps(record) + "\n")
     args = [
         "github",
         "report",
@@ -261,7 +268,7 @@ def test_dismiss_appends_record_with_hashes(tmp_path):
     assert record["hashes"] == ["h1", "h2"] and record["by"] == "wren-writer"
 
 
-def test_dismiss_without_artifact_records_null_hashes(tmp_path):
+def test_dismiss_without_artifact_is_refused_and_writes_nothing(tmp_path, capsys):
     out = tmp_path / "dismissals.jsonl"
     args = [
         "github",
@@ -277,8 +284,9 @@ def test_dismiss_without_artifact_records_null_hashes(tmp_path):
         "--out",
         str(out),
     ]
-    assert main(args) == 0
-    assert json.loads(out.read_text())["hashes"] is None
+    assert main(args) == 1
+    assert not out.exists()
+    assert "no AI review result" in capsys.readouterr().err
 
 
 def test_dismiss_unknown_key_writes_nothing_and_exits_1(tmp_path):

@@ -9,7 +9,7 @@ import pytest
 from github_fakes import make_editor, make_finding, make_review
 
 from nanoif.github.dismiss import (
-    NO_ARTIFACT_NOTE,
+    RECORD_KEYS,
     DismissalError,
     append_record,
     apply_dismissals,
@@ -24,30 +24,25 @@ def _review():
     return make_review(make_editor(findings=[make_finding()]), make_editor("style"))
 
 
-def test_record_copies_passages_and_hashes_from_the_review():
+def test_record_has_exactly_the_contract_keys_with_hashes_in_passage_order():
     record = build_record("f-1a2b3c4d", "wren-writer", 12, "on purpose", _review(), NOW)
     assert record == {
         "key": "f-1a2b3c4d",
-        "type": "number",
-        "editor": "continuity",
         "passages": ["Day 1 EV", "Back at the ferry"],
         "hashes": ["h1", "h2"],
-        "fact_id": None,
         "by": "wren-writer",
         "pr": 12,
         "at": "2026-11-03T09:30:00Z",
         "reason": "on purpose",
-        "note": None,
     }
+    assert tuple(record) == RECORD_KEYS
 
 
-def test_record_without_artifact_has_null_hashes_and_says_so():
-    record = build_record("f-1a2b3c4d", "wren-writer", 12, "", None, NOW)
-    assert record["hashes"] is None and record["passages"] is None
-    assert record["note"] == NO_ARTIFACT_NOTE and record["reason"] is None
+def test_missing_reason_is_an_empty_string():
+    assert build_record("f-1a2b3c4d", "w", 12, None, _review(), NOW)["reason"] == ""
 
 
-def test_unknown_key_in_an_available_review_is_refused():
+def test_unknown_key_is_refused():
     with pytest.raises(DismissalError, match="f-00000000"):
         build_record("f-00000000", "wren-writer", 12, "", _review(), NOW)
 
@@ -56,7 +51,7 @@ def test_append_and_load_round_trip(tmp_path):
     path = tmp_path / "ai" / "dismissals.jsonl"
     path.parent.mkdir()
     path.write_text('{"key": "f-00000001"}')  # no trailing newline
-    append_record(path, build_record("f-1a2b3c4d", "w", 1, "", None, NOW))
+    append_record(path, build_record("f-1a2b3c4d", "w", 1, "", _review(), NOW))
     lines = path.read_text().splitlines()
     assert len(lines) == 2 and json.loads(lines[1])["key"] == "f-1a2b3c4d"
     assert [r["key"] for r in load_dismissals(path)] == ["f-00000001", "f-1a2b3c4d"]
@@ -90,7 +85,15 @@ def test_dismissal_lapses_when_a_cited_passage_changed():
     assert [f["key"] for f in result["editors"][0]["findings"]] == ["f-1a2b3c4d"]
 
 
-def test_hashless_dismissal_matches_on_key_alone():
-    record = build_record("f-1a2b3c4d", "w", 1, "", None, NOW)
+def test_a_line_without_hashes_never_suppresses():
+    record = {
+        "key": "f-1a2b3c4d",
+        "passages": [],
+        "hashes": [],
+        "by": "w",
+        "pr": 1,
+        "at": "2026-11-03T09:30:00Z",
+        "reason": "",
+    }
     result = apply_dismissals(_review(), [record])
-    assert result["editors"][0]["findings"] == []
+    assert [f["key"] for f in result["editors"][0]["findings"]] == ["f-1a2b3c4d"]
