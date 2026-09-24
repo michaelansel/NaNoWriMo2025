@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "style_review",
+  "description": "Output of the Style Editor for one passage: point of view, tense, and protagonist naming against the story's storyStyle. Quotes come from the passage under review only; code verifies them and computes the final severity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings", "notes"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "description", "severity", "confidence", "quotes"],
+        "properties": {
+          "type": {"enum": ["pov_slip", "tense_slip", "protagonist_name"]},
+          "description": {"type": "string"},
+          "severity": {"enum": ["minor", "major", "critical"]},
+          "confidence": {"enum": ["low", "medium", "high"]},
+          "quotes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["text"],
+              "properties": {
+                "text": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "notes": {"type": "string"}
+  }
+}

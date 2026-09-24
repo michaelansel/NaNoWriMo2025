@@ -1,0 +1,12 @@
+{
+  "original_finding": "The sword is held in her right hand but its handle is against her left ear (2025: reported after she fell on it).",
+  "why_false": "She fell on the sword between the two statements; its position changed.",
+  "passage_under_review": "The fall",
+  "other_passage": "Day 6 EV",
+  "type": "physical",
+  "quotes": {
+    "The fall": "she was lying with the handle against her left ear",
+    "Day 6 EV": "She held it in her right hand"
+  },
+  "expected_findings": 0
+}

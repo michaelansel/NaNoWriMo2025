@@ -157,6 +157,7 @@ class ReviewStory:
         ids: Passage name to its stable id.
         locations: Passage name to where it is declared, when known.
         style: The ``storyStyle`` settings.
+        repo: The repository root, for repository-relative file names.
     """
 
     start: str
@@ -165,6 +166,7 @@ class ReviewStory:
     ids: dict[str, str]
     locations: dict[str, PassageLocation] = field(default_factory=dict)
     style: StoryStyleConfig = field(default_factory=lambda: StoryStyleConfig({}, "not read"))
+    repo: Path | None = None
 
     @classmethod
     def from_graph(
@@ -173,6 +175,7 @@ class ReviewStory:
         tags: Mapping[str, Sequence[str]] | None = None,
         locations: Mapping[str, PassageLocation] | None = None,
         style: StoryStyleConfig | None = None,
+        repo: Path | None = None,
     ) -> ReviewStory:
         """Build from a ``story_graph`` artifact, dropping infrastructure passages.
 
@@ -181,6 +184,7 @@ class ReviewStory:
             tags: Passage name to its tags, from the source files.
             locations: Passage name to its declaration site.
             style: The ``storyStyle`` settings.
+            repo: The repository root.
 
         Returns:
             The review view of the story.
@@ -212,6 +216,7 @@ class ReviewStory:
             ids=passage_id_mapping(content),
             locations=dict(locations or {}),
             style=style or StoryStyleConfig({}, "not read"),
+            repo=repo,
         )
 
     def name_for_id(self) -> dict[str, str]:
@@ -265,7 +270,7 @@ def load_story(paths: ProjectPaths) -> ReviewStory:
         if paths.src.is_dir()
         else StoryStyleConfig({}, f"story source {paths.src} not found")
     )
-    return ReviewStory.from_graph(story_graph, tags, locations, style)
+    return ReviewStory.from_graph(story_graph, tags, locations, style, paths.repo)
 
 
 def select_passages(

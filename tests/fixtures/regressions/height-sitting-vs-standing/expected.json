@@ -1,0 +1,12 @@
+{
+  "original_finding": "A creature's head is near half again her height while sitting but it is nearly twice her height standing (2025: reported on four paths).",
+  "why_false": "Sitting and standing heights differ; both statements are consistent.",
+  "passage_under_review": "The thing stands",
+  "other_passage": "Day 5 EV",
+  "type": "physical",
+  "quotes": {
+    "The thing stands": "Standing, it was nearly twice her height",
+    "Day 5 EV": "Even sitting, its head was near half again Wren's height"
+  },
+  "expected_findings": 0
+}

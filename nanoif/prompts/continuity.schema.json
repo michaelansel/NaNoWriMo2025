@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "continuity_review",
+  "description": "Output of the Continuity Editor for one review unit. Every finding pairs the passage under review with exactly one other source and quotes both verbatim; code verifies the quotes and computes the final severity.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["findings", "notes"],
+  "properties": {
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["type", "source", "other", "description", "severity", "confidence", "quotes"],
+        "properties": {
+          "type": {
+            "enum": [
+              "death_then_alive",
+              "world_rule",
+              "timeline",
+              "number",
+              "name_typo",
+              "identity",
+              "physical",
+              "object",
+              "location",
+              "knowledge",
+              "other"
+            ]
+          },
+          "source": {"enum": ["path", "canon"]},
+          "other": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["passage_id", "fact_id"],
+            "properties": {
+              "passage_id": {"type": ["string", "null"]},
+              "fact_id": {"type": ["string", "null"]}
+            }
+          },
+          "description": {"type": "string"},
+          "severity": {"enum": ["minor", "major", "critical"]},
+          "confidence": {"enum": ["low", "medium", "high"]},
+          "quotes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["passage_id", "text"],
+              "properties": {
+                "passage_id": {"type": "string"},
+                "text": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "notes": {"type": "string"}
+  }
+}

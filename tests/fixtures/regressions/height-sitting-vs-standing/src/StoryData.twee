@@ -1,0 +1,12 @@
+:: StoryData
+{
+  "ifid": "3B7D2E91-5C4A-4F08-9A6E-1D2C3B4A5F60",
+  "format": "Harlowe",
+  "format-version": "3.3.9",
+  "start": "Start",
+  "storyStyle": {
+    "perspective": "third-person",
+    "protagonist": "Wren Halloway",
+    "tense": "past"
+  }
+}
