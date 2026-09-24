@@ -103,11 +103,21 @@ jobs:
           base-ref: ${{ github.base_ref }}
 
       - name: Build & Structure report
-        if: ${{ !cancelled() && steps.structure.outcome == 'success' }}
+        # Runs after any earlier failure too: when install, lint or the structure check
+        # failed, the comment and a failed Structure check on this commit say the structure
+        # check did not run, instead of the previous push's result staying up (AC-build-and-deploy-7).
+        if: ${{ !cancelled() }}
         env:
           BUILD_OUTCOME: ${{ steps.build.outcome }}
+          STRUCTURE_OUTCOME: ${{ steps.structure.outcome }}
         run: |
-          args=(--structure dist/structure.json --dist dist --build-outcome "$BUILD_OUTCOME")
+          if ! command -v nanoif >/dev/null 2>&1; then
+            echo "::warning::nanoif is not installed (an earlier step failed); installing it to post the report"
+            echo "Build & Structure report: nanoif was not installed; retried the install to post the report." >> "$GITHUB_STEP_SUMMARY"
+            python -m pip install -e .
+          fi
+          args=(--structure dist/structure.json --dist dist
+                --build-outcome "$BUILD_OUTCOME" --structure-outcome "$STRUCTURE_OUTCOME")
           if [ -n "$PR_NUMBER" ]; then args+=(--pr "$PR_NUMBER" --head-sha "$HEAD_SHA"); fi
           nanoif github build-report "${args[@]}"
 

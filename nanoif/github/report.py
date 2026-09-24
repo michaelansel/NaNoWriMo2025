@@ -435,27 +435,36 @@ def _kb(size: int | None) -> str:
 
 
 def render_build(
-    findings: Sequence[Mapping[str, Any]],
+    findings: Sequence[Mapping[str, Any]] | None,
     stats: BuildStats | None,
     run: RunInfo,
     build_ok: bool,
+    *,
+    structure_crashed: bool = False,
 ) -> Rendered:
     """Render the Build & Structure sticky comment and the ``Structure`` check run.
 
     Args:
-        findings: Structure findings (already validated against their schema).
+        findings: Structure findings (already validated against their schema), or ``None``
+            when the structure check produced no result for this commit.
         stats: Output sizes and counts, or ``None`` when the build did not produce ``dist/``.
         run: The workflow run.
         build_ok: Whether the story build step succeeded.
+        structure_crashed: With ``findings`` ``None``: the structure check itself failed
+            (``True``) or an earlier step failed before it could run (``False``).
 
     Returns:
-        The comment body and the ``Structure`` check payload.
+        The comment body and the ``Structure`` check payload. Without a structure result
+        the comment says the check did not run, never "0 errors", and the check fails.
     """
+    structure_ran = findings is not None
     by_level: dict[str, list[dict[str, Any]]] = {"error": [], "warning": [], "info": []}
-    for finding in findings:
+    for finding in findings or ():
         by_level[finding["level"]].append(_structure_view(finding))
     errors, warnings, infos = (len(by_level[k]) for k in ("error", "warning", "info"))
-    if not build_ok:
+    if not structure_ran and structure_crashed:
+        headline = "structure check could not run"
+    elif not build_ok:
         headline = "build failed"
     elif errors:
         headline = _plural(errors, "structure error")
@@ -472,14 +481,20 @@ def render_build(
             "? paths" if stats.path_count is None else _plural(stats.path_count, "path"),
         ]
     header = " · ".join(["Build", *counts, run.label])
-    structure_line = (
-        f"{_plural(errors, 'error')}, {_plural(warnings, 'warning')}, {_plural(infos, 'note')}"
-    )
+    if structure_ran:
+        structure_line = (
+            f"{_plural(errors, 'error')}, {_plural(warnings, 'warning')}, "
+            f"{_plural(infos, 'note')}"
+        )
+    else:
+        structure_line = "not checked"
     context = {
         "marker": MARKER_BUILD,
         "headline": headline,
         "header": header,
         "build_ok": build_ok,
+        "structure_ran": structure_ran,
+        "structure_crashed": structure_crashed,
         "run": run.label,
         "structure_line": structure_line,
         "errors": by_level["error"][:MAX_LISTED],
@@ -491,17 +506,22 @@ def render_build(
         "sizes": [] if stats is None else [(label, name, _kb(s)) for label, name, s in stats.sizes],
     }
     body = _environment().get_template("build.md.jinja2").render(**context)
-    title = (
-        "Structure clean"
-        if not findings
-        else f"{_plural(errors, 'error')}, {_plural(warnings, 'warning')}"
-    )
+    if not structure_ran:
+        title = "Structure check did not run"
+        conclusion = "failure"
+    else:
+        title = (
+            "Structure clean"
+            if not findings
+            else f"{_plural(errors, 'error')}, {_plural(warnings, 'warning')}"
+        )
+        conclusion = structure_conclusion(findings or ())
     check = CheckPayload(
         name=STRUCTURE_CHECK,
-        conclusion=structure_conclusion(findings),
+        conclusion=conclusion,
         title=title,
         summary=f"{header}\n\nStructure: {structure_line}.",
         text=body.removeprefix(MARKER_BUILD).lstrip("\n"),
-        annotations=tuple(structure_annotations(findings)),
+        annotations=tuple(structure_annotations(findings or ())),
     )
     return Rendered(MARKER_BUILD, body, check)

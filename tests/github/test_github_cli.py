@@ -185,6 +185,82 @@ def test_build_report_with_failed_build_and_no_dist(wired, tmp_path):
     assert "build failed" in wired.bodies(12)[0]
 
 
+def _build_report_args(structure, dist, *extra):
+    return [
+        "github",
+        "build-report",
+        "--pr",
+        "12",
+        "--structure",
+        str(structure),
+        "--dist",
+        str(dist),
+        *extra,
+    ]
+
+
+@pytest.mark.intent("AC-build-and-deploy-7", "AC-structure-check-18")
+def test_build_report_when_an_early_step_failed_replaces_the_stale_comment(wired, tmp_path):
+    stale = wired.add_comment(
+        12, BOT, f"{MARKER_BUILD}\n### Build & Structure: built, structure clean\n0 errors"
+    )
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    args = _build_report_args(
+        dist / "structure.json",
+        dist,
+        "--build-outcome",
+        "skipped",
+        "--structure-outcome",
+        "skipped",
+        "--head-sha",
+        "d" * 40,
+    )
+    assert main(args) == 0
+    assert wired.bodies(12) == [stale["body"]]
+    assert "The build failed before the structure check could run" in stale["body"]
+    assert "0 errors" not in stale["body"] and "Preview" not in stale["body"]
+    run = wired.check_runs[0]
+    assert (run["name"], run["conclusion"], run["head_sha"]) == ("Structure", "failure", "d" * 40)
+
+
+@pytest.mark.intent("AC-structure-check-18")
+def test_build_report_when_the_structure_step_failed_ignores_its_partial_output(wired, tmp_path):
+    structure = tmp_path / "structure.json"
+    structure.write_text("[]")
+    args = _build_report_args(
+        structure, tmp_path, "--build-outcome", "skipped", "--structure-outcome", "failure"
+    )
+    assert main(args) == 0
+    body = wired.bodies(12)[0]
+    assert "The structure check could not run" in body and "0 errors" not in body
+    assert wired.check_runs[0]["conclusion"] == "failure"
+
+
+@pytest.mark.intent("AC-structure-check-18")
+def test_build_report_with_a_missing_structure_file_reports_it_and_exits_2(
+    wired, tmp_path, capsys
+):
+    args = _build_report_args(tmp_path / "absent.json", tmp_path)
+    assert main(args) == 2
+    assert "The structure check could not run" in wired.bodies(12)[0]
+    assert wired.check_runs[0]["conclusion"] == "failure"
+    assert "absent.json" in capsys.readouterr().err
+
+
+@pytest.mark.intent("AC-build-and-deploy-7")
+def test_build_report_for_a_failed_build_shows_no_stale_sizes_or_preview(wired, tmp_path):
+    structure = tmp_path / "structure.json"
+    structure.write_text("[]")
+    dist = tmp_path / "dist"
+    dist.mkdir()
+    (dist / "play.html").write_text("old")
+    assert main(_build_report_args(structure, dist, "--build-outcome", "failure")) == 0
+    body = wired.bodies(12)[0]
+    assert "build failed" in body
+    assert "play.html" not in body and "Preview" not in body
+
+
 def test_build_report_with_unreadable_structure_is_usage_error(wired, tmp_path):
     structure = tmp_path / "structure.json"
     structure.write_text("not json")

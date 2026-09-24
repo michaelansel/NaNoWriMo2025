@@ -41,6 +41,7 @@ EXIT_OK = 0
 EXIT_API = 1
 EXIT_USAGE = 2
 WRITE_ROLES = frozenset({"admin", "maintain", "write"})
+OUTCOMES = ("success", "failure", "cancelled", "skipped")
 REACTIONS = ("+1", "-1", "laugh", "confused", "heart", "hooray", "rocket", "eyes")
 
 # Tests replace this factory to inject a fake transport.
@@ -128,14 +129,30 @@ def _pending(args: argparse.Namespace) -> int:
 
 
 def _build_report(args: argparse.Namespace) -> int:
+    # Without a structure result the comment and check say the check did not run: a
+    # missing or failed structure step must never render as "0 errors" (AC-structure-check-18).
+    build_ok = args.build_outcome == "success"
+    findings = None
+    problem = None
+    if args.structure_outcome == "success":
+        try:
+            findings = json.loads(args.structure.read_text(encoding="utf-8"))
+            validate_artifact(findings, "structure_findings")
+        except (OSError, json.JSONDecodeError, ArtifactValidationError) as exc:
+            findings = None
+            problem = f"cannot read the structure result: {exc}"
     try:
-        findings = json.loads(args.structure.read_text(encoding="utf-8"))
-        validate_artifact(findings, "structure_findings")
-        stats = collect_build_stats(args.dist) if args.dist.is_dir() else None
-    except (OSError, json.JSONDecodeError, ArtifactValidationError, BuildError) as exc:
+        # A failed build's dist/ holds no uploaded preview; its sizes would be stale.
+        stats = collect_build_stats(args.dist) if build_ok and args.dist.is_dir() else None
+    except (ArtifactValidationError, BuildError) as exc:
         return _usage(f"cannot read build inputs: {exc}")
-    rendered = render_build(findings, stats, RunInfo.from_env(), args.build_outcome == "success")
+    crashed = args.structure_outcome == "failure" or problem is not None
+    rendered = render_build(
+        findings, stats, RunInfo.from_env(), build_ok, structure_crashed=crashed
+    )
     _publish([rendered], args.pr, args.head_sha)
+    if problem is not None:
+        return _usage(problem)
     return EXIT_OK
 
 
@@ -218,8 +235,14 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     build.add_argument("--dist", type=Path, required=True, help="build output directory")
     build.add_argument(
         "--build-outcome",
-        choices=["success", "failure", "cancelled", "skipped"],
+        choices=OUTCOMES,
         default="success",
+    )
+    build.add_argument(
+        "--structure-outcome",
+        choices=OUTCOMES,
+        default="success",
+        help="outcome of the structure step; anything but success means no structure result",
     )
     build.add_argument("--head-sha")
     build.set_defaults(handler=_build_report)

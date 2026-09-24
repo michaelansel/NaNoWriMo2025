@@ -4,7 +4,10 @@
 {{ marker }}
 ### Build & Structure: {{ headline }}
 <sub>{{ header }}</sub>
-{% if not build_ok %}
+{% if not structure_ran %}
+
+**{{ "The structure check could not run" if structure_crashed else "The build failed before the structure check could run" }}**, so this commit has no structure result{{ "" if build_ok else " and no preview" }}. The error is in {{ run }}.
+{% elif not build_ok %}
 
 **The story build failed**, so this commit has no preview. The error is in {{ run }}.
 {% endif %}

@@ -154,6 +154,31 @@ def test_build_failed_comment_matches_golden():
     assert rendered.body == (GOLDEN / "build_failed.md").read_text(encoding="utf-8")
 
 
+@pytest.mark.intent("AC-build-and-deploy-7", "AC-structure-check-18")
+@pytest.mark.parametrize(
+    "crashed, golden",
+    [(False, "build_structure_not_reached.md"), (True, "build_structure_crashed.md")],
+)
+def test_build_comment_without_a_structure_result_matches_golden(crashed, golden):
+    rendered = render_build(None, None, RUN, build_ok=False, structure_crashed=crashed)
+    assert rendered.body == (GOLDEN / golden).read_text(encoding="utf-8")
+    assert "0 errors" not in rendered.body and "Preview" not in rendered.body
+    check = rendered.check
+    assert (check.name, check.conclusion) == ("Structure", "failure")
+    assert check.title == "Structure check did not run"
+    assert check.annotations == ()
+
+
+@pytest.mark.intent("AC-structure-check-18")
+def test_structure_crash_after_a_good_build_still_offers_the_preview():
+    rendered = render_build(None, STATS, RUN, build_ok=True, structure_crashed=True)
+    assert "**The structure check could not run**, so this commit has no structure result." in (
+        rendered.body
+    )
+    assert "**Preview:**" in rendered.body
+    assert rendered.check.conclusion == "failure"
+
+
 @pytest.mark.intent("AC-continuity-review-7")
 @pytest.mark.parametrize(
     "status, findings, conclusion",
