@@ -1,130 +1,98 @@
-# Contributing New Story Branches
+# Your First Contribution
 
-These instructions help you add a new branching path to the story. See [Pull Request #7](https://github.com/michaelansel/NaNoWriMo2025/pull/7) for a good example.
+This guide walks you through adding your first passage, start to finish, using only the GitHub
+website. It takes about fifteen minutes the first time. After that, the short daily routine is in
+[WRITING-WORKFLOW.md](WRITING-WORKFLOW.md).
 
-## Our Philosophy
+## Before you start
 
-This project follows the **"Writers First, Always"** principle - every decision optimizes for the writer's experience, not the developer's convenience. See [PRINCIPLES.md](PRINCIPLES.md) for our complete guiding principles and [VISION.md](VISION.md) to understand why this project exists.
+- You need a GitHub account, and the story's owner needs to have added you as a collaborator.
+  Accept the invitation email first.
+- Pick your **initials**: 1 to 10 letters, used in every file name and day passage you write.
+  This guide uses `EV`.
 
-## Overview
+## How the story is built
 
-When you want to add a choice that branches the story, you'll:
-1. Modify an existing passage to add the new choice
-2. Create a new passage file with your new content
-3. Test that everything works
-4. Merge your changes
+The story lives in the `src/` folder as plain-text `.twee` files. Each file holds one or more
+**passages**. A passage starts with a line like `:: The crossing` (its name) and ends where the
+next `::` line begins. Readers move between passages by clicking **links**, written
+`[[Link text->Passage name]]`.
 
-## Step-by-Step Instructions
+Every day you write, you do two things in one **pull request** (a proposed change that others can
+see before it goes live):
 
-### Phase 1: Set Up the Branch Point
+1. Add a link from an existing passage to your new passage.
+2. Create a new file with your new passage.
 
-1. **Find the passage** where you want to add a new choice
-   - Browse to `src/` folder in the repository
-   - Click on the `.twee` file you want to edit
+## Step 1: Add the link
 
-2. **Edit the file** to add your new decision point
-   - Click the pencil icon (✏️) in the top-right
-   - Add your new choice using Twee link syntax
-   - You'll need two new passage names:
-     - One for the original/existing path (where the story continues if someone picks the original choice)
-     - One for your new branch (where your new choice leads)
+1. Open the `src/` folder and click the file holding the passage where your part should begin.
+   Not sure which file? The story's **Passages** page lists every passage with its file.
+2. Click the pencil icon (top right of the file) to edit it.
+3. At the end of the passage, add a link to your new passage. Your first passage is always named
+   `Day <N> <INITIALS>`, where `N` is the day you are writing for:
 
-**Example - Before:**
-```twee
-:: MorningWalk
+   ```twee
+   [[Wait for morning->Day 2 EV]]
+   ```
 
-You step outside into the crisp morning air. The park awaits.
+4. Click **Commit changes**. Choose **Create a new branch for this commit and start a pull
+   request**, give the branch a short name like `ev-day-2`, and click **Propose changes**.
+5. On the next page, click **Create pull request**. Do not merge yet.
 
-[[Continue walking->ParkBench]]
-```
+## Step 2: Write your passage
 
-**Example - After:**
-```twee
-:: MorningWalk
+1. On your pull request, click your branch name near the top to open your branch.
+2. Click **Add file → Create new file**.
+3. Name the file `src/<INITIALS>-<YYYYMMDD>.twee` with today's date as year, month, day. For EV
+   writing on November 2nd: `src/EV-YYYY1102.twee`, with this year in place of `YYYY`.
+4. Write your passage. The first line must match the link you added:
 
-You step outside into the crisp morning air. The park awaits, but you also notice a trail leading into the woods.
+   ```twee
+   :: Day 2 EV
 
-[[Head to the park->ParkBench]]
-[[Explore the forest trail->ForestPath]]
-```
+   Morning came up thin and yellow over the reach.
 
-3. **Create a pull request** with this change
-   - At the bottom, select "Create a new branch for this commit"
-   - Name your branch something descriptive (e.g., `add-forest-path`)
-   - Click "Propose changes"
-   - Click "Create pull request"
-   - **Do not merge yet!**
+   [[Go to the weir->The weir]]
+   [[Wait for the toll boat->The toll]]
+   ```
 
-### Phase 2: Write Your New Content
+   Every link needs a passage with that exact name somewhere in the story. You can add more
+   passages to the same file, each starting with its own `::` line and a blank line before it.
+5. Click **Commit changes**, and make sure it commits to your branch, not `main`.
 
-4. **Write your new passage** for the day
-   - Draft your story content (can be in any text editor)
+## Step 3: Check it
 
-5. **Switch to your pull request branch** in GitHub
-   - Go to your pull request
-   - Look for the branch dropdown near the top (it shows `main` by default)
-   - Select your new branch name
+Go back to your pull request. Within a few minutes you will see:
 
-6. **Create the new passage file**
-   - Click "Add file" → "Create new file"
-   - Name it using the date format: `src/YYYY-MM-DD.twee` (e.g., `src/2025-11-01.twee`)
-   - Add your content using this format:
-     ```
-     :: ForestPath
-     
-     The forest trail winds between ancient trees. Shadows dance across the path as leaves rustle overhead.
-     
-     [[Go deeper into the woods->DeepForest]]
-     [[Return to the main path->ParkBench]]
-     ```
+- **A green or red check.** Red means the build failed; click it to see where.
+- **A Build comment** with instructions for the **preview**: download `story-preview`, unzip it,
+  open `index.html`, and play through your new passage.
+- **Notes on your lines** in the **Files changed** tab. An error such as a broken link (a link to
+  a passage name that does not exist) is worth fixing before you merge. Warnings are advice.
+- **Comments from the Continuity Editor and the Style Editor** pointing out anything that seems
+  to contradict earlier passages or the story's point of view and tense. You decide what to do;
+  [WRITING-WORKFLOW.md](WRITING-WORKFLOW.md) explains how to dismiss a note you disagree with.
 
-7. **Commit your new file**
-   - Scroll down and click "Commit changes"
-   - Make sure it's committing to your branch (not `main`)
+To fix something, open the file on your branch, edit it, and commit again. Everything re-runs by
+itself. No bot will ever change your files for you.
 
-### Phase 3: Test and Merge
+## Step 4: Merge
 
-8. **Review the pull request**
-   - Go back to your PR to see all changes together
-   - The "Files changed" tab shows everything you've added
+When you are happy, click **Merge pull request**. The live story updates a few minutes later.
 
-9. **Find and test the build**
-   - The automated build process will add a comment to your PR with a link
-   - Click the link in that comment to download the test bundle
-   - Extract the files and open `index.html` in your browser
-   - Play through your new branch to verify it works correctly
+## Common mistakes
 
-10. **Make corrections if needed**
-    - Still on your branch, edit files and commit fixes
-    - Each commit automatically updates the PR and triggers a new build
+- **The file name does not end in `.twee`**: the story ignores it, and your link shows up as
+  broken.
+- **The link and the passage name differ** (even by a capital letter or a space): the link is
+  reported as broken.
+- **A passage name someone already used**: reported as an error; pick another name.
+- **Committing to `main` instead of a new branch**: your change goes live with no preview.
+  Next time, choose "Create a new branch".
 
-11. **Merge your pull request**
-    - When everything looks good, click "Merge pull request"
-    - Your changes will go live on the website in ~2 minutes!
+## Getting help
 
-## Important Tips
-
-- **File naming**: Your file MUST end in `.twee` for it to be included in the build. The rest of the filename doesn't matter to the system, but use date format (`YYYY-MM-DD.twee`) for organization.
-
-- **Passage names vs. filenames**: 
-  - The links you create (`[[Text->PassageName]]`) point to **passage names** (the text after `::`)
-  - They do NOT point to filenames
-  - You can have multiple passages in one file, or one passage per file
-  - Example: A link `[[Go home->Home]]` looks for a passage named `:: Home` anywhere in your `.twee` files
-
-- **Passage names must be unique**: Each `:: PassageName` can only appear once across all your files
-
-## Quick Reference
-
-**Twee syntax for links:**
-- `[[Next passage]]` - Simple link (uses passage name as link text)
-- `[[Click here->PassageName]]` - Link with custom text
-- `[[PassageName]]` - Same as the first example
-
-**Common mistakes to avoid:**
-- Forgetting the `::` before your passage name
-- Creating a link to a passage name that doesn't exist
-- Forgetting the `.twee` extension on your filename
-- Always test before merging!
-
-**Need help?** Check existing pull requests for examples or ask questions in your PR.
+Ask in your pull request; the other writers see it. For the daily routine, see
+[WRITING-WORKFLOW.md](WRITING-WORKFLOW.md). For why this project works the way it does, see
+[VISION.md](VISION.md).

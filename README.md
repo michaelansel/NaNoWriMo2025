@@ -7,7 +7,7 @@ Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego
 ## Documentation Guide
 
 - **[Vision](VISION.md)** - Why this project exists and who it serves
-- **[Roadmap](ROADMAP.md)** - Feature roadmap and releases
+- **[Priorities](PRIORITIES.md)** - What matters most, dates, and the roadmap
 - **[Contributing](CONTRIBUTING.md)** - How to contribute story content
 - **[Writing Workflow](WRITING-WORKFLOW.md)** - Daily writing checklist
 - **[Development Guide](CLAUDE.md)** - For developers working on the codebase
@@ -21,7 +21,7 @@ Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego
 3. Write your passages using [Twee syntax](#twee-syntax-cheat-sheet)
 4. Commit to a new branch and create a pull request
 5. GitHub will automatically build and validate your changes
-6. Download the preview from the Actions tab to test
+6. Download the `story-preview` artifact linked from the Build comment to test
 7. Merge when ready - goes live in ~2 minutes!
 
 ### Option 2: Local Development
@@ -43,10 +43,15 @@ unzip tweego-2.1.1-linux-x64.zip -d temp
 mv temp/storyformats .
 ```
 
-**Develop with live reload:**
+**Install the tooling and build:**
 ```bash
-npm run dev              # Watch and rebuild on changes
-open dist/index.html     # View in browser
+pip install -e ".[dev]"                                       # the nanoif package, pytest, ruff
+tweego src -o dist/story-paperthin.html -f paperthin-1        # compiled story the build reads
+nanoif build all --repo .                                     # all paths, metrics, story bible, passages
+tweego src -o dist/play.html -f harlowe-3                     # playable story
+open dist/play.html                                           # view in browser
+nanoif check structure src/                                   # broken links, duplicates, orphans
+pytest                                                        # tests
 ```
 
 **Submit changes:**
@@ -77,9 +82,12 @@ Your story text here.
 
 ```
 src/
-├── StoryData.twee    # Story metadata (don't edit unless you know what you're doing)
-├── StoryTitle.twee   # Story title
-└── Start.twee        # Your story passages (add more .twee files as needed)
+├── StoryData.twee            # Story metadata (don't edit unless you know what you're doing)
+├── StoryTitle.twee           # Story title
+├── StoryStyles.twee          # Page styles
+├── PathIdDisplay.twee        # Shows the path id at endings
+├── Start.twee                # The first passage
+└── <INITIALS>-<YYYYMMDD>.twee  # One file per writer per day, starting with :: Day <N> <INITIALS>
 ```
 
 ## Outputs

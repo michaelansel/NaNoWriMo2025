@@ -1,129 +1,136 @@
 # Daily Writing Workflow
 
-## The Pattern
+Everything here happens on the GitHub website. You never need to install anything.
+First time? Start with [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Every day requires **two changes** to connect new content to the story:
+## The pattern
 
-1. **Edit existing passage** - Add a branching choice
-2. **Create new file** - Write today's content
+Every day is **two changes in one pull request**:
 
-Both changes go in the same PR.
+1. **Edit an existing passage** to add a link to today's passage.
+2. **Create a new file** with today's writing.
 
----
+## Example: writer EV, day 2
 
-## Example: Day 21
+### 1. Edit the passage where the story should branch
 
-### 1. Edit `src/mansel-20251112.twee`
+In `src/`, open the file that holds the passage (here, `The crossing`), click the pencil icon,
+and add a link to today's entry passage:
+
 ```twee
-[[Collect snacks]]
-[[Empty kitchen->Day 21 KEB]]
+:: The crossing
 
-::Collect snacks
-...
+...He let her pass. The far jetty came up out of the fog.
+
+[[Hollin Reach]]
+[[Wait for morning->Day 2 EV]]
 ```
 
-### 2. Create `src/KEB-251121.twee`
-```twee
-:: Day 21 KEB
+### 2. Create today's file
 
-Javlyn checked the cabinet and found it bare of any meat...
+Click **Add file → Create new file** and name it `src/EV-YYYY1102.twee`, with this year in place
+of `YYYY`:
+
+```twee
+:: Day 2 EV
+
+Morning came up thin and yellow over the reach...
 ```
 
----
+## Naming
 
-## File Naming
+| What | Pattern | Example |
+|---|---|---|
+| File | `src/<INITIALS>-<YYYYMMDD>.twee` | `src/EV-YYYY1102.twee` |
+| First passage in the file | `:: Day <N> <INITIALS>` | `:: Day 2 EV` |
+| Any other passage | any name not already used | `:: The toll` |
 
-Pattern: `{INITIALS}-YYMMDD.twee`
-- `KEB-251121.twee` (November 21, 2025)
-- `mansel-20251112.twee` (November 12, 2025)
+- Use the same initials in the file name and the `Day` passage.
+- The file name must end in `.twee`, or the story will not see it.
+- Put all of a day's passages in that day's file.
 
-**Must end with `.twee` extension.**
-
----
-
-## Twee Syntax
+## Twee in one minute
 
 ```twee
 :: Passage Name
 
-Content here.
+Your text here.
 
-[[Display text->Destination]]
-[[Simple Link]]
+[[Link text->Passage Name]]
+[[Passage Name]]
 ```
 
-**Key rules:**
-- Passage names must be unique across all files
-- Links reference passage names (not filenames)
-- `[[Empty kitchen->Day 21 KEB]]` looks for `:: Day 21 KEB` anywhere
+- Links point at **passage names** (the text after `::`), never at file names.
+- Every passage name must be unique across all files.
+- Leave one blank line after the `::` line and between passages.
 
----
+## Step by step
 
-## Workflow (GitHub Web UI)
+1. Open the passage you want to branch from, click the pencil icon, add your link.
+2. Click **Commit changes**, choose **Create a new branch for this commit**, and click
+   **Propose changes**, then **Create pull request**.
+3. On the pull request page, open your branch (click its name near the top), then
+   **Add file → Create new file** for today's file. Commit it to the same branch.
+4. Wait a few minutes for the checks (below). Read any notes, fix what you agree with by editing
+   the file on your branch.
+5. Click **Merge pull request**. The story is live a few minutes later.
 
-1. Edit existing file → add branching choice → commit to new branch → create PR
-2. On same branch: Add new file with today's content → commit
-3. Automation runs: `Auto-update Resource-Passage Names` commit + builds
-4. Download `story-preview` artifact from Actions → test `index.html`
-5. Merge when ready → live in ~2 minutes
+## What happens automatically
 
----
+You do not need to ask for any of this. Nothing here ever changes your files or adds commits to
+your branch.
 
-## What Happens Automatically
+| What | Where you see it | What to do |
+|---|---|---|
+| **Build** | A green or red check, and a **Build** comment | Red: open the check to see which step failed |
+| **Preview** | `story-preview` on the build's run page | Download, unzip, open `index.html`, play your branch |
+| **Structure notes** | Notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
+| **Formatting notes** | Notes on your lines in **Files changed** | Optional: spacing suggestions only |
+| **Continuity Editor** | One comment, updated on every push | Read the quotes; fix, or dismiss (below) |
+| **Style Editor** | One comment, updated on every push | Checks point of view, tense and main character |
 
-When you push changes, the system handles everything for you. Here's what runs and when:
+**Structure errors** are the ones to fix before merging: a link to a passage that does not exist,
+a passage name someone else already used, or a problem in `StoryData`. **Warnings** include a
+passage nothing links to yet, and a file name that does not follow the pattern.
 
-### Automatic: Generates Outputs You Can Browse
+**Editor findings** each show two quotes that disagree and the passages they come from. You
+decide. If the editor is wrong, reply on the pull request:
 
-These run on every build and produce pages you can view on GitHub Pages:
+```
+/dismiss f-1a2b3c4d it's a dream sequence
+```
 
-| Output | What It Is | Where to Find It |
-|--------|-----------|------------------|
-| **Story (Harlowe)** | Playable interactive story | `index.html` |
-| **Proofread (Paperthin)** | Linear text for reading | `proofread.html` |
-| **Structure (DotGraph)** | Visual story map | `graph.html` |
-| **AllPaths** | All possible playthroughs with dates | `allpaths.html` |
-| **Story Bible** | World facts and characters | `story-bible.html` |
-| **Writing Metrics** | Word counts and statistics | `metrics.html` |
+using the id shown on the finding. It will not come back unless one of those passages changes.
 
-### Automatic: Maintains Files For You
+**"AI review unavailable"** means the editors could not read your passages this time. It is not
+an all-clear. Your pull request still builds and can still be merged.
 
-These run on every build and update repository files:
+## Commands you can comment on a pull request
 
-| What | Effect |
-|------|--------|
-| **Formatting Linter** | Auto-fixes .twee formatting issues (commits changes) |
-| **Resource Tracking** | Updates passage catalog in `Resource-Passage Names` |
+Most days you need none of these.
 
-### Automatic: Gives You Feedback
+| Command | What it does |
+|---|---|
+| `/dismiss <id> [reason]` | Hides a finding you disagree with |
+| `/check-continuity` | Runs the editors again on your changed passages |
+| `/check-continuity all` | Reviews the whole story (says the cost first) |
+| `/extract-story-bible` | Shows what the Story Bible would learn from your pull request |
 
-These run on PRs and post results as comments:
+## The pages
 
-| What | When | Where You See It |
-|------|------|------------------|
-| **AI Copy Editing Team** | Every PR | PR comment with validation results |
-| **Build Status** | Every push | Green/red checkmark on PR |
+After merging, the story's site has a landing page linking to: **Play**, **Proofread** (all the
+text on one page), **All paths** (every route through the story), **Metrics** (word counts),
+**Passages** (every passage name, its file, and its links: handy for linking), **Story Bible**
+(the cast, places and rules so far), and **Graph** (a map of the story).
 
-### Manual: Webhook Commands (PR Comments)
-
-Comment these on a PR when you need them:
-
-| Command | What It Does |
-|---------|--------------|
-| `/extract-story-bible` | Re-extracts Story Bible from current content |
-| `/check-continuity` | Run validation (default: new paths only) |
-| `/check-continuity modified` | Validate new + modified paths |
-| `/check-continuity all` | Full validation of all paths |
-
-**Most of the time, you don't need manual commands.** Everything runs automatically.
-
----
+To teach the Story Bible something (two names for one person, a word that is not a character, a
+deliberate mystery), edit `story-overrides.txt` at the top of the repository. The
+[Story Bible note](features/story-bible.md#behavior) shows one example of each kind of line.
 
 ## Checklist
 
-- [ ] Edit existing `.twee` file → add link to today's passage
-- [ ] Create `src/{INITIALS}-YYMMDD.twee` with new content
-- [ ] Test preview artifact
-- [ ] Merge
-
-**Remember:** Two files change every day (one edit + one create)
+- [ ] Link added to an existing passage, pointing at `Day <N> <INITIALS>`
+- [ ] New file `src/<INITIALS>-<YYYYMMDD>.twee` starting with `:: Day <N> <INITIALS>`
+- [ ] Build green, structure errors fixed, preview played
+- [ ] Editors' notes read
+- [ ] Merged
