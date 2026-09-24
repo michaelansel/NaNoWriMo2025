@@ -18,20 +18,24 @@ import re
 from collections import deque
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
 from nanoif.check.overrides import parse_overrides
 from nanoif.schemas.artifacts import validate_artifact
-from nanoif.twee.files import TweePassage, find_twee_files, split_twee
+from nanoif.twee.files import (
+    DAY_PASSAGE_RE,
+    TweePassage,
+    find_twee_files,
+    parse_prose_file_name,
+    split_twee,
+)
 from nanoif.twee.links import find_links
 
 Level = Literal["error", "warning", "info"]
 
 INFRA_FILES = frozenset({"Start", "StoryData", "StoryTitle", "StoryStyles", "PathIdDisplay"})
 GENERATED_FILES = frozenset({"PathIdLookup"})
-PROSE_FILE_RE = re.compile(r"^(?P<initials>[A-Za-z]{1,10})-(?P<date>\d{8})$")
 METADATA_PASSAGES = frozenset({"StoryData", "StoryTitle"})
 CODE_TAGS = frozenset({"script", "stylesheet"})
 NOT_IN_FLOW_TAGS = CODE_TAGS | {"footer", "header", "startup"}
@@ -249,15 +253,8 @@ def _check_naming(declared: list[_Declared], findings: list[Finding]) -> None:
         stem = Path(file).stem
         if stem in INFRA_FILES or stem in GENERATED_FILES:
             continue
-        match = PROSE_FILE_RE.match(stem)
-        valid_date = False
-        if match is not None:
-            try:
-                datetime.strptime(match.group("date"), "%Y%m%d")
-                valid_date = True
-            except ValueError:
-                valid_date = False
-        if match is None or not valid_date:
+        parsed = parse_prose_file_name(file)
+        if parsed is None:
             findings.append(
                 Finding(
                     "warning",
@@ -270,9 +267,9 @@ def _check_naming(declared: list[_Declared], findings: list[Finding]) -> None:
                 )
             )
             continue
-        initials = match.group("initials")
-        day_re = re.compile(rf"^Day \d+ {re.escape(initials)}$")
-        if not any(day_re.match(passage.name) for passage in by_file.get(file, [])):
+        initials = parsed.initials
+        days = (DAY_PASSAGE_RE.match(passage.name) for passage in by_file.get(file, []))
+        if not any(day and day.group("initials") == initials for day in days):
             findings.append(
                 Finding(
                     "warning",

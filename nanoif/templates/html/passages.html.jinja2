@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Passages - {{ story_title }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+        }
+        .header h1 { font-size: 2rem; margin-bottom: 0.25rem; }
+        .header .subtitle { opacity: 0.9; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 1.5rem; }
+        .toolbar {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .toolbar input {
+            flex: 1;
+            min-width: 16rem;
+            padding: 0.5rem 0.75rem;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .count { color: #666; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        th {
+            background: #f8f9fa;
+            color: #667eea;
+            text-align: left;
+            padding: 0.6rem 0.75rem;
+            border-bottom: 2px solid #667eea;
+            position: sticky;
+            top: 0;
+        }
+        td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: top;
+            font-size: 0.9rem;
+        }
+        tr:target { background: #fff8e1; }
+        tr:hover { background: #f8f9fa; }
+        .name { font-weight: 600; }
+        .file { font-family: 'Courier New', monospace; font-size: 0.85rem; white-space: nowrap; }
+        .num { text-align: right; white-space: nowrap; }
+        .tag {
+            display: inline-block;
+            padding: 0 0.4rem;
+            margin-left: 0.25rem;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: normal;
+        }
+        .links a { color: #667eea; text-decoration: none; }
+        .links a:hover { text-decoration: underline; }
+        .none { color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Passages</h1>
+        <div class="subtitle">{{ story_title }} | {{ rows|length }} passages in {{ file_count }} files | generated {{ generated_date }}</div>
+    </div>
+
+    <div class="container">
+        <div class="toolbar">
+            <input type="search" id="filter" placeholder="Filter by passage, file, writer, day or link..." autofocus>
+            <span class="count"><span id="shown">{{ rows|length }}</span> of {{ rows|length }} shown</span>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Passage</th>
+                    <th>File</th>
+                    <th>Writer</th>
+                    <th>Date</th>
+                    <th>Day</th>
+                    <th>Links out</th>
+                    <th>Links in</th>
+                    <th class="num">Words</th>
+                </tr>
+            </thead>
+            <tbody>
+{% for row in rows %}
+                <tr id="{{ row.anchor }}">
+                    <td class="name">{{ row.name }}{% for tag in row.tags %}<span class="tag">{{ tag }}</span>{% endfor %}</td>
+                    <td class="file">{% if row.file %}{{ row.file }}:{{ row.line }}{% else %}<span class="none">not in src/</span>{% endif %}</td>
+                    <td>{{ row.initials or '' }}</td>
+                    <td>{{ row.date or '' }}</td>
+                    <td class="num">{{ row.day if row.day is not none else '' }}</td>
+                    <td class="links">{% for target in row.links_out %}<a href="#{{ anchors.get(target, '') }}">{{ target }}</a>{% if not loop.last %}, {% endif %}{% else %}<span class="none">none</span>{% endfor %}</td>
+                    <td class="links">{% for source in row.links_in %}<a href="#{{ anchors.get(source, '') }}">{{ source }}</a>{% if not loop.last %}, {% endif %}{% else %}<span class="none">none</span>{% endfor %}</td>
+                    <td class="num">{{ row.words }}</td>
+                </tr>
+{% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        (function () {
+            var input = document.getElementById('filter');
+            var rows = Array.prototype.slice.call(document.querySelectorAll('tbody tr'));
+            var shown = document.getElementById('shown');
+            input.addEventListener('input', function () {
+                var terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+                var count = 0;
+                rows.forEach(function (row) {
+                    var text = row.textContent.toLowerCase();
+                    var match = terms.every(function (term) { return text.indexOf(term) !== -1; });
+                    row.style.display = match ? '' : 'none';
+                    if (match) { count++; }
+                });
+                shown.textContent = count;
+            });
+        })();
+    </script>
+</body>
+</html>

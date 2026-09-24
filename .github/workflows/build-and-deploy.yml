@@ -55,32 +55,17 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
 
-      - name: Generate resources file
-        run: |
-          chmod +x scripts/generate-resources.sh
+      - name: Lint twee formatting (report-only)
+        # Formatting issues are shown as warning annotations on the PR; they never
+        # block the build and nothing rewrites the writer's files.
+        continue-on-error: true
+        run: nanoif lint src/ --format github
 
-      - name: Auto-fix and commit formatting changes
-        if: github.event_name == 'pull_request'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Fetch and checkout the PR branch first (before generating)
-          git fetch origin ${{ github.head_ref }}
-          git checkout ${{ github.head_ref }}
-
-          # Run the passage formatting linter with auto-fix
-          python3 scripts/lint_twee.py src/ --fix || true
-
-          # Generate the resources file on the PR branch
-          ./scripts/generate-resources.sh
-
-          # Commit and push if there are changes
-          git add src/*.twee "Resource-Passage Names"
-          if ! git diff --staged --quiet; then
-            git commit -m "Auto-fix passage formatting and update resources"
-            git push origin ${{ github.head_ref }}
-          fi
+      - name: Check story structure (report-only)
+        # Phase 1 rollout: every finding is annotated on the PR but the step exits 0.
+        # Structure errors (broken links, duplicate passages, invalid StoryData,
+        # story-overrides.txt syntax) become blocking in Phase 2: drop --exit-zero then.
+        run: nanoif check structure src/ --format github --exit-zero
 
       - name: Download and install tweego
         run: |
@@ -146,20 +131,24 @@ jobs:
           ./scripts/build-metrics.sh
 
       - name: Build Story Bible (world consistency tracking)
-        continue-on-error: true
         run: |
           chmod +x scripts/build-story-bible.sh
           ./scripts/build-story-bible.sh
+
+      - name: Build passage index
+        run: |
+          chmod +x scripts/build-passages.sh
+          ./scripts/build-passages.sh
 
       - name: Upload build artifacts (for PR preview and continuity checking)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: story-preview
+          # dist/ includes passages.html, allpaths-index.json and changes.json
           path: |
             dist/
             lib/artifacts/
-            allpaths-validation-status.json
             src/StoryData.twee
           retention-days: 30
 
