@@ -1,0 +1,13 @@
+{# Shared pieces of the editor comments. Every value arrives sanitized. #}
+{% macro finding(f) %}
+- **{{ f.description }}**
+  `{{ f.key }}` · {{ f.type }} · {{ f.confidence }} confidence · {{ f.passages | join(" ↔ ") }}{% if f.routes_seen > 1 %} · seen on {{ f.routes_seen }} routes{% endif %}
+
+{% for q in f.quotes %}
+  - "{{ q.text }}" (in *{{ q.passage }}*)
+{% endfor %}
+  - Not a problem? Reply `/dismiss {{ f.key }} <reason>`
+{% endmacro %}
+{% macro short(f) %}
+- `{{ f.key }}` · {{ f.type }} · {{ f.passages | join(" ↔ ") }}: {{ f.description }}
+{% endmacro %}

@@ -1,0 +1,53 @@
+{% import "_macros.md.jinja2" as m %}
+{{ marker }}
+### {{ title }}: {{ headline }}
+<sub>{{ header }}</sub>
+{% if lead %}
+
+{{ lead }}
+{% endif %}
+{% if not_checked %}
+
+**Could not check {{ not_checked | length }} passage{{ "" if not_checked | length == 1 else "s" }}:**
+{% for unit in not_checked %}
+- *{{ unit.passage }}*: could not check{% if unit.status == "skipped" %} (skipped){% endif %}: {{ unit.reason }}
+{% endfor %}
+{% endif %}
+{% for group in groups %}
+
+#### {{ group.label }} ({{ group.findings | length + group.overflow }})
+{% for f in group.findings %}
+{{ m.finding(f) }}
+{%- endfor %}
+{% if group.overflow %}
+- …and {{ group.overflow }} more in the `ai-review` artifact of this run.
+{% endif %}
+{% endfor %}
+{% if suppressed_total %}
+
+<details><summary>{{ suppressed_total }} suppressed (dismissed, or a conflict marked intentional)</summary>
+
+{% for f in suppressed %}
+{{ m.short(f) }}
+{%- endfor %}
+{% if suppressed_overflow %}
+- …and {{ suppressed_overflow }} more.
+{% endif %}
+
+</details>
+{% endif %}
+{% if unverified_total %}
+
+<details><summary>{{ unverified_total }} unverified (quotes not found in the cited passages; not counted)</summary>
+
+{% for f in unverified %}
+{{ m.short(f) }}
+{%- endfor %}
+{% if unverified_overflow %}
+- …and {{ unverified_overflow }} more.
+{% endif %}
+
+</details>
+{% endif %}
+
+<sub>Reply `{{ retry }}` to re-run on changed passages, `{{ retry }} all` for every passage, or `{{ retry }} passage=<name>` for one.</sub>

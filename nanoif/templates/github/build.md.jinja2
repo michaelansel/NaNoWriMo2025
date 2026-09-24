@@ -1,0 +1,59 @@
+{% macro item(f) %}
+- {% if f.where %}`{{ f.where }}` {% endif %}{% if f.passage %}*{{ f.passage }}* {% endif %}({{ f.code }}): {{ f.message }}
+{% endmacro %}
+{{ marker }}
+### Build & Structure: {{ headline }}
+<sub>{{ header }}</sub>
+{% if not build_ok %}
+
+**The story build failed**, so this commit has no preview. The error is in {{ run }}.
+{% endif %}
+
+**Structure:** {{ structure_line }}.
+{% if errors %}
+
+{% for f in errors %}
+{{ item(f) }}
+{%- endfor %}
+{% if errors_overflow %}
+- …and {{ errors_overflow }} more errors in {{ run }}.
+{% endif %}
+{% endif %}
+{% if warnings %}
+
+<details><summary>Warnings</summary>
+
+{% for f in warnings %}
+{{ item(f) }}
+{%- endfor %}
+{% if warnings_overflow %}
+- …and {{ warnings_overflow }} more.
+{% endif %}
+
+</details>
+{% endif %}
+{% if infos %}
+
+<details><summary>Notes</summary>
+
+{% for f in infos %}
+{{ item(f) }}
+{%- endfor %}
+{% if infos_overflow %}
+- …and {{ infos_overflow }} more.
+{% endif %}
+
+</details>
+{% endif %}
+{% if sizes %}
+
+| Output | File | Size |
+|---|---|---|
+{% for label, name, size in sizes %}
+| {{ label }} | `{{ name }}` | {{ size }} |
+{% endfor %}
+
+**Preview:** download the `story-preview` artifact from {{ run }}, unzip it, and open `dist/index.html`.
+{% endif %}
+
+{{ freshness }}

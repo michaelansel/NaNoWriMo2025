@@ -397,6 +397,10 @@ def build_parser() -> argparse.ArgumentParser:
     irange.add_argument("--head", default="HEAD")
     irange.set_defaults(handler=_intent_range)
     intent.set_defaults(handler=lambda _args: (intent.print_help(), 2)[1])
+
+    from nanoif.github.cli import register as register_github
+
+    register_github(subparsers)
     return parser
 
 
