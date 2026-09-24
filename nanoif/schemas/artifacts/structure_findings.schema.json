@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/structure_findings.schema.json",
+  "title": "Structure Findings",
+  "description": "Output of `nanoif check structure --format json`",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["level", "code", "file", "line", "passage", "message"],
+    "additionalProperties": false,
+    "properties": {
+      "level": { "type": "string", "enum": ["error", "warning", "info"] },
+      "code": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$" },
+      "file": { "type": ["string", "null"], "description": "Repository-relative POSIX path" },
+      "line": { "type": ["integer", "null"], "minimum": 1 },
+      "passage": { "type": ["string", "null"] },
+      "message": { "type": "string", "minLength": 1 }
+    }
+  }
+}

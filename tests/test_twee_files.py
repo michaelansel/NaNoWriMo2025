@@ -42,10 +42,10 @@ def test_passage_header_regex_rejects_non_headers(line):
 
 
 def test_split_twee_returns_passages_with_lines_and_tags():
-    text = "Preamble\n:: Start [footer]\nHello.\n\n:: End\nBye.\n"
+    text = "Preamble\n:: Start [footer]\nHello.\n\n:: End\n\n\nBye.\n"
     assert split_twee(text) == [
-        TweePassage("Start", ("footer",), "Hello.", 2),
-        TweePassage("End", (), "Bye.", 5),
+        TweePassage("Start", ("footer",), "Hello.", 2, 3),
+        TweePassage("End", (), "Bye.", 5, 8),
     ]
 
 
@@ -54,7 +54,8 @@ def test_split_twee_normalizes_crlf():
 
 
 def test_split_twee_empty_passage_body():
-    assert split_twee(":: A\n:: B\ntext")[0].text == ""
+    first = split_twee(":: A\n:: B\ntext")[0]
+    assert first.text == "" and first.body_line == first.line == 1
 
 
 def test_find_twee_files_is_recursive_and_sorted(tmp_path):

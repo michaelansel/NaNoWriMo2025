@@ -169,7 +169,7 @@ def _check_structure(args: argparse.Namespace) -> int:
 
     overrides = args.overrides or args.src.parent / "story-overrides.txt"
     findings = check_structure(args.src, overrides_path=overrides)
-    output = format_findings(findings, args.format, args.src.resolve().parent)
+    output = format_findings(findings, args.format)
     if output:
         print(output)
     errors = sum(1 for finding in findings if finding.level == "error")

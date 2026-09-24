@@ -26,12 +26,14 @@ class TweePassage:
         tags: Tags from the header, in order.
         text: Passage body with surrounding whitespace stripped.
         line: 1-based line of the header in the file.
+        body_line: 1-based line where ``text`` starts (the header line when empty).
     """
 
     name: str
     tags: tuple[str, ...]
     text: str
     line: int
+    body_line: int
 
 
 @dataclass(frozen=True)
@@ -67,12 +69,17 @@ def split_twee(text: str) -> list[TweePassage]:
         body_start = match.end()
         body_end = headers[index + 1].start() if index + 1 < len(headers) else len(text)
         tags = tuple((match.group("tags") or "").split())
+        raw_body = text[body_start:body_end]
+        body = raw_body.strip()
+        line = text.count("\n", 0, match.start()) + 1
+        leading = raw_body[: len(raw_body) - len(raw_body.lstrip())]
         passages.append(
             TweePassage(
                 name=match.group("name").strip(),
                 tags=tags,
-                text=text[body_start:body_end].strip(),
-                line=text.count("\n", 0, match.start()) + 1,
+                text=body,
+                line=line,
+                body_line=line + leading.count("\n") if body else line,
             )
         )
     return passages
