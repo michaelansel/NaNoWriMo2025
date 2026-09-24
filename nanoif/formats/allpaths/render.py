@@ -3,40 +3,16 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
+from nanoif.formats.common import format_date_for_display, html_environment
 from nanoif.twee.links import display_text
 
 if TYPE_CHECKING:
     from nanoif.formats.allpaths.generator import PathRecord
 
-TEMPLATE_DIR = Path(__file__).resolve().parents[2] / "templates" / "html"
 RULE = "=" * 80
-
-
-def format_date_for_display(date_str: str | None) -> str:
-    """Format an ISO 8601 date for the browser page.
-
-    Args:
-        date_str: An ISO 8601 date, with or without an offset, or None.
-
-    Returns:
-        ``YYYY-MM-DD HH:MM UTC``; ``Unknown`` for no date; the first ten
-        characters for a date that does not parse.
-    """
-    if not date_str:
-        return "Unknown"
-    try:
-        parsed = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-    except ValueError:
-        return date_str[:10]
-    if parsed.tzinfo is not None:
-        parsed = parsed.astimezone(timezone.utc)
-    return parsed.strftime("%Y-%m-%d %H:%M UTC")
 
 
 def _header(record: PathRecord, total: int) -> list[str]:
@@ -114,10 +90,7 @@ def render_html(
     Returns:
         The HTML page.
     """
-    env = Environment(
-        loader=FileSystemLoader(str(TEMPLATE_DIR)),
-        autoescape=select_autoescape(["html", "jinja2"]),
-    )
+    env = html_environment()
     env.globals["display_text"] = display_text
     template = env.get_template("allpaths.html.jinja2")
     lengths = [len(record.route) for record in records]

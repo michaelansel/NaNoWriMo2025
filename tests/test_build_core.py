@@ -54,27 +54,38 @@ def test_build_core_missing_src_is_an_error(project):
         build_core(project / "dist" / "story-paperthin.html", project / "nope", project / "out", project / "x.twee")
 
 
-def test_cli_build_core_reports_and_defaults_lookup_path(project, capsys):
-    argv = [
-        "build",
-        "core",
-        "--html",
-        str(project / "dist" / "story-paperthin.html"),
-        "--src",
-        str(project / "src"),
-        "--out",
-        str(project / "lib" / "artifacts"),
-    ]
-    assert main(argv) == 0
+def test_cli_build_core_derives_paths_from_repo(project, capsys):
+    assert main(["build", "core", "--repo", str(project)]) == 0
     out = capsys.readouterr().out
     assert "Parsed 5 passages; start passage: Start" in out
+    assert (project / "lib" / "artifacts" / "story_graph.json").exists()
     assert (project / "src" / "PathIdLookup.twee").exists()
 
 
+def test_cli_build_core_accepts_explicit_paths(project, tmp_path):
+    other = tmp_path / "elsewhere"
+    argv = [
+        "build", "core", "--repo", str(project),
+        "--html", str(project / "dist" / "story-paperthin.html"),
+        "--artifacts", str(other / "artifacts"),
+        "--lookup", str(other / "Lookup.twee"),
+    ]
+    assert main(argv) == 0
+    assert (other / "artifacts" / "passages_deduplicated.json").exists()
+    assert (other / "Lookup.twee").exists()
+
+
 def test_cli_build_core_error_is_reported_not_raised(project, capsys):
-    argv = ["build", "core", "--html", str(project / "nope.html"), "--src", str(project / "src"), "--out", str(project)]
+    argv = ["build", "core", "--repo", str(project), "--html", str(project / "nope.html")]
     assert main(argv) == 1
     assert "error: compiled story not found" in capsys.readouterr().err
+
+
+def test_cli_build_requires_repo(capsys):
+    with pytest.raises(SystemExit) as exc:
+        main(["build", "core"])
+    assert exc.value.code == 2
+    assert "--repo" in capsys.readouterr().err
 
 
 def test_cli_build_without_target_prints_help(capsys):

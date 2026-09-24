@@ -227,12 +227,6 @@ def test_cli_build_allpaths_after_build_core(story_repo, capsys, monkeypatch):
         "allpaths",
         "--repo",
         str(story_repo),
-        "--src",
-        str(story_repo / "src"),
-        "--story-graph",
-        str(story_repo / "lib" / "artifacts" / "story_graph.json"),
-        "--out",
-        str(story_repo / "dist"),
     ]
     assert main(argv) == 0
     out = capsys.readouterr().out
@@ -247,9 +241,6 @@ def test_cli_build_allpaths_bad_base_ref_reports_error(story_repo, capsys):
     argv = [
         "build", "allpaths",
         "--repo", str(story_repo),
-        "--src", str(story_repo / "src"),
-        "--story-graph", str(story_repo / "lib" / "artifacts" / "story_graph.json"),
-        "--out", str(story_repo / "dist"),
         "--base-ref", "nope",
     ]
     assert main(argv) == 1

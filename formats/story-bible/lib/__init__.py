@@ -1,1 +1,0 @@
-"""Story Bible library package."""
