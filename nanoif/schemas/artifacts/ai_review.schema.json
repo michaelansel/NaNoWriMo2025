@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/ai_review.schema.json",
+  "title": "AI review",
+  "description": "Result of `nanoif ai review`: one entry per editor, written as ai-review.json and consumed by `nanoif github report` to render the sticky PR comments and check runs. An editor that could not run has status error or skipped and never reports zero findings as a pass.",
+  "type": "object",
+  "required": ["version", "generated_at", "commit_sha", "base_sha", "mode", "llm", "editors"],
+  "additionalProperties": false,
+  "definitions": {
+    "passage_ref": {
+      "type": "object",
+      "required": ["name", "hash"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "hash": {"type": "string", "description": "content_hash of the passage text this finding was made against"},
+        "file": {"type": ["string", "null"]},
+        "line": {"type": ["integer", "null"], "minimum": 1}
+      }
+    },
+    "quote": {
+      "type": "object",
+      "required": ["passage", "text"],
+      "additionalProperties": false,
+      "properties": {
+        "passage": {"type": "string", "minLength": 1},
+        "text": {"type": "string", "minLength": 1}
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["key", "editor", "type", "severity", "confidence", "description", "passages", "quotes"],
+      "additionalProperties": false,
+      "properties": {
+        "key": {"type": "string", "pattern": "^f-[0-9a-f]{8}$", "description": "f-sha256(type|passage_a|passage_b)[:8], names sorted; stable across runs for dismissal"},
+        "editor": {"enum": ["continuity", "style"]},
+        "type": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["minor", "major", "critical"]},
+        "confidence": {"enum": ["low", "medium", "high"]},
+        "description": {"type": "string", "minLength": 1},
+        "passages": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"$ref": "#/definitions/passage_ref"}},
+        "quotes": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/quote"}},
+        "canon_fact_id": {"type": ["string", "null"]},
+        "routes_seen": {"type": "integer", "minimum": 1, "description": "How many review units reported this same key before merging"}
+      }
+    },
+    "unit": {
+      "type": "object",
+      "required": ["passage", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "passage": {"type": "string", "minLength": 1},
+        "status": {"enum": ["reviewed", "error", "skipped"]},
+        "reason": {"type": ["string", "null"], "description": "Required in practice for error and skipped: e.g. provider error, too long (N tokens)"},
+        "tokens": {"type": ["integer", "null"], "minimum": 0}
+      }
+    },
+    "editor": {
+      "type": "object",
+      "required": ["name", "status", "units", "findings", "suppressed", "unverified"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {"enum": ["continuity", "style"]},
+        "status": {"enum": ["ok", "error", "skipped"], "description": "ok = every unit reviewed; error = at least one unit could not be reviewed; skipped = editor did not run (reason says why)"},
+        "reason": {"type": ["string", "null"]},
+        "units": {"type": "array", "items": {"$ref": "#/definitions/unit"}},
+        "findings": {"type": "array", "items": {"$ref": "#/definitions/finding"}},
+        "suppressed": {"type": "array", "items": {"$ref": "#/definitions/finding"}, "description": "Findings matched by a dismissal or an intentional conflict"},
+        "unverified": {"type": "array", "items": {"$ref": "#/definitions/finding"}, "description": "Findings whose quotes were not found in the cited passages; shown collapsed, never counted"}
+      }
+    }
+  },
+  "properties": {
+    "version": {"const": 1},
+    "generated_at": {"type": "string", "format": "date-time"},
+    "commit_sha": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "base_sha": {"type": ["string", "null"], "pattern": "^[a-f0-9]{40}$"},
+    "mode": {"enum": ["changed", "all", "passage"]},
+    "llm": {
+      "type": "object",
+      "description": "LLMClient.usage_summary() plus where the job ran",
+      "required": ["profile", "model", "calls", "prompt_tokens", "completion_tokens", "usd", "usd_known"],
+      "properties": {
+        "profile": {"type": "string"},
+        "model": {"type": "string"},
+        "runner": {"enum": ["exe", "hosted", "local", null]},
+        "calls": {"type": "integer", "minimum": 0},
+        "prompt_tokens": {"type": "integer", "minimum": 0},
+        "completion_tokens": {"type": "integer", "minimum": 0},
+        "usd": {"type": "number", "minimum": 0},
+        "usd_known": {"type": "boolean"}
+      }
+    },
+    "editors": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/editor"}}
+  }
+}
