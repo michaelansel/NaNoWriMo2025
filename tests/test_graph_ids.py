@@ -74,3 +74,25 @@ def test_write_path_id_lookup_writes_to_the_given_path(tmp_path):
     out = tmp_path / "src" / "PathIdLookup.twee"
     assert write_path_id_lookup(STORY_GRAPH, out) == 2
     assert out.read_text(encoding="utf-8") == render_path_id_lookup(STORY_GRAPH)[0]
+
+
+def test_rendered_lookup_reads_the_footer_contract():
+    """Ported from the retired scripts/test-path-id-lookup.js structural checks.
+
+    The PathIdDisplay footer writes past passages joined by ``|||`` into
+    ``#harlowe-history-data`` and the current passage into ``#harlowe-current-passage``;
+    the lookup script must read both, split on ``|||``, and re-check on DOM changes.
+    """
+    twee, _ = render_path_id_lookup(STORY_GRAPH)
+    for fragment in (
+        "window.pathIdLookup = {",
+        "window.getPathId = function(fullPath)",
+        "function getCurrentPassage(",
+        "function getFullPath(",
+        "getElementById('harlowe-current-passage')",
+        "getElementById('harlowe-history-data')",
+        "split('|||')",
+        "fullPath.join('→')",
+        "new MutationObserver",
+    ):
+        assert fragment in twee, fragment

@@ -41,8 +41,6 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-# Legacy trees are migrated into nanoif/ during Phase 1 and deleted; they are not linted.
-extend-exclude = ["services", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "I"]

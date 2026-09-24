@@ -14,5 +14,5 @@ paths:
 - No names, dates, or passage titles from a real writing year. Use eval-story names.
 - Tests do not depend on the cwd, tweego, git history, or files outside `tests/`. Build a temp repo with `tmp_path` when git is needed.
 - A slow test (over 2 s) is marked `@pytest.mark.slow`; the hook runs `pytest -m "not slow"`, CI runs everything.
-- JS tests for the path-id lookup live in `tests/js/` and run through the same CI job.
+- The path-id lookup script is checked in pytest (`tests/test_graph_ids.py`); there is no JS test runner.
 - A test that proves an acceptance criterion or ADR decision says so with `@pytest.mark.intent("AC-<note>-<n>")` (or `"ADR-NNN"`). Deleting the last test that cites a `verify: test` criterion fails `nanoif intent check`.
