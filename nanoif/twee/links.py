@@ -15,6 +15,7 @@ prose, goes through this module. Supported forms:
 from __future__ import annotations
 
 import re
+from collections.abc import Collection
 from dataclasses import dataclass
 
 _STRING = r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\''
@@ -140,26 +141,33 @@ def strip_links(text: str) -> str:
     return _replace_links(text, lambda _link: "")
 
 
-def display_text(text: str, selected_target: str | None = None) -> str:
-    """Render links as prose, optionally showing only the link that was taken.
+def display_text(text: str, selected_target: str | Collection[str] | None = None) -> str:
+    """Render links as prose, optionally showing only the links that were taken.
 
-    With no ``selected_target`` every link becomes its display text. With one,
-    the link to that target becomes its display text and every other link
-    becomes :data:`UNSELECTED` when the passage has more than one link, or is
-    removed when it is the only link.
+    With no ``selected_target`` every link becomes its display text. With one
+    target (or a collection of targets), a link to a selected target becomes its
+    display text and every other link becomes :data:`UNSELECTED` when the
+    passage has more than one link, or is removed when it is the only link.
 
     Args:
         text: Raw passage text.
-        selected_target: The passage the reader went to next, if known.
+        selected_target: The passage the reader went to next, or every passage
+            the reader may go to next in the context being rendered, if known.
 
     Returns:
         Prose with link markup resolved.
     """
     links = find_links(text)
     placeholder = UNSELECTED if len(links) > 1 else ""
+    if selected_target is None:
+        selected: Collection[str] | None = None
+    elif isinstance(selected_target, str):
+        selected = {selected_target}
+    else:
+        selected = selected_target
 
     def render(link: Link) -> str:
-        if selected_target is None or link.target == selected_target:
+        if selected is None or link.target in selected:
             return link.text
         return placeholder
 

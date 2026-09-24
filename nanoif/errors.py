@@ -33,3 +33,7 @@ class BuildError(NanoifError):
 
 class LintError(NanoifError):
     """A path given to the linter does not exist, is not a ``.twee`` file, or cannot be read."""
+
+
+class ReviewConfigError(NanoifError):
+    """An AI review cannot start: bad mode or passage, missing input, or a corrupt state file."""

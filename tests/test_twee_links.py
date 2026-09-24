@@ -109,3 +109,13 @@ def test_display_text_shows_every_link_to_selected_target():
 def test_display_text_renders_macros_as_prose():
     text = 'Then (link-goto: "open the door", "Hallway") or [[wait]].'
     assert display_text(text, "Hallway") == f"Then open the door or {UNSELECTED}."
+
+
+def test_display_text_accepts_several_selected_targets():
+    text = "Take [[the ferry->Crossing]], [[the hill->Chapel]] or [[stay]]."
+    assert display_text(text, {"Crossing", "Chapel"}) == f"Take the ferry, the hill or {UNSELECTED}."
+
+
+def test_display_text_empty_selection_marks_every_link():
+    text = "Take [[the ferry->Crossing]] or [[the hill->Chapel]]."
+    assert display_text(text, set()) == f"Take {UNSELECTED} or {UNSELECTED}."
