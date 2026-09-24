@@ -1,0 +1,43 @@
+# Intent gate: documented intent (features/, architecture/, the why-docs) must move with
+# governed code, and every acceptance criterion marked verify:test must have a test.
+# Required check. See CLAUDE.md "Intent" and nanoif/intent/.
+name: Intent
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: intent-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  intent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install package
+        run: pip install -e ".[dev]"
+      - name: Criteria, citations and ADR statuses
+        run: nanoif intent check --repo .
+      - name: Every commit in the PR moves intent or says why not
+        if: github.event_name == 'pull_request'
+        run: >-
+          nanoif intent range --repo .
+          --base "${{ github.event.pull_request.base.sha }}"
+          --head "${{ github.event.pull_request.head.sha }}"
+      - name: Every pushed commit moves intent or says why not
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: nanoif intent range --repo . --base "${{ github.event.before }}" --head "${{ github.sha }}"

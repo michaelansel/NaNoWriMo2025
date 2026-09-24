@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Intent gate: a commit that changes governed code must also change an intent document
+# (features/, architecture/, ARCHITECTURE.md, VISION.md, PRINCIPLES.md, PRIORITIES.md)
+# or carry a trailer:  Intent: unchanged (<reason>)
+# Enabled by .claude/hooks/session-start.sh (git config core.hooksPath .githooks).
+# CI runs the same check on every PR (.github/workflows/intent.yml).
+set -euo pipefail
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+if ! python3 -c "import nanoif.intent" >/dev/null 2>&1; then
+  echo "intent gate: nanoif.intent not importable here; commit NOT checked (pip install -e '.[dev]'). CI will check it." >&2
+  exit 0
+fi
+exec python3 -m nanoif.cli intent commit-msg "$1" --repo "$root"

@@ -33,7 +33,10 @@ nanoif = ["templates/**/*", "prompts/**/*", "schemas/**/*", "llm/templates/*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
-markers = ["slow: needs network, git history, or an LLM profile"]
+markers = [
+  "slow: needs network, git history, or an LLM profile",
+  "intent(*ids): acceptance criteria (AC-...) or ADRs (ADR-NNN) this test proves",
+]
 
 [tool.ruff]
 line-length = 100

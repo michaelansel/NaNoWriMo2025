@@ -30,6 +30,15 @@ class FileDates:
     modified: str
 
 
+@dataclass(frozen=True)
+class CommitInfo:
+    """One commit with its full message and the paths it changes."""
+
+    sha: str
+    message: str
+    paths: list[str]
+
+
 class GitService:
     """Read-only git queries against one repository.
 
@@ -188,6 +197,29 @@ class GitService:
             cursor += size + 1
         return contents
 
+    def staged_files(self) -> list[str]:
+        """Return paths staged in the index, relative to the repository root."""
+        out = self._run("diff", "--cached", "--name-only", "-z", "--no-renames")
+        return [p for p in out.decode("utf-8").split("\0") if p]
+
+    def commits(self, base: str, head: str = "HEAD") -> list[CommitInfo]:
+        """Return non-merge commits in ``base..head``, oldest first, with changed paths.
+
+        Args:
+            base: Exclusive lower bound ref.
+            head: Inclusive upper bound ref.
+        """
+        shas = self._run("rev-list", "--reverse", "--no-merges", f"{base}..{head}")
+        commits = []
+        for sha in shas.decode("utf-8").split():
+            message = self._run("log", "-1", "--format=%B", sha).decode("utf-8")
+            names = self._run(
+                "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", "--no-renames",
+                "--root", sha,
+            )
+            paths = [p for p in names.decode("utf-8").split("\0") if p]
+            commits.append(CommitInfo(sha=sha, message=message, paths=paths))
+        return commits
 
 SNAPSHOT_IDENTITY = ("-c", "user.name=nanoif", "-c", "user.email=nanoif@example.invalid")
 """Committer identity for throwaway snapshot repositories (never used on a real repo)."""

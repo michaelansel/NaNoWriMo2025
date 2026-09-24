@@ -16,4 +16,5 @@ paths:
 - No year, repo name, real writer name, or absolute path in a doc. Examples use eval-story names and `<INITIALS>-<YYYYMMDD>`.
 - Test every link you touch. A doc that links to a deleted file is a bug.
 - Temporary working notes are fine while a task is open; delete them before the PR is ready.
-- Reviewer agents can only read. If a review says a doc is wrong, you make the change.
+- `features/`, `architecture/`, `ARCHITECTURE.md` and the why-docs are written by their owners (`pm`, `architect`, `ceo`; see CLAUDE.md). Other docs you edit directly.
+- Every acceptance criterion is one line `- AC-<note-file-stem>-<n>: ...`; ids are never reused. ADRs carry a `Status:` line and are superseded, not rewritten. `nanoif intent check --repo .` must pass.

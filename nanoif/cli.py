@@ -253,6 +253,38 @@ def _ai_eval(args: argparse.Namespace) -> int:
     return 0 if outcome.ok else 1
 
 
+def _intent_check(args: argparse.Namespace) -> int:
+    from nanoif.intent import check_repo
+
+    findings = check_repo(args.repo.resolve())
+    for finding in findings:
+        print(finding.render())
+    errors = sum(1 for f in findings if f.level == "error")
+    print(f"intent check: {errors} error(s)")
+    return 1 if errors else 0
+
+
+def _intent_commit_msg(args: argparse.Namespace) -> int:
+    from nanoif.intent.gate import check_staged
+
+    message = args.message_file.read_text(encoding="utf-8")
+    result = check_staged(args.repo.resolve(), message)
+    if not result.ok:
+        print(result.message, file=sys.stderr)
+        return 1
+    return 0
+
+
+def _intent_range(args: argparse.Namespace) -> int:
+    from nanoif.intent import check_range
+
+    failures = check_range(args.repo.resolve(), args.base, args.head)
+    for sha, result in failures:
+        print(f"{sha[:12]}: {result.message}", file=sys.stderr)
+    print(f"intent range {args.base}..{args.head}: {len(failures)} commit(s) failing")
+    return 1 if failures else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Return the top-level argument parser."""
     parser = argparse.ArgumentParser(prog="nanoif", description=__doc__.splitlines()[0])
@@ -350,6 +382,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ai_eval.set_defaults(handler=_ai_eval)
     ai.set_defaults(handler=lambda _args: (ai.print_help(), 2)[1])
+    intent = subparsers.add_parser("intent", help="traceability of intent docs, tests and commits")
+    intents = intent.add_subparsers(dest="intent_command")
+    icheck = intents.add_parser("check", help="criteria ids, test citations and ADR statuses")
+    icheck.add_argument("--repo", type=Path, required=True)
+    icheck.set_defaults(handler=_intent_check)
+    imsg = intents.add_parser("commit-msg", help="git commit-msg hook: gate staged changes")
+    imsg.add_argument("message_file", type=Path)
+    imsg.add_argument("--repo", type=Path, required=True)
+    imsg.set_defaults(handler=_intent_commit_msg)
+    irange = intents.add_parser("range", help="gate every non-merge commit in base..head")
+    irange.add_argument("--repo", type=Path, required=True)
+    irange.add_argument("--base", required=True)
+    irange.add_argument("--head", default="HEAD")
+    irange.set_defaults(handler=_intent_range)
+    intent.set_defaults(handler=lambda _args: (intent.print_help(), 2)[1])
     return parser
 
 

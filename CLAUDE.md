@@ -60,21 +60,39 @@ dist/                build output, never committed
 - One sticky comment per check type per PR, found by its HTML marker, never by footer text.
 - Never delete or rewrite `ai/*` state locally; it is produced by Actions on main.
 
+## Intent is owned and traceable
+
+Intent has three layers, each with an owner who writes it. Behaviour may not drift from it silently.
+
+| Layer | Documents | Owner (writes it) |
+|---|---|---|
+| Why | `VISION.md`, `PRINCIPLES.md`, `PRIORITIES.md` | `ceo` drafts, the user approves |
+| What | `features/*.md`: every acceptance criterion is `- AC-<note>-<n>: ...` | `pm` |
+| How | `ARCHITECTURE.md`, `architecture/NNN-*.md` ADRs (`Status:` line; superseded, never rewritten) | `architect` |
+
+- Before changing behaviour a criterion or ADR describes, have its owner update that document in the
+  same change. Removing or weakening a criterion or decision is an explicit edit by its owner, never
+  a side effect.
+- Every `verify: test` criterion needs a test marked `@pytest.mark.intent("AC-...")`.
+  `nanoif intent check` fails on untested criteria, unknown citations, duplicate ids, missing ADR status.
+- A commit that changes governed code (`nanoif/`, `.github/`, `scripts/`, `deploy/`, `landing/`,
+  `pyproject.toml`, infra passages) without touching an intent document must carry
+  `Intent: unchanged (<why the documented behaviour still holds>)`. The commit-msg hook and the
+  Intent CI check enforce it; never bypass them (`--no-verify` is forbidden).
+
 ## How to work here
 
-You are the developer. Consult a reviewer agent once per change, at the point named below, then
-apply what you take and record what you decline in the PR description.
+You are the developer. Owners are consulted per change, not per project:
 
-| Tier | When | Do |
-|---|---|---|
-| 0 | Docs, config, tests, prompt wording, twee infra passages, behavior-preserving fixes | Just do it |
-| 1 | Anything a writer notices: comment text, check-run names, landing page, CLI messages, WRITING-WORKFLOW | Ask `pm` once before opening the PR |
-| 2 | Module or package boundary, workflow job, persistent state, dependency, data contract, anything that must stay alive unattended in November | Ask `architect` before the first edit; write an ADR with `/adr` if it changes a contract |
-| 3 | Scope, cutting a Nov 1 must-have, spend past the cap, changing a principle or a date | Ask `ceo`, then the user decides |
+| When | Do |
+|---|---|
+| Docs outside the three layers, tests, prompt wording, behaviour-preserving fixes | Just do it (trailer on governed code) |
+| Anything a writer notices, or any change to a feature's acceptance criteria | `pm` reviews and edits `features/` before the PR |
+| Module boundary, workflow job, persistent state, dependency, data contract, anything alive unattended in November | `architect` reviews before the first edit and writes the ADR |
+| Scope, a Nov 1 must-have, spend past the cap, a principle or a date | `ceo` drafts; the user decides |
 
-Reviewer agents are read-only. They answer in a fixed order (verdict first) so you can act on the first line.
-Skills: `/prd` for feature notes, `/adr` for decisions, `/eval-prompts` after any prompt change,
-`/nov1-checklist` and `/new-year-reset` are human-invoked only.
+Owners write only their own layer (enforced by a write-scope hook). Skills: `/prd`, `/adr`,
+`/eval-prompts`; `/nov1-checklist` and `/new-year-reset` are human-invoked only.
 
 ## Where the truth lives
 

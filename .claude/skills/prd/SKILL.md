@@ -26,6 +26,9 @@ What the writer sees, in order: trigger, what appears where, what they can do ne
 
 ## Acceptance criteria
 Testable conditions only (see guidelines below). Each one names the input and the observable output.
+One line each, with a stable id from the note's file stem, numbered once and never reused:
+- AC-<note>-1: <input> produces <observable output>.
+- AC-<note>-2: ... (verify: workflow)   <- only when no unit test can prove it; otherwise a test must cite it with @pytest.mark.intent("AC-<note>-2")
 
 ## Edge cases
 Required behavior when things go wrong: backend down, empty input, too long, unauthenticated trigger, stale state.
