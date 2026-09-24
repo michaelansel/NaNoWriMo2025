@@ -1,0 +1,13 @@
+[Unit]
+Description=nanoif runner health endpoint (GET /healthz -> 200 while the Actions runner is active)
+After=network.target
+
+[Service]
+Type=simple
+User=exedev
+Environment=HEALTHZ_PORT=8000
+ExecStart=/usr/bin/python3 /home/exedev/nanoif-deploy/healthz.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
