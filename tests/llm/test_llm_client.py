@@ -163,7 +163,7 @@ def test_repair_round_appends_validation_error_and_previous_output():
     assert repair[3]["role"] == "user"
     assert "<previous_output>" in repair[3]["content"]
     assert "I think the answer is" in repair[3]["content"]
-    assert "<validation_error>" in repair[3]["content"]
+    assert "Validation errors:" in repair[3]["content"]
 
 
 def test_schema_violation_triggers_repair_with_readable_error():
@@ -419,3 +419,25 @@ def test_openai_transport_builds_sdk_client_from_settings():
     assert sdk.api_key == "k"
     assert sdk.max_retries == 2
     assert sdk.timeout == 12.0
+
+
+def test_repair_round_instructs_the_model_from_the_packaged_template():
+    from importlib.resources import files
+
+    instruction = files("nanoif.llm").joinpath("templates/repair.md").read_text().strip()
+    assert instruction, "repair template must not be empty"
+    client, transport, _ = make([ok("{oops"), ok('{"answer": "fixed"}')])
+    client.complete(system="s", user="u", schema=SCHEMA)
+    repair = transport.requests[1].messages[3]["content"]
+    assert repair.startswith(instruction.splitlines()[0])
+    assert "{{" not in repair and "{%" not in repair
+
+
+def test_json_object_fallback_rechecks_the_budget_before_resending():
+    rejected = LLMTransportError(
+        "provider returned HTTP 400: response_format json_schema unsupported", status=400
+    )
+    client, transport, _ = make([rejected, ok('{"answer": "b"}')], max_tokens_per_job=30)
+    with pytest.raises(LLMBudgetExceeded):
+        client.complete(system="sys", user="u", schema=SCHEMA)
+    assert len(transport.requests) == 1

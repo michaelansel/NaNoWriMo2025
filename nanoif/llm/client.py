@@ -17,6 +17,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Protocol
 
 import openai
+from jinja2 import Environment, PackageLoader, StrictUndefined
 
 from nanoif.llm.errors import (
     LLMBudgetExceeded,
@@ -49,6 +50,13 @@ __all__ = [
 
 DEFAULT_MAX_TOKENS = 16000
 DEFAULT_TEMPERATURE = 0.2
+_REPAIR_TEMPLATE = Environment(
+    loader=PackageLoader("nanoif.llm", "templates"),
+    undefined=StrictUndefined,
+    autoescape=False,
+    keep_trailing_newline=False,
+).get_template("repair.md")
+
 LOG_KEYS = (
     "tag",
     "model",
@@ -436,6 +444,7 @@ class LLMClient:
             {"role": "system", "content": self._build_messages(system, "", schema)[0]["content"]},
             *messages[1:],
         ]
+        self._check_budget(rebuilt, max_tokens)
         request = TransportRequest(
             model=self.settings.model,
             messages=rebuilt,
@@ -550,11 +559,8 @@ def _parse(text: str, schema: dict[str, Any]) -> Any:
 
 
 def _repair_message(previous: str, error: LLMSchemaError) -> str:
-    detail = "\n".join(error.errors) if error.errors else str(error)
-    return (
-        f"<previous_output>\n{previous}\n</previous_output>\n"
-        f"<validation_error>\n{detail}\n</validation_error>"
-    )
+    errors = list(error.errors) if error.errors else [str(error)]
+    return _REPAIR_TEMPLATE.render(previous=previous, errors=errors).strip()
 
 
 def _result(

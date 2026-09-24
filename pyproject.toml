@@ -28,7 +28,7 @@ nanoif = "nanoif.cli:main"
 include = ["nanoif*"]
 
 [tool.setuptools.package-data]
-nanoif = ["templates/**/*", "prompts/**/*", "schemas/**/*"]
+nanoif = ["templates/**/*", "prompts/**/*", "schemas/**/*", "llm/templates/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
