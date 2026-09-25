@@ -7,8 +7,8 @@ allowed-tools: Bash(nanoif ai eval*), Bash(pytest*), Read, Grep, Glob
 # Evaluate prompts
 
 1. Run `pytest tests/test_fixture_integrity.py -q`. If it fails, stop: the fixture and its truth disagree, and no eval result is meaningful.
-2. Run `nanoif ai eval --profile "${NANOIF_LLM_PROFILE:-exe}" --json > /tmp/eval.json`. If the command is missing or the gateway is unreachable, report "eval could not run: <reason>" and stop. Never describe a prompt change as verified when the eval did not run.
-3. Read `tests/eval/baselines/<profile>.json` and compare every metric.
+2. Run `nanoif ai eval --repo . --baseline tests/eval/baselines/<profile>.json` (omit `--baseline` if that file does not exist yet), where `<profile>` is `$NANOIF_LLM_PROFILE` or `exe`. It writes `dist/eval-results.json` and `.md` and exits 0 pass, 1 below threshold or baseline, 2 could not run. On exit 2, or if the gateway is unreachable, report "eval could not run: <reason>" and stop. Never describe a prompt change as verified when the eval did not run. From outside the exe VM, run it on the runner instead: Actions, AI maintenance, task `eval`.
+3. Compare every metric in `dist/eval-results.json` with the baseline.
 
 ## Acceptance table
 

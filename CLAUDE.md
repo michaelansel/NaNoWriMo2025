@@ -10,19 +10,17 @@ Two rules override everything else here:
 
 ## Commands
 
-The `nanoif` CLI is being built in Phase 1; until it lands, `tweego` and `pytest` are the working commands.
-
 ```
-pip install -e ".[dev]"            # package + pytest + ruff
-pytest                             # all tests (CI required check)
-ruff check nanoif tests            # lint, E722 (bare except) is an error
-nanoif build                       # dist/: play, proofread, graph, allpaths, metrics, story bible, passages
-nanoif check structure src/        # broken links, duplicates, orphans, naming drift (report-only)
-nanoif lint src/                   # twee formatting (report-only; --fix is denied)
-nanoif ai review --mode changed    # Continuity + Style editors; paid inference
-nanoif ai eval                     # score prompts against tests/fixtures/eval-story
-nanoif bible extract --incremental # Story Bible v2; paid inference
-tweego -o dist/play.html -f harlowe-3 src/   # raw build fallback
+pip install -e ".[dev]"                   # package + pytest + ruff
+pytest                                    # all tests (CI required check)
+ruff check nanoif tests                   # lint, E722 (bare except) is an error
+nanoif build all --repo .                 # dist/ artifacts: allpaths, metrics, story bible, passages
+nanoif check structure src/               # broken links, duplicates, orphans, naming drift (report-only)
+nanoif lint src/                          # twee formatting (report-only; --fix is denied)
+nanoif ai review --repo . --mode changed  # Continuity + Style editors on a built repo; paid inference
+nanoif ai eval --repo . [--baseline tests/eval/baselines/<profile>.json]  # score the editors on the eval story
+nanoif intent check --repo .              # criteria, test citations, ADR statuses
+tweego -o dist/play.html -f harlowe-3.3.9 src/   # play build (CI pins Harlowe 3.3.9 into storyformats/)
 ```
 
 Inference env: `NANOIF_LLM_PROFILE` (`exe` default and the CI default, `fireworks`, `ollama`),

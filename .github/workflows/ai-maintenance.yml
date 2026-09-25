@@ -213,7 +213,7 @@ jobs:
           mkdir -p dist
           # Capture the code so the results are published before the job fails on it.
           set +e
-          nanoif ai eval --out dist/eval-results.json --markdown dist/eval-results.md
+          nanoif ai eval --repo . --out dist/eval-results.json
           code=$?
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
@@ -229,6 +229,7 @@ jobs:
           path: |
             dist/eval-results.json
             dist/eval-results.md
+            dist/eval-ai-review.json
           retention-days: 90
       - name: Fail when the eval failed
         env:
