@@ -90,13 +90,44 @@ def _publish(rendered: list[Rendered], pr: int | None, head_sha: str | None) -> 
         )
 
 
+def _recorded_head(path: Path) -> str:
+    """Return the head sha recorded beside a stored review, or ``""`` when unknown."""
+    return path.read_text(encoding="utf-8").strip() if path.is_file() else ""
+
+
+def _stale_review(sha_file: Path, head_sha: str) -> str:
+    """Return why a stored review must not be re-rendered on ``head_sha``, or ``""``.
+
+    A missing or empty sidecar means the commit is unknown, never the same commit (ADR-022).
+    """
+    recorded = _recorded_head(sha_file)
+    if not recorded:
+        return "the stored AI review does not say which commit it reviewed"
+    if recorded != head_sha:
+        return f"the stored AI review is for commit {recorded[:7]}, not {head_sha[:7]}"
+    return ""
+
+
 def _report(args: argparse.Namespace) -> int:
+    if args.review_head_sha_file is not None and (args.pr is None or not args.head_sha):
+        return _usage("--review-head-sha-file needs --pr and --head-sha (the current PR head)")
     try:
         review = load_artifact(args.review, "ai_review")
         if args.dismissals is not None:
             review = apply_dismissals(review, load_dismissals(args.dismissals))
     except (BuildError, ArtifactValidationError, DismissalError) as exc:
         return _usage(str(exc))
+    stale = ""
+    if args.review_head_sha_file is not None:
+        stale = _stale_review(args.review_head_sha_file, args.head_sha)
+    if args.github_output:
+        write_github_output(args.github_output, {"rendered": "false" if stale else "true"})
+    if stale:
+        # Re-rendering an older commit's review would post its results as the current
+        # head's; the next review of this head will pick up any recorded dismissal.
+        print(f"{stale}; comments and check runs not re-rendered")
+        _step_summary(f"AI comments not re-rendered: {stale}.")
+        return EXIT_OK
     run = RunInfo.from_env()
     rendered = [render_editor(review, editor["name"], run) for editor in review["editors"]]
     _publish(rendered, args.pr, args.head_sha)
@@ -170,8 +201,7 @@ def _earlier_review(folder: Path | None, head_sha: str | None) -> tuple[dict | N
     review_path = folder / "ai-review.json" if folder is not None else None
     if review_path is None or not review_path.is_file():
         return None, "no earlier AI review of this pull request is available"
-    sha_path = folder / HEAD_SHA_FILE
-    recorded = sha_path.read_text(encoding="utf-8").strip() if sha_path.is_file() else ""
+    recorded = _recorded_head(folder / HEAD_SHA_FILE)
     if not recorded or not head_sha:
         return None, "the earlier AI review does not say which commit it reviewed"
     if recorded != head_sha:
@@ -264,6 +294,14 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     report.add_argument("--review", type=Path, required=True, help="ai-review.json")
     report.add_argument("--dismissals", type=Path, help="ai/dismissals.jsonl to re-apply")
     report.add_argument("--head-sha", help="commit for the check runs (default: PR head)")
+    report.add_argument(
+        "--review-head-sha-file",
+        type=Path,
+        help=f"the review's {HEAD_SHA_FILE}; publish only if it equals --head-sha",
+    )
+    report.add_argument(
+        "--github-output", type=Path, help="append rendered=true|false to this file"
+    )
     report.set_defaults(handler=_report)
 
     unavailable = commands.add_parser("unavailable", help="AI review could not run")

@@ -54,7 +54,7 @@ def _update(continuity=None, style=None):
     )
 
 
-@pytest.mark.intent("AC-continuity-review-7")
+@pytest.mark.intent("AC-continuity-review-7", "AC-continuity-review-30")
 def test_clean_recheck_keeps_other_passages_findings_and_the_check_stays_neutral():
     merged = merge_passage_review(_previous(), _update(), X)
     validate_artifact(merged, "ai_review")
@@ -109,6 +109,7 @@ def test_recheck_that_failed_makes_the_merged_editor_an_error():
     assert render_editor(merged, "continuity", RUN).check.conclusion == "failure"
 
 
+@pytest.mark.intent("AC-continuity-review-30")
 def test_error_on_another_passage_is_kept_after_a_clean_recheck():
     previous = _previous()
     previous["editors"][0]["units"][0] = _unit("The weir", "error", "HTTP 502")
@@ -117,6 +118,7 @@ def test_error_on_another_passage_is_kept_after_a_clean_recheck():
     assert continuity["status"] == "error"
 
 
+@pytest.mark.intent("ADR-022")
 def test_merging_into_a_partial_review_stays_partial():
     previous = _update()
     weir = _update(
@@ -126,6 +128,7 @@ def test_merging_into_a_partial_review_stays_partial():
     merged = merge_passage_review(previous, weir, "The weir")
     assert merged["mode"] == "passage"
     assert [u["passage"] for u in merged["editors"][0]["units"]] == [X, "The weir"]
+    assert render_editor(merged, "continuity", RUN).check.conclusion == "failure"
 
 
 def test_a_skipped_editor_takes_this_runs_result():

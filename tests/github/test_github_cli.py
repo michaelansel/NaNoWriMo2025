@@ -80,6 +80,65 @@ def test_report_reapplies_dismissals(wired, tmp_path):
     assert wired.check_runs[0]["conclusion"] == "success"
 
 
+def _rerender_args(path, sidecar, head_sha, output):
+    return [
+        "github",
+        "report",
+        "--pr",
+        "12",
+        "--review",
+        str(path),
+        "--review-head-sha-file",
+        str(sidecar),
+        "--head-sha",
+        head_sha,
+        "--github-output",
+        str(output),
+    ]
+
+
+@pytest.mark.intent("ADR-022")
+def test_rerender_of_a_review_of_the_current_head_posts_on_that_head(wired, tmp_path):
+    current = "c" * 40  # differs from the fake PR head, so the explicit sha must be used
+    review = make_review(make_editor(findings=[make_finding()]), make_editor("style"))
+    path = _write_review(tmp_path, review)
+    sidecar = tmp_path / "ai-review-head-sha.txt"
+    sidecar.write_text(current + "\n")
+    output = tmp_path / "output.txt"
+    assert main(_rerender_args(path, sidecar, current, output)) == 0
+    assert len(wired.bodies(12)) == 2
+    assert [r["head_sha"] for r in wired.check_runs] == [current, current]
+    assert "rendered<<" in output.read_text() and "\ntrue\n" in output.read_text()
+
+
+@pytest.mark.intent("ADR-022")
+@pytest.mark.parametrize("recorded", ["d" * 40, "", None])
+def test_rerender_of_a_review_of_another_or_unknown_commit_posts_nothing(
+    wired, tmp_path, capsys, recorded
+):
+    wired.add_comment(12, BOT, f"{MARKER_CONTINUITY}\n### Continuity Editor: did not run")
+    path = _write_review(tmp_path, make_review(make_editor(findings=[make_finding()])))
+    sidecar = tmp_path / "ai-review-head-sha.txt"
+    if recorded is not None:
+        sidecar.write_text(recorded + "\n")
+    output = tmp_path / "output.txt"
+    assert main(_rerender_args(path, sidecar, HEAD_SHA, output)) == 0
+    assert wired.writes() == []
+    assert wired.bodies(12) == [f"{MARKER_CONTINUITY}\n### Continuity Editor: did not run"]
+    assert "\nfalse\n" in output.read_text()
+    assert "not re-rendered" in capsys.readouterr().out
+
+
+def test_rerender_check_needs_the_current_head(wired, tmp_path, capsys):
+    path = _write_review(tmp_path, make_review())
+    sidecar = tmp_path / "ai-review-head-sha.txt"
+    sidecar.write_text(HEAD_SHA + "\n")
+    args = ["github", "report", "--pr", "12", "--review", str(path)]
+    assert main([*args, "--review-head-sha-file", str(sidecar)]) == 2
+    assert wired.writes() == []
+    assert "--head-sha" in capsys.readouterr().err
+
+
 def test_report_without_pr_writes_only_the_step_summary(tmp_path, monkeypatch):
     def no_api():
         raise AssertionError("no GitHub call expected")

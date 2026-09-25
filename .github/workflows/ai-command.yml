@@ -249,7 +249,6 @@ jobs:
       PR_NUMBER: ${{ needs.parse.outputs.pr }}
       HEAD_SHA: ${{ needs.parse.outputs.head_sha }}
       BUILD_RESULT: ${{ needs.build.result }}
-      PROBE_RESULT: ${{ needs.probe.result }}
       PROBE_REASON: ${{ needs.probe.outputs.reason }}
     steps:
       # Default-branch tooling only; no pull-request code runs with this token.
@@ -265,9 +264,9 @@ jobs:
       - name: Say the AI review did not run for this request
         run: |
           if [ "$BUILD_RESULT" != success ]; then
-            reason="the build did not finish (${BUILD_RESULT}), so there was nothing to review; the build job's log in this run says why"
+            reason="the build failed, so there was nothing to review; the build log in this run says why"
           else
-            reason="the AI runner check failed: ${PROBE_REASON:-the probe job (${PROBE_RESULT}) log says why}"
+            reason="the AI runner is not set up correctly (${PROBE_REASON:-see the probe job's log}); ask whoever looks after the repository to fix it"
           fi
           nanoif github not-run --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$reason"
           echo "::error::AI review did not run: $reason"
@@ -295,6 +294,7 @@ jobs:
       KEY: ${{ needs.parse.outputs.key }}
       REASON: ${{ needs.parse.outputs.reason }}
       ACTOR: ${{ needs.parse.outputs.actor }}
+      HEAD_SHA: ${{ needs.parse.outputs.head_sha }}
       DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
     steps:
       - uses: actions/checkout@v7
@@ -319,6 +319,7 @@ jobs:
           gh run download "$run_id" --repo "$GITHUB_REPOSITORY" \
             --name "ai-review-pr-${PR_NUMBER}" --dir "$RUNNER_TEMP/review"
           echo "review=$RUNNER_TEMP/review/ai-review.json" >> "$GITHUB_OUTPUT"
+          echo "head_sha_file=$RUNNER_TEMP/review/ai-review-head-sha.txt" >> "$GITHUB_OUTPUT"
 
       # Refuses (exit 1, nothing written) when the key is not in that review: a line
       # without passage hashes would suppress the finding even after the passages change.
@@ -342,10 +343,24 @@ jobs:
             git push origin "HEAD:${DEFAULT_BRANCH}"
           fi
 
+      # Only a review of the current head is re-rendered (ADR-022): after a newer push, or a
+      # "did not run" notice, the stored review is an older commit's and would pose as current.
       - name: Re-render the AI comments (no LLM)
+        id: rerender
         env:
           REVIEW: ${{ steps.artifact.outputs.review }}
-        run: nanoif github report --pr "$PR_NUMBER" --review "$REVIEW" --dismissals ai/dismissals.jsonl
+          REVIEW_HEAD_SHA_FILE: ${{ steps.artifact.outputs.head_sha_file }}
+        run: |
+          nanoif github report --pr "$PR_NUMBER" --review "$REVIEW" \
+            --dismissals ai/dismissals.jsonl \
+            --review-head-sha-file "$REVIEW_HEAD_SHA_FILE" --head-sha "$HEAD_SHA" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Reply when the last review is not of the current commit
+        if: steps.rerender.outputs.rendered == 'false'
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body \
+            "Dismissed \`${KEY}\`. The last AI review is not of the latest commit, so the comments were left as they are; the next review will show the dismissal."
 
       - name: Reply when nothing could be recorded
         if: failure() && (steps.artifact.outcome == 'failure' || steps.record.outcome == 'failure')

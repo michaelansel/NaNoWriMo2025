@@ -135,17 +135,16 @@ def editor_conclusion(editor: Mapping[str, Any], mode: str | None = None) -> str
 
     Args:
         editor: One entry of ``ai-review.json`` ``editors``.
-        mode: The review's mode. A ``passage`` review re-checked only some passages, so
-            it is never ``success``.
+        mode: The review's mode. A ``passage`` review re-checked only some passages of
+            the commit, so it concludes ``failure`` whatever its status: a partial result
+            must never replace an earlier failure on the same commit (ADR-022).
 
     Returns:
-        ``success`` for ok with no findings, ``neutral`` for ok with findings or a
-        partial (``passage``) review, ``failure`` for ``error`` or ``skipped``.
+        ``success`` for ok with no findings, ``neutral`` for ok with findings,
+        ``failure`` for ``error``, ``skipped`` or a partial (``passage``) review.
     """
-    if editor["status"] != "ok":
+    if editor["status"] != "ok" or mode == "passage":
         return "failure"
-    if mode == "passage":
-        return "neutral"
     return "neutral" if editor["findings"] else "success"
 
 
@@ -193,10 +192,10 @@ def _partial(units: Sequence[Mapping[str, Any]], count: int) -> tuple[str, str]:
     outcome = "; the findings are below" if count else f", and nothing in {it} needs a look"
     lead = (
         f"Only {', '.join(f'*{name}*' for name in names)} {were} re-checked{outcome}. "
-        "No full review of this commit was available to merge it into, so the other "
-        f"passages are not shown. Reply `{RETRY}` to review every changed passage."
+        "The other passages' results are not shown, because there is no full review of "
+        f"this commit to add this one to. Reply `{RETRY}` to review every changed passage."
     )
-    return f"partial: only {', '.join(names)} {were} re-checked", lead
+    return f"only {', '.join(names)} {were} re-checked", lead
 
 
 def _status(editor: Mapping[str, Any], mode: str) -> tuple[str, str]:

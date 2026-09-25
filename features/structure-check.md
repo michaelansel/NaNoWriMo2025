@@ -74,7 +74,7 @@ summary and annotations only.
 - AC-structure-check-15: Findings are listed errors first, then warnings, then info.
 - AC-structure-check-16: In GitHub format each finding is one annotation of the matching level (error, warning, notice) carrying its file and line, with commas, colons and newlines escaped.
 - AC-structure-check-17: On a pull request, every structure finding that names a file appears as an annotation on its file and line, and one that names no file appears in the Build comment. (verify: workflow)
-- AC-structure-check-18: If the structure check cannot run, the pull request shows a failed step; it never shows an empty list of findings. (verify: workflow)
+- AC-structure-check-18: If the structure check cannot run, or the build fails before it, the Build comment says structure was not checked and the `Structure` check run on that commit is failure; it never shows an empty list of findings or the previous push's result.
 - AC-structure-check-19: Structure findings, errors included, never stop the pull request preview from being built. (verify: workflow)
 - AC-structure-check-20: Every pull request from a branch of this repository has a `Structure` check run whose conclusion is failure when there is an error, neutral when there are warnings and no error, and success when there are only info notes or no findings.
 - AC-structure-check-21: The Build comment lists the number of structure errors, warnings and info notes, and each error with its file and line.

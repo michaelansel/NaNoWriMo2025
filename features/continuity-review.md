@@ -55,7 +55,11 @@ in `Day 1 EV` but thirty in `Back at the ferry`"*, with one quote from each pass
 collaborators are obeyed, and nobody else's comment costs anything):
 - `/check-continuity` reviews the changed passages again; `/check-continuity all` reviews every
   passage, stating the estimated cost first and the actual cost after;
-  `/check-continuity passage=<name>` reviews one passage.
+  `/check-continuity passage=<name>` reviews one passage again. When the editors already reviewed
+  this same commit, that passage's new result replaces its old one and every other passage's
+  result stays, so the check run still reflects the whole review. When they have not (for
+  example the last review was of an earlier push, or did not run), the comments show only that
+  passage, say the other passages are not shown, and the check run is never success.
 - `/dismiss f-xxxxxxxx [reason]` records the dismissal and moves the finding to the collapsed
   section. No model is called.
 
@@ -66,7 +70,7 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-4: The same contradiction between the same two passages, seen from several routes, appears as one finding.
 - AC-continuity-review-5: A finding whose quotes are not found verbatim in the cited passages is listed only in the collapsed "unverified" section and is not counted as a finding.
 - AC-continuity-review-6: Each comment's header shows the passages reviewed, findings, suppressed findings, model, the input and output tokens and estimated cost of the whole review run, and a link to that run.
-- AC-continuity-review-7: Each editor's check run is success when every passage was reviewed with no findings, neutral when there are findings, and failure when any passage could not be reviewed.
+- AC-continuity-review-7: Each editor's check run is success when every passage was reviewed with no findings, neutral when there are findings, and failure when any passage could not be reviewed; after `/check-continuity passage=<name>`, "every passage" is that passage plus every other passage of the last review of the same commit, and with no such review the check run is never success.
 - AC-continuity-review-8: A passage that could not be reviewed (provider error after one retry, or too long for the model) is listed by name with the reason, and its editor's comment never reports "no issues" for it.
 - AC-continuity-review-9: When the exe.dev runner is offline, each editor's comment says "AI review unavailable" with the reason and its check run fails, while the build and structure check still run.
 - AC-continuity-review-10: `/check-continuity`, `/check-continuity all` and `/check-continuity passage=<name>` from an owner, member or collaborator start the matching review; the same comment from anyone else starts no job and spends no tokens.
@@ -87,15 +91,22 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-25: The cost figures behind the comment header total the tokens and estimated cost of every call in the run, and mark the cost as unknown, not zero, for a model with no known price.
 - AC-continuity-review-26: Scoring an empty result against the eval story gives zero on every recall metric, and an eval run missing a metric is a regression, never a pass.
 - AC-continuity-review-27: Run over the regression fixtures for two known false-positive patterns, `height-sitting-vs-standing` (a size given sitting and standing) and `sword-hand-after-fall` (a position that changes after an event), the Continuity Editor reports no finding. (verify: planned)
-- AC-continuity-review-28: When a push's build fails or its review cannot start, each editor's comment says the review did not run for that push and shows no earlier result as current, and its check run on that commit is failure. (verify: planned)
+- AC-continuity-review-28: When the review did not run for a commit, each editor's comment says it did not run for that commit, gives the reason, says nothing was checked, and shows no earlier result, and its check run on that commit is failure.
+- AC-continuity-review-29: When a push's build fails or the AI runner check fails, that push's run posts the AC-continuity-review-28 comments and check runs, and so does `/check-continuity` when its build or runner check fails. (verify: workflow)
+- AC-continuity-review-30: After `/check-continuity passage=<name>`, each editor's comment keeps every other passage's findings and could-not-review entries from the last review of the same commit; with no such review, its title says only that passage was re-checked and it says the other passages are not shown.
 
 ## Edge cases
 - **Runner offline or gateway out of tokens**: "AI review unavailable" with the reason, a failed
   check run, and no findings shown as if the review happened (AC-continuity-review-9).
 - **Passage too long for the model**: listed as "could not check (skipped): too long", check run
   failure.
-- **Build failed**: the review has nothing to read; the comments must say it did not run for that
-  push (AC-continuity-review-28).
+- **Build failed, or the AI runner check failed** (for example a mistyped `AI_RUNNER` setting):
+  the review has nothing to read or nowhere to run; both comments say it did not run for that
+  commit and why, the old result is removed, and both check runs fail (AC-continuity-review-28,
+  AC-continuity-review-29).
+- **One passage re-checked after a new push, before that push was reviewed**: there is no review
+  of the same commit to add it to, so the comments show only that passage and say so
+  (AC-continuity-review-30); `/check-continuity` brings back every changed passage.
 - **Pull request from a fork**: the editors do not run and post nothing; the `ai-review` check
   shows as skipped, and `/check-continuity` replies that forks are not reviewed. No paid inference
   runs for a fork.

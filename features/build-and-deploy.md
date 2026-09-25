@@ -77,6 +77,10 @@ The live site's address is the repository's GitHub Pages address; the landing pa
   the build check is red; the structure notes, which run first, usually say why.
 - **GitHub Actions is down or queued**: the check stays pending; nothing deploys and nothing is
   reported as passed. Merging while the check is pending is the writer's choice.
+- **The build cannot even check out the story or install its tools** (a GitHub outage): the
+  `build` check is red, but the Build comment is not replaced, so the previous push's comment
+  stays up, which falls short of AC-build-and-deploy-7; the red `build` check on the new commit
+  is the writer's signal.
 - **Two merges close together**: deploys run one after another; the later merge is what stays live.
 - **Preview artifact expired** (after 30 days): re-run the workflow from the pull request's
   Checks tab to get a fresh one.

@@ -223,12 +223,14 @@ def test_check_run_conclusion_mapping(status, findings, conclusion):
     assert render_editor(review, "continuity", RUN).check.conclusion == conclusion
 
 
-@pytest.mark.intent("AC-continuity-review-7")
+@pytest.mark.intent("AC-continuity-review-7", "AC-continuity-review-30", "ADR-022")
 @pytest.mark.parametrize(
     "status, findings, conclusion",
-    [("ok", [], "neutral"), ("ok", [make_finding()], "neutral"), ("error", [], "failure")],
+    [("ok", [], "failure"), ("ok", [make_finding()], "failure"), ("error", [], "failure")],
 )
 def test_single_passage_recheck_is_partial_and_never_success(status, findings, conclusion):
+    # ADR-022: a partial result concludes failure whatever the editor status, so it can
+    # never replace an earlier failure on the same commit with something greener.
     units = [{"passage": "Day 1 EV", "status": "reviewed", "reason": None, "tokens": 9}]
     if status == "error":
         units = [{"passage": "Day 1 EV", "status": "error", "reason": "HTTP 502", "tokens": None}]
@@ -239,7 +241,7 @@ def test_single_passage_recheck_is_partial_and_never_success(status, findings, c
     assert rendered.check.conclusion == conclusion
     if status == "ok":
         assert rendered.body.splitlines()[1] == (
-            "### Continuity Editor: partial: only Day 1 EV was re-checked"
+            "### Continuity Editor: only Day 1 EV was re-checked"
         )
         assert "No findings" not in rendered.body
 

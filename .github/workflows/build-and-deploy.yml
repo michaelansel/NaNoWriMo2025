@@ -204,7 +204,6 @@ jobs:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       BUILD_RESULT: ${{ needs.build.result }}
-      PROBE_RESULT: ${{ needs.probe.result }}
       PROBE_REASON: ${{ needs.probe.outputs.reason }}
     steps:
       - uses: actions/checkout@v7
@@ -219,9 +218,9 @@ jobs:
       - name: Say the AI review did not run for this push
         run: |
           if [ "$BUILD_RESULT" != success ]; then
-            reason="the build did not finish (${BUILD_RESULT}), so there was nothing to review; the Build & Structure comment says why"
+            reason="the build failed, so there was nothing to review; the Build & Structure comment says why"
           else
-            reason="the AI runner check failed: ${PROBE_REASON:-the probe job (${PROBE_RESULT}) log says why}"
+            reason="the AI runner is not set up correctly (${PROBE_REASON:-see the probe job's log}); ask whoever looks after the repository to fix it"
           fi
           nanoif github not-run --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$reason"
           echo "::error::AI review did not run: $reason"

@@ -82,7 +82,7 @@ your branch.
 
 | What | Where you see it | What to do |
 |---|---|---|
-| **Build** | The `build` check, and a **Build & Structure** comment | Red: open the check to see which step failed |
+| **Build** | The `build` check, and a **Build & Structure** comment | Red: the comment says the build failed and links the run that shows why |
 | **Preview** | `story-preview`, linked from the Build & Structure comment | Download, unzip, open `dist/index.html`, play your branch |
 | **Structure notes** | The `Structure` check, the Build & Structure comment, and notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
 | **Formatting notes** | Notes on your lines in **Files changed** | Optional: spacing suggestions only |
@@ -108,6 +108,11 @@ never blocks merging.
 **"AI review unavailable"** means the editors could not read your passages this time. It is not
 an all-clear. Your pull request still builds and can still be merged.
 
+**"Did not run"** on an editor's comment means the editors did not read this push at all, usually
+because the build failed. The old result is removed and the check is red: nothing was checked.
+If the build failed, fix what the Build & Structure comment points to and push again; for any
+other reason, tell whoever looks after the repository.
+
 ## Commands you can comment on a pull request
 
 Most days you need none of these.
@@ -117,7 +122,7 @@ Most days you need none of these.
 | `/dismiss <id> [reason]` | Hides a finding you disagree with |
 | `/check-continuity` | Runs the editors again on your changed passages |
 | `/check-continuity all` | Reviews the whole story; the comment shows what it cost |
-| `/check-continuity passage=<name>` | Reviews one passage again; the comments keep the other passages' results |
+| `/check-continuity passage=<name>` | Reviews one passage again. The comments keep the other passages' results if this push was already reviewed; otherwise they show only that passage and say so |
 
 ## The pages
 
