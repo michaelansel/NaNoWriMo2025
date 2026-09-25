@@ -209,7 +209,40 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
                 f"{m} (missing)" for m in diff["missing"]
             ]
             detail.append("Baseline: regressions in " + ", ".join(names) + ".")
-    return "\n".join(lines) + "\n\n" + "\n".join(f"- {line}" for line in detail) + "\n"
+    text = "\n".join(lines) + "\n\n" + "\n".join(f"- {line}" for line in detail) + "\n"
+    if scores.get("findings"):
+        text += "\n" + _findings_table(scores["findings"])
+    return text
+
+
+_OUTCOMES = {
+    "planted": "planted ({planted})",
+    "intentional_leak": "intentional leak ({planted})",
+    "false_positive": "false positive ({routes})",
+    "unplanted": "not planted, off the clean routes",
+}
+
+
+def _cell(value: Any) -> str:
+    return " ".join(str(value or "").split()).replace("|", "\\|")
+
+
+def _findings_table(rows: list[Mapping[str, Any]]) -> str:
+    """One Markdown row per finding with what it landed on."""
+    out = [
+        "| Outcome | Editor | Key | Type | Severity | Passages | Description |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for row in rows:
+        outcome = _OUTCOMES[row["outcome"]].format(
+            planted=row["planted"], routes=", ".join(row["clean_routes"])
+        )
+        cells = [
+            outcome, row["editor"], row["key"], row["type"], row["severity"],
+            ", ".join(row["passages"]), row["description"],
+        ]
+        out.append("| " + " | ".join(_cell(c) for c in cells) + " |")
+    return "\n".join(out) + "\n"
 
 
 def to_json(scores: Mapping[str, Any]) -> str:

@@ -138,3 +138,16 @@ def test_unknown_missing_metric_still_fails_the_diff(truth):
     diff = diff_against_baseline(scores, base(new_metric=1))
     assert diff["missing"] == ["new_metric"]
     assert not diff["ok"]
+
+
+def test_markdown_lists_each_finding_with_its_outcome(truth):
+    scores = run_scoring(truth, {"findings": [
+        {"type": "contradiction", "passages": ["Day 2 EV"], "severity": "minor",
+         "editor": "continuity", "key": "f-0000000a", "description": "Pip | is\nolder."},
+    ], "conflicts": []})
+    text = render_markdown(scores)
+    assert "| Outcome | Editor | Key | Type | Severity | Passages | Description |" in text
+    assert (
+        "| false positive (clean-crossing, clean-widow) | continuity | f-0000000a | "
+        "contradiction | minor | Day 2 EV | Pip \\| is older. |"
+    ) in text

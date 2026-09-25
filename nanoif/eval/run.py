@@ -121,7 +121,14 @@ def results_from_review(artifact: Mapping[str, Any]) -> dict[str, Any]:
         for finding in editor["findings"]:
             names = [ref["name"] for ref in finding["passages"]]
             findings.append(
-                {"type": finding["type"], "passages": names, "severity": finding["severity"]}
+                {
+                    "type": finding["type"],
+                    "passages": names,
+                    "severity": finding["severity"],
+                    "editor": editor["name"],
+                    "key": finding.get("key"),
+                    "description": finding.get("description", ""),
+                }
             )
             if editor["name"] == "continuity":
                 conflicts.append({"passages": names, "intentional": False})

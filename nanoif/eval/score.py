@@ -338,40 +338,41 @@ def _matches_planted(finding: Mapping[str, Any], truth: Mapping[str, Any]) -> st
     return None
 
 
+def _on_route(finding: Mapping[str, Any], route: Sequence[str]) -> bool:
+    """Whether a finding belongs to a route: by its declared ``route``, else by its passages."""
+    declared = finding.get("route")
+    if declared is not None:
+        return list(declared) == list(route)
+    passages = _passage_set(finding.get("passages", ()))
+    return bool(passages) and passages <= set(route)
+
+
 def score_clean_paths(
     truth: Mapping[str, Any], findings: Sequence[Mapping[str, Any]]
 ) -> dict[str, Any]:
     """Count findings on clean routes that do not land on any planted item.
 
     A finding is on a clean route when its ``route`` equals that route, or, without a
-    ``route``, when every passage it cites lies on the route. A finding that lands on the
-    intentional contradiction is not a false positive but is counted as an
-    ``intentional_leak`` (the overrides file should have suppressed it).
+    ``route``, when every passage it cites lies on the route. A finding on several clean
+    routes is listed under each but counted once. A finding that lands on the intentional
+    contradiction is not a false positive but is counted as an ``intentional_leak`` (the
+    overrides file should have suppressed it).
 
     Args:
         truth: Parsed ``truth.json``.
         findings: Reported findings.
 
     Returns:
-        ``false_positives`` count, ``intentional_leaks`` count, and per-path details.
+        ``false_positives`` and ``intentional_leaks`` (distinct findings), and per-path details.
     """
     intentional = {c["id"] for c in truth.get("contradictions", []) if c["intentional"]}
     per_path: dict[str, list[dict[str, Any]]] = {}
-    false_positives = 0
-    intentional_leaks = 0
+    false_positives: set[int] = set()
+    intentional_leaks: set[int] = set()
     for path in truth.get("clean_paths", []):
-        route = list(path["route"])
-        route_set = set(route)
         rows: list[dict[str, Any]] = []
-        for finding in findings:
-            declared = finding.get("route")
-            on_route = (
-                list(declared) == route
-                if declared is not None
-                else bool(_passage_set(finding.get("passages", ())))
-                and _passage_set(finding.get("passages", ())) <= route_set
-            )
-            if not on_route:
+        for index, finding in enumerate(findings):
+            if not _on_route(finding, path["route"]):
                 continue
             planted = _matches_planted(finding, truth)
             kind = (
@@ -389,15 +390,57 @@ def score_clean_paths(
                     "planted": planted,
                 }
             )
-            false_positives += kind == "false_positive"
-            intentional_leaks += kind == "intentional_leak"
+            if kind == "false_positive":
+                false_positives.add(index)
+            elif kind == "intentional_leak":
+                intentional_leaks.add(index)
         per_path[path["id"]] = rows
     return {
         "paths": len(per_path),
-        "false_positives": false_positives,
-        "intentional_leaks": intentional_leaks,
+        "false_positives": len(false_positives),
+        "intentional_leaks": len(intentional_leaks),
         "per_path": per_path,
     }
+
+
+def classify_findings(
+    truth: Mapping[str, Any], findings: Sequence[Mapping[str, Any]]
+) -> list[dict[str, Any]]:
+    """Say what each reported finding landed on, so a run's false positives can be read.
+
+    Args:
+        truth: Parsed ``truth.json``.
+        findings: Reported findings, optionally with ``editor``, ``key`` and ``description``.
+
+    Returns:
+        One row per finding, in order, with ``outcome`` one of ``planted`` (a planted
+        defect or contradiction), ``intentional_leak`` (the intentional contradiction),
+        ``false_positive`` (nothing planted, on a clean route) or ``unplanted`` (nothing
+        planted, off every clean route), plus ``planted`` and ``clean_routes``.
+    """
+    intentional = {c["id"] for c in truth.get("contradictions", []) if c["intentional"]}
+    rows = []
+    for finding in findings:
+        planted = _matches_planted(finding, truth)
+        routes = [p["id"] for p in truth.get("clean_paths", []) if _on_route(finding, p["route"])]
+        if planted:
+            outcome = "intentional_leak" if planted in intentional else "planted"
+        else:
+            outcome = "false_positive" if routes else "unplanted"
+        rows.append(
+            {
+                "editor": finding.get("editor"),
+                "key": finding.get("key"),
+                "type": finding.get("type"),
+                "severity": finding.get("severity"),
+                "passages": sorted(_passage_set(finding.get("passages", ()))),
+                "description": finding.get("description", ""),
+                "outcome": outcome,
+                "planted": planted,
+                "clean_routes": routes,
+            }
+        )
+    return rows
 
 
 def score_pronouns(
@@ -491,8 +534,8 @@ def run_scoring(truth: Mapping[str, Any], results: Mapping[str, Any]) -> dict[st
 
     Returns:
         Per-section detail under ``entities``, ``facts``, ``conflicts``, ``defects``,
-        ``pronouns``, ``clean_paths``, ``totals``, plus a flat ``metrics`` dict that the
-        report and baseline diff consume.
+        ``pronouns``, ``clean_paths``, ``findings``, ``totals``, plus a flat ``metrics`` dict
+        that the report and baseline diff consume.
     """
     findings = list(results.get("findings", []) or [])
     sections = {
@@ -502,6 +545,7 @@ def run_scoring(truth: Mapping[str, Any], results: Mapping[str, Any]) -> dict[st
         "defects": score_defects(truth, findings),
         "pronouns": score_pronouns(truth, results.get("pronouns")),
         "clean_paths": score_clean_paths(truth, findings),
+        "findings": classify_findings(truth, findings),
         "totals": totals_block(results.get("usage")),
     }
     metrics = {

@@ -7,6 +7,7 @@ import pytest
 
 from nanoif.eval.score import (
     claim_overlap,
+    classify_findings,
     normalize_name,
     run_scoring,
     score_clean_paths,
@@ -292,14 +293,37 @@ def test_clean_path_false_positives_by_route_and_by_passages(truth):
     ]
     scores = score_clean_paths(truth, findings)
     assert scores["paths"] == 2
-    # Finding 1 is on the crossing route by declaration; finding 2 is on both routes by passages;
+    # Finding 1 is on the crossing route by declaration; finding 2 is on both routes by passages
+    # but is one finding (AC-continuity-review-17 counts findings, not route hits);
     # finding 3 lands on c-pip-age (planted); finding 4 is off every clean route;
     # finding 5 is the intentional mystery on the widow route.
-    assert scores["false_positives"] == 3
+    assert scores["false_positives"] == 2
     assert scores["intentional_leaks"] == 1
     kinds = {path: [row["kind"] for row in rows] for path, rows in scores["per_path"].items()}
     assert kinds["clean-crossing"] == ["false_positive", "false_positive"]
     assert kinds["clean-widow"] == ["false_positive", "intentional_leak"]
+
+
+def test_classify_findings_names_what_each_finding_landed_on(truth):
+    clean_route = truth["clean_paths"][1]["route"]
+    findings = [
+        {"type": "death_then_alive", "passages": ["The weir", "The toll"], "severity": "major",
+         "editor": "continuity", "key": "f-00000001", "description": "Marsh is back."},
+        {"type": "contradiction", "passages": ["Day 2 EV"], "severity": "minor",
+         "editor": "continuity", "key": "f-00000002", "description": "Invented."},
+        {"type": "contradiction", "passages": ["The widow's door"], "severity": "minor",
+         "editor": "continuity", "key": "f-00000003", "route": clean_route},
+        {"type": "contradiction", "passages": ["The weir"], "severity": "minor",
+         "editor": "continuity", "key": "f-00000004"},
+    ]
+    rows = classify_findings(truth, findings)
+    assert [row["outcome"] for row in rows] == [
+        "planted", "false_positive", "intentional_leak", "unplanted"
+    ]
+    assert rows[0]["planted"] == "d-marsh-alive"
+    assert rows[1]["clean_routes"] == ["clean-crossing", "clean-widow"]
+    assert rows[1]["description"] == "Invented."
+    assert rows[3]["clean_routes"] == []
 
 
 def test_declared_route_that_is_not_clean_is_ignored(truth):
