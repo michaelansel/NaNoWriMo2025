@@ -12,9 +12,25 @@ from __future__ import annotations
 import subprocess
 from collections.abc import Iterable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from nanoif.errors import GitError
+
+
+def normalize_iso_date(value: str) -> str:
+    """Return a git ``%aI`` date in one form whatever the git version.
+
+    Newer git prints a UTC offset as ``Z`` and older git as ``+00:00``; both
+    become ``+00:00`` so outputs do not change with the runner's git.
+
+    Args:
+        value: A strict ISO 8601 date from git.
+
+    Returns:
+        The same instant and offset as ``datetime.isoformat`` writes it.
+    """
+    return datetime.fromisoformat(value).isoformat()
 
 
 @dataclass(frozen=True)
@@ -130,7 +146,7 @@ class GitService:
                 lines = chunk.strip("\n").split("\n")
                 if not lines[0]:
                     continue
-                date = lines[0].split(" ", 1)[1]
+                date = normalize_iso_date(lines[0].split(" ", 1)[1])
                 for path in lines[1:]:
                     if not path:
                         continue

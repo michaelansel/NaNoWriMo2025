@@ -3,7 +3,7 @@
 import pytest
 
 from nanoif.errors import GitError
-from nanoif.git.service import FileDates, GitService
+from nanoif.git.service import FileDates, GitService, normalize_iso_date
 from tests.conftest import commit_all, git
 
 
@@ -43,6 +43,19 @@ def test_file_dates_created_and_modified_from_one_log(story_repo):
         created="2025-11-02T10:00:00+00:00", modified="2025-11-02T10:00:00+00:00"
     )
     assert "src/AB-20251104.twee" not in dates
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("2025-11-01T10:00:00Z", "2025-11-01T10:00:00+00:00"),
+        ("2025-11-01T10:00:00+00:00", "2025-11-01T10:00:00+00:00"),
+        ("2025-11-01T10:00:00-07:00", "2025-11-01T10:00:00-07:00"),
+    ],
+)
+def test_normalize_iso_date_is_the_same_across_git_versions(raw, expected):
+    # git 2.55 prints a UTC %aI as "Z"; older git prints "+00:00".
+    assert normalize_iso_date(raw) == expected
 
 
 def test_file_dates_only_covers_the_directory(story_repo):
