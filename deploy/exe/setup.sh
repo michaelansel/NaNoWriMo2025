@@ -4,6 +4,8 @@
 # Usage (on the VM, as the default user with sudo):
 #   curl -fsSL https://raw.githubusercontent.com/<owner>/<repo>/main/deploy/exe/setup.sh | bash -s -- <owner>/<repo> <runner-token>
 # Get <runner-token> from GitHub: repo → Settings → Actions → Runners → New self-hosted runner.
+# DEPLOY_BASE overrides where healthz.py and its unit are downloaded from (default: the
+# repo's main branch), for setting up the VM before the code is on main.
 set -euo pipefail
 
 REPO="${1:?usage: setup.sh <owner>/<repo> <runner-token>}"
@@ -34,7 +36,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || true
 if [ -n "$SCRIPT_DIR" ] && [ -f "$SCRIPT_DIR/healthz.py" ]; then
   cp "$SCRIPT_DIR/healthz.py" "$SCRIPT_DIR/nano-healthz.service" "$DEPLOY_DIR/"
 else
-  BASE="https://raw.githubusercontent.com/${REPO}/main/deploy/exe"
+  BASE="${DEPLOY_BASE:-https://raw.githubusercontent.com/${REPO}/main/deploy/exe}"
   curl -fsSL -o "$DEPLOY_DIR/healthz.py" "$BASE/healthz.py"
   curl -fsSL -o "$DEPLOY_DIR/nano-healthz.service" "$BASE/nano-healthz.service"
 fi
@@ -47,4 +49,4 @@ echo "== verify"
 sleep 1
 curl -fsS http://127.0.0.1:8000/healthz && echo
 echo "Runner should now show as Idle under Settings → Actions → Runners."
-echo "Make the proxy public so hosted runners can probe it: ssh exe.dev share public nano-runner"
+echo "Make the proxy public so hosted runners can probe it: ssh exe.dev share set-public nano-runner"

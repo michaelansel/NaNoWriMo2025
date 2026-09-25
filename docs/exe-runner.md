@@ -17,12 +17,12 @@ The VM holds nothing but the runner and a health endpoint. No secrets live on it
 
 exe.dev proxies `https://<vm>.exe.xyz/` to port 8000 on the VM, which is where healthz
 listens. The proxy is private by default; it must be made public so a GitHub-hosted
-`probe` job can reach it (`ssh exe.dev share public nano-runner`). The endpoint only
+`probe` job can reach it (`ssh exe.dev share set-public nano-runner`). The endpoint only
 reveals whether the runner is up.
 
 ## Setup (once)
 
-1. `ssh exe.dev new` and name the VM `nano-runner` (any name works; it becomes the URL).
+1. `ssh exe.dev new --name nano-runner` (any name works; it becomes the URL).
 2. In the GitHub repo: Settings → Actions → Runners → New self-hosted runner → Linux x64.
    Copy the registration token (valid for one hour).
 3. On the VM:
@@ -32,7 +32,7 @@ reveals whether the runner is up.
    ```
    The script installs git/python3, downloads the runner, registers it as
    `nano-runner` with label `exe`, installs both systemd units, and curls healthz.
-4. `ssh exe.dev share public nano-runner`, then from anywhere:
+4. `ssh exe.dev share set-public nano-runner`, then from anywhere:
    `curl -fsS https://nano-runner.exe.xyz/healthz` → `{"runner": "active"}`.
 5. In the GitHub repo set variables (Settings → Secrets and variables → Actions → Variables):
    `LLM_PROFILE=exe`, `LLM_MODEL=<id from the gateway's /v1/models>`,
