@@ -26,7 +26,7 @@ JSON_MODES = ("schema", "object", "prompt")
 REASONING_EFFORTS = ("minimal", "low", "medium", "high")
 
 EXE_BASE_URL = "https://llm.int.exe.xyz/v1"
-EXE_MODEL = "gpt-oss-120b"
+EXE_MODEL = "fireworks/gpt-oss-120b"
 FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
 FIREWORKS_MODEL = "accounts/fireworks/models/gpt-oss-120b"
 FIREWORKS_KEY_ENV = "FIREWORKS_API_KEY"

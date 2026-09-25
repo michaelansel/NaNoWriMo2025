@@ -55,7 +55,7 @@ PROFILE_RATE_SOURCE: dict[str, str] = {
     "custom": "model",
 }
 
-_PREFIXES = ("accounts/fireworks/models/", "openai/", "ollama/")
+_PREFIXES = ("accounts/fireworks/models/", "fireworks/", "openai/", "ollama/")
 
 
 def normalize_model(model: str) -> str:

@@ -21,6 +21,9 @@ def test_table_has_the_agreed_rates():
         ("GPT-OSS:20b", "gpt-oss-20b"),
         ("openai/gpt-oss-20b", "gpt-oss-20b"),
         ("gpt-oss-120b-fp8", "gpt-oss-120b"),
+        # ids as the exe.dev gateway lists them at /v1/models
+        ("fireworks/gpt-oss-120b", "gpt-oss-120b"),
+        ("fireworks/deepseek-v4-flash-0731", "deepseek-v4-flash"),
     ],
 )
 def test_model_ids_normalize_to_table_keys(model, key):
