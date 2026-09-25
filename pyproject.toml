@@ -32,6 +32,7 @@ nanoif = ["templates/**/*", "prompts/**/*", "schemas/**/*", "llm/templates/*", "
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-q"
 markers = [
   "slow: needs network, git history, or an LLM profile",
