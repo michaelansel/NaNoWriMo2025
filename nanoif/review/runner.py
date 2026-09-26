@@ -11,7 +11,11 @@ Honesty rules the runner enforces:
   model;
 - an editor is ``ok`` only when every unit was reviewed, ``error`` when any unit was not,
   and ``skipped`` (with a reason) when it could not start;
-- the verdict is computed from the units, never taken from the model.
+- the verdict is computed from the units, never taken from the model;
+- the Continuity Editor reads ``dist/canon-pack.json`` (ADR-020): each unit gets the canon
+  slice of its passage, a finding on a fact in an intentional conflict is suppressed with
+  the reason, and the artifact's ``canon`` block says which canon was used. A missing or
+  invalid pack stops the review; it is never an empty canon.
 """
 
 from __future__ import annotations
@@ -22,11 +26,13 @@ import threading
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from nanoif.bible.canon import CanonFact, CanonSlice, load_canon_pack, select_canon
+from nanoif.bible.source import bible_passages
 from nanoif.build.paths import ProjectPaths
 from nanoif.errors import ReviewConfigError
 from nanoif.git.service import GitService
@@ -55,11 +61,11 @@ BUDGET_EXHAUSTED = BUDGET_EXHAUSTED_REASON
 ARTIFACT_VERSION = 1
 
 UnitStatus = Literal["reviewed", "error", "skipped"]
-EditorCall = Callable[[Completer, ReviewStory, ReviewUnit], UnitFindings]
+EditorCall = Callable[[Completer, ReviewStory, ReviewUnit, Sequence[CanonFact]], UnitFindings]
 
 _EDITOR_CALLS: dict[str, EditorCall] = {
     "continuity": continuity.review_unit,
-    "style": style.review_unit,
+    "style": lambda client, story, unit, _canon: style.review_unit(client, story, unit),
 }
 
 
@@ -158,6 +164,7 @@ def _run_unit(
     editor: str,
     unit: ReviewUnit,
     halt: _Halt,
+    canon: Sequence[CanonFact] = (),
 ) -> UnitOutcome:
     if unit.over_budget:
         return UnitOutcome("skipped", f"too long ({unit.tokens} tokens)")
@@ -167,7 +174,7 @@ def _run_unit(
         if halt.reason is not None:
             return UnitOutcome("skipped", halt.reason)
         try:
-            result = call(client, story, unit)
+            result = call(client, story, unit, canon)
         except LLMRunHalted as exc:
             halt.set(exc.reason)
             return UnitOutcome("skipped", halt.reason or exc.reason)
@@ -191,8 +198,22 @@ def _plan(
     return None, [style_unit(story, name, budget) for name in names]
 
 
+def _suppression(
+    finding: Finding,
+    dismissals: Mapping[str, Sequence[Mapping[str, str]]],
+    intentional: Mapping[str, str],
+) -> str | None:
+    if finding.canon_fact_id is not None and finding.canon_fact_id in intentional:
+        return f"intentional-conflict:{intentional[finding.canon_fact_id]}"
+    if is_dismissed(finding, dismissals):
+        return "dismissed"
+    return None
+
+
 def _findings_block(
-    outcomes: Sequence[UnitOutcome], dismissals: Mapping[str, Sequence[Mapping[str, str]]]
+    outcomes: Sequence[UnitOutcome],
+    dismissals: Mapping[str, Sequence[Mapping[str, str]]],
+    intentional: Mapping[str, str],
 ) -> tuple[list[Finding], list[Finding], list[Finding]]:
     results = [outcome.result for outcome in outcomes if outcome.result is not None]
     merged = merge_findings(result.findings for result in results)
@@ -202,8 +223,14 @@ def _findings_block(
         for finding in merge_findings(result.unverified for result in results)
         if finding.key not in verified_keys
     ]
-    shown = [finding for finding in merged if not is_dismissed(finding, dismissals)]
-    suppressed = [finding for finding in merged if is_dismissed(finding, dismissals)]
+    shown: list[Finding] = []
+    suppressed: list[Finding] = []
+    for finding in merged:
+        reason = _suppression(finding, dismissals, intentional)
+        if reason is None:
+            shown.append(finding)
+        else:
+            suppressed.append(replace(finding, suppressed_reason=reason))
     return shown, suppressed, unverified
 
 
@@ -239,6 +266,7 @@ def _editor_entry(
     units: Sequence[ReviewUnit],
     outcomes: Sequence[UnitOutcome],
     dismissals: Mapping[str, Sequence[Mapping[str, str]]],
+    intentional: Mapping[str, str] | None = None,
 ) -> dict[str, Any]:
     if skip_reason is not None:
         return {
@@ -250,7 +278,7 @@ def _editor_entry(
             "suppressed": [],
             "unverified": [],
         }
-    shown, suppressed, unverified = _findings_block(outcomes, dismissals)
+    shown, suppressed, unverified = _findings_block(outcomes, dismissals, intentional or {})
     unit_entries = [
         {
             "passage": unit.passage,
@@ -283,6 +311,7 @@ def review(
     env: Mapping[str, str] | None = None,
     max_workers: int | None = None,
     now: datetime | None = None,
+    canon_path: Path | None = None,
 ) -> dict[str, Any]:
     """Run the editors and return the ``ai_review`` artifact.
 
@@ -298,6 +327,8 @@ def review(
             settings; defaults to ``os.environ``.
         max_workers: Concurrent units; defaults to the client's ``max_concurrency``.
         now: Timestamp for ``generated_at``.
+        canon_path: The canon pack; defaults to ``<repo>/dist/canon-pack.json``. Read only
+            when the Continuity Editor runs.
 
     Returns:
         The artifact, validated against ``ai_review``.
@@ -305,7 +336,8 @@ def review(
     Raises:
         ReviewConfigError: Bad mode, passage, editor list, runner, budget, or dismissals.
         LLMConfigError: No client given and the LLM settings are unusable.
-        BuildError: A required build artifact is missing.
+        BuildError: A required build artifact (including the canon pack) is missing.
+        ArtifactValidationError: The canon pack does not match its schema.
         GitError: The repository has no ``HEAD`` commit.
     """
     env = os.environ if env is None else env
@@ -329,6 +361,12 @@ def review(
     names = select_passages(story, mode, changes, passage)
     dismissals = load_dismissals(dismissals_path or paths.repo / "ai" / "dismissals.jsonl")
     commit_sha = GitService(paths.repo).rev_parse("HEAD")
+    slices: dict[str, CanonSlice] = {}
+    canon_block: dict[str, Any] | None = None
+    if "continuity" in editors:
+        slices, canon_block = _canon(paths, story, names, canon_path or paths.canon_pack)
+    intentional = {fid: label for piece in slices.values()
+                   for fid, label in piece.intentional.items()}
 
     try:
         client.check_spend()
@@ -340,7 +378,11 @@ def review(
     halt = _Halt()
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         futures = [
-            pool.submit(_run_unit, client, story, name, unit, halt) for name, unit in jobs
+            pool.submit(
+                _run_unit, client, story, name, unit, halt,
+                slices[unit.passage].facts if name == "continuity" else (),
+            )
+            for name, unit in jobs
         ]
         outcomes = [future.result() for future in futures]
 
@@ -350,7 +392,7 @@ def review(
         skip_reason, units = plans[name]
         mine = outcomes[cursor : cursor + len(units)]
         cursor += len(units)
-        entries.append(_editor_entry(name, skip_reason, units, mine, dismissals))
+        entries.append(_editor_entry(name, skip_reason, units, mine, dismissals, intentional))
 
     stamp = (now or datetime.now(UTC)).astimezone(UTC)
     artifact = {
@@ -362,8 +404,40 @@ def review(
         "llm": {**client.usage_summary(), "runner": runner},
         "editors": entries,
     }
+    if canon_block is not None:
+        artifact["canon"] = canon_block
     validate_artifact(artifact, "ai_review")
     return artifact
+
+
+def _canon(
+    paths: ProjectPaths, story: ReviewStory, names: Sequence[str], pack_path: Path
+) -> tuple[dict[str, CanonSlice], dict[str, Any]]:
+    """Load the canon pack and select each reviewed passage's slice.
+
+    Current hashes come from ``src/`` through the bible's own reader, so a passage counts
+    as read by the Bible exactly when the extraction would skip it.
+    """
+    pack = load_canon_pack(pack_path)
+    if paths.src.is_dir():
+        current = {p.name: p.content_hash for p in bible_passages(paths.repo, paths.src)}
+    else:
+        current = {name: story.hash(name) for name in story.content}
+    slices = {name: select_canon(pack, name, story.content[name], current) for name in names}
+    source = pack["source"]
+    block = {
+        "status": "used" if source["cache_present"] else "no_cache",
+        "extracted_at": source["extracted_at"],
+        "commit": source["commit"],
+        "facts_offered": sum(len(piece.facts) for piece in slices.values()),
+        "stale_excluded": sum(piece.stale_excluded for piece in slices.values()),
+        "passages_not_in_bible": sorted(
+            name for name in names if pack["passages"].get(name) != current.get(name)
+        )
+        if source["cache_present"]
+        else [],
+    }
+    return slices, block
 
 
 def summary_lines(artifact: Mapping[str, Any]) -> list[str]:

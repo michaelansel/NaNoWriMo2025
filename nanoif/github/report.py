@@ -176,6 +176,37 @@ def header_line(review: Mapping[str, Any], editor: Mapping[str, Any], run: RunIn
     return " · ".join(parts)
 
 
+def canon_line(review: Mapping[str, Any]) -> str | None:
+    """Return the Continuity header's statement of the Story Bible canon it used (ADR-020).
+
+    Args:
+        review: The ``ai-review.json`` document.
+
+    Returns:
+        ``Story Bible of <date> (<commit>): N established facts offered, M out of date left
+        out; not in the Bible yet: ...``, the path-only statement when there was no saved
+        extraction, or ``None`` when the review has no ``canon`` block.
+    """
+    canon = review.get("canon")
+    if not canon:
+        return None
+    if canon["status"] == "no_cache":
+        return "No saved Story Bible extraction: checked against earlier passages only"
+    date = sanitize(str(canon.get("extracted_at") or "unknown date")[:10], 20)
+    commit = sanitize(str(canon.get("commit") or "unknown")[:8], 20)
+    line = (
+        f"Story Bible of {date} ({commit}): "
+        f"{_plural(canon['facts_offered'], 'established fact')} offered, "
+        f"{canon['stale_excluded']} out of date left out"
+    )
+    missing = [sanitize(name, 200) for name in canon.get("passages_not_in_bible", [])]
+    if missing:
+        shown = ", ".join(missing[:MAX_LISTED])
+        more = f" and {len(missing) - MAX_LISTED} more" if len(missing) > MAX_LISTED else ""
+        line += f"; not in the Bible yet: {shown}{more}"
+    return line
+
+
 def _unit_reason(editor: Mapping[str, Any]) -> str:
     if editor.get("reason"):
         return sanitize(editor["reason"], 300)
@@ -311,6 +342,7 @@ def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> 
         "title": spec.title,
         "headline": headline,
         "header": header,
+        "canon": canon_line(review) if editor_name == "continuity" else None,
         "lead": lead,
         "groups": groups,
         "suppressed": suppressed,

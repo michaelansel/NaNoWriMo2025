@@ -41,7 +41,8 @@
         "passages": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"$ref": "#/definitions/passage_ref"}},
         "quotes": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/quote"}},
         "canon_fact_id": {"type": ["string", "null"]},
-        "routes_seen": {"type": "integer", "minimum": 1, "description": "How many review units reported this same key before merging"}
+        "routes_seen": {"type": "integer", "minimum": 1, "description": "How many review units reported this same key before merging"},
+        "suppressed_reason": {"type": "string", "description": "Why a suppressed finding is not shown: dismissed, or intentional-conflict:<id or label> (ADR-020)"}
       }
     },
     "unit": {
@@ -96,6 +97,20 @@
         "month_cap_reached": {"type": "boolean", "description": "the cap refused a call in this run, or spend is at the cap"}
       }
     },
-    "editors": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/editor"}}
+    "editors": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/editor"}},
+    "canon": {
+      "type": "object",
+      "description": "The Story Bible canon the Continuity Editor checked against (ADR-020); absent when the Continuity Editor was not run",
+      "required": ["status", "extracted_at", "commit", "facts_offered", "stale_excluded", "passages_not_in_bible"],
+      "additionalProperties": false,
+      "properties": {
+        "status": {"enum": ["used", "no_cache"], "description": "no_cache: no saved extraction, so earlier passages only"},
+        "extracted_at": {"type": ["string", "null"]},
+        "commit": {"type": ["string", "null"]},
+        "facts_offered": {"type": "integer", "minimum": 0},
+        "stale_excluded": {"type": "integer", "minimum": 0},
+        "passages_not_in_bible": {"type": "array", "items": {"type": "string"}}
+      }
+    }
   }
 }

@@ -80,6 +80,8 @@ class Finding:
         quotes: Verbatim quotes with passage names.
         canon_fact_id: The canon fact involved, for canon findings.
         routes_seen: How many review units reported this key.
+        suppressed_reason: Why a suppressed finding is not shown (``dismissed`` or
+            ``intentional-conflict:<id or label>``); ``None`` for a shown finding.
     """
 
     key: str
@@ -92,10 +94,11 @@ class Finding:
     quotes: tuple[Quote, ...]
     canon_fact_id: str | None = None
     routes_seen: int = 1
+    suppressed_reason: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize in the ``ai_review`` artifact's finding shape."""
-        return {
+        data = {
             "key": self.key,
             "editor": self.editor,
             "type": self.type,
@@ -110,6 +113,9 @@ class Finding:
             "canon_fact_id": self.canon_fact_id,
             "routes_seen": self.routes_seen,
         }
+        if self.suppressed_reason is not None:
+            data["suppressed_reason"] = self.suppressed_reason
+        return data
 
 
 @dataclass

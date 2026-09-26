@@ -1,22 +1,24 @@
 """The Continuity Editor: one model call per review unit, then deterministic checks.
 
-The model sees the unit text (earlier passages and the passage under review, by id) and,
-from Phase 3, a canon slice. Its answer is never trusted as is:
+The model sees the unit text (earlier passages and the passage under review, by id) and
+the canon slice for the passage (:func:`nanoif.bible.canon.select_canon`), quote-less.
+Its answer is never trusted as is:
 
 - a finding that does not quote the passage under review, names an unknown or third
   passage, or names the passage under review as the "other" source is dropped;
 - every quote must be a whitespace-normalized substring of the passage it cites, and a
   ``path`` finding must quote both passages, else the finding goes to ``unverified``;
 - severity is clamped to the range its type allows (:data:`TYPE_SEVERITY`);
-- the key is computed from the type and the two passage names.
+- the key is computed from the type and the two passage names;
+- a canon finding gets the fact's verbatim quote re-attached as its second quote.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass
 from typing import Any
 
+from nanoif.bible.canon import CanonFact
 from nanoif.llm.client import Completer
 from nanoif.llm.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.findings import (
@@ -43,23 +45,6 @@ TYPE_SEVERITY: dict[str, tuple[str, str]] = {
     "name_typo": ("minor", "minor"),
 }
 """Severity range per type; types not listed take the rubric answer as is."""
-
-
-@dataclass(frozen=True)
-class CanonFact:
-    """A canon fact offered to the model as source ``[B]`` (Phase 3).
-
-    Attributes:
-        id: Stable fact id, for example ``tam#2``.
-        entity: Entity name.
-        claim: The fact, quote-less.
-        passage: Name of the passage that established it.
-    """
-
-    id: str
-    entity: str
-    claim: str
-    passage: str
 
 
 def build_prompt(
@@ -172,6 +157,10 @@ def postprocess(
         verified = all(
             quote_found(quote.text, passage_texts(story, quote.passage, unit)) for quote in quotes
         )
+        if fact_id is not None:
+            fact = facts[fact_id]
+            if fact.quote and quote_found(fact.quote, passage_texts(story, fact.passage)):
+                quotes = (*quotes, Quote(fact.passage, fact.quote))
         if raw["source"] == "path":
             verified = verified and any(quote.passage == other_name for quote in quotes)
 

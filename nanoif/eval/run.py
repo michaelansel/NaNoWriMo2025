@@ -15,6 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from nanoif.bible.assemble import load_bible
+from nanoif.bible.canon import write_canon_pack
 from nanoif.build.paths import ProjectPaths
 from nanoif.errors import BuildError
 from nanoif.eval.report import diff_against_baseline, render_markdown
@@ -102,6 +104,7 @@ def prepare_eval_repo(fixture: Path, workdir: Path) -> ProjectPaths:
             base_ref=base_sha,
         )
     )
+    write_canon_pack(load_bible(workdir, paths.cache), paths.canon_pack)
     return paths
 
 
