@@ -1,65 +1,65 @@
 # Vision
 
-## Why We Exist
+## Why we exist
 
-Interactive fiction should be accessible to writers, not just programmers. Collaborative storytelling should enable creativity, not drown it in merge conflicts and technical barriers.
+Interactive fiction should be open to writers, not just programmers. We exist to show that a small
+group of writers can build a branching story together in a month, using only a web browser, with
+automation that catches what people cannot and never gets in their way.
 
-We exist to prove that writers can create complex, branching narratives together using simple tools and powerful automation.
+## The goal
 
-## The Problem We're Solving
+On Nov 1 a writer opens a pull request from a browser and within minutes gets an honest AI read of
+their new passages, and nothing in the pipeline can fail without saying so.
 
-**For aspiring interactive fiction authors:**
-- Traditional IF tools require programming knowledge, local development environments, and technical expertise
-- Collaboration on branching narratives is fragile - one person's changes can break another's story paths
-- Testing all possible paths manually is impossible beyond trivial stories
-- Publishing requires build pipelines, hosting, and deployment knowledge
+## The problem
 
-**For collaborative writing teams:**
-- Git workflows are intimidating for non-technical writers
-- Continuity errors multiply exponentially with branching narratives
-- No easy way to visualize or audit the complete story structure
-- Friction between "writing" and "shipping" kills momentum
+- Interactive fiction tools assume programming, a local setup, and a build pipeline.
+- Branching multiplies the places a story can contradict itself, and nobody can re-read every route
+  before merging a day's passage.
+- Git is intimidating, and one writer's change can break another writer's route.
+- Automation that is noisy, or that fails quietly, is worse than none: writers learn to ignore it,
+  and the one real problem ships anyway.
 
-## Who We Serve
+## Who we serve
 
-**Primary:** Writers participating in NaNoWriMo who want to explore interactive fiction without becoming software developers
+**Primary:** writers taking part in NaNoWriMo who want to write branching fiction without becoming
+developers. They work in the GitHub web UI and never install or run anything.
 
-**Secondary:** Small collaborative writing teams who value:
-- Daily writing practice and accountability
-- Immediate feedback and publication
-- Quality through automation rather than gatekeeping
-- Creative experimentation with branching narratives
+**Secondary:** small writing groups who want daily practice, immediate publication, and quality
+from automation rather than gatekeeping.
 
-## What Success Looks Like
+## What success looks like
 
-**Short-term (NaNoWriMo 2025):**
-- Complete a 50,000+ word interactive fiction story collaboratively
-- Authors contribute daily using only GitHub's web interface
-- Zero continuity errors across all story paths at publication
-- Changes go live in under 2 minutes from commit to web
+**The writers' goal** is a 50,000-word branching story, written together in November. It belongs
+to the writers. The tooling cannot write it, only stay out of its way, so word count does not
+measure the tooling.
 
-**Long-term:**
-- Writers choose our workflow because it's simpler than traditional IF tools
-- Teams cite our approach as the model for collaborative IF development
-- The question "how do you ensure continuity in branching narratives?" has an automated answer
-- Non-programmers confidently publish complex interactive fiction
+**The tooling succeeds, each November, when:**
+- Writers contribute every day from a browser, and no day's passage waits on the tooling.
+- Every merged path has been read by the checker and every flagged issue dispositioned by a writer.
+- No automated check can fail silently. A check that could not run says so on the pull request.
+- A merged passage is playable on the web within minutes.
 
-## Our Unique Approach
+**Long term:** "How do you keep a branching story consistent?" has an automated, honest answer, and
+non-programmers publish complex interactive fiction with confidence.
 
-We combine:
-1. **Zero-barrier contribution** - Edit in a web browser, no installation required
-2. **Exhaustive automated testing** - AI validates every possible story path
-3. **Multiple perspectives** - Same content, different formats for different needs (play, proofread, visualize, audit)
-4. **Transparent automation** - Writers see exactly what's being checked and why
+## Our approach
 
-We're not building a writing tool. We're removing every obstacle between a writer's imagination and a published interactive story.
+1. **Zero-barrier contribution**: edit in a browser, install nothing.
+2. **Honest automated review**: deterministic structure checks on every pull request, then AI
+   editors that read the new passages, quote what they found, and say plainly when they could not
+   check.
+3. **Many views, one source**: every reading, proofing and review view is generated from the same
+   Twee source ([output formats](features/output-formats.md)).
+4. **Transparent automation**: writers see what was checked, what was not, and why.
 
-## Strategic North Star
+We are not building a writing tool. We remove the obstacles between a writer's idea and a published
+interactive story.
 
-When making decisions, ask:
-- Does this make it easier for a writer to contribute their first passage?
-- Does this increase confidence that the story maintains internal consistency?
-- Does this reduce the time between "I have an idea" and "readers can experience it"?
-- Does this empower writers to focus on storytelling rather than tooling?
+## North star
 
-If the answer is yes, we're on the right path.
+When deciding, ask:
+- Does this make it easier for a writer to contribute the next passage?
+- Does this make the story's consistency more trustworthy, honestly?
+- Does this shorten the time from "I have an idea" to "readers can play it"?
+- Could this fail without a writer seeing it? If so, it is not done.

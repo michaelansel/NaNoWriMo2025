@@ -1,190 +1,129 @@
-# Strategic Priorities
+# Priorities
 
-Stack-ranked priorities for the NaNoWriMo2025 project. Higher priorities get resources and attention first.
+What matters now, in rank order, with dates. The goal is in [VISION.md](VISION.md); how we decide is
+in [PRINCIPLES.md](PRINCIPLES.md).
 
-## Current Phase: NaNoWriMo 2025 Active Writing (November 2025)
+## Trade order
 
-### Priority 1: Writer Velocity
+When two things compete for time, the higher one wins:
 
-**Goal:** Nothing blocks a writer from contributing daily
+1. Tooling reliable for writers
+2. AI honest
+3. Codebase clean
+4. AI good
 
-**Why now:** NaNoWriMo is a time-bound challenge. Every day counts. A blocked writer is a demotivated writer.
+## Nov 1 must-haves
 
-**Success metrics:**
-- Author can contribute a new passage in under 5 minutes (web UI only)
-- Build pipeline completes in under 2 minutes
-- Zero tolerance for blocking bugs in contribution workflow
-- Documentation answers common questions in under 30 seconds of reading
+### P0: Tooling reliable for writers
 
-**Focus areas:**
-- Keep GitHub Actions build fast and reliable
-- Maintain clear, actionable error messages
-- Ensure CONTRIBUTING.md is current and complete
-- Quick response to workflow issues
+**Goal:** every day of November, a writer goes from edit to pull request to preview to merge to live
+from a browser, with nothing blocking them.
 
----
+- Content reset done: `src/` holds only the infrastructure passages and the Start stub, AI state is
+  fresh, and the story settings are filled in.
+- Every pull request builds, previews and runs the structure check; every merge deploys; tests run
+  in CI as a required check.
+- No automation commits to a writer's branch or rewrites prose.
+- Writer docs (`README.md`, `CONTRIBUTING.md`, `WRITING-WORKFLOW.md`) are current.
 
-### Priority 2: Story Quality Through Automation
+**Done by:** Oct 25, when `/nov1-checklist` prints `READY`.
 
-**Goal:** Writers trust that automation catches continuity errors
+### P1: AI honest
 
-**Why now:** As the story grows and branches multiply, manual continuity checking becomes impossible. Writers need confidence to experiment.
+**Goal:** every AI result is either a verified read or a visible "could not check".
 
-**Success metrics:**
-- AI continuity checker runs on every PR automatically, within the AI spend cap (see Constraints)
-- New paths validated within minutes of PR creation
-- Authors can approve/dismiss AI feedback with simple commands
-- Zero continuity errors make it to published story
+- The Continuity and Style editors review every pull request from a branch of this repository,
+  with one comment and one check run each.
+- Runner offline, model error, a passage too long to read, or the spend cap reached: the pull
+  request says so and the check fails.
+- On-demand commands answer collaborators only.
 
-**Focus areas:**
-- Reliable AI continuity checking service
-- Clear, actionable AI feedback
-- Efficient validation (check only what changed)
-- Easy approval workflow for validated paths
+**Done by:** green on a real pull request by Oct 10 (critical path).
 
-**Strategic Decision: Focused Validation**
+### P2: Codebase clean enough
 
-Writer Experience Goal:
-- Writers receive fast feedback on only what they changed
-- System never makes writers wait to revalidate unchanged content
-- Validation results are relevant to the writer's contribution
+**Goal:** one installable package that the next change can be made in safely.
 
-Why This Matters:
-- Full story validation can take hours as the story grows
-- Writers contributing during NaNoWriMo need feedback in minutes
-- Irrelevant validation feedback is noise that distracts from writing
-- Waiting blocks momentum and breaks flow state
+- One `nanoif` package; pytest and ruff in CI; no tests that cannot fail; dead code deleted.
 
-Success Metrics:
-- PR validation completes in under 5 minutes for typical contributions
-- Validation feedback mentions only paths affected by changes
-- Writers can continue working while validation runs
-- Zero false positives (checking things that didn't change)
+**Done by:** Oct 25. No restructuring in November.
 
-Trade-off Accepted:
-- More complex categorization/tracking to enable selective validation
-- Worth it because writer time and focus are the scarcest resources
+### P3: AI good
 
----
+**Goal:** findings worth a writer's minute.
 
-### Priority 3: Collaborative Workflow Excellence
+- Story Bible v2 (per-entity merge, stable fact ids, the overrides file, freshness) is live and
+  feeds canon to the Continuity Editor.
+- An eval baseline is committed for the default profile, and every prompt change cites its eval
+  delta.
+- Quality keeps improving through November by prompt and config changes only.
 
-**Goal:** Multiple authors work simultaneously without conflicts
+**Done by:** Story Bible v2 Oct 18; eval tuning Oct 25. If Story Bible v2 is not green by Oct 25 it
+does not ship on Nov 1: the Continuity Editor runs on earlier passages only, and the Story Bible
+lands in December.
 
-**Why now:** This is fundamentally a collaborative project. Friction between authors kills momentum.
+## Schedule (2026 season)
 
-**Success metrics:**
-- Authors work in parallel on different branches without blocking each other
-- PRs provide complete preview of changes before merge
-- Clear visualization of how changes affect story structure
-- Automated resource tracking prevents naming conflicts
+| When | Work |
+|---|---|
+| Sep 26 - Oct 2 | Package and CI tests, structure check, LLM client, eval story, runner online |
+| Oct 3 - Oct 10 | Critical path: move to the new repository; Continuity and Style editors; workflows; green on a real pull request |
+| Oct 11 - Oct 18 | Story Bible v2, overrides, dismissals and outcomes |
+| Oct 19 - Oct 25 | Eval and prompt tuning, remaining bugs, docs, content reset; `/nov1-checklist` READY |
+| Oct 26 - Oct 31 | Freeze: a dry-run pull request each day; fixes only |
+| Nov 1 - Nov 30 | Writing. Only writer-blocking bugs and prompt or config changes; weekly false-positive review from `ai/outcomes.jsonl`; spend watch |
+| December | Retro (`new-year-reset`), anything cut, structural changes |
 
-**Focus areas:**
-- PR preview artifacts with all output formats
-- Automated resource passage name generation
-- Clear branching contribution documentation
-- Graph visualization for story structure
-
----
-
-### Priority 4: Visibility and Inspection
-
-**Goal:** Everyone can see and understand the complete story state
-
-**Why now:** Complex branching narratives are hard to reason about. Multiple output formats serve different needs.
-
-**Success metrics:**
-- Four output formats maintained: playable, proofread, graph, allpaths
-- Path tracking shows when each branch was completed
-- Easy to identify which paths need review
-- Statistics show daily progress toward goals
-
-**Focus areas:**
-- Keep all output formats building reliably
-- Maintain allpaths validation tracking
-- Provide clear path statistics and metrics
-- Documentation for each output format's purpose
-
----
+**Change windows.** A structural change (module boundary, workflow job, persistent state,
+dependency, data contract) lands by Oct 25 or waits for December. Prompt wording, model choice and
+configuration variables may change in November, each with its eval delta.
 
 ## Constraints
 
-### AI Spend Cap: $10 per Calendar Month
+### AI spend cap: $10 per calendar month
 
-**Decision:** AI inference for this project costs at most $10 per calendar month (UTC), estimated at list prices. The cap resets on the 1st. Only the owner raises it, and raising it is a spend decision, not a code change.
+**Decision:** AI inference for this project costs at most $10 per calendar month (UTC), estimated at
+list prices. The cap resets on the 1st. Only the owner raises it, and raising it is a spend
+decision, not a code change.
 
-**Why:** Inference runs on the owner's shared LLM token allocation. This project must never be able to use it up.
+**Why:** Inference runs on the owner's shared LLM token allocation. This project must never be able
+to use it up.
 
-**When the cap is reached:** AI review stops, and the PR says so. It is a visible "not run", never a silent pass. Builds and structure checks spend no tokens, so they keep running.
+**When the cap is reached:** AI review stops, and the pull request says so. It is a visible "not
+run", never a silent pass. Builds and structure checks spend no tokens, so they keep running.
 
-**Trade-off accepted:** The cap outranks Priority 2's "runs on every PR". Late in an expensive month, a PR may get no AI read. An honest "not run" beats an unbounded bill.
+**Trade-off accepted:** The cap outranks P1's "every pull request". Late in an expensive month, a
+pull request may get no AI read. An honest "not run" beats an unbounded bill.
 
----
+## Not before Nov 1
 
-## Deliberately Deferred (Important but not now)
+- A local-model profile as the default (December at the earliest)
+- Path comparison, analytics and retrospective tools
+- New AI editors: choice, pacing and ending checks; grammar and proofreading; multi-model review
+- AI check runs as required merge checks
+- Advanced interactive fiction features: variables, inventory, game mechanics
+- Custom story formats beyond the current outputs
 
-### Post-NaNoWriMo Retrospective Tools
-- **What:** Analytics on writing patterns, contribution frequency, path completion timeline
-- **Why deferred:** Don't need during active writing; valuable for learning after completion
-- **Revisit:** December 2025
+## Not in scope
 
-### Advanced IF Features
-- **What:** Variables, inventory systems, complex game mechanics
-- **Why deferred:** Scope creep threatens the core goal - completing the story
-- **Revisit:** Only if needed for specific story requirements
+- Real-time collaborative editing: the pull request model fits an async team.
+- A WYSIWYG editor: Twee is simple enough to edit anywhere, even on a phone.
+- Alternatives to Git and GitHub: the automation is built on them.
+- Story formats other than Harlowe.
+- Per-path approval: writers disposition findings, not paths.
+- Story Bible variables, scene state and timelines.
 
-### Custom Story Format Development
-- **What:** Building custom Tweego story formats beyond AllPaths
-- **Why deferred:** Existing formats serve current needs adequately
-- **Revisit:** If specific gaps identified in current tooling
+## Deciding what's next
 
-### Automated Grammar/Style Checking
-- **What:** AI-based proofreading and style consistency checking
-- **Why deferred:** Proofreading can happen after story completion
-- **Revisit:** During editing phase (December 2025)
+Ask, in order:
 
----
+1. Will a writer notice it on Nov 1?
+2. Does it remove a silent failure?
+3. Does it add a moving part that must be alive in November? Then its failure must be visible to a
+   writer.
+4. Can it be tested end to end in the real repository before the freeze?
+5. Is it prompt or config (can change in November) or structure (must land by Oct 25)?
+6. Does fixing the whole class cost about the same as fixing this one instance? Fix the class.
+7. Does it need the user? Batch the question.
 
-## Not In Scope (Active "No" List)
-
-### Real-time Collaborative Editing
-- Adds complexity without solving a real problem for our async workflow
-- GitHub PR model works well for our team size and pace
-
-### WYSIWYG Editor
-- Defeats the purpose of our "edit anywhere, even on your phone" approach
-- Twee syntax is already extremely simple
-
-### Version Control Alternatives
-- Git/GitHub is fundamental to our automation strategy
-- Alternative workflows would require rebuilding entire infrastructure
-
-### Supporting Other Story Formats
-- Harlowe serves our needs well
-- Format fragmentation would complicate testing and documentation
-
----
-
-## Priority Evolution
-
-These priorities will shift as we move through phases:
-
-**November 2025 (Active Writing):** Velocity, quality automation, collaboration
-**December 2025 (Refinement):** Editing tools, analytics, retrospective
-**Future (Sharing):** Publication polish, accessibility, documentation for others
-
-Priorities are reviewed when:
-- Major blockers emerge
-- Phase transitions occur
-- Strategic goals are achieved
-- New information fundamentally changes assumptions
-
-## Decision Framework
-
-When prioritizing new work, ask:
-1. Does this directly support completing the story by November 30, 2025?
-2. Does this reduce friction for daily author contributions?
-3. Does this increase confidence in story quality?
-4. Is this actually blocking, or just nice to have?
-
-Be ruthless about saying "not now" to good ideas that don't serve the current phase.
+Say "not now" to good ideas that do not serve this season.

@@ -1,129 +1,104 @@
 # Principles
 
-Core principles that guide decision-making for the NaNoWriMo2025 project. These are non-negotiable.
+How we decide. These are non-negotiable; changing one is an explicit edit to this file, approved by
+the user.
 
 ## 1. Writers First, Always
 
 **Principle:** Every decision optimizes for the writer's experience, not the developer's convenience.
 
 **This means:**
-- Simple beats powerful when in conflict
-- Web-based contribution beats feature-rich local tooling
-- Clear error messages beat detailed technical diagnostics
-- Documentation written for writers, not engineers
+- Simple beats powerful when they conflict.
+- Web-based contribution beats feature-rich local tooling.
+- Clear, actionable messages beat technical diagnostics.
+- Writer documentation is written for writers, not engineers.
 
-**Trade-offs we accept:**
-- Some advanced IF features may be harder to implement
-- Tooling may be less flexible than traditional IF frameworks
-- Technical users may find the workflow limiting
+**Trade-offs we accept:** some advanced interactive fiction features are harder to build; technical
+users may find the workflow limiting.
 
-**Example decisions:**
-- ✓ Edit .twee files directly in GitHub web UI
-- ✗ Require local Tweego installation
-- ✓ Automated resource passage tracking
-- ✗ Manual management of passage dependencies
+**Examples:**
+- Yes: edit `.twee` files directly in the GitHub web UI. No: require a local Tweego install.
+- Yes: a generated passage index page. No: writers tracking passage names by hand.
 
 ---
 
 ## 2. Automation Over Gatekeeping
 
-**Principle:** Quality comes from tooling and automation, not from manual review gates or restrictive permissions.
+**Principle:** Quality comes from tooling, not from manual review gates or restrictive permissions.
+Automation advises; writers edit; a bot never modifies prose on a writer's branch.
 
 **This means:**
-- Automate what can be automated
-- Provide feedback, not barriers
-- Trust contributors, verify with tooling
-- Make the right thing the easy thing
+- Automate what can be automated; give feedback, not barriers.
+- Checks report. They never rewrite a writer's files or commit to a writer's branch.
+- An AI finding is advice. A writer decides whether to fix it or dismiss it.
+- Trust contributors; verify with tooling.
 
-**Trade-offs we accept:**
-- More complex build infrastructure
-- Ongoing maintenance of automation
-- Occasional false positives from automated checks
+**Trade-offs we accept:** build infrastructure to maintain; occasional false positives, which
+writers dismiss.
 
-**Example decisions:**
-- ✓ AI continuity checking on every PR
-- ✗ Requiring senior author approval before merge
-- ✓ Automated resource passage name generation
-- ✗ Manual tracking of passage names in spreadsheets
-- ✓ Multiple output formats generated automatically
-- ✗ Authors manually export to different formats
+**Examples:**
+- Yes: AI review on every pull request. No: senior-author approval before merge.
+- Yes: the linter reports a formatting problem with its file and line. No: a bot commits the fix.
 
 ---
 
 ## 3. Fast Feedback Loops
 
-**Principle:** Time from idea to feedback should be measured in minutes, not hours or days.
+**Principle:** Time from idea to feedback is measured in minutes, not hours or days.
 
 **This means:**
-- Build and deploy in under 2 minutes
-- PR previews available immediately after workflow completion
-- Continuity checks start as soon as code is pushed
-- Status visible at all times
+- Every push builds, previews and runs the structure check.
+- AI review starts on its own after the build.
+- By default, review reads only what changed; the whole story is reviewed on request.
+- Status is visible while work is running.
 
-**Trade-offs we accept:**
-- Infrastructure costs for compute resources
-- Complexity of webhook services and automation
-- Maintaining fast build pipelines requires ongoing attention
+**Trade-offs we accept:** compute and token cost, bounded by the monthly spend cap
+([PRIORITIES.md](PRIORITIES.md)); fast pipelines need ongoing attention.
 
-**Example decisions:**
-- ✓ GitHub Actions for immediate build on push
-- ✗ Nightly batch builds
-- ✓ Incremental validation (check only what changed)
-- ✗ Full re-validation on every commit
-- ✓ Progress updates posted as paths complete
-- ✗ Wait for all paths before posting results
+**Examples:**
+- Yes: GitHub Actions on every push. No: nightly batch builds.
+- Yes: review the changed passages with the routes that lead to them. No: re-review the whole story
+  on every push.
 
 ---
 
 ## 4. Multiple Perspectives, Same Source
 
-**Principle:** Different tasks need different views of the same content. Generate multiple perspectives from a single source of truth.
+**Principle:** Different tasks need different views of the same content. Generate every view from
+one source of truth.
 
 **This means:**
-- One .twee source, many output formats
-- Each format optimized for specific use case
-- Never manually maintain parallel versions
-- Add new perspectives when they serve a clear need
+- One `src/` of Twee, many generated outputs, each built for one use.
+- Never maintain a parallel copy by hand.
+- Add a view only when it serves a clear need.
 
-**Trade-offs we accept:**
-- More complex build process
-- Maintenance burden of multiple format generators
-- Potential for format-specific bugs
+**Trade-offs we accept:** a more complex build; format-specific bugs.
 
-**Example decisions:**
-- ✓ Harlowe for playing, Paperthin for proofreading, DotGraph for visualization, AllPaths for AI checking
-- ✗ One-size-fits-all output
-- ✓ Custom AllPaths format for continuity needs
-- ✗ Manually copy passages into AI prompts
-- ✓ Clean prose vs metadata formats for different audiences
-- ✗ Single format trying to serve all purposes
+**Examples:**
+- Yes: play, proofread, graph, all-paths and passage pages built from `src/`. No: one output trying
+  to serve every purpose.
+- Yes: the AI reads generated story context. No: pasting passages into prompts by hand.
 
 ---
 
 ## 5. Transparency and Inspectability
 
-**Principle:** Authors should always be able to see what's happening and why. No mysterious black boxes.
+**Principle:** Writers can always see what happened and why. A failure is always visible; a check
+that could not run says so.
 
 **This means:**
-- All automation produces visible, understandable output
-- Builds show detailed logs
-- AI feedback explains specific issues
-- Every path can be traced and inspected
+- "No issues" is only ever a verified result.
+- Every AI finding quotes the text that disagrees and names the passages.
+- Every AI result says what was read, by which model, and at what cost.
+- One comment per check type per pull request, edited in place.
 
-**Trade-offs we accept:**
-- More verbose output and notifications
-- Additional documentation burden
-- Complexity of making internals visible
+**Trade-offs we accept:** more red checks, because an outage shows as a failure rather than as
+quiet; more verbose output.
 
-**Example decisions:**
-- ✓ Detailed PR comments showing validation results
-- ✗ Simple pass/fail status checks
-- ✓ AllPaths HTML interface for browsing every story path
-- ✗ Black box "all good" report
-- ✓ Path IDs link to specific routes through the story
-- ✗ Generic error messages
-- ✓ Validation cache shows exactly which paths are checked
-- ✗ Opaque AI decision-making
+**Examples:**
+- Yes: "could not review: runner offline" with a failed check. No: an empty comment or a green check
+  when the AI did not run.
+- Yes: a finding with two quotes and two passage names. No: a generic "continuity issue".
 
 ---
 
@@ -132,109 +107,108 @@ Core principles that guide decision-making for the NaNoWriMo2025 project. These 
 **Principle:** Ship improvements iteratively. Working now beats perfect later.
 
 **This means:**
-- Start with basic functionality, enhance based on real usage
-- Optimize common paths, tolerate rough edges in rare cases
-- Learn from what's shipped, not what's planned
-- Iterate based on actual pain points, not hypothetical ones
+- Start with basic functionality; improve from real usage, not hypothetical pain.
+- Optimize common paths; tolerate rough edges in rare cases.
+- Learn from what shipped, not from what was planned.
 
-**Trade-offs we accept:**
-- Some inconsistencies as systems evolve
-- Occasional breaking changes when we learn better approaches
-- Documentation lags slightly behind implementation
+**Trade-offs we accept:** some inconsistency while systems evolve; occasional breaking changes when
+we learn a better approach.
 
-**Example decisions:**
-- ✓ Ship selective validation (new-only mode), then add modified mode based on feedback
-- ✗ Wait until perfect validation system designed before shipping anything
-- ✓ Add validation modes incrementally (new-only → modified → all)
-- ✗ Design complete system upfront
-- ✓ Document features as they stabilize
-- ✗ Hold all documentation until every feature is final
+**Examples:**
+- Yes: tune prompts through November against the eval story. No: hold the AI back until it is
+  perfect.
+- Yes: ship the Continuity Editor with earlier passages only if the Story Bible is not ready. No:
+  hold the Continuity Editor for the Story Bible.
 
 ---
 
 ## 7. Smart Defaults, Escape Hatches
 
-**Principle:** The default path should work for 90% of cases. Provide escape hatches for the other 10%.
+**Principle:** The default path works for most cases. Escape hatches cover the rest.
 
 **This means:**
-- Zero configuration should produce good results
-- Advanced users can customize when needed
-- Documentation explains both the simple path and the advanced options
-- Never force everyone through the advanced workflow
+- Zero configuration produces good results.
+- Advanced options exist but are never required.
 
-**Trade-offs we accept:**
-- Some duplication between simple and advanced paths
-- Documentation covers both novice and expert paths
-- Advanced features may be less polished
+**Trade-offs we accept:** some duplication between the simple and advanced paths; advanced options
+may be less polished.
 
-**Example decisions:**
-- ✓ Default validation mode (new-only) optimized for common case
-- ✗ Force everyone to choose a mode
-- ✓ /check-continuity command with optional mode parameter
-- ✗ Separate command for each mode
-- ✓ Edit on GitHub web (simple) or local development (advanced)
-- ✗ Require local setup for everyone
+**Examples:**
+- Yes: review of changed passages runs automatically. No: writers choose a mode on every pull request.
+- Yes: `/check-continuity all` for a whole-story read on request. No: a separate command per mode.
+- Yes: correct the Story Bible by editing one text file in the web UI. No: correcting it requires a
+  developer.
 
 ---
 
-## Applying These Principles
+## 8. Spend Tokens, Not Writer Minutes
 
-When facing decisions, principles form a hierarchy:
+**Principle:** Model tokens are cheap; a writer's attention in November is not. Spend tokens to save
+writer minutes, within the monthly spend cap.
 
-1. **Writers First** - If it makes writing harder, it's wrong
-2. **Automation** - If humans could do it wrong, automate it
-3. **Fast Feedback** - If it takes too long, find a faster way
-4. **Multiple Perspectives** - If someone needs a different view, generate it
-5. **Transparency** - If it's mysterious, explain it
-6. **Incremental** - If it's not perfect, ship it anyway and iterate
-7. **Smart Defaults** - If most people need it, make it the default
+**This means:**
+- AI review runs automatically; writers do not have to ask for it or wait on it.
+- Managed inference beats a machine someone has to keep alive.
+- Cost is cut by better prompts and sending only what is needed, never by quietly skipping review.
+- The cap is hard. When it is reached, review says it did not run (see the Constraints in
+  [PRIORITIES.md](PRIORITIES.md)).
 
-**Principle conflicts:** When principles conflict, Writers First wins. Fast Feedback beats Perfection. Transparency beats Simplicity.
+**Trade-offs we accept:** a monthly bill up to the cap; late in an expensive month, a pull request may
+get no AI read.
 
-## Strategic Decisions
-
-These are key architectural and interface decisions locked in to guide implementation:
-
-### GitHub PRs as Primary Interface
-
-**Decision:** GitHub pull requests are the primary and default interface for all writer interactions with the story pipeline.
-
-**What this means:**
-- Writers commit changes via GitHub web interface
-- Writers trigger validation via PR comments (`/extract-story-bible`, `/check-continuity`)
-- Writers see results in PR comments and GitHub Pages artifacts
-- Writers never need to install tools or run commands locally
-
-**CLI as Developer Tool:**
-- CLI commands (`make metrics`, `make build`) exist for developers working on the pipeline
-- CLI is an escape hatch for advanced users who prefer local workflows
-- CLI is NOT documented in writer-facing guides (CONTRIBUTING.md, features/)
-- CLI is NOT a supported workflow for story contributions
-
-**Why:**
-- Aligns with Vision: "Zero-barrier contribution - Edit in a web browser, no installation required"
-- Aligns with Priority 1: "Author can contribute a new passage in under 5 minutes (web UI only)"
-- Aligns with Principle 1: "Web-based contribution beats feature-rich local tooling"
-- Aligns with Principle 7: Web is the smart default, CLI is the escape hatch
-
-**Implications:**
-- Feature specs describe PR-based workflows only
-- Documentation assumes GitHub web interface
-- Error messages guide writers to PR comment commands, not CLI
-- Testing focuses on PR automation experience
+**Examples:**
+- Yes: read each changed passage with its routes and a compact slice of canon. No: resend the whole
+  Story Bible with every route.
+- Yes: stop at the cap and say so. No: raise the cap automatically.
 
 ---
 
-## Non-Principles (What We Don't Value)
+## 9. Less, Kept True
 
-To clarify what we stand for, here's what we explicitly don't prioritize:
+**Principle:** Keep fewer documents, features and moving parts, and keep every one of them accurate.
+What is not kept true is fixed or deleted.
 
-- ✗ Technical elegance over user experience
-- ✗ Feature completeness over time to value
-- ✗ Flexibility over focused functionality
-- ✗ Innovation for innovation's sake
-- ✗ Supporting every possible workflow
-- ✗ Beautiful code over working software
-- ✗ Comprehensive design docs over shipping iterations
+**This means:**
+- One home per fact; documents describe the current state.
+- A feature writers do not use is removed, not maintained.
+- Every part that must be alive in November has a failure a writer can see.
+- A test that cannot fail is deleted or fixed.
 
-These things aren't bad - they're just not what this project optimizes for.
+**Trade-offs we accept:** things get deleted that someone might want later; git history is the
+archive.
+
+**Examples:**
+- Yes: delete a feature nobody used last season. No: keep it "just in case".
+- Yes: one link parser. No: six that disagree.
+
+---
+
+## Applying these principles
+
+The principles rank in the order above: Writers First, Automation, Fast Feedback, Multiple
+Perspectives, Transparency, Incremental, Smart Defaults, Spend Tokens, Less Kept True.
+
+**When they conflict:** Writers First wins. An honest "could not check" beats a fast or flattering
+answer. The spend cap beats Spend Tokens. Fast Feedback beats perfection. Transparency beats
+simplicity.
+
+## Strategic decision: pull requests are the writer's interface
+
+- Writers commit through the GitHub web UI, see results in pull request comments and the preview,
+  and run the few on-demand commands as pull request comments ([WRITING-WORKFLOW.md](WRITING-WORKFLOW.md)).
+- Writers never install tools, run commands, or run Claude in the repository.
+- The `nanoif` CLI is a developer tool. It is not documented in writer guides and is not a supported
+  way to contribute.
+- Feature notes describe pull-request workflows; error messages point writers to pull request
+  comments, never to the CLI.
+
+## What we do not optimize for
+
+- Technical elegance over the writer's experience
+- Feature completeness over time to value
+- Flexibility over focused functionality
+- Supporting every possible workflow
+- Beautiful code over working software
+- Comprehensive design documents over shipping
+
+These are not bad; they are not what this project optimizes for.
