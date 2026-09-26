@@ -115,4 +115,3 @@ runs:
         tweego src -o dist/play.html -f "harlowe-${HARLOWE_VERSION}"
         tweego src -o dist/proofread.html -f paperthin-1
         tweego src -o dist/graph.html -f dotgraph-2
-        cp landing/index.html dist/index.html

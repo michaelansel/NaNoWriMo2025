@@ -59,7 +59,7 @@ passage names and text, so it changes when any passage on the route changes. The
 ## Acceptance criteria
 - AC-output-formats-1: Every build produces `play.html` (Harlowe), `proofread.html` (Paperthin) and `graph.html` (DotGraph) from `src/`, and a build that cannot produce one of them fails. (verify: workflow)
 - AC-output-formats-2: Every link on the landing page opens an existing page, in the pull request preview and on GitHub Pages. (verify: workflow)
-- AC-output-formats-3: The landing page shows the title from `StoryTitle`. (verify: planned)
+- AC-output-formats-3: The landing page shows the title from `StoryTitle`.
 - AC-output-formats-4: The All Paths page lists one entry per route from the start passage to an ending, in link order, with the route's passage names, files, created and modified dates, and category.
 - AC-output-formats-5: A route that existed at the base with any passage changed is *modified*; a new route containing a new passage or changed prose is *new*; a new route whose only changes are links is *modified*; every other route is *unchanged*.
 - AC-output-formats-6: Categories compare against the pull request's merge base when one is given, otherwise `HEAD`; when the base has no story, every route is *new*.

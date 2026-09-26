@@ -32,6 +32,8 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
     monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
     monkeypatch.delenv("GITHUB_MERGE_BASE", raising=False)
     paperthin(story_repo)
+    (story_repo / "landing").mkdir()
+    (story_repo / "landing" / "index.html").write_text("<h1>{{STORY_TITLE}}</h1>", encoding="utf-8")
     assert main(["build", "all", "--repo", str(story_repo)]) == 0
     out = capsys.readouterr().out
     order = [
@@ -41,6 +43,7 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
         "rendered the placeholder page",
         "Canon pack with no saved extraction",
         "Passage index: 5 passages",
+        "index.html",
     ]
     positions = [out.index(marker) for marker in order]
     assert positions == sorted(positions)
@@ -54,11 +57,13 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
         "story-bible.json",
         "canon-pack.json",
         "passages.html",
+        "index.html",
     ):
         assert (dist / name).is_file(), name
     validate_artifact(json.loads((dist / "changes.json").read_text()), "changes")
     assert (story_repo / "lib" / "artifacts" / "story_graph.json").is_file()
     assert (story_repo / "src" / "PathIdLookup.twee").is_file()
+    assert (dist / "index.html").read_text(encoding="utf-8") == "<h1>Test Story</h1>"
 
 
 @pytest.mark.intent("AC-build-and-deploy-3", "ADR-015")

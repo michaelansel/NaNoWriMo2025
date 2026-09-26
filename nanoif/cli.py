@@ -175,6 +175,15 @@ def _build_passages(args: argparse.Namespace) -> int:
     return 0
 
 
+def _build_landing(args: argparse.Namespace) -> int:
+    from nanoif.formats.landing import build_landing
+
+    paths = _paths(args)
+    out = build_landing(paths.repo / "landing" / "index.html", paths.story_graph, paths.dist)
+    print(f"Wrote {out}")
+    return 0
+
+
 def _build_all(args: argparse.Namespace) -> int:
     steps = (
         _build_core,
@@ -183,6 +192,7 @@ def _build_all(args: argparse.Namespace) -> int:
         _build_story_bible,
         _build_canon_pack,
         _build_passages,
+        _build_landing,
     )
     for step in steps:
         status = step(args)
@@ -396,8 +406,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--cache", type=Path, default=None, help="default: <repo>/ai/story-bible-cache.json"
     )
     _add_build(targets, "passages", "passage index page", _build_passages)
+    _add_build(targets, "landing", "landing page with the story title", _build_landing)
     everything = _add_build(
-        targets, "all", "core, allpaths, metrics, story-bible, canon-pack and passages", _build_all
+        targets, "all", "every build step, ending with the landing page", _build_all
     )
     everything.add_argument("--html", type=Path, default=None, help=argparse.SUPPRESS)
     everything.add_argument("--lookup", type=Path, default=None, help=argparse.SUPPRESS)
