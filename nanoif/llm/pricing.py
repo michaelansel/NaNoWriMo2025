@@ -40,10 +40,19 @@ class Estimate:
     model_key: str | None
 
 
+# Fireworks serverless list prices (USD per 1M tokens), checked 2026-09-26 from published
+# listings. deepseek-v4p1-flash uses DeepSeek's peak rate because no Fireworks row was found.
 MODEL_RATES: dict[str, Rate] = {
     "gpt-oss-120b": Rate(0.15, 0.60),
     "gpt-oss-20b": Rate(0.07, 0.30),
     "deepseek-v4-flash": Rate(0.14, 0.28),
+    "deepseek-v4p1-flash": Rate(0.30, 1.20),
+    "deepseek-v4-pro": Rate(1.74, 3.48),
+    "qwen3p8": Rate(2.00, 6.00),
+    "kimi-k3": Rate(3.00, 15.00),
+    "glm-5p3": Rate(1.40, 4.40),
+    "glm-5p3-flash": Rate(0.15, 0.50),
+    "minimax-m3": Rate(0.30, 1.20),
 }
 
 # The monthly spend cap (ADR-023) charges a model with no row at this rate, above every

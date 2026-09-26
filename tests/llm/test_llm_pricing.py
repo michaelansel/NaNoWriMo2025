@@ -24,6 +24,13 @@ def test_table_has_the_agreed_rates():
         # ids as the exe.dev gateway lists them at /v1/models
         ("fireworks/gpt-oss-120b", "gpt-oss-120b"),
         ("fireworks/deepseek-v4-flash-0731", "deepseek-v4-flash"),
+        ("fireworks/deepseek-v4p1-flash", "deepseek-v4p1-flash"),
+        ("fireworks/deepseek-v4-pro-0813", "deepseek-v4-pro"),
+        ("fireworks/qwen3p8-2p4t-a95b", "qwen3p8"),
+        ("fireworks/kimi-k3", "kimi-k3"),
+        ("fireworks/glm-5p3", "glm-5p3"),
+        ("fireworks/glm-5p3-flash", "glm-5p3-flash"),
+        ("fireworks/minimax-m3", "minimax-m3"),
     ],
 )
 def test_model_ids_normalize_to_table_keys(model, key):
