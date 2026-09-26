@@ -131,12 +131,14 @@ def test_reasoning_model_detection():
     assert is_reasoning_model("gpt-oss-120b")
     assert is_reasoning_model("accounts/fireworks/models/gpt-oss-120b")
     assert is_reasoning_model("gpt-oss:20b")
+    assert is_reasoning_model("fireworks/glm-5p3-flash")
     assert not is_reasoning_model("llama-3.1-70b-instruct")
 
 
 def test_exe_default_model_is_a_gateway_id():
     # The exe.dev gateway lists models with a provider prefix, e.g. "fireworks/gpt-oss-120b".
-    assert Settings.from_env({}).model == "fireworks/gpt-oss-120b"
+    # Chosen by the eval (tests/eval/baselines/exe.json); see the eval-prompts skill.
+    assert Settings.from_env({}).model == "fireworks/glm-5p3-flash"
 
 
 @pytest.mark.parametrize(

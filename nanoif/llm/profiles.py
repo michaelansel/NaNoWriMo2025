@@ -30,7 +30,7 @@ JSON_MODES = ("schema", "object", "prompt")
 REASONING_EFFORTS = ("minimal", "low", "medium", "high")
 
 EXE_BASE_URL = "https://llm.int.exe.xyz/v1"
-EXE_MODEL = "fireworks/gpt-oss-120b"
+EXE_MODEL = "fireworks/glm-5p3-flash"
 FIREWORKS_BASE_URL = "https://api.fireworks.ai/inference/v1"
 FIREWORKS_MODEL = "accounts/fireworks/models/gpt-oss-120b"
 FIREWORKS_KEY_ENV = "FIREWORKS_API_KEY"
@@ -38,7 +38,7 @@ OLLAMA_BASE_URL = "http://michaels-mac-mini:11434/v1"
 OLLAMA_MODEL = "gpt-oss:20b"
 NO_KEY = "none"
 
-REASONING_MODEL_MARKERS = ("gpt-oss", "deepseek-r", "deepseek-v4", "qwen3")
+REASONING_MODEL_MARKERS = ("gpt-oss", "deepseek-r", "deepseek-v4", "qwen3", "glm-5")
 REASONING_MIN_MAX_TOKENS = 8000
 
 
