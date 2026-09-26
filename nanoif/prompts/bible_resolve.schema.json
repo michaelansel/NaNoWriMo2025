@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bible_resolve",
+  "description": "Story Bible name resolution for one run (ADR-020): which new name clusters are the same entity as another cluster or an existing entity, and which are not entities at all. Code applies only high-confidence merges of one type, each key at most once.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["merges", "drop"],
+  "properties": {
+    "merges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["into", "members", "confidence"],
+        "properties": {
+          "into": { "type": "string" },
+          "members": { "type": "array", "items": { "type": "string" } },
+          "confidence": { "enum": ["high", "medium", "low"] }
+        }
+      }
+    },
+    "drop": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["key", "reason"],
+        "properties": {
+          "key": { "type": "string" },
+          "reason": { "enum": ["generic", "not_named"] }
+        }
+      }
+    }
+  }
+}

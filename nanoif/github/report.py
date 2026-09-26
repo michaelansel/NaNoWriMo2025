@@ -176,6 +176,37 @@ def header_line(review: Mapping[str, Any], editor: Mapping[str, Any], run: RunIn
     return " · ".join(parts)
 
 
+def canon_line(review: Mapping[str, Any]) -> str | None:
+    """Return the Continuity header's statement of the Story Bible canon it used (ADR-020).
+
+    Args:
+        review: The ``ai-review.json`` document.
+
+    Returns:
+        ``Story Bible of <date> (<commit>): N established facts offered, M out of date left
+        out; not in the Bible yet: ...``, the path-only statement when there was no saved
+        extraction, or ``None`` when the review has no ``canon`` block.
+    """
+    canon = review.get("canon")
+    if not canon:
+        return None
+    if canon["status"] == "no_cache":
+        return "No saved Story Bible extraction: checked against earlier passages only"
+    date = sanitize(str(canon.get("extracted_at") or "unknown date")[:10], 20)
+    commit = sanitize(str(canon.get("commit") or "unknown")[:8], 20)
+    line = (
+        f"Story Bible of {date} ({commit}): "
+        f"{_plural(canon['facts_offered'], 'established fact')} offered, "
+        f"{canon['stale_excluded']} out of date left out"
+    )
+    missing = [sanitize(name, 200) for name in canon.get("passages_not_in_bible", [])]
+    if missing:
+        shown = ", ".join(missing[:MAX_LISTED])
+        more = f" and {len(missing) - MAX_LISTED} more" if len(missing) > MAX_LISTED else ""
+        line += f"; not in the Bible yet: {shown}{more}"
+    return line
+
+
 def _unit_reason(editor: Mapping[str, Any]) -> str:
     if editor.get("reason"):
         return sanitize(editor["reason"], 300)
@@ -311,6 +342,7 @@ def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> 
         "title": spec.title,
         "headline": headline,
         "header": header,
+        "canon": canon_line(review) if editor_name == "continuity" else None,
         "lead": lead,
         "groups": groups,
         "suppressed": suppressed,
@@ -428,11 +460,22 @@ def render_pending(editor_name: str, run: RunInfo) -> str:
 
 @dataclass(frozen=True)
 class BuildStats:
-    """Numbers the Build comment shows."""
+    """Numbers the Build comment shows.
+
+    Attributes:
+        sizes: ``(label, file, bytes or None)`` per output.
+        passage_count: Passages in ``allpaths-index.json``.
+        path_count: Paths in ``allpaths-index.json``.
+        bible_unread: Passages the Story Bible has not read in their current text, from
+            ``story-bible.json``; ``None`` when that file is missing.
+        bible_extracted: Whether ``story-bible.json`` came from a saved extraction.
+    """
 
     sizes: tuple[tuple[str, str, int | None], ...]
     passage_count: int | None
     path_count: int | None
+    bible_unread: int | None = None
+    bible_extracted: bool = False
 
 
 def collect_build_stats(dist: Path) -> BuildStats:
@@ -442,22 +485,51 @@ def collect_build_stats(dist: Path) -> BuildStats:
         dist: The build output directory.
 
     Returns:
-        Sizes (``None`` for a missing file) and the passage and path counts from
-        ``allpaths-index.json`` (``None`` when that file is missing).
+        Sizes (``None`` for a missing file), the passage and path counts from
+        ``allpaths-index.json`` (``None`` when that file is missing), and the Story Bible's
+        unread-passage count from ``story-bible.json`` (``None`` when it is missing).
 
     Raises:
-        BuildError: If ``allpaths-index.json`` exists but is not valid JSON.
-        ArtifactValidationError: If it does not match its schema.
+        BuildError: If ``allpaths-index.json`` or ``story-bible.json`` exists but is not
+            valid JSON.
+        ArtifactValidationError: If one does not match its schema.
     """
     sizes = tuple(
         (label, name, (dist / name).stat().st_size if (dist / name).is_file() else None)
         for label, name in BUILD_OUTPUTS
     )
+    unread: int | None = None
+    extracted = False
+    bible_path = dist / "story-bible.json"
+    if bible_path.is_file():
+        bible = load_artifact(bible_path, "story_bible")
+        fresh = bible["freshness"]
+        unread = len(set(fresh["changed"]) | set(fresh["new"]))
+        extracted = bool(bible["cache_present"])
     index_path = dist / "allpaths-index.json"
     if not index_path.is_file():
-        return BuildStats(sizes, None, None)
+        return BuildStats(sizes, None, None, unread, extracted)
     index = load_artifact(index_path, "allpaths_index")
-    return BuildStats(sizes, len(index["passages"]), len(index["paths"]))
+    return BuildStats(sizes, len(index["passages"]), len(index["paths"]), unread, extracted)
+
+
+def bible_line(stats: BuildStats | None) -> str | None:
+    """Return the Build comment's Story Bible line (AC-story-bible-16), or ``None``.
+
+    Args:
+        stats: The build numbers.
+
+    Returns:
+        How many passages the Story Bible has not read in their current text.
+    """
+    if stats is None or stats.bible_unread is None:
+        return None
+    count = _plural(stats.bible_unread, "passage")
+    if not stats.bible_extracted:
+        return f"not extracted yet, so {count} not yet read"
+    if not stats.bible_unread:
+        return "every passage read in its current text"
+    return f"{count} not yet read in their current text (listed under Freshness on the page)"
 
 
 def structure_conclusion(findings: Sequence[Mapping[str, Any]]) -> str:
@@ -581,6 +653,7 @@ def render_build(
         "infos": by_level["info"][:MAX_LISTED],
         "infos_overflow": max(0, infos - MAX_LISTED),
         "sizes": [] if stats is None else [(label, name, _kb(s)) for label, name, s in stats.sizes],
+        "bible": bible_line(stats),
     }
     body = _environment().get_template("build.md.jinja2").render(**context)
     if not structure_ran:

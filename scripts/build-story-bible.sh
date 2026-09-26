@@ -1,7 +1,7 @@
 #!/bin/bash
 # Build the Story Bible pages (dist/story-bible.html, dist/story-bible.json)
-# from story-bible-cache.json. A missing cache renders the placeholder page
-# (success); an unreadable cache or a missing core artifact fails the build.
+# from ai/story-bible-cache.json. A missing cache renders the placeholder page
+# (success); an invalid cache or a missing core artifact fails the build.
 
 set -euo pipefail
 

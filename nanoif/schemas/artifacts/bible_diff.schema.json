@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/bible_diff.schema.json",
+  "title": "Bible Diff",
+  "description": "dist/bible-diff.json, written by every `nanoif bible extract` run (ADR-020): what the run read, what failed, and what changed against the cache it started from.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status", "mode", "dry_run", "cache_written", "base", "passages_read", "passages_failed",
+    "passages_deleted", "pending", "entities", "facts", "conflicts", "usage"
+  ],
+  "definitions": {
+    "names": { "type": "array", "items": { "type": "string" } }
+  },
+  "properties": {
+    "status": {
+      "enum": ["ok", "partial", "up_to_date"],
+      "description": "ok: everything planned was read; partial: some passages failed or entities are pending (exit 3); up_to_date: no passage changed and no model was called."
+    },
+    "mode": { "enum": ["incremental", "full"] },
+    "dry_run": { "type": "boolean" },
+    "cache_written": { "type": "boolean" },
+    "base": {
+      "description": "The extraction the run started from, or null when there was no cache.",
+      "anyOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["commit", "extracted_at"],
+          "properties": {
+            "commit": { "type": "string" },
+            "extracted_at": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "passages_read": { "$ref": "#/definitions/names" },
+    "passages_failed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["passage", "reason"],
+        "properties": {
+          "passage": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "passages_deleted": { "$ref": "#/definitions/names" },
+    "pending": {
+      "type": "array",
+      "description": "Entities left with reconcile: pending, and why.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entity", "reason"],
+        "properties": {
+          "entity": { "type": "string" },
+          "reason": { "type": "string" }
+        }
+      }
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "removed", "changed"],
+      "properties": {
+        "added": { "$ref": "#/definitions/names" },
+        "removed": { "$ref": "#/definitions/names" },
+        "changed": { "$ref": "#/definitions/names" }
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "reworded", "retired"],
+      "properties": {
+        "added": { "$ref": "#/definitions/names" },
+        "reworded": { "$ref": "#/definitions/names" },
+        "retired": { "$ref": "#/definitions/names" }
+      }
+    },
+    "conflicts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "retired"],
+      "properties": {
+        "added": { "$ref": "#/definitions/names" },
+        "retired": { "$ref": "#/definitions/names" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "description": "The completer's usage_summary(): calls, tokens, usd, usd_known, profile, model, monthly spend.",
+      "required": ["calls", "usd", "usd_known"],
+      "properties": {
+        "calls": { "type": "integer", "minimum": 0 },
+        "usd": { "type": "number", "minimum": 0 },
+        "usd_known": { "type": "boolean" }
+      }
+    }
+  }
+}

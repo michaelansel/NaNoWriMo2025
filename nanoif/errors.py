@@ -37,3 +37,11 @@ class LintError(NanoifError):
 
 class ReviewConfigError(NanoifError):
     """An AI review cannot start: bad mode or passage, missing input, or a corrupt state file."""
+
+
+class BibleError(NanoifError):
+    """A Story Bible stage could not run: bad input, an unusable model answer, a bad path."""
+
+
+class BibleCacheError(BuildError):
+    """``ai/story-bible-cache.json`` exists but is unreadable, not v2, invalid, or dangling."""

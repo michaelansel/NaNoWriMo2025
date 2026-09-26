@@ -12,6 +12,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from nanoif.llm.client import Completer
+from nanoif.llm.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.findings import (
     Finding,
     Quote,
@@ -23,7 +24,6 @@ from nanoif.review.findings import (
     passage_texts,
     quote_found,
 )
-from nanoif.review.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.units import STORY_STYLE_KEYS, ReviewStory, ReviewUnit
 
 EDITOR = "style"

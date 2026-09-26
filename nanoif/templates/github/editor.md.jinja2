@@ -2,6 +2,9 @@
 {{ marker }}
 ### {{ title }}: {{ headline }}
 <sub>{{ header }}</sub>
+{% if canon %}
+<br><sub>{{ canon }}</sub>
+{% endif %}
 {% if lead %}
 
 {{ lead }}

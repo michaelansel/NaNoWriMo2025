@@ -16,8 +16,14 @@ from nanoif.github.api import BOT_LOGIN, GitHubAPI
 MARKER_BUILD = "<!-- nano:build -->"
 MARKER_CONTINUITY = "<!-- nano:continuity -->"
 MARKER_STYLE = "<!-- nano:style -->"
+MARKER_BIBLE = "<!-- nano:bible -->"
 
-MARKERS = {"build": MARKER_BUILD, "continuity": MARKER_CONTINUITY, "style": MARKER_STYLE}
+MARKERS = {
+    "build": MARKER_BUILD,
+    "continuity": MARKER_CONTINUITY,
+    "style": MARKER_STYLE,
+    "bible": MARKER_BIBLE,
+}
 
 
 @dataclass(frozen=True)

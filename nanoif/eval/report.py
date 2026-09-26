@@ -18,6 +18,8 @@ HIGHER_IS_BETTER = (
     "conflict_recall",
     "conflict_precision",
     "intentional_flagged",
+    "review_conflict_recall",
+    "review_conflict_precision",
     "defects_detected",
     "defect_severity_matches",
     "pronoun_accuracy",
@@ -44,6 +46,8 @@ _LABELS = {
     "conflict_recall": "Conflict recall",
     "conflict_precision": "Conflict precision",
     "intentional_flagged": "Intentional conflict flagged",
+    "review_conflict_recall": "Review conflict recall",
+    "review_conflict_precision": "Review conflict precision",
     "defects_detected": "Defects detected",
     "defect_severity_matches": "Defect severities right",
     "pronoun_accuracy": "Pronoun accuracy",
@@ -170,8 +174,8 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
         if "skipped" in facts
         else f"Facts: {len(facts['recalled'])}/{facts['expected']} recalled; "
         f"missed {', '.join(facts['missed']) or 'none'}.",
-        f"Conflicts: found {', '.join(scores['conflicts']['found']) or 'none'}; "
-        f"missed {', '.join(scores['conflicts']['missed']) or 'none'}.",
+        _conflicts_line("Conflicts", scores["conflicts"]),
+        _conflicts_line("Review conflicts", scores.get("review_conflicts", {"skipped": "not run"})),
         "Defects: "
         + ", ".join(
             f"{row['id']} {'found' if row['detected'] else 'missed'}"
@@ -184,6 +188,12 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
     ]
     if scores.get("spend"):
         detail.append(f"{scores['spend'][0].upper()}{scores['spend'][1:]}.")
+    extraction = scores.get("extraction")
+    if extraction:
+        line = f"Extraction: {extraction['status']}"
+        if extraction.get("reason"):
+            line += f" ({extraction['reason']})"
+        detail.append(line + ".")
     pronouns = scores.get("pronouns", {})
     if "skipped" in pronouns:
         detail.append(f"Pronouns: skipped ({pronouns['skipped']}).")
@@ -215,6 +225,15 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
     if scores.get("findings"):
         text += "\n" + _findings_table(scores["findings"])
     return text
+
+
+def _conflicts_line(label: str, section: Mapping[str, Any]) -> str:
+    if "skipped" in section:
+        return f"{label}: skipped ({section['skipped']})."
+    return (
+        f"{label}: found {', '.join(section['found']) or 'none'}; "
+        f"missed {', '.join(section['missed']) or 'none'}."
+    )
 
 
 _OUTCOMES = {

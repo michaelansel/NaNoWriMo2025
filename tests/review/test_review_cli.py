@@ -10,7 +10,7 @@ import pytest
 from review_helpers import FIXTURES, answer, path_finding
 
 from nanoif.cli import main
-from nanoif.eval.run import EXTRACTION_SKIPPED, prepare_eval_repo
+from nanoif.eval.run import prepare_eval_repo
 from nanoif.graph.ids import passage_id_mapping
 from nanoif.llm.fake import FakeLLM
 from nanoif.schemas.artifacts import load_artifact
@@ -122,6 +122,7 @@ def planted_defects_llm() -> FakeLLM:
         }
 
     script = {
+        "bible-resolve": {"merges": [], "drop": []},
         f"continuity:{TOLL}": answer(marsh),
         "style:Gull Chapel at dusk": answer(
             slip("pov_slip", "I could hear the bell still humming in the beams above us")
@@ -130,7 +131,14 @@ def planted_defects_llm() -> FakeLLM:
             slip("tense_slip", "Wren steps aboard and takes the pole from Tam's hands")
         ),
     }
-    return FakeLLM(lambda call: script.get(call.tag, answer()))
+    empty_bible = {"summary": "", "entities": [], "references": []}
+
+    def respond(call):
+        if call.tag.startswith("bible-extract:"):
+            return empty_bible
+        return script.get(call.tag, answer())
+
+    return FakeLLM(respond)
 
 
 def test_eval_scores_planted_defects(tmp_path, capsys, no_llm_env):
@@ -144,16 +152,16 @@ def test_eval_scores_planted_defects(tmp_path, capsys, no_llm_env):
     assert scores["metrics"]["defects_detected"] == 3
     assert scores["metrics"]["defect_severity_matches"] == 3
     assert scores["metrics"]["clean_path_false_positives"] == 0
-    assert "entity_recall" not in scores["metrics"]
-    assert scores["entities"] == {"skipped": EXTRACTION_SKIPPED}
-    assert scores["skipped_metrics"]["fact_recall"] == EXTRACTION_SKIPPED
+    assert scores["extraction"]["status"] == "ok"
+    assert scores["entities"]["reported"] == 0 and scores["entities"]["recall"] == 0.0
+    assert "skipped_metrics" not in scores
     assert [e["status"] for e in scores["review"]["editors"]] == ["ok", "ok"]
     rows = {row["id"]: row["detected"] for row in scores["defects"]["per_defect"]}
     assert rows["d-marsh-alive"] and rows["d-pov"] and rows["d-tense"]
     assert not rows["d-lantern-rule"]
     markdown = (tmp_path / "results" / "eval-results.md").read_text()
     assert "d-marsh-alive found" in markdown
-    assert f"Entities: skipped ({EXTRACTION_SKIPPED})" in markdown
+    assert "Extraction: ok." in markdown
     assert "Defects detected | 3" in capsys.readouterr().out
     load_artifact(tmp_path / "results" / "eval-ai-review.json", "ai_review")
 

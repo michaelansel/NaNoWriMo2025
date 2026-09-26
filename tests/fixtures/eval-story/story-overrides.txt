@@ -11,4 +11,4 @@ not-entity: the man who built the weir
 pin: River Wardens = The River Wardens fly a green pennant | "the green pennant of the River Wardens" @ The crossing
 
 # The widow calling herself no one's wife is a mystery the writer planted on purpose.
-intentional-conflict: c-widow-never-wife
+intentional-conflict: c-widow-never-wife = Widow Kestle | never anyone's wife

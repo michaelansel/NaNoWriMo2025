@@ -15,7 +15,7 @@ class ProjectPaths:
         src: Story source (``src/``).
         artifacts: Core artifacts (``lib/artifacts/``).
         dist: Build output (``dist/``).
-        cache: The Story Bible extraction cache.
+        cache: The Story Bible extraction cache (``ai/story-bible-cache.json``).
     """
 
     repo: Path
@@ -40,7 +40,7 @@ class ProjectPaths:
             src: Override for ``<repo>/src``.
             artifacts: Override for ``<repo>/lib/artifacts``.
             dist: Override for ``<repo>/dist``.
-            cache: Override for ``<repo>/story-bible-cache.json``.
+            cache: Override for ``<repo>/ai/story-bible-cache.json``.
 
         Returns:
             The layout.
@@ -50,7 +50,7 @@ class ProjectPaths:
             src=src or repo / "src",
             artifacts=artifacts or repo / "lib" / "artifacts",
             dist=dist or repo / "dist",
-            cache=cache or repo / "story-bible-cache.json",
+            cache=cache or repo / "ai" / "story-bible-cache.json",
         )
 
     @property
@@ -62,6 +62,21 @@ class ProjectPaths:
     def passages(self) -> Path:
         """``passages_deduplicated.json``."""
         return self.artifacts / "passages_deduplicated.json"
+
+    @property
+    def overrides(self) -> Path:
+        """``story-overrides.txt``."""
+        return self.repo / "story-overrides.txt"
+
+    @property
+    def canon_pack(self) -> Path:
+        """``canon-pack.json``, the Continuity Editor's canon."""
+        return self.dist / "canon-pack.json"
+
+    @property
+    def bible_diff(self) -> Path:
+        """``bible-diff.json``, written by every extraction run."""
+        return self.dist / "bible-diff.json"
 
     @property
     def paperthin_html(self) -> Path:

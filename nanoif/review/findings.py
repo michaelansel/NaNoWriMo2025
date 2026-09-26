@@ -9,7 +9,6 @@ same key and can be merged or dismissed.
 from __future__ import annotations
 
 import hashlib
-import re
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any
@@ -17,12 +16,28 @@ from typing import Any
 from nanoif.review.units import ReviewStory, ReviewUnit
 from nanoif.twee.files import relative_file
 from nanoif.twee.links import display_text
+from nanoif.twee.quotes import clean_quote, normalize_text, quote_found
+
+__all__ = [
+    "CONFIDENCES",
+    "SEVERITIES",
+    "Finding",
+    "PassageRef",
+    "Quote",
+    "UnitFindings",
+    "clamp_severity",
+    "clean_quote",
+    "finding_key",
+    "is_dismissed",
+    "merge_findings",
+    "normalize_text",
+    "passage_ref",
+    "passage_texts",
+    "quote_found",
+]
 
 SEVERITIES = ("minor", "major", "critical")
 CONFIDENCES = ("low", "medium", "high")
-
-_QUOTE_CHARS = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"'})
-_SPACE_RE = re.compile(r"\s+")
 
 
 @dataclass(frozen=True)
@@ -65,6 +80,8 @@ class Finding:
         quotes: Verbatim quotes with passage names.
         canon_fact_id: The canon fact involved, for canon findings.
         routes_seen: How many review units reported this key.
+        suppressed_reason: Why a suppressed finding is not shown (``dismissed`` or
+            ``intentional-conflict:<id or label>``); ``None`` for a shown finding.
     """
 
     key: str
@@ -77,10 +94,11 @@ class Finding:
     quotes: tuple[Quote, ...]
     canon_fact_id: str | None = None
     routes_seen: int = 1
+    suppressed_reason: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize in the ``ai_review`` artifact's finding shape."""
-        return {
+        data = {
             "key": self.key,
             "editor": self.editor,
             "type": self.type,
@@ -95,6 +113,9 @@ class Finding:
             "canon_fact_id": self.canon_fact_id,
             "routes_seen": self.routes_seen,
         }
+        if self.suppressed_reason is not None:
+            data["suppressed_reason"] = self.suppressed_reason
+        return data
 
 
 @dataclass
@@ -127,46 +148,6 @@ def finding_key(finding_type: str, a: str, b: str) -> str:
     first, second = sorted((a, b))
     digest = hashlib.sha256(f"{finding_type}|{first}|{second}".encode()).hexdigest()
     return f"f-{digest[:8]}"
-
-
-def normalize_text(text: str) -> str:
-    """Normalize for quote matching: typographic quotes to plain, whitespace collapsed.
-
-    Args:
-        text: Any text.
-
-    Returns:
-        The normalized text.
-    """
-    return _SPACE_RE.sub(" ", text.translate(_QUOTE_CHARS)).strip()
-
-
-def clean_quote(text: str) -> str:
-    """Strip surrounding whitespace and double quotation marks a model wraps a quote in.
-
-    Args:
-        text: The quote as the model wrote it.
-
-    Returns:
-        The quote itself.
-    """
-    return text.strip().strip('"“”').strip()
-
-
-def quote_found(quote: str, texts: Iterable[str]) -> bool:
-    """Return whether a quote is a whitespace-normalized substring of any of ``texts``.
-
-    Args:
-        quote: The quote.
-        texts: Renderings of the cited passage.
-
-    Returns:
-        True when found; an empty quote is never found.
-    """
-    needle = normalize_text(clean_quote(quote))
-    if not needle:
-        return False
-    return any(needle in normalize_text(text) for text in texts)
 
 
 def passage_texts(story: ReviewStory, name: str, unit: ReviewUnit | None = None) -> list[str]:

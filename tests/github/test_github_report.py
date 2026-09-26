@@ -384,6 +384,45 @@ def test_collect_build_stats_without_index_reports_unknown_counts(tmp_path):
     stats = collect_build_stats(tmp_path)
     assert stats.passage_count is None and stats.path_count is None
     assert "? passages" in render_build([], stats, RUN, True).body
+    assert "**Story Bible:**" not in render_build([], stats, RUN, True).body
+
+
+def _story_bible_json(cache_present, changed=(), new=()):
+    return {
+        "meta": {"generated": "2026-11-04T09:15:00", "commit": "c" * 40, "schema_version": "2.0.0"},
+        "cache_present": cache_present,
+        "passage_count": 16,
+        "cast": [], "places": [], "items": [], "groups": [], "world_rules": [], "conflicts": [],
+        "intentional_mysteries": [], "unmatched_overrides": [],
+        "freshness": {
+            "commit": "a" * 40 if cache_present else None,
+            "extracted_at": "2026-11-02T08:00:00Z" if cache_present else None,
+            "mode": "incremental" if cache_present else None,
+            "extraction_result": "success",
+            "changed": list(changed), "new": list(new), "deleted": [], "pending": [],
+        },
+    }
+
+
+@pytest.mark.intent("AC-story-bible-16")
+@pytest.mark.parametrize(
+    ("document", "line"),
+    [
+        (
+            _story_bible_json(True, changed=["Hollin Reach"], new=["The toll"]),
+            "**Story Bible:** 2 passages not yet read in their current text",
+        ),
+        (_story_bible_json(True), "**Story Bible:** every passage read in its current text."),
+        (
+            _story_bible_json(False, new=["Day 1 EV", "The toll"]),
+            "**Story Bible:** not extracted yet, so 2 passages not yet read.",
+        ),
+    ],
+)
+def test_build_comment_states_how_many_passages_the_bible_has_not_read(tmp_path, document, line):
+    (tmp_path / "story-bible.json").write_text(__import__("json").dumps(document))
+    stats = collect_build_stats(tmp_path)
+    assert line in render_build([], stats, RUN, True).body
 
 
 def test_run_info_from_env():

@@ -30,7 +30,8 @@ Constraints); once it is reached, reviews say they did not run until the 1st.
 - **Continuity Editor** reads the passage with the passages that lead to it on its routes and the
   Story Bible facts for the people, places and things it mentions ([story-bible](story-bible.md)).
   It reports contradictions between the passage and one earlier passage or one established fact.
-  Until the Story Bible is extracted, it has earlier passages only.
+  Until the Story Bible is extracted, it has earlier passages only, and its header says which
+  canon it used.
 - **Style Editor** checks the passage's point of view, tense and protagonist against `storyStyle`
   in `StoryData`.
 
@@ -39,7 +40,8 @@ push, and one check run per editor (`Continuity Editor`, `Style Editor`). While 
 each comment says "running" instead of showing the previous result.
 
 - The header: passages reviewed, findings, suppressed findings, model, the tokens and estimated
-  cost of the whole review run, and a link to that run.
+  cost of the whole review run, a link to that run, and (Continuity only) the Story Bible canon
+  it checked against.
 - Each finding: its id (`f-` and 8 hex digits), severity, confidence, one sentence, the quotes that
   disagree with the passage name for each, and the exact `/dismiss` command for it. Severity:
   *critical* = impossible on this route; *major* = a reader will notice; *minor* = a careful
@@ -78,7 +80,7 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-11: `/check-continuity all` posts its estimated cost before the run and the actual cost in the finished comment. (verify: planned)
 - AC-continuity-review-12: `/dismiss f-xxxxxxxx [reason]` from a collaborator records the dismissal on `main` and re-renders the comment with that finding in the suppressed section, without calling a model.
 - AC-continuity-review-13: A dismissed finding stays suppressed on later runs while both of its passages are unchanged, and is reported again when either passage changes.
-- AC-continuity-review-14: A contradiction listed as `intentional-conflict:` in `story-overrides.txt` is never reported as a finding; on the eval story, `c-widow-never-wife` is never reported. (verify: planned)
+- AC-continuity-review-14: A finding against an established fact that belongs to a conflict marked in `story-overrides.txt` as intentional (by `c-<id>` or by label) is listed only among suppressed findings with the reason `intentional-conflict:<id or label>`, and is not counted as a finding.
 - AC-continuity-review-15: Run over the eval story, the Continuity Editor reports the contradictions `c-tam-years` and `c-pip-age`. (verify: workflow)
 - AC-continuity-review-16: Run over the eval story, the Continuity Editor reports at least two of the planted defects `d-marsh-alive`, `d-lantern-rule` and `d-timeline`. (verify: workflow)
 - AC-continuity-review-17: Run over the eval story, both editors together report at most one finding across the clean routes `clean-crossing` and `clean-widow`. (verify: workflow)
@@ -100,6 +102,8 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-33: An unreadable or invalid spend ledger stops AI review before any model call with a visible reason naming the ledger problem, and the comments and check runs are those of AC-continuity-review-28; it is never counted as zero spend.
 - AC-continuity-review-34: When the monthly spend cap is reached, the build, the preview and the structure check still run and report as usual. (verify: workflow)
 - AC-continuity-review-35: `/check-continuity all` whose estimated cost would take this month's spend past the cap starts no review, calls no model, and replies with the AC-continuity-review-31 reason instead of an estimate. (verify: planned)
+- AC-continuity-review-36: The Continuity Editor comment header states the Story Bible canon it used: the extraction date and commit, the number of established facts offered, the number of out-of-date facts left out, and the reviewed passages the Bible has not read; with no saved extraction it says only earlier passages were checked. A missing or unreadable canon stops the review with the reason shown, never a review against no established facts.
+- AC-continuity-review-37: Run over the eval story with its `story-overrides.txt`, `c-widow-never-wife` is never reported as a finding. (verify: workflow)
 
 ## Edge cases
 - **Runner offline or gateway out of tokens**: "AI review unavailable" with the reason, a failed
@@ -124,7 +128,9 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - **No passages changed** (for example only `story-overrides.txt`): the comments say nothing
   needed review; the check runs succeed.
 - **Passage not yet in the Story Bible**: it is still reviewed against earlier passages; the
-  header notes that no established facts were available for it.
+  header names it as not in the Bible (AC-continuity-review-36).
+- **An established fact whose passage changed since extraction**: it is left out of the canon
+  and counted in the header as out of date.
 - **Two pushes close together**: the newer run replaces the older one; one comment per editor.
 
 ## Soft goals

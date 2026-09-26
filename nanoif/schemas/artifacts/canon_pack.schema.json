@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/canon_pack.schema.json",
+  "title": "Canon Pack",
+  "description": "dist/canon-pack.json, built by `nanoif build canon-pack` from the assembled Story Bible with no model (ADR-020). The Continuity Editor's only source of canon facts.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "source", "passages", "entities", "conflicts", "alias_index"],
+  "definitions": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "fact_id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*#([1-9][0-9]*|pin-[0-9a-f]{8})$" }
+  },
+  "properties": {
+    "version": { "const": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "extracted_at", "cache_present"],
+      "properties": {
+        "commit": { "type": ["string", "null"] },
+        "extracted_at": { "type": ["string", "null"] },
+        "cache_present": { "type": "boolean" }
+      }
+    },
+    "passages": {
+      "type": "object",
+      "description": "Passage name to the content hash the extraction read.",
+      "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{16}$" }
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "name", "type", "aliases", "facts"],
+        "properties": {
+          "slug": { "$ref": "#/definitions/slug" },
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["character", "location", "item", "group", "world"] },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "facts": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "claim", "quote", "passage", "pinned"],
+              "properties": {
+                "id": { "$ref": "#/definitions/fact_id" },
+                "claim": { "type": "string", "minLength": 1 },
+                "quote": { "type": "string" },
+                "passage": { "type": "string", "minLength": 1 },
+                "pinned": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "conflicts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "fact_ids", "intentional", "label"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "fact_ids": { "type": "array", "items": { "$ref": "#/definitions/fact_id" }, "minItems": 2, "maxItems": 2 },
+          "intentional": { "type": "boolean" },
+          "label": {
+            "type": ["string", "null"],
+            "description": "The intentional-conflict override (conflict id or mystery label) that marks it, else null."
+          }
+        }
+      }
+    },
+    "alias_index": {
+      "type": "object",
+      "description": "Case-folded name or alias (at least 3 characters, never a pronoun) to entity slug.",
+      "propertyNames": { "minLength": 3 },
+      "additionalProperties": { "$ref": "#/definitions/slug" }
+    }
+  }
+}

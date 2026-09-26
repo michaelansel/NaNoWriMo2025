@@ -4,9 +4,19 @@ import json
 
 import pytest
 
-from nanoif.check.overrides import Override, OverrideError, parse_overrides
+from nanoif.check.overrides import (
+    AliasOverride,
+    IntentionalConflictOverride,
+    NotEntityOverride,
+    OverrideError,
+    Overrides,
+    PinOverride,
+    parse_overrides,
+    read_overrides,
+)
 from nanoif.check.structure import Finding, check_structure, format_findings
 from nanoif.cli import main
+from nanoif.errors import BuildError
 from nanoif.schemas.artifacts import validate_artifact
 
 STORY_DATA = {
@@ -202,33 +212,110 @@ def test_parse_overrides_accepts_every_directive_and_skips_comments():
     text = (
         "# writer overrides\n"
         "\n"
-        "alias: Rowan = Ro\n"
-        "not-entity: Morning\n"
-        "  pin: Rowan is left-handed\n"
-        "intentional-conflict: the bridge is both old and new\n"
+        "alias: Tamsin Reeve = Old Tam, Tam\n"
+        "not-entity: the man who built the weir\n"
+        '  pin: River Wardens = The River Wardens fly a green pennant | "the green pennant of the River Wardens" @ The crossing\n'
+        "intentional-conflict: c-widow-kestle-1\n"
+        "intentional-conflict: c-widow-never-wife = Widow Kestle | never anyone's wife\n"
     )
-    assert parse_overrides(text) == (
-        [
-            Override("alias", "Rowan = Ro", 3),
-            Override("not-entity", "Morning", 4),
-            Override("pin", "Rowan is left-handed", 5),
-            Override("intentional-conflict", "the bridge is both old and new", 6),
-        ],
-        [],
-    )
+    overrides, errors = parse_overrides(text)
+    assert errors == []
+    assert [(o.directive, o.line) for o in overrides] == [
+        ("alias", 3),
+        ("not-entity", 4),
+        ("pin", 5),
+        ("intentional-conflict", 6),
+        ("intentional-conflict", 7),
+    ]
+    assert [o.value for o in overrides] == [
+        AliasOverride("Tamsin Reeve", ("Old Tam", "Tam"), 3),
+        NotEntityOverride("the man who built the weir", 4),
+        PinOverride(
+            "River Wardens",
+            "The River Wardens fly a green pennant",
+            "the green pennant of the River Wardens",
+            "The crossing",
+            5,
+        ),
+        IntentionalConflictOverride(6, conflict_id="c-widow-kestle-1"),
+        IntentionalConflictOverride(
+            7, label="c-widow-never-wife", entity="Widow Kestle", fragment="never anyone's wife"
+        ),
+    ]
+    assert overrides[3].value.name == "c-widow-kestle-1"
+    assert overrides[4].value.name == "c-widow-never-wife"
 
 
 @pytest.mark.intent("AC-structure-check-13")
 def test_parse_overrides_reports_bad_lines_with_numbers():
     text = "alias: A = B\nrename: A -> B\njust some words\npin:\n: nothing\n"
     overrides, errors = parse_overrides(text)
-    assert overrides == [Override("alias", "A = B", 1)]
+    assert [o.payload for o in overrides] == ["A = B"]
     assert errors == [
         OverrideError(2, "unknown directive 'rename' (known: alias, intentional-conflict, not-entity, pin)"),
         OverrideError(3, "expected `directive: payload`"),
         OverrideError(4, "pin: needs a payload after the colon"),
         OverrideError(5, "expected `directive: payload`"),
     ]
+
+
+@pytest.mark.intent("ADR-020")
+@pytest.mark.parametrize(
+    ("line", "message"),
+    [
+        ("alias: Tamsin Reeve", "alias: expected `<canonical> = <alias>, <alias>...`"),
+        ("alias: = Tam", "alias: expected `<canonical> = <alias>, <alias>...`"),
+        ("alias: Tamsin Reeve = , ", "alias: expected `<canonical> = <alias>, <alias>...`"),
+        ("pin: Pip is twelve", 'pin: expected `<entity> = <claim> | "<quote>" @ <passage>`'),
+        ("pin: Pip Halloway = Pip is twelve | was twelve @ Hollin Reach", 'pin: expected `<entity> = <claim> | "<quote>" @ <passage>`'),
+        ('pin: Pip Halloway = Pip is twelve | "was twelve"', 'pin: expected `<entity> = <claim> | "<quote>" @ <passage>`'),
+        ("intentional-conflict: the widow was never a wife", "intentional-conflict: expected `c-<id>` or `<label> = <entity> | <quote fragment>`"),
+        ("intentional-conflict: mystery = Widow Kestle", "intentional-conflict: expected `c-<id>` or `<label> = <entity> | <quote fragment>`"),
+    ],
+)
+def test_bad_payloads_are_errors_with_the_expected_form(line, message):
+    overrides, errors = parse_overrides(f"# ok\n{line}\n")
+    assert overrides == []
+    assert errors == [OverrideError(2, message)]
+
+
+@pytest.mark.intent("ADR-020")
+def test_pin_accepts_typographic_quotes():
+    overrides, errors = parse_overrides(
+        "pin: Pip Halloway = Pip is twelve | “Wren's brother was twelve” @ Hollin Reach\n"
+    )
+    assert errors == []
+    assert overrides[0].value == PinOverride(
+        "Pip Halloway", "Pip is twelve", "Wren's brother was twelve", "Hollin Reach", 1
+    )
+
+
+@pytest.mark.intent("ADR-020")
+def test_override_set_groups_payloads_and_keeps_errors():
+    result = Overrides.from_text("alias: Tamsin Reeve = Old Tam\nnot-entity: no one\nbogus: x\n")
+    assert result.aliases == (AliasOverride("Tamsin Reeve", ("Old Tam",), 1),)
+    assert result.not_entities == (NotEntityOverride("no one", 2),)
+    assert result.pins == () and result.intentional_conflicts == ()
+    assert [error.line for error in result.errors] == [3]
+
+
+@pytest.mark.intent("ADR-020")
+def test_read_overrides_missing_file_is_empty_and_unreadable_is_an_error(tmp_path):
+    assert read_overrides(tmp_path / "story-overrides.txt") == Overrides()
+    bad = tmp_path / "bad.txt"
+    bad.write_bytes(b"alias: \xff = x\n")
+    with pytest.raises(BuildError, match="story-overrides"):
+        read_overrides(bad)
+
+
+@pytest.mark.intent("ADR-020")
+def test_payload_errors_are_structure_errors(tmp_path):
+    src = make_story(tmp_path)
+    overrides = tmp_path / "story-overrides.txt"
+    write(overrides, "alias: Tamsin Reeve = Tam\npin: Pip is twelve\n")
+    findings = [f for f in check_structure(src, overrides_path=overrides) if f.level == "error"]
+    assert [(f.code, f.line) for f in findings] == [("overrides-syntax", 2)]
+    assert "pin: expected" in findings[0].message
 
 
 @pytest.mark.intent("AC-structure-check-13")

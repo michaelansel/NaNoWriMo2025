@@ -15,6 +15,8 @@ from pathlib import Path
 import jsonschema
 import pytest
 
+from nanoif.check.overrides import Overrides
+
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "eval-story"
 SRC = FIXTURE / "src"
 SCHEMA_PATH = (
@@ -411,5 +413,11 @@ def test_overrides_exercise_all_four_directives(truth, passages):
     assert passage.strip() in passages
     assert quote.strip().strip('"') in passages[passage.strip()]
 
-    intentional = {c["id"] for c in truth["contradictions"] if c["intentional"]}
-    assert directives["intentional-conflict"][0] in intentional
+    intentional = {c["id"]: c for c in truth["contradictions"] if c["intentional"]}
+    parsed = Overrides.from_text(text)
+    assert parsed.errors == ()
+    (mystery,) = parsed.intentional_conflicts
+    assert mystery.label in intentional and mystery.entity in names
+    planted = intentional[mystery.label]
+    assert any(mystery.fragment in quote for quote in planted["quotes"])
+    assert any(mystery.fragment in passages[name] for name in planted["passages"])

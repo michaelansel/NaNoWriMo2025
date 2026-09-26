@@ -1,4 +1,4 @@
-{#- Style Editor. Rendered by nanoif.review.prompts.render_prompt("style", ...).
+{#- Style Editor. Rendered by nanoif.llm.prompts.render_prompt("style", ...).
     Variables: unit_text (str), passage_id (str), style (dict with any of perspective, tense, protagonist).
     The system block holds rules and rubric; the user block holds story text only, between delimiters. -#}
 {% block system %}

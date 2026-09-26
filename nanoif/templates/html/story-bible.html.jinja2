@@ -5,624 +5,203 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Story Bible - {{ story_title }}</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
+            line-height: 1.6; color: #333; background: #f5f5f5;
         }
-
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            color: white; padding: 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-
-        .header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
+        .header h1 { font-size: 2.2rem; margin-bottom: 0.3rem; }
+        .header .subtitle { opacity: 0.9; }
+        .header a { color: white; }
+        .container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+        .panel {
+            background: white; padding: 1.5rem; border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 2rem;
         }
-
-        .header .subtitle {
-            opacity: 0.9;
-            font-size: 1rem;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .meta-info {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-
-        .meta-info p {
-            margin: 0.5rem 0;
-        }
-
-        nav {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            position: sticky;
-            top: 20px;
-            z-index: 100;
-        }
-
-        nav h3 {
-            margin-bottom: 1rem;
-            color: #667eea;
-        }
-
-        nav ul {
-            list-style: none;
-        }
-
-        nav li {
-            margin: 0.5rem 0;
-        }
-
-        nav a {
-            color: #667eea;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        nav a:hover {
-            color: #764ba2;
-            text-decoration: underline;
-        }
-
-        .section {
-            background: white;
-            margin-bottom: 2rem;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .section h2 {
-            color: #667eea;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .section h3 {
-            color: #764ba2;
-            margin-top: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .section h4 {
-            color: #555;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .fact {
-            background: #f8f9fa;
-            padding: 1rem;
-            margin: 0.75rem 0;
-            border-radius: 4px;
-            border-left: 4px solid #2196F3;
-        }
-
-        .fact.constant {
-            border-left-color: #4CAF50;
-        }
-
-        .fact.variable {
-            border-left-color: #FF9800;
-        }
-
-        .fact.conflict {
-            border-left-color: #F44336;
-            background: #ffebee;
-        }
-
-        .fact strong {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #333;
-        }
-
-        .evidence {
-            font-size: 0.9rem;
-            color: #666;
-            margin-top: 0.5rem;
-            padding-left: 1rem;
-            border-left: 2px solid #ddd;
-        }
-
-        .evidence-item {
-            margin: 0.5rem 0;
-        }
-
-        .evidence em {
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .evidence-quote {
-            font-style: italic;
-            color: #555;
-        }
-
-        .character {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e0e0e0;
-        }
-
-        .character:first-child {
-            border-top: none;
-            margin-top: 0;
-            padding-top: 0;
-        }
-
-        .character h3 {
-            color: #667eea;
-            font-size: 1.5rem;
-        }
-
-        .mention-count {
-            display: inline-block;
-            padding: 0.4rem 0.8rem;
-            background: #667eea;
-            color: white;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            margin-left: 1rem;
-            font-weight: normal;
-        }
-
-        .passage-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin: 0.5rem 0;
-        }
-
-        .passage-tag {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background: #e3f2fd;
-            color: #1976d2;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            border: 1px solid #bbdefb;
-        }
-
-        .mention-item {
-            background: #f8f9fa;
-            padding: 0.75rem;
-            margin: 0.5rem 0;
-            border-radius: 4px;
-            border-left: 3px solid #667eea;
-        }
-
-        .mention-context {
-            display: inline-block;
-            padding: 0.2rem 0.5rem;
-            background: #764ba2;
-            color: white;
-            border-radius: 4px;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            margin-right: 0.5rem;
-            font-weight: 600;
-        }
-
-        .mention-quote {
-            font-style: italic;
-            color: #555;
-        }
-
-        .mention-passage {
-            font-size: 0.85rem;
-            color: #999;
-            margin-top: 0.25rem;
-        }
-
-        .empty-state {
-            padding: 2rem;
-            text-align: center;
-            color: #999;
-            font-style: italic;
-        }
-
+        .notice { border-left: 5px solid #d97706; background: #fffbeb; }
+        nav ul { list-style: none; display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; }
+        nav a { color: #5a4fcf; text-decoration: none; }
+        h2 { color: #4c3fae; margin-bottom: 1rem; }
+        h3 { margin: 1rem 0 0.3rem; }
+        .entity { border-top: 1px solid #eee; padding-top: 0.8rem; margin-top: 0.8rem; }
+        .entity:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+        .meta { color: #666; font-size: 0.92rem; }
+        ul.facts { margin: 0.4rem 0 0 1.2rem; }
+        ul.facts li { margin: 0.3rem 0; }
+        q { color: #555; font-style: italic; }
+        .passage { color: #5a4fcf; font-size: 0.88rem; white-space: nowrap; }
         .badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            background: #e0e0e0;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            margin-left: 0.5rem;
+            display: inline-block; font-size: 0.75rem; padding: 0 0.4rem; border-radius: 4px;
+            background: #ede9fe; color: #4c3fae; margin-left: 0.3rem;
         }
-
-        .badge.high {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .badge.medium {
-            background: #FF9800;
-            color: white;
-        }
-
-        .badge.low {
-            background: #F44336;
-            color: white;
-        }
-
-        .placeholder-notice {
-            background: #fff3cd;
-            border: 2px solid #ffc107;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            color: #856404;
-        }
-
-        .placeholder-notice h3 {
-            margin-top: 0;
-            color: #856404;
-        }
-
-        .placeholder-notice p {
-            margin: 0.5rem 0;
-        }
+        .badge.warn { background: #fee2e2; color: #991b1b; }
+        .conflict { border-left: 4px solid #dc2626; padding-left: 0.8rem; margin: 0.8rem 0; }
+        .mystery { border-left: 4px solid #7c3aed; padding-left: 0.8rem; margin: 0.8rem 0; }
+        .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: #666; }
+        .empty { color: #777; font-style: italic; }
+        footer { color: #777; font-size: 0.85rem; text-align: center; margin: 2rem 0; }
     </style>
 </head>
 <body>
+{%- macro fact_line(fact, entity=None) -%}
+<li>{% if entity %}<strong>{{ entity }}:</strong> {% endif %}<span class="claim">{{ fact.claim }}</span>
+    <q>{{ fact.quote }}</q> <span class="passage">({{ fact.passage }})</span>
+    <span class="id">{{ fact.id }}</span>
+    {%- if fact.pinned %}<span class="badge">pinned</span>{% endif %}
+    {%- if not fact.quote_found %}<span class="badge warn">quote not found</span>{% endif %}
+    {%- if fact.evidence > 1 %}<span class="badge">stated in {{ fact.evidence }} places</span>{% endif %}</li>
+{%- endmacro -%}
+{%- macro entity_list(entities, noun) -%}
+{% if entities %}
+{% for e in entities %}
+<article class="entity" id="entity-{{ e.slug }}">
+    <h3>{{ e.name }}{% if e.pending %}<span class="badge warn">not yet reconciled</span>{% endif %}</h3>
+    <p class="meta">
+        {% if e.aliases %}Also called: {{ e.aliases | join(", ") }} · {% endif %}
+        {% if e.role %}Role: {{ e.role }} · {% endif %}
+        Appears in {{ e.passages | length }} passage{{ "" if e.passages | length == 1 else "s" }}
+    </p>
+    {% if e.facts %}
+    <ul class="facts">
+        {% for fact in e.facts %}{{ fact_line(fact) }}{% endfor %}
+    </ul>
+    {% else %}
+    <p class="empty">No established facts yet.</p>
+    {% endif %}
+</article>
+{% endfor %}
+{% else %}
+<p class="empty">No {{ noun }} found in the passages read so far.</p>
+{% endif %}
+{%- endmacro -%}
+{%- macro conflict_block(c, cls) -%}
+<div class="{{ cls }}">
+    <p><span class="id">{{ c.id }}</span> <strong>{{ c.entity_name }}</strong>: {{ c.note }}</p>
+    <ul class="facts">
+        {% for fact in c.facts %}{{ fact_line(fact) }}{% endfor %}
+    </ul>
+</div>
+{%- endmacro -%}
     <div class="header">
-        <h1>📖 Story Bible</h1>
-        <div class="subtitle">{{ story_title }}</div>
+        <h1>Story Bible</h1>
+        <p class="subtitle">{{ story_title }} · <a href="index.html">back to the story</a></p>
     </div>
-
     <div class="container">
-        {% if metadata and metadata.generation_mode == 'placeholder' %}
-        <div class="placeholder-notice">
-            <h3>⚠️ Placeholder Story Bible</h3>
-            <p><strong>{{ metadata.message }}</strong></p>
-            <p>Loaded {{ metadata.passages_loaded }} passages, but AI extraction was not available.</p>
-            <p><em>Reason:</em> {{ metadata.reason }}</p>
-        </div>
-        {% endif %}
-
-        <div class="meta-info">
-            <p><strong>Last Updated:</strong> {{ generated_at }}</p>
-            <p><strong>Source Commit:</strong> {{ commit_hash }}</p>
-            {% if metadata and metadata.generation_mode != 'placeholder' %}
-            <p><strong>View Type:</strong>
-                {% if view_type == 'summarized' %}
-                ✨ Summarized (deduplicated facts with unified evidence)
-                {% elif view_type == 'per_passage' %}
-                📄 Per-passage (facts extracted from individual passages)
-                {% else %}
-                ❓ {{ view_type }}
-                {% endif %}
-            </p>
-            <p><strong>Statistics:</strong>
-                {{ metadata.total_constants or 0 }} constants,
-                {{ metadata.total_variables or 0 }} variables,
-                {{ metadata.total_characters or 0 }} characters
-            </p>
+{% if not bible.cache_present %}
+        <div class="panel notice" id="placeholder">
+            <h2>Placeholder Story Bible</h2>
+            <p>The story has {{ bible.passage_count }} passage{{ "" if bible.passage_count == 1 else "s" }}, and the Story Bible has not been extracted yet. It is extracted automatically after changes are merged to <code>main</code>.</p>
+            {% if fresh.extraction_result != "success" %}
+            <p>The latest extraction did not complete ({{ fresh.extraction_result }}).</p>
             {% endif %}
         </div>
-
-        <nav>
-            <h3>Navigation</h3>
+{% else %}
+        {% if fresh.extraction_result != "success" or fresh.unread %}
+        <div class="panel notice">
+            {% if fresh.extraction_result != "success" %}
+            <p><strong>The latest extraction did not complete ({{ fresh.extraction_result }}).</strong> This page shows the extraction of {{ extracted_at }}.</p>
+            {% endif %}
+            {% if fresh.unread %}
+            <p>{{ fresh.unread | length }} passage{{ "" if fresh.unread | length == 1 else "s" }} not yet read in {{ "its" if fresh.unread | length == 1 else "their" }} current text; see <a href="#freshness">Freshness</a>.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+        <nav class="panel">
             <ul>
-                <li><a href="#world-constants">World Constants</a></li>
-                <li><a href="#characters">Characters</a></li>
-                <li><a href="#variables">Variables</a></li>
-                {% if conflicts %}
-                <li><a href="#conflicts">⚠️ Conflicts ({{ conflicts|length }})</a></li>
-                {% endif %}
-                {% if per_passage %}
-                <li><a href="#per-passage">📄 Per-Passage Facts ({{ per_passage|length }} passages)</a></li>
-                {% endif %}
+                <li><a href="#cast">Cast ({{ bible.cast | length }})</a></li>
+                <li><a href="#places">Places ({{ bible.places | length }})</a></li>
+                <li><a href="#items">Items ({{ bible.items | length }})</a></li>
+                <li><a href="#groups">Groups ({{ bible.groups | length }})</a></li>
+                <li><a href="#world-rules">World rules ({{ bible.world_rules | length }})</a></li>
+                <li><a href="#conflicts">Conflicts ({{ bible.conflicts | length }})</a></li>
+                <li><a href="#intentional-mysteries">Intentional mysteries ({{ bible.mysteries | length }})</a></li>
+                <li><a href="#freshness">Freshness</a></li>
             </ul>
         </nav>
-
-        <section id="world-constants" class="section">
-            <h2>World Constants</h2>
-            <p>Facts that are true in all story paths, regardless of player choices.</p>
-
-            {% if constants.world_rules %}
-            <h3>World Rules</h3>
-            {% for fact in constants.world_rules %}
-            <div class="fact constant">
-                <strong>{{ fact.fact }}</strong>
-                {% if fact.confidence %}
-                <span class="badge {{ fact.confidence }}">{{ fact.confidence }} confidence</span>
-                {% endif %}
-                <div class="evidence">
-                    <strong>Evidence:</strong>
-                    {% for ev in fact.evidence[:3] %}
-                    <div class="evidence-item">
-                        <em>{{ ev.passage }}:</em>
-                        <span class="evidence-quote">"{{ ev.quote[:200] }}{% if ev.quote|length > 200 %}...{% endif %}"</span>
-                    </div>
-                    {% endfor %}
-                    {% if fact.evidence|length > 3 %}
-                    <div class="evidence-item">
-                        <em>... and {{ fact.evidence|length - 3 }} more passages</em>
-                    </div>
-                    {% endif %}
-                </div>
-            </div>
-            {% endfor %}
+        <section class="panel" id="cast">
+            <h2>Cast</h2>
+            {{ entity_list(bible.cast, "characters") }}
+        </section>
+        <section class="panel" id="places">
+            <h2>Places</h2>
+            {{ entity_list(bible.places, "places") }}
+        </section>
+        <section class="panel" id="items">
+            <h2>Items</h2>
+            {{ entity_list(bible.items, "items") }}
+        </section>
+        <section class="panel" id="groups">
+            <h2>Groups</h2>
+            {{ entity_list(bible.groups, "groups") }}
+        </section>
+        <section class="panel" id="world-rules">
+            <h2>World rules</h2>
+            {% if bible.world_rules %}
+            <ul class="facts">
+                {% for entity, fact in bible.world_rules %}{{ fact_line(fact, entity) }}{% endfor %}
+            </ul>
             {% else %}
-            <div class="empty-state">No world rules extracted yet.</div>
-            {% endif %}
-
-            {% if constants.setting %}
-            <h3>Setting</h3>
-            {% for fact in constants.setting %}
-            <div class="fact constant">
-                <strong>{{ fact.fact }}</strong>
-                {% if fact.confidence %}
-                <span class="badge {{ fact.confidence }}">{{ fact.confidence }} confidence</span>
-                {% endif %}
-                <div class="evidence">
-                    <strong>Evidence:</strong>
-                    {% for ev in fact.evidence[:3] %}
-                    <div class="evidence-item">
-                        <em>{{ ev.passage }}:</em>
-                        <span class="evidence-quote">"{{ ev.quote[:200] }}{% if ev.quote|length > 200 %}...{% endif %}"</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="empty-state">No setting details extracted yet.</div>
-            {% endif %}
-
-            {% if constants.timeline %}
-            <h3>Timeline</h3>
-            {% for fact in constants.timeline %}
-            <div class="fact constant">
-                <strong>{{ fact.fact }}</strong>
-                {% if fact.confidence %}
-                <span class="badge {{ fact.confidence }}">{{ fact.confidence }} confidence</span>
-                {% endif %}
-                <div class="evidence">
-                    <strong>Evidence:</strong>
-                    {% for ev in fact.evidence[:3] %}
-                    <div class="evidence-item">
-                        <em>{{ ev.passage }}:</em>
-                        <span class="evidence-quote">"{{ ev.quote[:200] }}{% if ev.quote|length > 200 %}...{% endif %}"</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div class="empty-state">No timeline events extracted yet.</div>
+            <p class="empty">No rules of the world found in the passages read so far.</p>
             {% endif %}
         </section>
-
-        <section id="characters" class="section">
-            <h2>Characters</h2>
-            <p>Character identities, default states, and variable outcomes.</p>
-
-            {% if characters %}
-            {% for char_name, char_data in characters.items() %}
-            <div class="character">
-                <h3>
-                    {{ char_name }}
-                    {% if char_data.passages %}
-                    <span class="mention-count">Mentioned in {{ char_data.passages|length }} passage{% if char_data.passages|length != 1 %}s{% endif %}</span>
-                    {% endif %}
-                </h3>
-
-                {% if char_data.passages %}
-                <h4>Mentioned In</h4>
-                <div class="passage-list">
-                    {% for passage_name in char_data.passages %}
-                    <span class="passage-tag">{{ passage_name }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-
-                {% if char_data.mentions %}
-                <h4>Mentions</h4>
-                {% for mention in char_data.mentions %}
-                <div class="mention-item">
-                    <span class="mention-context">{{ mention.context or 'context' }}</span>
-                    <span class="mention-quote">"{{ mention.quote[:200] }}{% if mention.quote|length > 200 %}...{% endif %}"</span>
-                    {% if mention.passage %}
-                    <div class="mention-passage">— {{ mention.passage }}</div>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                {% endif %}
-
-                {% if char_data.identity %}
-                <h4>Identity (Constants)</h4>
-                {% for fact in char_data.identity %}
-                <div class="fact constant">
-                    {{ fact.fact }}
-                    {% if fact.confidence %}
-                    <span class="badge {{ fact.confidence }}">{{ fact.confidence }}</span>
-                    {% endif %}
-                    <div class="evidence">
-                        {% for ev in fact.evidence[:2] %}
-                        <div class="evidence-item">
-                            <em>{{ ev.passage }}:</em>
-                            <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-                {% endif %}
-
-                {% if char_data.zero_action_state %}
-                <h4>Zero Action State</h4>
-                <p style="font-size: 0.9em; color: #666; margin-bottom: 0.5rem;">
-                    What happens if the player does nothing.
-                </p>
-                {% for fact in char_data.zero_action_state %}
-                <div class="fact">
-                    {{ fact.fact }}
-                    <div class="evidence">
-                        {% for ev in fact.evidence[:2] %}
-                        <div class="evidence-item">
-                            <em>{{ ev.passage }}:</em>
-                            <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-                {% endif %}
-
-                {% if char_data.variables %}
-                <h4>Variables (Player-Determined)</h4>
-                {% for fact in char_data.variables %}
-                <div class="fact variable">
-                    {{ fact.fact }}
-                    <div class="evidence">
-                        {% for ev in fact.evidence[:2] %}
-                        <div class="evidence-item">
-                            <em>{{ ev.passage }}:</em>
-                            <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-                {% endif %}
-            </div>
+        <section class="panel" id="conflicts">
+            <h2>Conflicts</h2>
+            {% for c in bible.conflicts %}{{ conflict_block(c, "conflict") }}{% else %}
+            <p class="empty">No two established facts disagree.</p>
             {% endfor %}
+        </section>
+        <section class="panel" id="intentional-mysteries">
+            <h2>Intentional mysteries</h2>
+            {% for m in bible.mysteries %}
+            <h3>{{ m.label }}</h3>
+            {% for c in m.conflicts %}{{ conflict_block(c, "mystery") }}{% endfor %}
             {% else %}
-            <div class="empty-state">No characters extracted yet.</div>
-            {% endif %}
-        </section>
-
-        <section id="variables" class="section">
-            <h2>Variables</h2>
-            <p>Facts that change based on player choices.</p>
-
-            {% if variables.events %}
-            <h3>Events</h3>
-            {% for fact in variables.events %}
-            <div class="fact variable">
-                <strong>{{ fact.fact }}</strong>
-                <div class="evidence">
-                    {% for ev in fact.evidence[:3] %}
-                    <div class="evidence-item">
-                        <em>{{ ev.passage }}:</em>
-                        <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
+            <p class="empty">No conflict is marked intentional in <code>story-overrides.txt</code>.</p>
             {% endfor %}
-            {% else %}
-            <div class="empty-state">No variable events extracted yet.</div>
-            {% endif %}
-
-            {% if variables.outcomes %}
-            <h3>Outcomes</h3>
-            {% for fact in variables.outcomes %}
-            <div class="fact variable">
-                <strong>{{ fact.fact }}</strong>
-                <div class="evidence">
-                    {% for ev in fact.evidence[:3] %}
-                    <div class="evidence-item">
-                        <em>{{ ev.passage }}:</em>
-                        <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-            {% endif %}
-        </section>
-
-        {% if conflicts %}
-        <section id="conflicts" class="section">
-            <h2>⚠️ Conflicts</h2>
-            <p>Potentially contradictory facts that need author review.</p>
-
-            {% for conflict in conflicts %}
-            <div class="fact conflict">
-                <strong>{{ conflict.description }}</strong>
-                <div class="evidence">
-                    {% for fact in conflict.facts %}
-                    <div class="evidence-item">
-                        <strong>"{{ fact.fact }}"</strong>
-                        {% for ev in fact.evidence[:1] %}
-                        <br><em>Evidence:</em> <span class="evidence-quote">"{{ ev.quote[:100] }}..."</span>
-                        {% endfor %}
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </section>
-        {% endif %}
-
-        {% if per_passage %}
-        <section id="per-passage" class="section">
-            <h2>📄 Per-Passage Facts</h2>
-            <p>Complete fact extractions organized by source passage. This preserves all original facts before summarization/deduplication.</p>
-
-            {% for passage_id, passage_data in per_passage.items()|sort %}
-            <div class="character">
-                <h3>{{ passage_data.passage_name or passage_id }}</h3>
-                {% if passage_data.facts %}
-                {% for fact in passage_data.facts %}
-                <div class="fact {% if fact.category == 'constant' %}constant{% elif fact.category == 'variable' %}variable{% endif %}">
-                    <strong>{{ fact.fact }}</strong>
-                    {% if fact.type %}
-                    <span class="badge">{{ fact.type }}</span>
-                    {% endif %}
-                    {% if fact.confidence %}
-                    <span class="badge {{ fact.confidence }}">{{ fact.confidence }}</span>
-                    {% endif %}
-                    {% if fact.evidence %}
-                    <div class="evidence">
-                        {% for ev in fact.evidence[:2] %}
-                        <div class="evidence-item">
-                            {% if ev.passage %}
-                            <em>{{ ev.passage }}:</em>
-                            {% endif %}
-                            <span class="evidence-quote">"{{ ev.quote[:150] }}{% if ev.quote|length > 150 %}...{% endif %}"</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
+            {% if bible.unmatched %}
+            <h3>Overrides with no effect</h3>
+            <ul class="facts">
+                {% for line, text in bible.unmatched %}
+                <li><span class="badge warn">unmatched</span> line {{ line }}: <code>{{ text }}</code></li>
                 {% endfor %}
-                {% else %}
-                <div class="empty-state">No facts extracted from this passage.</div>
-                {% endif %}
-            </div>
-            {% endfor %}
+            </ul>
+            {% endif %}
         </section>
-        {% endif %}
+{% endif %}
+        <section class="panel" id="freshness">
+            <h2>Freshness</h2>
+            {% if bible.cache_present %}
+            <p>Extracted from commit <span class="id">{{ (fresh.commit or "")[:8] }}</span> on {{ extracted_at }} ({{ fresh.mode }}).</p>
+            {% endif %}
+            {% if fresh.extraction_result != "success" %}
+            <p><strong>The latest extraction did not complete ({{ fresh.extraction_result }}).</strong>{% if bible.cache_present %} The extraction shown is from {{ extracted_at }}.{% endif %}</p>
+            {% endif %}
+            {% if fresh.unread %}
+            <h3>Not yet read in their current text ({{ fresh.unread | length }})</h3>
+            <ul class="facts">
+                {% for name in fresh.unread %}<li>{{ name }}{% if name in fresh.changed %} <span class="badge">changed</span>{% else %} <span class="badge">new</span>{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p>Every passage has been read in its current text.</p>
+            {% endif %}
+            {% if fresh.deleted %}
+            <h3>Read, but no longer in the story ({{ fresh.deleted | length }})</h3>
+            <ul class="facts">
+                {% for name in fresh.deleted %}<li>{{ name }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            {% if fresh.pending %}
+            <h3>Not yet reconciled</h3>
+            <p>{{ fresh.pending | join(", ") }}: duplicates and conflicts among their facts are checked on the next extraction.</p>
+            {% endif %}
+        </section>
     </div>
+    <footer>Built from commit <span class="id">{{ commit[:8] }}</span> on {{ generated_at }}.</footer>
 </body>
 </html>

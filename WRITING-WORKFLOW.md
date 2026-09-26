@@ -133,10 +133,11 @@ text on one page), **All paths** (every route through the story), **Metrics** (w
 (the cast, places and rules; a placeholder until the Bible is first extracted), and **Graph** (a
 map of the story).
 
-`story-overrides.txt` at the top of the repository is where you will teach the Story Bible
-things (two names for one person, a word that is not a character, a deliberate mystery). For now
-the build only checks that each line is written correctly. The [Story Bible note](features/story-bible.md#behavior) shows one
-example of each kind of line.
+`story-overrides.txt` at the top of the repository is where you teach the Story Bible things
+(two names for one person, a word that is not a character, a fact to always keep, a deliberate
+mystery). Your edit shows in the next preview's Story Bible; a mystery line that matched no
+conflict is marked `unmatched` there. The [Story Bible note](features/story-bible.md#behavior) shows one example of
+each kind of line.
 
 ## Checklist
 

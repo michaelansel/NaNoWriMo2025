@@ -1,4 +1,4 @@
-{#- Continuity Editor. Rendered by nanoif.review.prompts.render_prompt("continuity", ...).
+{#- Continuity Editor. Rendered by nanoif.llm.prompts.render_prompt("continuity", ...).
     Variables: unit_text (str), passage_id (str), canon (list of {id, entity, claim, passage_id}; may be empty).
     The system block holds rules and rubric; the user block holds story text only, between delimiters. -#}
 {% block system %}
