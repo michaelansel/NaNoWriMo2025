@@ -13,6 +13,10 @@
 {% endif %}
 
 **Structure:** {{ structure_line }}.
+{% if bible %}
+
+**Story Bible:** {{ bible }}.
+{% endif %}
 {% if errors %}
 
 {% for f in errors %}

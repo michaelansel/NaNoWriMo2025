@@ -1,0 +1,47 @@
+{{ marker }}
+### Story Bible: {{ headline }}
+<sub>{{ header }}</sub>
+{% if not ran %}
+
+The dry run did not run: {{ reason }}. Nothing was extracted or saved, and no earlier result is shown. Reply `/extract-story-bible` to try again.
+{% else %}
+
+This is what extraction would change if this pull request were merged into `main`. {{ base }} Nothing was saved: the Story Bible is saved only by the extraction after a merge.
+{% if up_to_date %}
+
+No passage changed since the saved extraction, so nothing was read and no model was called.
+{% else %}
+
+- **Entities:** {{ entities }}
+- **Facts:** {{ facts }}
+- **Conflicts:** {{ conflicts }}
+{% if read %}
+
+<details><summary>{{ read | length }} passage{{ "" if read | length == 1 else "s" }} read</summary>
+
+{% for name in read %}
+- *{{ name }}*
+{% endfor %}
+
+</details>
+{% endif %}
+{% if deleted %}
+
+**No longer in the story:** {{ deleted | join(", ") }}.
+{% endif %}
+{% endif %}
+{% if failed %}
+
+**Could not read {{ failed | length }} passage{{ "" if failed | length == 1 else "s" }}** (the extraction after the merge will try again):
+{% for item in failed %}
+- *{{ item.passage }}*: {{ item.reason }}
+{% endfor %}
+{% endif %}
+{% if pending %}
+
+**Not yet reconciled:**
+{% for item in pending %}
+- *{{ item.entity }}*: {{ item.reason }}
+{% endfor %}
+{% endif %}
+{% endif %}

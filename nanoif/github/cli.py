@@ -16,8 +16,9 @@ from pathlib import Path
 
 from nanoif.errors import ArtifactValidationError, BuildError
 from nanoif.github.api import GitHubAPI
+from nanoif.github.bible import render_bible_diff, render_bible_not_run
 from nanoif.github.commands import parse_command, write_github_output
-from nanoif.github.comments import upsert_sticky
+from nanoif.github.comments import MARKER_BIBLE, upsert_sticky
 from nanoif.github.dismiss import (
     DismissalError,
     append_record,
@@ -196,6 +197,24 @@ def _build_report(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _bible_report(args: argparse.Namespace) -> int:
+    run = RunInfo.from_env()
+    if args.diff is not None:
+        try:
+            diff = load_artifact(args.diff, "bible_diff")
+        except (BuildError, ArtifactValidationError) as exc:
+            return _usage(str(exc))
+        body = render_bible_diff(diff, run)
+    else:
+        body = render_bible_not_run(args.reason, run)
+    _step_summary(body.removeprefix(MARKER_BIBLE))
+    if args.pr is None:
+        return EXIT_OK
+    result = upsert_sticky(api_factory(), args.pr, MARKER_BIBLE, body)
+    print(f"Story Bible: comment {result.action} ({result.comment_id})")
+    return EXIT_OK
+
+
 def _earlier_review(folder: Path | None, head_sha: str | None) -> tuple[dict | None, str]:
     """Return the earlier review to merge into, or ``None`` and why it is not usable."""
     review_path = folder / "ai-review.json" if folder is not None else None
@@ -346,6 +365,15 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     )
     build.add_argument("--head-sha")
     build.set_defaults(handler=_build_report)
+
+    bible = commands.add_parser(
+        "bible-report", help="the /extract-story-bible dry-run comment (<!-- nano:bible -->)"
+    )
+    bible.add_argument("--pr", type=int, help="pull request (omit: step summary only)")
+    source = bible.add_mutually_exclusive_group(required=True)
+    source.add_argument("--diff", type=Path, help="bible-diff.json of the dry run")
+    source.add_argument("--reason", help="why the dry run did not run")
+    bible.set_defaults(handler=_bible_report)
 
     merge = commands.add_parser(
         "merge-review", help="merge a passage re-check into the PR's last AI review"
