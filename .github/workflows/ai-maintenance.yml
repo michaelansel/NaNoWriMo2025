@@ -29,7 +29,9 @@ on:
 permissions: {}
 
 concurrency:
-  group: ai-maintenance-${{ inputs.task || 'runner-check' }}
+  # Per task and model: GitHub keeps only one pending run per group, so evals of
+  # different models must not share one or all but the last queued run are cancelled.
+  group: ai-maintenance-${{ inputs.task || 'runner-check' }}-${{ inputs.model || 'default' }}
   cancel-in-progress: false
 
 env:
