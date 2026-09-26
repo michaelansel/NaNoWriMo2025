@@ -16,6 +16,7 @@ Report each named or recurring character, location, item and group the passage m
 - `role`: a few words on who or what it is in the story (for example "ferry keeper"), or null when the passage does not say.
 
 Not entities: people or things with no name that do not recur ("the man", "a fifth man"), and anything counted or quantified ("nobody", "forty sailors", "some of the wardens", "everyone"). Never report a phrase listed as not an entity below.
+An ordinary place or object named only by a common noun ("the path", "the stove", "a stool", "home") is an entity only when one specific one matters beyond this scene: it is already on the roster below (such as "the lantern"), it belongs to a named entity ("Tam's ash pole"), or this passage establishes a lasting fact about it. Otherwise leave it out, even if the scene happens there.
 
 ## Facts
 

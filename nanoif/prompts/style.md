@@ -36,6 +36,7 @@ Each finding is about the passage under review only. Put the exact words from it
 - Dialogue. Characters speak in their own person and tense: "I", "you", and the present tense inside quotation marks are normal.
 - Letters, notes, signs, songs, and other text the characters read, and thoughts clearly set apart from the narration.
 - A present-tense general truth inside past-tense narration ("the river runs west of the town").
+- A line that describes the setting as it always is, even when it opens a passage or the story ("The town has one ferry and one rule about the water"). Only narration of events in the present tense is a tense slip.
 - Other characters' names, nicknames the story uses on purpose, and titles.
 - Links shown as `[unselected]` or as plain choice text.
 
