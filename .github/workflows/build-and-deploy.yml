@@ -2,8 +2,9 @@ name: Build and deploy
 
 # Pull requests: test, build + Structure check, probe, AI review (exe runner), or a
 # "did not run" notice on the editors when the build or probe failed.
-# Main: test, build, (Story Bible extraction, Phase 3), deploy to Pages.
-# Nothing here pushes to a pull request branch.
+# Main: test, build, probe, Story Bible extraction (exe runner; commits only
+# ai/story-bible-cache.json to main), then deploy to Pages with the Bible re-rendered
+# from the newest cache. Nothing here pushes to a pull request branch.
 
 on:
   pull_request:
@@ -11,6 +12,12 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      bible-mode:
+        description: "Story Bible extraction on main: incremental (changed passages) or full (every passage, ids kept)"
+        type: choice
+        options: [incremental, full]
+        default: incremental
 
 permissions: {}
 
@@ -136,8 +143,8 @@ jobs:
           retention-days: 30
 
   probe:
+    # Pull requests (AI review), pushes to main and dispatches (Story Bible extraction).
     name: probe
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 2
     permissions:
@@ -230,38 +237,166 @@ jobs:
           exit 1
 
   bible-extract:
-    # PLACEHOLDER until Phase 3. The real job runs `nanoif bible extract --incremental` on
-    # [self-hosted, exe] behind the probe, with contents: write, and commits
-    # ai/story-bible-cache.json to main (pull --rebase retry once). Off unless
-    # vars.BIBLE_EXTRACT == 'true'.
+    # Story Bible extraction after a push or dispatch on main (ADR-020); never on a pull
+    # request. It runs inside the workflow's `pages` concurrency group, so two runs on main
+    # never extract at once, and it is the only job here that may write to main: it commits
+    # ai/story-bible-cache.json alone. The deploy job re-renders the Bible from its result.
     name: bible-extract
-    needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.BIBLE_EXTRACT == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions: {}
+    needs: [build, probe]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ${{ needs.probe.outputs.runner == 'exe' && fromJSON('["self-hosted","exe"]') || 'ubuntu-latest' }}
+    timeout-minutes: 45
+    permissions:
+      contents: write # commit ai/story-bible-cache.json to main
+    env:
+      NANOIF_LLM_PROFILE: ${{ vars.LLM_PROFILE || 'exe' }}
+      NANOIF_LLM_MODEL: ${{ vars.LLM_MODEL }}
+      BIBLE_MODE: ${{ inputs.bible-mode || 'incremental' }}
     steps:
-      - name: Placeholder
-        run: echo "Story Bible extraction lands in Phase 3" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Report that extraction cannot run here
+        # There is no fallback provider: on a hosted runner nothing is extracted, the job
+        # fails, and the deploy still publishes the last saved Bible, which says so.
+        if: needs.probe.outputs.runner != 'exe'
+        env:
+          REASON: ${{ needs.probe.outputs.reason }}
+        run: |
+          reason="${REASON:-the exe runner is not available}"
+          echo "::error::Story Bible extraction did not run: $reason. The site deploys with the last saved Bible."
+          echo "Story Bible extraction did not run: $reason; the site deploys with the last saved Bible." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - uses: actions/checkout@v7
+        if: needs.probe.outputs.runner == 'exe'
+        with:
+          # The newest main, so the extraction starts from any cache committed since this
+          # run's commit (a push starts no workflow when made with GITHUB_TOKEN).
+          ref: main
+
+      - name: Python venv (exe runner)
+        if: needs.probe.outputs.runner == 'exe'
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Install nanoif
+        if: needs.probe.outputs.runner == 'exe'
+        run: python -m pip install -e .
+
+      - name: Extract the Story Bible
+        id: extract
+        if: needs.probe.outputs.runner == 'exe'
+        # Exit 0 ok, 3 partial (what was read is saved), 1 nothing written (invalid cache,
+        # spend cap, error). The code is captured so the cache is committed before a
+        # partial run fails the job.
+        run: |
+          set +e
+          if [ "$BIBLE_MODE" = full ]; then
+            nanoif bible extract --repo . --full > "$RUNNER_TEMP/bible.txt" 2> "$RUNNER_TEMP/bible-err.txt"
+          else
+            nanoif bible extract --repo . --incremental > "$RUNNER_TEMP/bible.txt" 2> "$RUNNER_TEMP/bible-err.txt"
+          fi
+          code=$?
+          set -e
+          cat "$RUNNER_TEMP/bible.txt" "$RUNNER_TEMP/bible-err.txt"
+          cat "$RUNNER_TEMP/bible.txt" "$RUNNER_TEMP/bible-err.txt" >> "$GITHUB_STEP_SUMMARY"
+          echo "nanoif bible extract --$BIBLE_MODE exited $code" >> "$GITHUB_STEP_SUMMARY"
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" != 0 ] && [ "$code" != 3 ]; then
+            echo "::error::Story Bible extraction failed and saved nothing; the site deploys with the last saved Bible."
+            exit "$code"
+          fi
+
+      - name: Commit the cache to main
+        if: steps.extract.outputs.exit_code == '0' || steps.extract.outputs.exit_code == '3'
+        run: |
+          if [ ! -f ai/story-bible-cache.json ]; then
+            echo "No Story Bible cache was written; nothing to commit." >> "$GITHUB_STEP_SUMMARY"
+          elif git diff --quiet HEAD -- ai/story-bible-cache.json && git ls-files --error-unmatch ai/story-bible-cache.json > /dev/null 2>&1; then
+            echo "Story Bible cache unchanged; nothing to commit." >> "$GITHUB_STEP_SUMMARY"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add ai/story-bible-cache.json
+            git commit -m "chore: update story bible cache"
+            if ! git push origin HEAD:main; then
+              echo "Push rejected; rebasing once onto the new main"
+              git pull --rebase origin main
+              git push origin HEAD:main
+            fi
+            echo "Committed ai/story-bible-cache.json to main." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the cache for the deploy
+        if: steps.extract.outputs.exit_code == '0' || steps.extract.outputs.exit_code == '3'
+        uses: actions/upload-artifact@v7
+        with:
+          name: bible-cache
+          path: ai/story-bible-cache.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Fail a partial extraction
+        if: steps.extract.outputs.exit_code == '3'
+        run: |
+          echo "::error::Story Bible extraction was partial: the passages or entities listed above were not read or reconciled. What was read is saved; the next extraction retries the rest."
+          exit 1
 
   deploy:
+    # Runs when the build succeeded, whatever the extraction did (AC-story-bible-18): the
+    # Story Bible and the canon pack are re-rendered from the newest cache (the bible-cache
+    # artifact when extraction saved one, else the cache at this commit) and the page says
+    # when the latest extraction did not complete.
     name: deploy
     needs: [build, bible-extract]
-    # Deploy even when extraction failed or was skipped: the site renders the previous cache.
     if: ${{ always() && needs.build.result == 'success' && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    env:
+      EXTRACTION_RESULT: ${{ needs.bible-extract.result }}
     steps:
       - uses: actions/download-artifact@v8
         with:
           name: story-preview
           path: site
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          path: repo
+          persist-credentials: false
+      - name: Download the extracted cache, if any
+        # A pattern that matches nothing downloads nothing; the next step says which cache
+        # the page is built from.
+        uses: actions/download-artifact@v8
+        with:
+          pattern: bible-cache
+          merge-multiple: true
+          path: ${{ runner.temp }}/bible-cache
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: repo/pyproject.toml
+      - name: Install nanoif
+        run: python -m pip install -e repo
+      - name: Re-render the Story Bible and the canon pack
+        run: |
+          if [ -f "$RUNNER_TEMP/bible-cache/story-bible-cache.json" ]; then
+            mkdir -p repo/ai
+            cp "$RUNNER_TEMP/bible-cache/story-bible-cache.json" repo/ai/story-bible-cache.json
+            echo "Story Bible: rendered from the cache this run's extraction saved." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Story Bible: rendered from the cache at ${GITHUB_SHA::8} (latest extraction: $EXTRACTION_RESULT)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+          nanoif build story-bible --repo repo --artifacts site/lib/artifacts --out site/dist \
+            --extraction-result "$EXTRACTION_RESULT"
+          nanoif build canon-pack --repo repo --artifacts site/lib/artifacts --out site/dist
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
