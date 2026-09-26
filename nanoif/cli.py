@@ -281,6 +281,10 @@ def _ai_eval(args: argparse.Namespace) -> int:
     print(outcome.markdown)
     if not outcome.review_ok:
         print("eval incomplete: an editor did not review every unit", file=sys.stderr)
+    if not outcome.extraction_ok:
+        extraction = outcome.extraction
+        detail = f" ({extraction['reason']})" if extraction.get("reason") else ""
+        print(f"eval incomplete: extraction {extraction['status']}{detail}", file=sys.stderr)
     if outcome.diff is not None and not outcome.diff["ok"]:
         print("eval below baseline", file=sys.stderr)
     print(f"Wrote {out}, {markdown_path} and {review_path}")
@@ -452,7 +456,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ai_review.set_defaults(handler=_ai_review)
     ai_eval = ai_commands.add_parser(
-        "eval", help="review the eval story and score the editors against truth.json"
+        "eval",
+        help="extract the eval story's Story Bible, review it, and score both against truth.json",
     )
     ai_eval.add_argument("--repo", type=Path, required=True, help="repository root")
     ai_eval.add_argument(

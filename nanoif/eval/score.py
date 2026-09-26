@@ -8,7 +8,8 @@ manifest and a *results* object built by the CLI from extractor and reviewer out
     results = {
       "entities":  [{"name": str, "type": str?, "aliases": [str]?}],
       "facts":     [{"entity": str?, "claim": str, "passage": str?, "evidence_phrase": str?}],
-      "conflicts": [{"passages": [str], "intentional": bool?}],
+      "conflicts": [{"passages": [str], "intentional": bool?}],                 # the Bible's
+      "review_conflicts": [{"passages": [str], "intentional": bool?}],          # the editor's
       "pronouns":  [{"passage": str, "sentence": str, "entity": str | None}],   # optional
       "findings":  [{"type": str, "passages": [str], "severity": str, "route": [str]?}],
       "usage":     <LLMClient.usage_summary()>                                  # optional
@@ -533,8 +534,9 @@ def run_scoring(truth: Mapping[str, Any], results: Mapping[str, Any]) -> dict[st
         results: The results object described in the module docstring.
 
     Returns:
-        Per-section detail under ``entities``, ``facts``, ``conflicts``, ``defects``,
-        ``pronouns``, ``clean_paths``, ``findings``, ``totals``, plus a flat ``metrics`` dict
+        Per-section detail under ``entities``, ``facts``, ``conflicts`` (the Bible's),
+        ``review_conflicts`` (the Continuity Editor's), ``defects``, ``pronouns``,
+        ``clean_paths``, ``findings``, ``totals``, plus a flat ``metrics`` dict
         that the report and baseline diff consume.
     """
     findings = list(results.get("findings", []) or [])
@@ -542,6 +544,9 @@ def run_scoring(truth: Mapping[str, Any], results: Mapping[str, Any]) -> dict[st
         "entities": score_entities(truth, list(results.get("entities", []) or [])),
         "facts": score_facts(truth, list(results.get("facts", []) or [])),
         "conflicts": score_conflicts(truth, list(results.get("conflicts", []) or [])),
+        "review_conflicts": score_conflicts(
+            truth, list(results.get("review_conflicts", []) or [])
+        ),
         "defects": score_defects(truth, findings),
         "pronouns": score_pronouns(truth, results.get("pronouns")),
         "clean_paths": score_clean_paths(truth, findings),
@@ -558,6 +563,8 @@ def run_scoring(truth: Mapping[str, Any], results: Mapping[str, Any]) -> dict[st
         "conflict_recall": sections["conflicts"]["recall"],
         "conflict_precision": sections["conflicts"]["precision"],
         "intentional_flagged": sections["conflicts"]["intentional_flagged"],
+        "review_conflict_recall": sections["review_conflicts"]["recall"],
+        "review_conflict_precision": sections["review_conflicts"]["precision"],
         "defects_detected": sections["defects"]["detected"],
         "defect_severity_matches": sections["defects"]["severity_matches"],
         "pronoun_accuracy": sections["pronouns"]["accuracy"],
