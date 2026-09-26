@@ -2,7 +2,7 @@
 
 ## Status
 
-Status: Accepted
+Status: Superseded by ADR-020
 Scope: rendering the Story Bible from the committed cache. Extraction no longer runs in a webhook (ADR-014); ADR-020 proposes replacing the rest.
 
 **Phase 1**: Implemented - Cache-first build (reads committed cache)

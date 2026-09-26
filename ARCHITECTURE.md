@@ -40,7 +40,8 @@ src/*.twee
         │                              allpaths-index.json, changes.json
         ├─ nanoif build metrics     ─→ metrics.html
         ├─ nanoif build passages    ─→ passages.html
-        └─ nanoif build story-bible ─→ story-bible.html, story-bible.json (from the cache, no model)
+        ├─ nanoif build story-bible ─→ story-bible.html, story-bible.json (cache + overrides, no model)
+        └─ nanoif build canon-pack  ─→ canon-pack.json (≤ 6 facts per entity, for the Continuity Editor)
 ```
 
 - Tweego versions and story formats are pinned in the workflow; `scripts/build-*.sh` are thin
@@ -90,18 +91,24 @@ PR opened / pushed
 ## Main branch flow
 
 ```
-push to main
-  ├─ build (hosted)
-  ├─ bible-extract (exe, contents: write) → nanoif bible extract --incremental
-  │                                        → commit ai/story-bible-cache.json if changed
-  └─ render-and-deploy (hosted, always runs) → rebuild with the current cache → Pages
+push to main (or dispatch with bible-mode=full)
+  ├─ build, probe (hosted)
+  ├─ bible-extract (probe runner, contents: write) → checkout main HEAD
+  │     exe:    nanoif bible extract --incremental|--full → commit ai/story-bible-cache.json
+  │             if changed (rebase-retry once); exit 3 = partial: commit, then fail
+  │     hosted: no model call, ::error:: + step summary, job fails
+  └─ deploy (hosted, whenever build succeeded) → re-render story-bible + canon-pack from the
+        new cache (or the previous one) with --extraction-result → Pages
 ```
 
-- A failed extraction still deploys, with the previous cache and a freshness notice
-  ([020](architecture/020-story-bible-v2.md), Proposed; the current renderer reads the
-  earlier cache format per [010](architecture/010-story-bible-design.md)).
-- `ai-maintenance.yml` (manual, and a daily `runner-check` in November) runs `extract-full`,
-  `check-all`, `eval` and `runner-check`; `pr-closed` records finding outcomes on merge.
+- Stages: extract per changed passage (model), resolve names (deterministic, then one batched
+  model pass), reconcile touched entities (model returns fact ids only), assemble with
+  `story-overrides.txt` (deterministic). Fact ids `<slug>#<n>` are never reused
+  ([020](architecture/020-story-bible-v2.md)).
+- A failed or skipped extraction still deploys, with the previous cache and a banner naming
+  the failure and the date of the Bible shown.
+- `ai-maintenance.yml` (manual, and a daily `runner-check` in November) runs `check-all`,
+  `eval` and `runner-check`; `pr-closed` records finding outcomes on merge.
 
 ## State
 
