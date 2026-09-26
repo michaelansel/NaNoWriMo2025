@@ -30,7 +30,7 @@ Inference env: `NANOIF_LLM_PROFILE` (`exe` default and the CI default, `firework
 ## Layout
 
 ```
-src/                 writer prose + infra passages (Start, StoryData, StoryTitle, StoryStyles, PathIdDisplay)
+src/                 writer prose + infra files (StoryData, StoryTitle, StoryStyles, PathIdDisplay; Start is tooling-owned prose)
 story-overrides.txt  writer-editable bible overrides (alias / not-entity / pin / intentional-conflict)
 ai/                  state written only by Actions on main: story-bible-cache.json, dismissals.jsonl, outcomes.jsonl
 nanoif/              the package: twee/ graph/ git/ llm/ bible/ review/ check/ formats/ prompts/ schemas/ templates/ cli.py

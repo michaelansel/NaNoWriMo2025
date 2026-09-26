@@ -12,7 +12,7 @@ it is and links the ADR that explains each part. Superseded ADRs are kept for th
 
 | Component | What it is | Decided in |
 |---|---|---|
-| `src/` | Writer prose `<INITIALS>-<YYYYMMDD>.twee` plus infrastructure passages (`Start`, `StoryData`, `StoryTitle`, `StoryStyles`, `PathIdDisplay`) | [018](architecture/018-structure-check-and-report-only-lint.md) |
+| `src/` | Writer prose `<INITIALS>-<YYYYMMDD>.twee`, tooling-owned `Start.twee` (the opening; its passages are story prose), and infrastructure passages (`StoryData`, `StoryTitle`, `StoryStyles`, `PathIdDisplay`) | [018](architecture/018-structure-check-and-report-only-lint.md), [020](architecture/020-story-bible-v2.md) |
 | `story-overrides.txt` | Writer-editable Story Bible corrections, syntax-checked on every build | [020](architecture/020-story-bible-v2.md) |
 | `nanoif/` | The one Python package and `nanoif` CLI | [015](architecture/015-nanoif-package.md) |
 | `.github/workflows/` | `build-and-deploy.yml`, `ai-command.yml`, `ai-maintenance.yml`, `intent.yml` | [014](architecture/014-actions-automation-exe-runner.md), [021](architecture/021-intent-gate.md) |
@@ -86,19 +86,21 @@ PR opened / pushed
   collaborators ([014](architecture/014-actions-automation-exe-runner.md)). A `passage=`
   re-check merges into the last review only when both are for the current head, otherwise
   it is published as partial; `/dismiss` re-renders only a review of the current head
-  ([022](architecture/022-ai-review-lineage-and-not-run.md)).
+  ([022](architecture/022-ai-review-lineage-and-not-run.md)). `/extract-story-bible` is a dry
+  run on the PR merged with `main` that never writes `ai/`; its result or "did not run" is the
+  `<!-- nano:bible -->` comment ([020](architecture/020-story-bible-v2.md)).
 
 ## Main branch flow
 
 ```
 push to main (or dispatch with bible-mode=full)
   ├─ build, probe (hosted)
-  ├─ bible-extract (probe runner, contents: write) → checkout main HEAD
+  ├─ bible-extract (probe runner, contents: write, in the run's `pages` group) → main HEAD
   │     exe:    nanoif bible extract --incremental|--full → commit ai/story-bible-cache.json
   │             if changed (rebase-retry once); exit 3 = partial: commit, then fail
   │     hosted: no model call, ::error:: + step summary, job fails
   └─ deploy (hosted, whenever build succeeded) → re-render story-bible + canon-pack from the
-        new cache (or the previous one) with --extraction-result → Pages
+        bible-cache artifact (or the cache at this commit) with --extraction-result → Pages
 ```
 
 - Stages: extract per changed passage (model), resolve names (deterministic, then one batched
@@ -114,7 +116,7 @@ push to main (or dispatch with bible-mode=full)
 
 | File | Written by | Read by |
 |---|---|---|
-| `ai/story-bible-cache.json` (v2) | `bible-extract` on main | `nanoif build story-bible`, canon pack |
+| `ai/story-bible-cache.json` (v2, the only Bible cache) | `bible-extract` on main | `bible.assemble` → Story Bible page, canon pack; `/extract-story-bible` dry run |
 | `ai/dismissals.jsonl` | `/dismiss` job on main | `nanoif ai review` (suppression) |
 | `ai/outcomes.jsonl` | `pr-closed` on main | false-positive review |
 | `story-overrides.txt` | writers | `nanoif check structure`, Story Bible |
@@ -122,9 +124,7 @@ push to main (or dispatch with bible-mode=full)
 | spend ledger `<NANOIF_LLM_LEDGER_DIR>/YYYY-MM.jsonl` (on the exe VM, not in git) | every model call | the monthly cap ([023](architecture/023-monthly-spend-cap.md)) |
 
 Only those three `main` jobs have `contents: write`, and only for `ai/`. No automation commits
-to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)). Until Story Bible v2
-lands, the renderer reads the earlier cache format from `story-bible-cache.json` at the
-repository root ([010](architecture/010-story-bible-design.md)).
+to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)).
 
 ## Data contracts
 
@@ -140,14 +140,18 @@ Every JSON artifact that crosses a job or process boundary has a schema in
 | `changes.json` | `changes` | `build allpaths` → `ai review --mode changed` ([017](architecture/017-git-based-categorization.md)) |
 | `structure --format json` | `structure_findings` | `check structure` → Structure check run ([018](architecture/018-structure-check-and-report-only-lint.md)) |
 | `ai-review.json` | `ai_review` | `ai review`, `github merge-review` → GitHub reporter, `/dismiss` ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
+| `ai/story-bible-cache.json` | `story_bible_cache` | `bible extract` → `bible.assemble` ([020](architecture/020-story-bible-v2.md)) |
+| `story-bible.json`, `canon-pack.json` | `story_bible`, `canon_pack` | `build story-bible`, `build canon-pack` → Pages; pack → Continuity Editor ([020](architecture/020-story-bible-v2.md)) |
+| `bible-diff.json` | `bible_diff` | `bible extract` → step summary, `<!-- nano:bible -->` ([020](architecture/020-story-bible-v2.md)) |
 | model output | `nanoif/prompts/<name>.schema.json` | model → editors ([016](architecture/016-llm-client-and-prompt-contract.md)) |
 | spend ledger line | `spend_ledger_line` | `LLMClient` → `LLMClient` in later jobs ([023](architecture/023-monthly-spend-cap.md)) |
 
 Other contracts: `ai-review-head-sha.txt` beside `ai-review.json` in the `ai-review-pr-<N>`
-artifact (unvalidated; missing means commit unknown), comment markers `<!-- nano:build -->`
-and `<!-- nano:<editor> -->`, env
-`NANOIF_LLM_*` (including `MONTHLY_USD` and `LEDGER_DIR`) and `NANOIF_REVIEW_UNIT_BUDGET`,
-repository variables `LLM_PROFILE`, `LLM_MODEL`, `LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
+artifact (unvalidated; missing means commit unknown), the `bible-cache` artifact (`bible-extract`
+→ `deploy`), markers `<!-- nano:build -->`, `<!-- nano:<editor> -->`, `<!-- nano:bible -->`,
+workflow input `bible-mode`, env `NANOIF_LLM_*` (including `MONTHLY_USD`, `LEDGER_DIR`) and
+`NANOIF_REVIEW_UNIT_BUDGET`, and repository variables `LLM_PROFILE`, `LLM_MODEL`,
+`LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
 
 ## Where each concern lives in `nanoif/`
 
@@ -155,18 +159,18 @@ repository variables `LLM_PROFILE`, `LLM_MODEL`, `LLM_MONTHLY_USD`, `EXE_HEALTH_
 |---|---|
 | `cli.py` | `nanoif` commands; every path derived from `--repo` or an explicit argument |
 | `errors.py` | package error hierarchy (`NanoifError`) |
-| `twee/` | the one header regex (`files`), link parser (`links`), story parser (`parse`), prose and word counts, passage hashes, report-only linter (`lint`) |
+| `twee/` | the one header regex (`files`), link parser (`links`), story parser (`parse`), prose, word counts and the one infrastructure-passage rule (`prose.is_infra`), quote verifier (`quotes`), passage hashes, report-only linter (`lint`) |
 | `graph/` | path enumeration (`paths`), base comparison and categories (`categorize`), passage ids and the path-id lookup (`ids`) |
 | `git/` | the one `git` service: cached, timed, one `git log` per build |
 | `build/` | repository layout (`paths`) and `build core` |
 | `formats/` | `allpaths`, `metrics`, `passages`, `story_bible` pages from core artifacts; HTML in `templates/html/` |
 | `check/` | `structure` checks and the `story-overrides.txt` syntax parser |
 | `schemas/` | artifact schemas and write/read validation |
-| `llm/` | client, profiles, schema parsing, pricing, spend ledger (`ledger`), test doubles ([016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md)) |
+| `llm/` | client, profiles, schema parsing, prompt rendering and hashes (`prompts`), pricing, spend ledger (`ledger`), test doubles ([016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md)) |
 | `prompts/` | Jinja prompts with sibling output schemas |
 | `review/` | review units, Continuity and Style editors, finding keys, editor status (`runner.editor_status`) ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `github/` | the GitHub reporter: sticky comments and check runs, `/dismiss` records, passage re-check merge (`merge`), slash-command parsing ([014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md)) |
-| `bible/` | Story Bible v2 stages and canon pack (planned, [020](architecture/020-story-bible-v2.md)) |
+| `bible/` | Story Bible v2: `source`, `extract`, `resolve`, `reconcile`, `ids`, `cache`, `assemble`, canon pack and retrieval (`canon`), `bible extract` (`run`); imports `twee/`, `llm/`, `check/`, never `review/` ([020](architecture/020-story-bible-v2.md)) |
 | `eval/` | scoring against `tests/fixtures/eval-story/truth.json` and baseline diffs |
 | `intent/` | criterion and ADR index, citation check, commit gate ([021](architecture/021-intent-gate.md)) |
 

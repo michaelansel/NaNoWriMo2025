@@ -32,7 +32,7 @@ On every pull request build, before the pages are built, two report-only tools r
 | `duplicate-passage` | error | A passage name is declared twice; points at both places |
 | `story-data-missing`, `story-data-invalid` | error | No `StoryData`, bad JSON, bad IFID, unknown start passage, or bad `storyStyle` values |
 | `unreadable-file` | error | A `.twee` file is not valid UTF-8 text |
-| `overrides-syntax` | error | A line of `story-overrides.txt` is not `directive: payload` with a known directive |
+| `overrides-syntax` | error | A line of `story-overrides.txt` is not `directive: payload` with a known directive, or its payload does not fit its directive (for example a `pin:` without `\| "quote" @ passage`, an `alias:` without `=`) |
 | `orphan-passage` | warning | No route from the start passage reaches it |
 | `file-naming` | warning | A file breaks the naming rule ([web-editing](web-editing.md)) |
 | `missing-day-passage` | warning | A writer's file has no `Day <N> <INITIALS>` passage with its initials |
@@ -69,7 +69,7 @@ summary and annotations only.
 - AC-structure-check-10: A file whose name breaks the naming rule is a warning; the infrastructure files and the generated `PathIdLookup.twee` are exempt.
 - AC-structure-check-11: A writer's file with no `Day <N> <INITIALS>` passage whose initials match the file name is a warning on that file.
 - AC-structure-check-12: A `.twee` file that is not valid UTF-8 is an error naming the file.
-- AC-structure-check-13: Each bad line of `story-overrides.txt` is an error with its line number, and an unknown directive's message lists the known ones; comment lines, blank lines and a missing file produce nothing.
+- AC-structure-check-13: Each bad line of `story-overrides.txt` (not `directive: payload`, an unknown directive, no payload, or a payload that does not fit its directive) is an error with its line number; an unknown directive's message lists the known ones and a payload error's message shows the directive's expected form; comment lines, blank lines and a missing file produce nothing.
 - AC-structure-check-14: `nanoif check structure` exits 1 when there is an error and 0 when there are only warnings and info.
 - AC-structure-check-15: Findings are listed errors first, then warnings, then info.
 - AC-structure-check-16: In GitHub format each finding is one annotation of the matching level (error, warning, notice) carrying its file and line, with commas, colons and newlines escaped.

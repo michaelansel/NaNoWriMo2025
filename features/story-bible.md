@@ -53,8 +53,9 @@ intentional-conflict: c-widow-never-wife = Widow Kestle | never anyone's wife
 `intentional-conflict:` has two forms: an id copied from the Conflicts section
 (`intentional-conflict: c-<id>`), or a label with an entity and a fragment of one quote, as above.
 A pinned fact whose quote is not in the named passage is still pinned, flagged `quote not found`.
-Override edits show in the next build, without a new extraction. Syntax errors in this file are
-reported by the structure check ([structure-check](structure-check.md)).
+Override edits show in the next build, without a new extraction. Malformed lines in this file,
+including a payload that does not fit its directive, are reported by the structure check
+([structure-check](structure-check.md)).
 
 **For the Continuity Editor** the Bible provides a compact canon: per entity, a few facts with
 stable ids, pinned facts first ([continuity-review](continuity-review.md)).
@@ -84,14 +85,14 @@ what would change and what the run cost, or "did not run" with the reason; it co
 - AC-story-bible-18: When the latest extraction did not succeed (failed, cancelled, skipped, or stopped by the spend cap), the page says the latest extraction did not complete and gives the date of the extraction it shows.
 - AC-story-bible-19: `/extract-story-bible` from an owner, member or collaborator on a pull request runs a dry run of the pull request merged with `main` and commits nothing; from anyone else it starts no job and spends nothing; when the AI runner is unavailable or the run fails, its job fails. (verify: workflow)
 - AC-story-bible-20: Each fact keeps its id across extractions: a fact re-extracted from its changed passage with the same quote or a reworded claim keeps its id, the facts of a merged entity keep theirs, a fact no longer found or whose passage was deleted is retired, and a retired id is never given to another fact.
-- AC-story-bible-21: A pinned fact is always among the facts the Continuity Editor checks a passage against when that passage mentions the pinned entity.
+- AC-story-bible-21: When a passage mentions a pinned entity, the pinned fact is among the facts the Continuity Editor checks that passage against, even past the per-passage fact limit, unless the pin cites that passage itself or a passage whose text changed since the extraction (AC-story-bible-28).
 - AC-story-bible-22: A full extraction of a story of up to 100 passages costs at most $1 at the default profile's prices. (verify: workflow)
 - AC-story-bible-23: An extracted fact whose quote is not found in its passage, a fact that is momentary scene state, and an entity whose name starts with a quantifier or number word (`no one`, `thirteen people`) never reach the page or the canon, and the saved extraction records per passage how many of each were dropped.
 - AC-story-bible-24: A `pin:` whose quote is not found in the named passage is still shown and still pinned, flagged `quote not found`.
 - AC-story-bible-25: `intentional-conflict: c-<id>` moves the conflict with that id from Conflicts to Intentional mysteries; `intentional-conflict: <label> = <entity> | <quote fragment>` lists the label under Intentional mysteries and moves there every conflict on that entity with a quote containing the fragment.
 - AC-story-bible-26: An `intentional-conflict:` line that matches no conflict changes nothing and is listed on the page as `unmatched`.
-- AC-story-bible-27: An `alias:` or `not-entity:` line that matches no entity the Bible knows is listed on the page as `unmatched`. (verify: planned)
-- AC-story-bible-28: The canon offered for a passage never includes facts drawn from that passage or from a passage whose text changed since the extraction.
+- AC-story-bible-27: An `alias:`, `not-entity:` or `pin:` line that names no entity the Bible knows changes nothing and is listed on the page as `unmatched`.
+- AC-story-bible-28: The canon offered for a passage never includes facts, pinned or extracted, drawn from that passage or from a passage whose text changed since the extraction.
 - AC-story-bible-29: Only the extraction job on `main` commits the saved extraction, as a commit of `ai/story-bible-cache.json` alone to `main`; it never runs for a pull request, and nothing commits to a pull request branch. (verify: workflow)
 - AC-story-bible-30: When extraction fails or is skipped after a merge, the site still deploys with the latest saved Bible. (verify: workflow)
 - AC-story-bible-31: The `/extract-story-bible` result is one comment per pull request, found by its `<!-- nano:bible -->` marker and edited in place, headed "dry run: nothing was saved" and listing the entities, facts and conflicts that would be added, changed or retired and what the run cost; when the run did not happen or failed, it says "did not run" with the reason and shows no earlier result.
@@ -110,9 +111,12 @@ what would change and what the run cost, or "did not run" with the reason; it co
   latest extraction did not complete (AC-story-bible-32).
 - **A passage is deleted**: its facts are retired, their ids are not reused, and Freshness lists
   it until the next extraction.
-- **Overrides name an entity or conflict that does not exist**: the line has no effect; an
-  `intentional-conflict:` line is listed as `unmatched` (AC-story-bible-26). A later extraction
-  that finds the entity applies it.
+- **Overrides name an entity or conflict that does not exist**: the line has no effect and is
+  listed as `unmatched` (AC-story-bible-26, AC-story-bible-27). A later extraction that finds the
+  entity applies it.
+- **A pin cites the passage under review, or a passage changed since the extraction**: the pin is
+  not offered for that review; a changed passage's pin counts among the out-of-date facts the
+  Continuity Editor comment reports, and is offered again once the next extraction reads it.
 - **Two merges close together**: the second extraction starts from the first one's saved result.
 - **A deliberate mystery is also flagged by the Continuity Editor**: findings on its facts are
   suppressed ([continuity-review](continuity-review.md), AC-continuity-review-14).

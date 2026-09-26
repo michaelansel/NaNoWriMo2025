@@ -143,6 +143,20 @@ def test_pinned_facts_are_exempt_from_the_cap():
     assert result.capped == 8
 
 
+@pytest.mark.intent("AC-story-bible-21", "AC-story-bible-28")
+def test_a_pin_is_left_out_when_it_cites_the_passage_under_review_or_a_changed_passage():
+    result_pack = pack(PIN)
+    own = select_canon(result_pack, CROSSING, "the River Wardens", HASHES)
+    assert not [f for f in own.facts if f.pinned]
+    assert own.own_excluded >= 1
+    changed = {**HASHES, CROSSING: "f" * 16}
+    stale = select_canon(result_pack, "The toll", "the River Wardens", changed)
+    assert not [f for f in stale.facts if f.pinned]
+    assert stale.stale_excluded >= 1
+    fresh = select_canon(result_pack, "The toll", "the River Wardens", HASHES)
+    assert [f.entity for f in fresh.facts if f.pinned] == ["River Wardens"]
+
+
 def test_load_canon_pack_missing_or_invalid_is_an_error(tmp_path):
     with pytest.raises(BuildError, match="canon_pack not found"):
         load_canon_pack(tmp_path / "canon-pack.json")

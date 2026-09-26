@@ -325,6 +325,7 @@ jobs:
           echo "::error::/extract-story-bible did not run: $reason"
           exit 1
       - name: Take the story files from the pull request merged with main
+        id: merge
         if: env.RUNNER_KIND == 'exe'
         run: |
           git fetch --no-tags --depth=1 origin "+refs/pull/${PR_NUMBER}/merge:refs/remotes/pr/merge"
@@ -347,17 +348,24 @@ jobs:
           cat "$RUNNER_TEMP/bible.txt" "$RUNNER_TEMP/bible-err.txt" >> "$GITHUB_STEP_SUMMARY"
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
       - name: Post the Story Bible comment
-        if: env.RUNNER_KIND == 'exe'
+        # Runs even when an earlier step failed: a comment-triggered run is not among the
+        # pull request's checks, so this comment is the only place a writer sees the result.
+        if: ${{ !cancelled() && env.RUNNER_KIND == 'exe' }}
         env:
           CODE: ${{ steps.extract.outputs.exit_code }}
+          MERGE: ${{ steps.merge.outcome }}
         run: |
-          if [ -f "$RUNNER_TEMP/bible-diff.json" ] && { [ "$CODE" = 0 ] || [ "$CODE" = 3 ]; }; then
+          if [ "$MERGE" != success ]; then
+            CODE="${CODE:-1}"
+            nanoif github bible-report --pr "$PR_NUMBER" --reason "could not merge the pull request with main; resolve its conflicts, then comment again"
+          elif [ -f "$RUNNER_TEMP/bible-diff.json" ] && { [ "$CODE" = 0 ] || [ "$CODE" = 3 ]; }; then
             nanoif github bible-report --pr "$PR_NUMBER" --diff "$RUNNER_TEMP/bible-diff.json"
           else
-            reason="$(tail -n 1 "$RUNNER_TEMP/bible-err.txt")"
-            nanoif github bible-report --pr "$PR_NUMBER" --reason "${reason:-the extraction exited $CODE without a reason}"
+            reason=""
+            if [ -f "$RUNNER_TEMP/bible-err.txt" ]; then reason="$(tail -n 1 "$RUNNER_TEMP/bible-err.txt")"; fi
+            nanoif github bible-report --pr "$PR_NUMBER" --reason "${reason:-the extraction exited ${CODE:-without an exit code} and gave no reason}"
           fi
-          if [ "$CODE" != 0 ]; then
+          if [ "${CODE:-1}" != 0 ]; then
             echo "::error::/extract-story-bible exited $CODE; the comment says what did not happen."
             exit 1
           fi

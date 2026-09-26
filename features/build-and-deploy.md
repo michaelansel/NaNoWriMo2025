@@ -60,7 +60,7 @@ The live site's address is the repository's GitHub Pages address; the landing pa
 
 ## Acceptance criteria
 - AC-build-and-deploy-1: Every push to a pull request against `main` runs the build and uploads a `story-preview` artifact holding the landing page and every output page, kept for 30 days. (verify: workflow)
-- AC-build-and-deploy-2: `nanoif build all --repo <repo>` writes `allpaths.html`, `allpaths-index.json`, `changes.json`, `metrics.html`, `story-bible.html`, `story-bible.json` and `passages.html` to `dist/`, `story_graph.json` to `lib/artifacts/`, and a fresh `src/PathIdLookup.twee`.
+- AC-build-and-deploy-2: `nanoif build all --repo <repo>` writes `allpaths.html`, `allpaths-index.json`, `changes.json`, `metrics.html`, `story-bible.html`, `story-bible.json`, `canon-pack.json` and `passages.html` to `dist/`, `story_graph.json` to `lib/artifacts/`, and a fresh `src/PathIdLookup.twee`.
 - AC-build-and-deploy-3: When the compiled story is missing, `nanoif build all` exits non-zero with an error naming it and writes none of the later pages.
 - AC-build-and-deploy-4: When any build step fails, the pull request's build check is red and the run log names the failing step; a failed build never shows as passed. (verify: workflow)
 - AC-build-and-deploy-5: The Build comment states the size of each output page, the number of story paths, and the steps to download and open the preview.

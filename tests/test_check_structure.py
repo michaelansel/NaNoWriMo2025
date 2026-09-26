@@ -259,7 +259,7 @@ def test_parse_overrides_reports_bad_lines_with_numbers():
     ]
 
 
-@pytest.mark.intent("ADR-020")
+@pytest.mark.intent("ADR-020", "AC-structure-check-13")
 @pytest.mark.parametrize(
     ("line", "message"),
     [
@@ -308,7 +308,7 @@ def test_read_overrides_missing_file_is_empty_and_unreadable_is_an_error(tmp_pat
         read_overrides(bad)
 
 
-@pytest.mark.intent("ADR-020")
+@pytest.mark.intent("ADR-020", "AC-structure-check-13")
 def test_payload_errors_are_structure_errors(tmp_path):
     src = make_story(tmp_path)
     overrides = tmp_path / "story-overrides.txt"

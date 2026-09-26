@@ -5,7 +5,7 @@ paths:
 
 # Twee files
 
-- Prose files are `src/<INITIALS>-<YYYYMMDD>.twee` and belong to writers. Do not open them for editing unless the user named the file. Infra passages (`Start`, `StoryData`, `StoryTitle`, `StoryStyles`, `PathIdDisplay`) are yours.
+- Prose files are `src/<INITIALS>-<YYYYMMDD>.twee` and belong to writers. Do not open them for editing unless the user named the file. Infra files (`Start`, `StoryData`, `StoryTitle`, `StoryStyles`, `PathIdDisplay`) are yours. `Start.twee` is tooling-owned but its passage is story prose: the Story Bible and the editors read it.
 - `src/PathIdLookup.twee` is generated at build time and gitignored; never write it by hand.
 - Entry passage of a prose file is `:: Day <N> <INITIALS>`; other passage names are natural language. `nanoif check structure` reports naming drift.
 - Links: `[[Text->Target]]`, `[[Target]]`, or `(link-goto:)`; the target is the rightmost `->`. Every target must exist; broken links fail the Structure check.
