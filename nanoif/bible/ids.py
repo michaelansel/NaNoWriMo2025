@@ -14,9 +14,19 @@ from __future__ import annotations
 
 import hashlib
 import re
-from collections.abc import Collection
+from collections.abc import Collection, Sequence
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
+
+from nanoif.twee.quotes import clean_quote, normalize_text
+
+if TYPE_CHECKING:
+    from nanoif.bible.cache import Entity, Fact
+    from nanoif.bible.extract import ExtractedFact
 
 WORLD_SLUG = "world"
+KEEP_OVERLAP = 0.6
+"""Claim overlap at which a re-extracted fact keeps the id of a live fact (ADR-020)."""
 """Reserved slug of the entity holding world rules that belong to no other entity."""
 
 QUANTIFIERS = frozenset(
@@ -195,3 +205,112 @@ def claim_overlap(a: str, b: str) -> float:
     if not left or not right:
         return 0.0
     return len(left & right) / max(len(left), len(right))
+
+
+@dataclass
+class FactAssignment:
+    """How one passage's re-extracted facts landed on one entity.
+
+    Attributes:
+        kept: Live ids matched by a new fact (by quote, else by claim overlap).
+        reworded: Kept ids whose claim text changed.
+        added: New ids.
+        retired: Ids of the passage's live facts nothing matched.
+    """
+
+    kept: list[str] = field(default_factory=list)
+    reworded: list[str] = field(default_factory=list)
+    added: list[str] = field(default_factory=list)
+    retired: list[str] = field(default_factory=list)
+
+
+def _quote_key(quote: str) -> str:
+    return normalize_text(clean_quote(quote)).casefold()
+
+
+def assign_fact_ids(
+    entity: Entity, passage: str, facts: Sequence[ExtractedFact], commit: str
+) -> FactAssignment:
+    """Give a passage's newly extracted facts ids, keeping ids of facts already known.
+
+    A new fact keeps the id of a live fact of the same entity and passage whose
+    normalized quote is equal, or else whose claim overlap (:func:`claim_overlap`) is at
+    least :data:`KEEP_OVERLAP`, best match first; each live fact is matched once. Other new
+    facts get ``<slug>#<next_n>``. Live facts of the passage that nothing matched move to
+    ``retired`` (reason ``passage_changed``). The entity is changed in place.
+
+    Args:
+        entity: The entity.
+        passage: The passage that was re-extracted.
+        facts: Its verified facts about this entity (duplicates within the list ignored).
+        commit: The commit being extracted, recorded on retired facts.
+
+    Returns:
+        What was kept, reworded, added and retired.
+    """
+    from nanoif.bible.cache import Fact
+
+    result = FactAssignment()
+    unique: dict[tuple[str, str], ExtractedFact] = {}
+    for fact in facts:
+        unique.setdefault((fact.claim.casefold(), _quote_key(fact.quote)), fact)
+    incoming = list(unique.values())
+    live = [fact for fact in entity.facts if fact.passage == passage]
+    matched: dict[int, Fact] = {}
+    free = list(live)
+    for index, fact in enumerate(incoming):
+        hit = next((old for old in free if _quote_key(old.quote) == _quote_key(fact.quote)), None)
+        if hit is not None:
+            matched[index] = hit
+            free.remove(hit)
+    for index, fact in enumerate(incoming):
+        if index in matched or not free:
+            continue
+        score, best = max(((claim_overlap(old.claim, fact.claim), old) for old in free),
+                          key=lambda pair: pair[0])
+        if score >= KEEP_OVERLAP:
+            matched[index] = best
+            free.remove(best)
+    for index, fact in enumerate(incoming):
+        old = matched.get(index)
+        if old is not None:
+            result.kept.append(old.id)
+            if old.claim != fact.claim:
+                result.reworded.append(old.id)
+            old.claim, old.quote, old.kind = fact.claim, fact.quote, fact.kind
+            continue
+        new_id = fact_id(entity.slug, entity.next_n)
+        entity.next_n += 1
+        entity.facts.append(Fact(new_id, fact.claim, fact.quote, passage, fact.kind))
+        result.added.append(new_id)
+    result.retired = _retire(entity, free, commit, "passage_changed")
+    return result
+
+
+def retire_passage_facts(entity: Entity, passage: str, commit: str, reason: str) -> list[str]:
+    """Retire every live fact an entity has from one passage.
+
+    Args:
+        entity: The entity, changed in place.
+        passage: The passage.
+        commit: The commit being extracted.
+        reason: ``passage_changed``, ``passage_deleted``, ``not_entity`` or ``merged``.
+
+    Returns:
+        The retired ids.
+    """
+    return _retire(entity, [f for f in entity.facts if f.passage == passage], commit, reason)
+
+
+def _retire(entity: Entity, facts: Sequence[Fact], commit: str, reason: str) -> list[str]:
+    from nanoif.bible.cache import RetiredFact
+
+    gone = {fact.id for fact in facts}
+    entity.facts = [fact for fact in entity.facts if fact.id not in gone]
+    entity.retired.extend(
+        RetiredFact(fact.id, fact.claim, fact.passage, commit, reason) for fact in facts
+    )
+    for fact in entity.facts:
+        if fact.duplicate_of in gone:
+            fact.duplicate_of = None
+    return [fact.id for fact in facts]
