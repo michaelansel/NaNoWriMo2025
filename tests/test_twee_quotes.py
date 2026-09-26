@@ -8,13 +8,33 @@ from nanoif.twee.quotes import clean_quote, normalize_text, quote_found
 TEXT = "Thirty years I’ve poled this river,\n  Tamsin Reave said."
 
 
-def test_normalize_text_folds_typographic_quotes_and_whitespace():
-    assert normalize_text("  Thirty  years\nI’ve “poled” ") == "Thirty years I've \"poled\""
+def test_normalize_text_folds_every_quote_mark_to_one_form_and_collapses_whitespace():
+    assert normalize_text("  Thirty  years\nI’ve “poled” ") == "Thirty years I've 'poled'"
+    assert normalize_text("\"a\" 'b' ‘c’ “d”") == "'a' 'b' 'c' 'd'"
 
 
 def test_clean_quote_strips_wrapping_quotation_marks():
     assert clean_quote('  "Thirty years"  ') == "Thirty years"
     assert clean_quote("“Thirty years”") == "Thirty years"
+    assert clean_quote("'Thirty years'") == "Thirty years"
+    assert clean_quote("‘Thirty years’") == "Thirty years"
+
+
+@pytest.mark.parametrize(
+    "quote",
+    [
+        "'Fog's down,' Tam said without turning",
+        "‘Fog’s down,’ Tam said without turning",
+        "“Fog's down,” Tam said without turning",
+        '"Fog\'s down," Tam said without turning',
+        "'You'll take the lantern.'",
+    ],
+)
+def test_dialogue_quoted_with_other_quote_marks_is_found(quote):
+    source = '"Fog\'s down," Tam said without turning. "You\'ll take the lantern."'
+    assert quote_found(quote, [source])
+    curly = "“Fog’s down,” Tam said without turning. “You’ll take the lantern.”"
+    assert quote_found(quote, [curly])
 
 
 def test_quote_found_is_a_whitespace_normalized_substring():

@@ -55,7 +55,7 @@ def test_calls_the_model_once_with_low_effort_and_the_extract_schema():
     assert "- the man who built the weir" in call.user
 
 
-@pytest.mark.intent("AC-story-bible-10", "ADR-020")
+@pytest.mark.intent("AC-story-bible-23", "ADR-020")
 def test_fact_with_a_quote_not_in_the_passage_is_dropped_and_counted():
     marsh = ent(
         "Oriel Marsh",
@@ -79,7 +79,7 @@ def test_fact_with_a_quote_not_in_the_passage_is_dropped_and_counted():
     assert out.dropped.unverified_quote == 1
 
 
-@pytest.mark.intent("AC-story-bible-11", "ADR-020")
+@pytest.mark.intent("AC-story-bible-23", "ADR-020")
 def test_state_facts_are_dropped_and_counted():
     wren = ent(
         "Wren Halloway",
@@ -93,7 +93,7 @@ def test_state_facts_are_dropped_and_counted():
     assert out.dropped.state == 1
 
 
-@pytest.mark.intent("AC-story-bible-9", "ADR-020")
+@pytest.mark.intent("AC-story-bible-23", "ADR-020")
 def test_entities_named_with_a_quantifier_or_number_are_dropped_and_counted():
     _, out = run(
         answer(
@@ -129,7 +129,7 @@ def test_world_entity_is_named_world():
     assert out.entities[0].name == "World" and out.entities[0].type == "world"
 
 
-@pytest.mark.intent("AC-story-bible-12")
+@pytest.mark.intent("ADR-020")
 def test_references_are_verified_and_capped_at_twenty():
     refs = [{"quote": "the way he always stood", "pronoun": "he", "entity": "Oriel Marsh"}] * 22
     refs += [{"quote": "she said nothing", "pronoun": "she", "entity": None}]

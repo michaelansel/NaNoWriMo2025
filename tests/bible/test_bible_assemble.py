@@ -75,12 +75,14 @@ def test_pin_shows_the_fact_with_its_quote_and_passage_first():
     assert pinned.quote_found
 
 
+@pytest.mark.intent("AC-story-bible-24")
 def test_pin_whose_quote_is_not_found_is_flagged_and_still_shown():
     result = bible(f'pin: Pip Halloway = Pip is twelve | "Pip was twelve" @ {HOLLIN}\n')
     pip = named(result.cast, "Pip Halloway")
     assert pip.facts[0].pinned and not pip.facts[0].quote_found
 
 
+@pytest.mark.intent("AC-story-bible-26", "AC-story-bible-27")
 def test_override_lines_that_match_nothing_are_listed():
     result = bible(
         "alias: Maud Pellow = Maud\nnot-entity: no one\n"
@@ -90,7 +92,7 @@ def test_override_lines_that_match_nothing_are_listed():
     assert [line for line, _text in result.unmatched] == [1, 2, 3, 4]
 
 
-@pytest.mark.intent("AC-story-bible-13")
+@pytest.mark.intent("ADR-020")
 def test_open_conflicts_are_listed_with_both_quotes():
     (conflict,) = bible().conflicts
     assert conflict.id == "c-pip-halloway-1" and conflict.intentional is None
@@ -98,7 +100,7 @@ def test_open_conflicts_are_listed_with_both_quotes():
     assert [f.passage for f in conflict.facts] == [HOLLIN, WIDOW]
 
 
-@pytest.mark.intent("AC-story-bible-13", "ADR-020")
+@pytest.mark.intent("AC-story-bible-25", "ADR-020")
 @pytest.mark.parametrize(
     "line",
     [
@@ -118,6 +120,7 @@ def test_intentional_conflict_moves_to_intentional_mysteries(line):
     }
 
 
+@pytest.mark.intent("AC-story-bible-26")
 def test_mystery_whose_fragment_matches_no_conflict_is_unmatched():
     result = bible("intentional-conflict: mystery = Pip Halloway | never anyone's wife\n")
     assert len(result.conflicts) == 1 and result.mysteries == ()

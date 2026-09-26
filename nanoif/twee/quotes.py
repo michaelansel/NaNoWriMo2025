@@ -9,12 +9,15 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-_QUOTE_CHARS = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"'})
+_QUOTE_CHARS = str.maketrans({'"': "'", "‘": "'", "’": "'", "“": "'", "”": "'"})
+"""Every quotation mark and apostrophe folds to ``'``: a model often quotes dialogue with
+other marks than the source uses."""
+_WRAPPING = "\"'“”‘’"
 _SPACE_RE = re.compile(r"\s+")
 
 
 def normalize_text(text: str) -> str:
-    """Normalize for quote matching: typographic quotes to plain, whitespace collapsed.
+    """Normalize for quote matching: every quote mark to ``'``, whitespace collapsed.
 
     Args:
         text: Any text.
@@ -26,7 +29,7 @@ def normalize_text(text: str) -> str:
 
 
 def clean_quote(text: str) -> str:
-    """Strip surrounding whitespace and double quotation marks a model wraps a quote in.
+    """Strip surrounding whitespace and the quotation marks a model wraps a quote in.
 
     Args:
         text: The quote as the model wrote it.
@@ -34,7 +37,7 @@ def clean_quote(text: str) -> str:
     Returns:
         The quote itself.
     """
-    return text.strip().strip('"“”').strip()
+    return text.strip().strip(_WRAPPING).strip()
 
 
 def quote_found(quote: str, texts: Iterable[str]) -> bool:

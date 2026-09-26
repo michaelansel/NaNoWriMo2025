@@ -48,7 +48,7 @@ def test_pin_fact_id_is_entity_slug_and_claim_hash():
     assert pin_fact_id("river-wardens", claim) == f"river-wardens#pin-{digest}"
 
 
-@pytest.mark.intent("AC-story-bible-9")
+@pytest.mark.intent("AC-story-bible-23")
 @pytest.mark.parametrize(
     ("name", "generic"),
     [

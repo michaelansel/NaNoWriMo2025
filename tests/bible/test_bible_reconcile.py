@@ -27,7 +27,7 @@ def verdict(slug, duplicates=(), conflicts=()):
     }
 
 
-@pytest.mark.intent("AC-story-bible-13", "ADR-020")
+@pytest.mark.intent("ADR-020")
 def test_valid_answer_is_applied_per_entity():
     answer = {
         "entities": [
