@@ -31,7 +31,7 @@ Stack-ranked priorities for the NaNoWriMo2025 project. Higher priorities get res
 **Why now:** As the story grows and branches multiply, manual continuity checking becomes impossible. Writers need confidence to experiment.
 
 **Success metrics:**
-- AI continuity checker runs on every PR automatically
+- AI continuity checker runs on every PR automatically, within the AI spend cap (see Constraints)
 - New paths validated within minutes of PR creation
 - Authors can approve/dismiss AI feedback with simple commands
 - Zero continuity errors make it to published story
@@ -104,6 +104,20 @@ Trade-off Accepted:
 - Maintain allpaths validation tracking
 - Provide clear path statistics and metrics
 - Documentation for each output format's purpose
+
+---
+
+## Constraints
+
+### AI Spend Cap: $10 per Calendar Month
+
+**Decision:** AI inference for this project costs at most $10 per calendar month (UTC), estimated at list prices. The cap resets on the 1st. Only the owner raises it, and raising it is a spend decision, not a code change.
+
+**Why:** Inference runs on the owner's shared LLM token allocation. This project must never be able to use it up.
+
+**When the cap is reached:** AI review stops, and the PR says so. It is a visible "not run", never a silent pass. Builds and structure checks spend no tokens, so they keep running.
+
+**Trade-off accepted:** The cap outranks Priority 2's "runs on every PR". Late in an expensive month, a PR may get no AI read. An honest "not run" beats an unbounded bill.
 
 ---
 
