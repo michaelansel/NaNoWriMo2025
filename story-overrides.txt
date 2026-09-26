@@ -1,0 +1,14 @@
+# Story Bible corrections. Edit this file in the GitHub web UI like any story file.
+# One line per correction: `directive: payload`. Lines starting with # are ignored.
+# A line the build cannot read shows up as a Structure-check error on the pull request.
+#
+# alias: <name> = <other name>, <other name>
+#     Treat these as one character, place or thing.   alias: Tamsin Reeve = Old Tam, Tam
+# not-entity: <phrase>
+#     This is not a character, place or thing.         not-entity: the man who built the weir
+# pin: <name> = <fact> | "<exact quote>" @ <passage>
+#     A fact the Continuity Editor must always see.
+#     pin: River Wardens = The River Wardens fly a green pennant | "the green pennant of the River Wardens" @ The crossing
+# intentional-conflict: <label> = <name> | <words from one side>
+#     A contradiction the writers mean; it is listed as a mystery, not reported as a mistake.
+#     intentional-conflict: widow's past = Widow Kestle | never anyone's wife

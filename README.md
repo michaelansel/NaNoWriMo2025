@@ -1,104 +1,64 @@
-# NaNoWriMo2025
+# NaNoWriMo interactive fiction
 
-Interactive fiction project built with [Tweego](https://www.motoslave.net/tweego/). Write your story in plain text, push to GitHub, and it automatically publishes to the web.
+A branching story written together during NaNoWriMo. Writers add Twee passages from the GitHub
+web UI; every pull request gets a playable preview, a structure check and an honest AI read of the
+new passages, and every merge publishes the story.
 
-**Play the story:** https://michaelansel.github.io/NaNoWriMo2025/play.html
+**Play the story:** https://michaelansel.github.io/NaNoWriMo2026/play.html ·
+**Everything else** (proofread copy, story map, all paths, metrics, Story Bible, passage index):
+https://michaelansel.github.io/NaNoWriMo2026/
 
-## Documentation Guide
+## Before Nov 1
 
-- **[Vision](VISION.md)** - Why this project exists and who it serves
-- **[Priorities](PRIORITIES.md)** - What matters most, dates, and the roadmap
-- **[Contributing](CONTRIBUTING.md)** - How to contribute story content
-- **[Writing Workflow](WRITING-WORKFLOW.md)** - Daily writing checklist
-- **[Development Guide](CLAUDE.md)** - For developers working on the codebase
+- [ ] `src/StoryTitle.twee`: the story's title (it also titles the landing page)
+- [ ] `src/StoryData.twee` `storyStyle`: `perspective`, `protagonist` and `tense`
+      (the Style Editor stays off, and says so, until they are set)
+- [ ] `src/Start.twee`: the opening passage, linking to the first day's passage
+- [ ] Writers added as collaborators, so their `/check-continuity` comments count
+- [ ] `/nov1-checklist` prints `READY`
 
-## Quick Start: Contributing
+## Writing
 
-### Option 1: Edit on GitHub (No Setup Required)
-
-1. Click on any `.twee` file in the [`src/`](src/) folder
-2. Click the pencil icon ✏️ to edit
-3. Write your passages using [Twee syntax](#twee-syntax-cheat-sheet)
-4. Commit to a new branch and create a pull request
-5. GitHub will automatically build and validate your changes
-6. Download the `story-preview` artifact linked from the Build comment to test
-7. Merge when ready - goes live a few minutes later
-
-### Option 2: Local Development
-
-**Install tweego:**
-```bash
-# macOS/Linux
-wget https://github.com/tmedwards/tweego/releases/download/v2.1.1/tweego-2.1.1-macos-x64.zip
-unzip tweego-2.1.1-macos-x64.zip
-chmod +x tweego && sudo mv tweego /usr/local/bin/
-
-# Windows: Download from https://github.com/tmedwards/tweego/releases
-```
-
-**Get story formats:**
-```bash
-wget https://github.com/tmedwards/tweego/releases/download/v2.1.1/tweego-2.1.1-linux-x64.zip
-unzip tweego-2.1.1-linux-x64.zip -d temp
-mv temp/storyformats .
-```
-
-**Install the tooling and build:**
-```bash
-pip install -e ".[dev]"                                       # the nanoif package, pytest, ruff
-tweego src -o dist/story-paperthin.html -f paperthin-1        # compiled story the build reads
-nanoif build all --repo .                                     # all paths, metrics, story bible, passages
-tweego src -o dist/play.html -f harlowe-3                     # playable story
-open dist/play.html                                           # view in browser
-nanoif check structure src/                                   # broken links, duplicates, orphans
-pytest                                                        # tests
-```
-
-**Submit changes:**
-```bash
-git checkout -b my-new-chapter
-# Edit files in src/
-git add src/ && git commit -m "Add chapter 2"
-git push -u origin my-new-chapter
-gh pr create
-```
-
-## Twee Syntax Cheat Sheet
+Writers never need anything installed. Read **[WRITING-WORKFLOW.md](WRITING-WORKFLOW.md)** for the
+daily routine and **[CONTRIBUTING.md](CONTRIBUTING.md)** for a first pull request. In short: add
+`src/<INITIALS>-<YYYYMMDD>.twee` whose first passage is `:: Day <N> <INITIALS>`, link to it from an
+earlier passage, open a pull request, and read the Build, Continuity and Style comments.
 
 ```twee
-:: PassageName
-Your story text here.
+:: Day 3 EV
+Wren took the long way down to the ferry.
 
-[[Link text->DestinationPassage]]
-[[DestinationPassage]]
-
-(set: $variable to "value")
-(if: $variable is "value")[Show this text]
+[[Wait for Tam->The crossing]]
+[[Go alone]]
 ```
 
-**Learn more:** [Harlowe Documentation](https://twine2.neocities.org/) • [Twee 3 Spec](https://github.com/iftechfoundation/twine-specs/blob/master/twee-3-specification.md)
+Corrections to the Story Bible (merge two names, drop a false entry, pin a fact, mark a deliberate
+mystery) go in [`story-overrides.txt`](story-overrides.txt).
 
-## Project Structure
+## What runs automatically
 
+| When | What | Where to look |
+|---|---|---|
+| Every push to a pull request | Build, preview, structure check; Continuity and Style editors on the changed passages | Comments on the pull request, and its checks |
+| A collaborator comments `/check-continuity [all] [passage=<name>]` | The editors again | The same comments, updated in place |
+| A collaborator comments `/extract-story-bible` | A dry run of what the Story Bible would learn | A Story Bible comment; nothing is saved |
+| Merge to `main` | Story Bible extraction, then the site is published | The site, a few minutes later |
+
+AI work runs on a self-hosted runner and is capped at $10 of estimated spend per month; when the
+cap is reached the comments say so and name the day it resets.
+
+## Developing the tooling
+
+See **[CLAUDE.md](CLAUDE.md)** for commands and conventions, **[ARCHITECTURE.md](ARCHITECTURE.md)**
+for how it fits together, and `features/` for what each part must do.
+
+```bash
+pip install -e ".[dev]"          # the nanoif package, pytest, ruff
+pytest                           # tests
+nanoif check structure src/      # broken links, duplicates, orphans, naming
 ```
-src/
-├── StoryData.twee            # Story metadata (don't edit unless you know what you're doing)
-├── StoryTitle.twee           # Story title
-├── StoryStyles.twee          # Page styles
-├── PathIdDisplay.twee        # Shows the path id at endings
-├── Start.twee                # The first passage
-└── <INITIALS>-<YYYYMMDD>.twee  # One file per writer per day, starting with :: Day <N> <INITIALS>
-```
 
-## Outputs
-
-All output formats are available from the [landing page](https://michaelansel.github.io/NaNoWriMo2025/).
-
-- **Play the story:** [https://michaelansel.github.io/NaNoWriMo2025/play.html](https://michaelansel.github.io/NaNoWriMo2025/play.html)
-- **Browse all formats:** Proofread, metrics, story paths, story bible, and structure visualization - [view all](https://michaelansel.github.io/NaNoWriMo2025/)
-
-## Resources
-
-- [Tweego Docs](https://www.motoslave.net/tweego/docs/)
-- [Harlowe Guide](https://twine2.neocities.org/)
-- [Modern Twine Workflow](https://dev.to/lazerwalker/a-modern-developer-s-workflow-for-twine-4imp)
+Building the site locally needs [tweego 2.1.1](https://www.motoslave.net/tweego/) with its story
+formats plus Harlowe 3.3.9; `.github/actions/build-story/action.yml` shows the exact steps CI runs.
+Why the project exists and what comes first: [VISION.md](VISION.md), [PRINCIPLES.md](PRINCIPLES.md),
+[PRIORITIES.md](PRIORITIES.md).
