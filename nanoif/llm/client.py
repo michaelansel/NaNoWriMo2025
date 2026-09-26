@@ -195,7 +195,8 @@ class OpenAITransport:
             The provider's first choice with its usage.
 
         Raises:
-            LLMTransportError: Any SDK error, or a response with no choices.
+            LLMTransportError: Any SDK error, a reply that is not a chat completion, or a
+                response with no choices.
         """
         kwargs: dict[str, Any] = {
             "model": request.model,
@@ -219,6 +220,13 @@ class OpenAITransport:
             raise LLMTransportError(f"connection failed: {exc}") from exc
         except openai.OpenAIError as exc:
             raise LLMTransportError(f"SDK error: {exc}") from exc
+        if not isinstance(completion, openai.types.chat.ChatCompletion):
+            snippet = str(completion)[:300]
+            raise LLMTransportError(
+                f"provider reply is not a chat completion ({type(completion).__name__}): "
+                f"{snippet[:120]!r}",
+                body=snippet,
+            )
         if not completion.choices:
             raise LLMTransportError("provider returned no choices", body=_dump(completion))
         choice = completion.choices[0]

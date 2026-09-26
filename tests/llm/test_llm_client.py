@@ -423,6 +423,17 @@ def test_openai_transport_rejects_empty_choices():
         transport(_request())
 
 
+@pytest.mark.intent("AC-continuity-review-23")
+def test_openai_transport_rejects_a_reply_that_is_not_a_chat_completion():
+    # The gateway once answered a DeepSeek request with a body the SDK returned as a str.
+    raw = "data: " + "x" * 500
+    transport = OpenAITransport(Settings(), client=_StubSDK(raw))
+    with pytest.raises(LLMTransportError, match="not a chat completion") as info:
+        transport(_request())
+    assert info.value.status is None
+    assert info.value.body == raw[:300]
+
+
 def test_openai_transport_builds_sdk_client_from_settings():
     settings = Settings(base_url="http://gw/v1", api_key="k", timeout_s=12.0, max_retries=2)
     transport = OpenAITransport(settings)
