@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterable
 
 from nanoif.twee.links import display_text
 
@@ -11,6 +12,27 @@ HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 NON_PROSE_TAGS = frozenset({"script", "stylesheet", "footer", "header", "startup"})
 """Passages with these tags are page furniture or code, not story prose."""
+
+INFRA_PASSAGES = frozenset(
+    {"StoryData", "StoryTitle", "StoryStyles", "PathIdDisplay", "PathIdLookup"}
+)
+"""Passages that describe or decorate the story rather than tell it."""
+
+
+def is_infra(name: str, tags: Iterable[str] = ()) -> bool:
+    """Return whether a passage is infrastructure rather than story prose.
+
+    The editors and the Story Bible use this one definition, so they read the same
+    passages.
+
+    Args:
+        name: Passage name.
+        tags: Its tags.
+
+    Returns:
+        True for the known infrastructure passages and any passage with a code or page tag.
+    """
+    return name in INFRA_PASSAGES or not NON_PROSE_TAGS.isdisjoint(tags)
 
 
 def prose_text(text: str) -> str:

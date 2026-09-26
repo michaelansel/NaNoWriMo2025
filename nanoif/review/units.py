@@ -22,7 +22,7 @@ from __future__ import annotations
 import json
 import os
 from collections import deque
-from collections.abc import Collection, Iterable, Mapping, Sequence
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -35,7 +35,7 @@ from nanoif.twee.files import PassageLocation, find_twee_files, passage_location
 from nanoif.twee.links import display_text
 from nanoif.twee.parse import StoryGraph
 from nanoif.twee.passages import content_hash
-from nanoif.twee.prose import NON_PROSE_TAGS
+from nanoif.twee.prose import NON_PROSE_TAGS, is_infra
 
 UNIT_BUDGET_ENV = "NANOIF_REVIEW_UNIT_BUDGET"
 DEFAULT_UNIT_BUDGET = 20_000
@@ -44,9 +44,6 @@ TRUNCATE_KEEP = 12
 ROUTE_ENUMERATION_LIMIT = 2_000
 """Routes to P enumerated before the greedy cover gives up looking for more."""
 
-INFRA_PASSAGES = frozenset(
-    {"StoryData", "StoryTitle", "StoryStyles", "PathIdDisplay", "PathIdLookup"}
-)
 INFRA_TAGS = NON_PROSE_TAGS
 STORY_STYLE_KEYS = ("perspective", "tense", "protagonist")
 
@@ -233,19 +230,6 @@ class ReviewStory:
             :func:`nanoif.twee.passages.content_hash` of its text.
         """
         return content_hash(self.content[name])
-
-
-def is_infra(name: str, tags: Iterable[str] = ()) -> bool:
-    """Return whether a passage is infrastructure rather than story prose.
-
-    Args:
-        name: Passage name.
-        tags: Its tags.
-
-    Returns:
-        True for the known infrastructure passages and any passage with a code or page tag.
-    """
-    return name in INFRA_PASSAGES or not INFRA_TAGS.isdisjoint(tags)
 
 
 def load_story(paths: ProjectPaths) -> ReviewStory:
