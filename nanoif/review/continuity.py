@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from nanoif.llm.client import Completer
+from nanoif.llm.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.findings import (
     Finding,
     Quote,
@@ -29,7 +30,6 @@ from nanoif.review.findings import (
     passage_texts,
     quote_found,
 )
-from nanoif.review.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.units import ReviewStory, ReviewUnit
 
 EDITOR = "continuity"
@@ -73,7 +73,7 @@ def build_prompt(
         canon: Canon facts to offer; nothing is rendered when empty.
 
     Returns:
-        The rendered :class:`~nanoif.review.prompts.Prompt`.
+        The rendered :class:`~nanoif.llm.prompts.Prompt`.
     """
     return render_prompt(
         PROMPT,

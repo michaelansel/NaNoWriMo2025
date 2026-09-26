@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bible_extract",
+  "description": "Story Bible extraction for one passage (ADR-020). Every fact quotes the passage verbatim; code drops facts whose quote is not in the passage, facts of kind state, and entities named with a quantifier or number.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "entities", "references"],
+  "properties": {
+    "summary": { "type": "string" },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type", "aliases", "role", "facts"],
+        "properties": {
+          "name": { "type": "string" },
+          "type": { "enum": ["character", "location", "item", "group", "world"] },
+          "aliases": { "type": "array", "items": { "type": "string" } },
+          "role": { "type": ["string", "null"] },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["claim", "quote", "kind"],
+              "properties": {
+                "claim": { "type": "string" },
+                "quote": { "type": "string" },
+                "kind": {
+                  "enum": ["trait", "relationship", "location", "possession", "event", "rule", "state"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["quote", "pronoun", "entity"],
+        "properties": {
+          "quote": { "type": "string" },
+          "pronoun": { "type": "string" },
+          "entity": { "type": ["string", "null"] }
+        }
+      }
+    }
+  }
+}

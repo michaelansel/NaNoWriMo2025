@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "bible_reconcile",
+  "description": "Story Bible reconciliation of the facts of a batch of entities (ADR-020), by fact id only: groups of facts that say the same thing, and pairs that cannot both be true. Code checks every id before applying anything.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entities"],
+  "properties": {
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["slug", "duplicates", "conflicts"],
+        "properties": {
+          "slug": { "type": "string" },
+          "duplicates": {
+            "type": "array",
+            "items": { "type": "array", "items": { "type": "string" } }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["a", "b", "note"],
+              "properties": {
+                "a": { "type": "string" },
+                "b": { "type": "string" },
+                "note": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

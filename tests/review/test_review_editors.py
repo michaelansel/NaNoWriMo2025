@@ -10,6 +10,7 @@ import pytest
 from review_helpers import REGRESSIONS, answer, load_review_story, path_finding
 
 from nanoif.llm.fake import FakeLLM
+from nanoif.llm.prompts import PROMPTS_DIR, prompt_schema, render_prompt
 from nanoif.llm.schema import validate
 from nanoif.review import continuity, style
 from nanoif.review.findings import (
@@ -21,7 +22,6 @@ from nanoif.review.findings import (
     merge_findings,
     quote_found,
 )
-from nanoif.review.prompts import PROMPTS_DIR, prompt_schema, render_prompt
 from nanoif.review.units import StoryStyleConfig, continuity_units, style_unit
 
 P = "Back at the ferry"

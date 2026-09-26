@@ -1,0 +1,156 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/story_bible_cache.schema.json",
+  "title": "Story Bible Cache",
+  "description": "ai/story-bible-cache.json, version 2 (ADR-020). Written only by `nanoif bible extract` in the bible-extract job on main; validated when written and when read. Dangling references are checked in code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "extraction", "passages", "entities", "resolution", "conflicts"],
+  "definitions": {
+    "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "fact_id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*#[1-9][0-9]*$" },
+    "kind": { "enum": ["trait", "relationship", "location", "possession", "event", "rule"] },
+    "fact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "claim", "quote", "passage", "kind", "duplicate_of"],
+      "properties": {
+        "id": { "$ref": "#/definitions/fact_id" },
+        "claim": { "type": "string", "minLength": 1 },
+        "quote": { "type": "string", "minLength": 1 },
+        "passage": { "type": "string", "minLength": 1 },
+        "kind": { "$ref": "#/definitions/kind" },
+        "duplicate_of": { "anyOf": [{ "$ref": "#/definitions/fact_id" }, { "type": "null" }] }
+      }
+    },
+    "retired": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "claim", "passage", "retired_commit", "reason"],
+      "properties": {
+        "id": { "$ref": "#/definitions/fact_id" },
+        "claim": { "type": "string" },
+        "passage": { "type": "string" },
+        "retired_commit": { "type": "string" },
+        "reason": { "enum": ["passage_changed", "passage_deleted", "not_entity", "merged"] }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "slug", "name", "type", "aliases", "role", "passages", "next_n", "reconcile",
+        "merged_into", "facts", "retired"
+      ],
+      "properties": {
+        "slug": { "$ref": "#/definitions/slug" },
+        "name": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["character", "location", "item", "group", "world"] },
+        "aliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "role": { "type": ["string", "null"] },
+        "passages": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "next_n": { "type": "integer", "minimum": 1 },
+        "reconcile": { "enum": ["done", "pending"] },
+        "merged_into": { "anyOf": [{ "$ref": "#/definitions/slug" }, { "type": "null" }] },
+        "facts": { "type": "array", "items": { "$ref": "#/definitions/fact" } },
+        "retired": { "type": "array", "items": { "$ref": "#/definitions/retired" } }
+      }
+    },
+    "passage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["content_hash", "file", "summary", "mentions", "references", "fact_ids", "dropped"],
+      "properties": {
+        "content_hash": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+        "file": { "type": "string" },
+        "summary": { "type": "string" },
+        "mentions": { "type": "array", "items": { "$ref": "#/definitions/slug" }, "uniqueItems": true },
+        "references": {
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["quote", "pronoun", "entity"],
+            "properties": {
+              "quote": { "type": "string", "minLength": 1 },
+              "pronoun": { "type": "string", "minLength": 1 },
+              "entity": { "anyOf": [{ "$ref": "#/definitions/slug" }, { "type": "null" }] }
+            }
+          }
+        },
+        "fact_ids": { "type": "array", "items": { "$ref": "#/definitions/fact_id" }, "uniqueItems": true },
+        "dropped": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["unverified_quote", "state", "generic_entity"],
+          "properties": {
+            "unverified_quote": { "type": "integer", "minimum": 0 },
+            "state": { "type": "integer", "minimum": 0 },
+            "generic_entity": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    }
+  },
+  "properties": {
+    "version": { "const": 2 },
+    "extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit", "extracted_at", "mode", "profile", "model", "prompt_hashes", "usd", "usd_known"],
+      "properties": {
+        "commit": { "type": "string", "minLength": 1 },
+        "extracted_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$" },
+        "mode": { "enum": ["incremental", "full"] },
+        "profile": { "type": "string" },
+        "model": { "type": "string" },
+        "prompt_hashes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["bible_extract", "bible_resolve", "bible_reconcile"],
+          "properties": {
+            "bible_extract": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+            "bible_resolve": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+            "bible_reconcile": { "type": "string", "pattern": "^[0-9a-f]{12}$" }
+          }
+        },
+        "usd": { "type": ["number", "null"], "minimum": 0 },
+        "usd_known": { "type": "boolean" }
+      }
+    },
+    "passages": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/passage" }
+    },
+    "entities": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/entity" }
+    },
+    "resolution": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/slug" }
+    },
+    "conflicts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "entity", "fact_ids", "note", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^c-[a-z0-9]+(-[a-z0-9]+)*-[1-9][0-9]*$" },
+          "entity": { "$ref": "#/definitions/slug" },
+          "fact_ids": {
+            "type": "array",
+            "items": { "$ref": "#/definitions/fact_id" },
+            "minItems": 2,
+            "maxItems": 2,
+            "uniqueItems": true
+          },
+          "note": { "type": "string" },
+          "status": { "enum": ["open", "retired"] }
+        }
+      }
+    }
+  }
+}
