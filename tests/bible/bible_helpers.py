@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import copy
+import json
+from pathlib import Path
 from typing import Any
 
+from nanoif.llm.errors import LLMSpendCapReached
+from nanoif.llm.fake import FakeLLM
 from nanoif.twee.passages import content_hash
+from tests.conftest import git
 
 DAY1 = "Day 1 EV"
 CROSSING = "The crossing"
@@ -166,3 +171,137 @@ def small_cache() -> dict[str, Any]:
 
 def clone(data: dict[str, Any]) -> dict[str, Any]:
     return copy.deepcopy(data)
+
+
+# -- scripted extraction runs ----------------------------------------------------------
+
+EMPTY = {"summary": "Nothing named.", "entities": [], "references": []}
+CAP = LLMSpendCapReached(
+    "cap",
+    reason="monthly AI spend cap reached: $10.00 of $10.00 in 2026-11 (resets 2026-12-01 UTC)",
+    month_usd=10.0,
+    cap_usd=10.0,
+)
+
+
+def ent(name, facts=(), aliases=(), etype="character", role=None):
+    return {
+        "name": name,
+        "type": etype,
+        "aliases": list(aliases),
+        "role": role,
+        "facts": [{"claim": c, "quote": q, "kind": k} for c, q, k in facts],
+    }
+
+
+ANSWERS = {
+    DAY1: {
+        "summary": "Tam is up before Wren.",
+        "entities": [
+            ent(
+                "Tamsin Reeve",
+                [
+                    ("Tam has a grey braid", "her grey braid", "trait"),
+                    ("Tam carried the lantern for forty years", "every working day of those forty years", "event"),
+                    ("Tam coaxes the stove", "coaxing the stove", "state"),
+                    ("Tam is kind", "Tam was kind to everyone", "trait"),
+                ],
+                aliases=["Old Tam"],
+                role="ferry keeper",
+            ),
+            ent("no one"),
+        ],
+        "references": [{"quote": "her grey braid", "pronoun": "her", "entity": "Tamsin Reeve"}],
+    },
+    CROSSING: {
+        "summary": "Marsh stops the ferry.",
+        "entities": [
+            ent("Oriel Marsh", [("Oriel Marsh is a captain", "Captain Oriel Marsh stood in the stern", "relationship")],
+                aliases=["Captain Marsh"]),
+            ent("River Wardens", etype="group"),
+            ent("Old Tam"),
+        ],
+        "references": [],
+    },
+    HOLLIN: {
+        "summary": "Pip is twelve.",
+        "entities": [ent("Pip Halloway", [("Pip is twelve", "Wren's brother was twelve", "trait")], aliases=["Pip"])],
+        "references": [],
+    },
+    WIDOW: {
+        "summary": "Pip is eleven.",
+        "entities": [ent("Pip", [("Pip is eleven", "Eleven years old", "trait")])],
+        "references": [],
+    },
+}
+
+
+def verdicts(user, special):
+    slugs = [line.split()[1].rstrip(":") for line in user.splitlines() if line.startswith("ENTITY ")]
+    return {"entities": [special.get(s, {"slug": s, "duplicates": [], "conflicts": []}) for s in slugs]}
+
+
+def scripted(answers=ANSWERS, fail=(), reconcile=None, resolve=None, halt_on=None):
+    reconcile = reconcile or {}
+
+    def respond(call):
+        if call.tag.startswith("bible-extract:"):
+            name = call.tag.split(":", 1)[1]
+            if name == halt_on:
+                return CAP
+            if name in fail:
+                return FakeLLM.transport_error()
+            return answers.get(name, EMPTY)
+        if call.tag == "bible-resolve":
+            return resolve or {"merges": [], "drop": []}
+        if isinstance(reconcile, Exception):
+            return reconcile
+        return verdicts(call.user, reconcile)
+
+    return FakeLLM(respond)
+
+
+PIP_CONFLICT = {
+    "pip-halloway": {
+        "slug": "pip-halloway",
+        "duplicates": [],
+        "conflicts": [{"a": "pip-halloway#1", "b": "pip-halloway#2", "note": "twelve or eleven"}],
+    }
+}
+
+
+class CappedLLM(FakeLLM):
+    """A fake whose spend check always refuses, recording the estimate it was given."""
+
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        self.estimates = [*getattr(self, "estimates", []), estimate_usd]
+        raise CAP
+
+
+# -- story repositories -----------------------------------------------------------------
+
+STORY_DATA = ':: StoryData\n{"ifid": "7C1E4B2A-9D3F-4A6B-8E5C-2F7A9B1D3C4E", "start": "Day 1 EV"}\n'
+
+
+def write_story(repo: Path, texts=TEXTS) -> None:
+    """Write the passages as one prose file plus StoryData and StoryTitle."""
+    src = repo / "src"
+    src.mkdir(parents=True, exist_ok=True)
+    body = "\n\n".join(f":: {name}\n\n{text}" for name, text in texts.items())
+    (src / "EV-20261101.twee").write_text(body + "\n", encoding="utf-8")
+    (src / "StoryData.twee").write_text(STORY_DATA, encoding="utf-8")
+    (src / "StoryTitle.twee").write_text(":: StoryTitle\nThe Lantern Crossing\n", encoding="utf-8")
+
+
+def write_cache(repo: Path, data=None) -> Path:
+    path = repo / "ai" / "story-bible-cache.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(small_cache() if data is None else data), encoding="utf-8")
+    return path
+
+
+def commit(root: Path) -> str:
+    """Commit everything and return the new HEAD."""
+    git(root, "add", "-A")
+    git(root, "commit", "-q", "-m", "story")
+    return git(root, "rev-parse", "HEAD").strip()

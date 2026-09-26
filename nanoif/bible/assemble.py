@@ -17,17 +17,21 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
+from pathlib import Path
 from typing import Any
 
-from nanoif.bible.cache import BibleCache, Entity, Fact
+from nanoif.bible.cache import BibleCache, Entity, Fact, load_cache
 from nanoif.bible.ids import fact_number, normalize_name, pin_fact_id
+from nanoif.bible.source import bible_passages, current_hashes
 from nanoif.check.overrides import (
     AliasOverride,
     NotEntityOverride,
     Overrides,
     Payload,
     PinOverride,
+    read_overrides,
 )
+from nanoif.errors import BibleError
 from nanoif.twee.links import display_text
 from nanoif.twee.quotes import normalize_text, quote_found
 
@@ -472,4 +476,44 @@ def _finish(work: _Working) -> BibleEntity:
         facts=tuple(work.pins) + tuple(f for f in shown if f.kind != "rule"),
         rules=tuple(f for f in shown if f.kind == "rule"),
         pending=entity.reconcile == "pending",
+    )
+
+
+def load_bible(
+    repo: Path,
+    cache_path: Path,
+    *,
+    overrides_path: Path | None = None,
+    src: Path | None = None,
+    extraction_result: str = "success",
+) -> Bible:
+    """Read ``src/``, the cache and the overrides, and assemble the Bible.
+
+    Args:
+        repo: Repository root.
+        cache_path: ``ai/story-bible-cache.json``; a missing file means the placeholder.
+        overrides_path: Defaults to ``<repo>/story-overrides.txt``.
+        src: Defaults to ``<repo>/src``.
+        extraction_result: How the latest extraction job ended.
+
+    Returns:
+        The Bible.
+
+    Raises:
+        BibleError: An unknown extraction result, or no ``src/``.
+        BibleCacheError: The cache exists but is invalid.
+        BuildError: The overrides file cannot be read.
+    """
+    if extraction_result not in EXTRACTION_RESULTS:
+        raise BibleError(
+            f"unknown extraction result {extraction_result!r}; expected one of "
+            f"{', '.join(EXTRACTION_RESULTS)}"
+        )
+    sources = bible_passages(repo, src)
+    return assemble(
+        load_cache(cache_path),
+        read_overrides(overrides_path or repo / "story-overrides.txt"),
+        current_hashes(sources),
+        texts={passage.name: passage.text for passage in sources},
+        extraction_result=extraction_result,
     )

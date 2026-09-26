@@ -39,6 +39,7 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
         "Paths: 2 (new 0, modified 0, unchanged 2)",
         "Metrics:",
         "rendered the placeholder page",
+        "Canon pack with no saved extraction",
         "Passage index: 5 passages",
     ]
     positions = [out.index(marker) for marker in order]
@@ -51,6 +52,7 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
         "metrics.html",
         "story-bible.html",
         "story-bible.json",
+        "canon-pack.json",
         "passages.html",
     ):
         assert (dist / name).is_file(), name

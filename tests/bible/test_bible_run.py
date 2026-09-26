@@ -4,10 +4,22 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime
-from pathlib import Path
 
 import pytest
-from bible_helpers import CROSSING, DAY1, HOLLIN, TEXTS, WIDOW
+from bible_helpers import (
+    ANSWERS,
+    CROSSING,
+    DAY1,
+    HOLLIN,
+    PIP_CONFLICT,
+    TEXTS,
+    WIDOW,
+    CappedLLM,
+    commit,
+    ent,
+    scripted,
+    write_story,
+)
 
 from nanoif.bible.cache import load_cache
 from nanoif.bible.run import extract_bible
@@ -18,125 +30,11 @@ from nanoif.schemas.artifacts import validate_artifact
 from tests.conftest import git
 
 NOW = datetime(2026, 11, 3, 7, 30, tzinfo=UTC)
-EMPTY = {"summary": "Nothing named.", "entities": [], "references": []}
-CAP = LLMSpendCapReached(
-    "cap",
-    reason="monthly AI spend cap reached: $10.00 of $10.00 in 2026-11 (resets 2026-12-01 UTC)",
-    month_usd=10.0,
-    cap_usd=10.0,
-)
-
-
-def ent(name, facts=(), aliases=(), etype="character", role=None):
-    return {
-        "name": name,
-        "type": etype,
-        "aliases": list(aliases),
-        "role": role,
-        "facts": [{"claim": c, "quote": q, "kind": k} for c, q, k in facts],
-    }
-
-
-ANSWERS = {
-    DAY1: {
-        "summary": "Tam is up before Wren.",
-        "entities": [
-            ent(
-                "Tamsin Reeve",
-                [
-                    ("Tam has a grey braid", "her grey braid", "trait"),
-                    ("Tam carried the lantern for forty years", "every working day of those forty years", "event"),
-                    ("Tam coaxes the stove", "coaxing the stove", "state"),
-                    ("Tam is kind", "Tam was kind to everyone", "trait"),
-                ],
-                aliases=["Old Tam"],
-                role="ferry keeper",
-            ),
-            ent("no one"),
-        ],
-        "references": [{"quote": "her grey braid", "pronoun": "her", "entity": "Tamsin Reeve"}],
-    },
-    CROSSING: {
-        "summary": "Marsh stops the ferry.",
-        "entities": [
-            ent("Oriel Marsh", [("Oriel Marsh is a captain", "Captain Oriel Marsh stood in the stern", "relationship")],
-                aliases=["Captain Marsh"]),
-            ent("River Wardens", etype="group"),
-            ent("Old Tam"),
-        ],
-        "references": [],
-    },
-    HOLLIN: {
-        "summary": "Pip is twelve.",
-        "entities": [ent("Pip Halloway", [("Pip is twelve", "Wren's brother was twelve", "trait")], aliases=["Pip"])],
-        "references": [],
-    },
-    WIDOW: {
-        "summary": "Pip is eleven.",
-        "entities": [ent("Pip", [("Pip is eleven", "Eleven years old", "trait")])],
-        "references": [],
-    },
-}
-
-
-def verdicts(user, special):
-    slugs = [line.split()[1].rstrip(":") for line in user.splitlines() if line.startswith("ENTITY ")]
-    return {"entities": [special.get(s, {"slug": s, "duplicates": [], "conflicts": []}) for s in slugs]}
-
-
-def scripted(answers=ANSWERS, fail=(), reconcile=None, resolve=None, halt_on=None):
-    reconcile = reconcile or {}
-
-    def respond(call):
-        if call.tag.startswith("bible-extract:"):
-            name = call.tag.split(":", 1)[1]
-            if name == halt_on:
-                return CAP
-            if name in fail:
-                return FakeLLM.transport_error()
-            return answers.get(name, EMPTY)
-        if call.tag == "bible-resolve":
-            return resolve or {"merges": [], "drop": []}
-        if isinstance(reconcile, Exception):
-            return reconcile
-        return verdicts(call.user, reconcile)
-
-    return FakeLLM(respond)
-
-
-PIP_CONFLICT = {
-    "pip-halloway": {
-        "slug": "pip-halloway",
-        "duplicates": [],
-        "conflicts": [{"a": "pip-halloway#1", "b": "pip-halloway#2", "note": "twelve or eleven"}],
-    }
-}
-
-
-def write_story(repo: Path, texts=TEXTS) -> None:
-    src = repo / "src"
-    src.mkdir(parents=True, exist_ok=True)
-    body = "\n\n".join(f":: {name}\n\n{text}" for name, text in texts.items())
-    (src / "EV-20261101.twee").write_text(body + "\n", encoding="utf-8")
-    (src / "StoryData.twee").write_text(':: StoryData\n{"start": "Day 1 EV"}\n', encoding="utf-8")
 
 
 @pytest.fixture
-def repo(tmp_path):
-    root = tmp_path / "story"
-    root.mkdir()
-    git(root, "init", "-q", "-b", "main")
-    git(root, "config", "user.email", "t@example.invalid")
-    git(root, "config", "user.name", "Test")
-    write_story(root)
-    commit(root)
-    return root
-
-
-def commit(root):
-    git(root, "add", "-A")
-    git(root, "commit", "-q", "-m", "story")
-    return git(root, "rev-parse", "HEAD").strip()
+def repo(run_repo):
+    return run_repo
 
 
 def run(repo, client, mode="incremental", dry_run=False):
@@ -259,12 +157,6 @@ def test_failed_reconcile_leaves_entities_pending_and_the_run_partial(repo):
     assert cache.entities["pip-halloway"].reconcile == "pending"
     assert cache.entities["river-wardens"].reconcile == "done"
     assert [p["entity"] for p in diff_file(repo)["pending"]] == ["Pip Halloway", "Tamsin Reeve"]
-
-
-class CappedLLM(FakeLLM):
-    def check_spend(self, estimate_usd: float = 0.0) -> None:
-        self.estimates = [*getattr(self, "estimates", []), estimate_usd]
-        raise CAP
 
 
 @pytest.mark.intent("AC-story-bible-32", "ADR-020")

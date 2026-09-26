@@ -22,7 +22,7 @@ from typing import Any
 
 from nanoif.bible.assemble import Bible, BibleFact
 from nanoif.bible.ids import WORLD_SLUG, fact_number
-from nanoif.schemas.artifacts import load_artifact
+from nanoif.schemas.artifacts import load_artifact, write_artifact
 
 PACK_VERSION = 1
 MAX_FACTS_PER_ENTITY = 6
@@ -155,6 +155,24 @@ def build_canon_pack(bible: Bible) -> dict[str, Any]:
             form: next(iter(slugs)) for form, slugs in sorted(forms.items()) if len(slugs) == 1
         },
     }
+
+
+def write_canon_pack(bible: Bible, path: Path) -> dict[str, Any]:
+    """Build the pack and write it, validated.
+
+    Args:
+        bible: The assembled Bible.
+        path: ``dist/canon-pack.json``.
+
+    Returns:
+        The pack.
+
+    Raises:
+        ArtifactValidationError: The pack does not match its schema; nothing is written.
+    """
+    pack = build_canon_pack(bible)
+    write_artifact(path, pack, "canon_pack")
+    return pack
 
 
 def load_canon_pack(path: Path) -> dict[str, Any]:

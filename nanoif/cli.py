@@ -1,7 +1,7 @@
 """Command-line entry point for ``nanoif``.
 
 Build commands take ``--repo`` and derive every other path from it
-(``src/``, ``lib/artifacts/``, ``dist/``, ``story-bible-cache.json``); each
+(``src/``, ``lib/artifacts/``, ``dist/``, ``ai/story-bible-cache.json``); each
 can be overridden. Nothing is resolved against the current directory.
 """
 
@@ -122,20 +122,46 @@ def _build_story_bible(args: argparse.Namespace) -> int:
         StoryBibleConfig(
             repo_root=paths.repo,
             cache_path=paths.cache,
+            src_dir=paths.src,
+            overrides_path=paths.overrides,
             story_graph_path=paths.story_graph,
-            passages_path=paths.passages,
             output_dir=paths.dist,
+            extraction_result=getattr(args, "extraction_result", None) or "success",
         )
     )
+    bible = result.bible
+    fresh = bible.freshness
     if result.placeholder:
         print(f"Story Bible cache not found at {paths.cache}; rendered the placeholder page")
     else:
-        stats = result.statistics
         print(
-            f"Story Bible ({result.view_type}): {stats['total_constants']} constants, "
-            f"{stats['total_variables']} variables, {stats['total_characters']} characters"
+            f"Story Bible: {len(bible.cast)} characters, {len(bible.places)} places, "
+            f"{len(bible.items)} items, {len(bible.groups)} groups, "
+            f"{len(bible.world_rules)} world rules, {len(bible.conflicts)} conflicts, "
+            f"{len(bible.mysteries)} intentional mysteries"
         )
+    print(
+        f"Story Bible freshness: {len(fresh.unread)} passage(s) not yet read in their current "
+        f"text, {len(fresh.deleted)} no longer in the story; latest extraction: "
+        f"{fresh.extraction_result}"
+    )
+    for line, text in bible.unmatched:
+        print(f"story-overrides.txt:{line}: unmatched: {text}")
     print(f"Wrote {result.html_path} and {result.json_path}")
+    return 0
+
+
+def _build_canon_pack(args: argparse.Namespace) -> int:
+    from nanoif.bible.assemble import load_bible
+    from nanoif.bible.canon import write_canon_pack
+
+    paths = _paths(args)
+    bible = load_bible(paths.repo, paths.cache, overrides_path=paths.overrides, src=paths.src)
+    pack = write_canon_pack(bible, paths.canon_pack)
+    facts = sum(len(entity["facts"]) for entity in pack["entities"])
+    source = "from the saved extraction" if bible.cache_present else "with no saved extraction"
+    print(f"Canon pack {source}: {len(pack['entities'])} entities, {facts} facts")
+    print(f"Wrote {paths.canon_pack}")
     return 0
 
 
@@ -150,7 +176,15 @@ def _build_passages(args: argparse.Namespace) -> int:
 
 
 def _build_all(args: argparse.Namespace) -> int:
-    for step in (_build_core, _build_allpaths, _build_metrics, _build_story_bible, _build_passages):
+    steps = (
+        _build_core,
+        _build_allpaths,
+        _build_metrics,
+        _build_story_bible,
+        _build_canon_pack,
+        _build_passages,
+    )
+    for step in steps:
         status = step(args)
         if status != 0:
             return status
@@ -253,6 +287,37 @@ def _ai_eval(args: argparse.Namespace) -> int:
     return 0 if outcome.ok else 1
 
 
+def _bible_extract(args: argparse.Namespace) -> int:
+    from nanoif.bible.run import extract_bible
+    from nanoif.llm.client import LLMClient
+    from nanoif.llm.errors import LLMRunHalted
+    from nanoif.llm.profiles import Settings
+
+    paths = ProjectPaths.from_repo(args.repo, cache=args.cache)
+    mode = "full" if args.full else "incremental"
+    diff_out = args.diff_out or paths.bible_diff
+    try:
+        client = args.llm_client or LLMClient(Settings.from_env())
+        outcome = extract_bible(
+            paths.repo, mode, client, paths.cache, args.dry_run, diff_out=diff_out
+        )
+    except LLMRunHalted as exc:
+        print(f"bible extract did not run: {exc.reason}; nothing was written", file=sys.stderr)
+        return 1
+    except NanoifError as exc:
+        print(f"bible extract failed: {exc}; nothing was written", file=sys.stderr)
+        return 1
+    print(outcome.summary)
+    for failure in outcome.diff["passages_failed"]:
+        print(f"not read: {failure['passage']}: {failure['reason']}")
+    for pending in outcome.diff["pending"]:
+        print(f"pending: {pending['entity']}: {pending['reason']}")
+    if outcome.cache_written:
+        print(f"Wrote {paths.cache}")
+    print(f"Wrote {diff_out}")
+    return outcome.exit_code
+
+
 def _intent_check(args: argparse.Namespace) -> int:
     from nanoif.intent import check_repo
 
@@ -311,10 +376,24 @@ def build_parser() -> argparse.ArgumentParser:
     metrics.add_argument("--exclude", nargs="+", help="skip files whose names start with these")
     metrics.add_argument("--top", type=int, default=10, help="longest passages to list")
     bible = _add_build(targets, "story-bible", "render the Story Bible", _build_story_bible)
-    bible.add_argument("--cache", type=Path, default=None, help="extraction cache")
+    bible.add_argument(
+        "--cache", type=Path, default=None, help="default: <repo>/ai/story-bible-cache.json"
+    )
+    bible.add_argument(
+        "--extraction-result",
+        choices=["success", "failure", "cancelled", "skipped"],
+        default="success",
+        help="how the latest extraction job ended; the page says when it did not succeed",
+    )
+    canon = _add_build(
+        targets, "canon-pack", "the Continuity Editor's canon (no model)", _build_canon_pack
+    )
+    canon.add_argument(
+        "--cache", type=Path, default=None, help="default: <repo>/ai/story-bible-cache.json"
+    )
     _add_build(targets, "passages", "passage index page", _build_passages)
     everything = _add_build(
-        targets, "all", "core, allpaths, metrics, story-bible and passages", _build_all
+        targets, "all", "core, allpaths, metrics, story-bible, canon-pack and passages", _build_all
     )
     everything.add_argument("--html", type=Path, default=None, help=argparse.SUPPRESS)
     everything.add_argument("--lookup", type=Path, default=None, help=argparse.SUPPRESS)
@@ -387,6 +466,30 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ai_eval.set_defaults(handler=_ai_eval)
     ai.set_defaults(handler=lambda _args: (ai.print_help(), 2)[1])
+
+    bible_cmd = subparsers.add_parser("bible", help="Story Bible extraction (paid inference)")
+    bible_commands = bible_cmd.add_subparsers(dest="bible_command")
+    extract = bible_commands.add_parser(
+        "extract",
+        help="extract changed passages into ai/story-bible-cache.json; exit 3 when partial",
+    )
+    extract.add_argument("--repo", type=Path, required=True, help="repository root")
+    which = extract.add_mutually_exclusive_group()
+    which.add_argument(
+        "--incremental", action="store_true", help="only passages whose text changed (default)"
+    )
+    which.add_argument("--full", action="store_true", help="re-read every passage, keeping ids")
+    extract.add_argument(
+        "--dry-run", action="store_true", help="write only the diff, never the cache"
+    )
+    extract.add_argument(
+        "--cache", type=Path, default=None, help="default: <repo>/ai/story-bible-cache.json"
+    )
+    extract.add_argument(
+        "--diff-out", type=Path, default=None, help="default: <repo>/dist/bible-diff.json"
+    )
+    extract.set_defaults(handler=_bible_extract)
+    bible_cmd.set_defaults(handler=lambda _args: (bible_cmd.print_help(), 2)[1])
     intent = subparsers.add_parser("intent", help="traceability of intent docs, tests and commits")
     intents = intent.add_subparsers(dest="intent_command")
     icheck = intents.add_parser("check", help="criteria ids, test citations and ADR statuses")
