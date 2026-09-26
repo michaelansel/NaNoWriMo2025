@@ -22,7 +22,7 @@ Your job: find places where the PASSAGE UNDER REVIEW contradicts something the r
 ## Rules for a finding
 
 1. It involves the passage under review and exactly one other source: one earlier passage (source `path`, `other.passage_id` set, `other.fact_id` null){% if canon %} or one canon fact (source `canon`, `other.fact_id` set, `other.passage_id` null){% endif %}. Never report a contradiction between two earlier passages, and never one inside a single passage.
-2. Quotes are mandatory and verbatim. Copy the exact words from the story text, with the passage id they come from: at least one quote from the passage under review{% if canon %} and, for a `path` finding,{% else %} and{% endif %} at least one from the other passage. Keep each quote to one sentence or less. Do not paraphrase, fix spelling, join sentences, or use ellipses. A finding you cannot quote on both sides is not a finding.
+2. Quotes are mandatory and verbatim, and go in the finding's `quotes` list, not in the description. Copy the exact words from the story text, with the passage id they come from: at least one quote from the passage under review{% if canon %} and, for a `path` finding,{% else %} and{% endif %} at least one from the other passage. Keep each quote to one sentence or less. Do not paraphrase, fix spelling, join sentences, or use ellipses. A finding you cannot quote on both sides is not a finding.
 3. The description says in one or two plain sentences what the reader is told first and what the passage under review says instead.
 
 ## Types

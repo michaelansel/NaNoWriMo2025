@@ -365,3 +365,20 @@ def test_regression_sword_in_right_hand_vs_handle_against_left_ear_after_falling
     paraphrased = dict(expected["quotes"], **{"The fall": "the sword was now in her left hand"})
     out = _replay_2025_finding(story, unit, expected, paraphrased)
     assert out.findings == [] and len(out.unverified) == 1
+
+
+@pytest.mark.parametrize("name", ["continuity", "style"])
+def test_prompt_schemas_require_a_quote_on_every_finding(name):
+    # Weaker models put the quote in the description and leave `quotes` empty; the schema
+    # makes that a schema error the client repairs, instead of a finding lost as unverified.
+    from nanoif.llm.errors import LLMSchemaError
+
+    schema = prompt_schema(name)
+    item = schema["properties"]["findings"]["items"]
+    quotes = item["properties"]["quotes"]
+    assert quotes["minItems"] == 1
+    assert quotes["items"]["properties"]["text"]["minLength"] == 1
+    finding = {key: None for key in item["required"]}
+    finding["quotes"] = []
+    with pytest.raises(LLMSchemaError):
+        validate({"findings": [finding], "notes": ""}, schema)

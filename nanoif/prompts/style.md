@@ -29,7 +29,7 @@ Only these, and only for the settings listed above:
 - `protagonist_name`: the narration names the protagonist in a way that does not match {{ style.protagonist }} (a misspelling or a different name).
 {% endif %}
 
-Each finding is about the passage under review only. Quote the exact words from it: one sentence or less per quote, copied verbatim, no ellipses, no fixes. A finding you cannot quote is not a finding.
+Each finding is about the passage under review only. Put the exact words from it in the finding's `quotes` list, not in the description: one sentence or less per quote, copied verbatim, no ellipses, no fixes. A finding you cannot quote is not a finding.
 
 ## Not style slips
 
