@@ -51,3 +51,12 @@ def test_missing_src_is_an_error(tmp_path):
 
     with pytest.raises(BibleError, match="src"):
         bible_passages(tmp_path)
+
+
+def test_a_file_that_is_not_utf8_is_a_typed_error(tmp_path):
+    from nanoif.errors import BibleError
+
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "EV-20261101.twee").write_bytes(b":: Day 1 EV\n\n\xff\xfe\n")
+    with pytest.raises(BibleError, match="EV-20261101.twee"):
+        bible_passages(tmp_path)

@@ -48,8 +48,8 @@ def bible_passages(repo: Path, src: Path | None = None) -> list[SourcePassage]:
         Passages sorted by name.
 
     Raises:
-        BibleError: The source directory does not exist.
-        UnicodeDecodeError: A ``.twee`` file is not UTF-8 (the structure check names it).
+        BibleError: The source directory does not exist, or a ``.twee`` file cannot be
+            read as UTF-8 text (the structure check reports it too).
     """
     src = src or repo / "src"
     if not src.is_dir():
@@ -58,7 +58,11 @@ def bible_passages(repo: Path, src: Path | None = None) -> list[SourcePassage]:
     found: dict[str, SourcePassage] = {}
     for path in find_twee_files(src):
         file = path.relative_to(root).as_posix() if path.is_relative_to(root) else path.as_posix()
-        for passage in split_twee(path.read_text(encoding="utf-8")):
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            raise BibleError(f"cannot read {file} as UTF-8 text: {exc}") from exc
+        for passage in split_twee(text):
             if passage.name in found or is_infra(passage.name, passage.tags):
                 continue
             found[passage.name] = SourcePassage(
