@@ -18,6 +18,11 @@ on:
           - check-all
           - eval
           - runner-check
+      model:
+        description: Model id for check-all or eval (default vars.LLM_MODEL), e.g. fireworks/deepseek-v4-flash-0731
+        required: false
+        type: string
+        default: ""
   schedule:
     - cron: "0 14 * * *"
 
@@ -176,7 +181,7 @@ jobs:
           mode: all
           artifact-name: ai-review-all
           llm-profile: ${{ vars.LLM_PROFILE || 'exe' }}
-          llm-model: ${{ vars.LLM_MODEL }}
+          llm-model: ${{ inputs.model || vars.LLM_MODEL }}
           python-version: ${{ env.PYTHON_VERSION }}
 
   eval:
@@ -206,11 +211,20 @@ jobs:
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
       - name: Install package
         run: python -m pip install -e .
+      - name: Gateway models
+        if: ${{ (vars.LLM_PROFILE || 'exe') == 'exe' }}
+        run: |
+          # What the gateway offers right now, for choosing the next model to compare.
+          if ! curl -fsS --max-time 20 https://llm.int.exe.xyz/v1/models -o "$RUNNER_TEMP/models.json"; then
+            echo "::warning::could not list gateway models"
+          else
+            python3 -c 'import json,sys; print("\n".join(sorted(m["id"] for m in json.load(open(sys.argv[1]))["data"])))' "$RUNNER_TEMP/models.json"
+          fi
       - name: Run the eval
         id: eval
         env:
           NANOIF_LLM_PROFILE: ${{ vars.LLM_PROFILE || 'exe' }}
-          NANOIF_LLM_MODEL: ${{ vars.LLM_MODEL }}
+          NANOIF_LLM_MODEL: ${{ inputs.model || vars.LLM_MODEL }}
           NANOIF_RUNNER: exe
         run: |
           mkdir -p dist
@@ -225,6 +239,10 @@ jobs:
           else
             echo "nanoif ai eval exited $code without writing results." >> "$GITHUB_STEP_SUMMARY"
           fi
+      - name: Print the review
+        if: ${{ !cancelled() && hashFiles('dist/eval-ai-review.json') != '' }}
+        # Every finding with its quotes, readable from the job log without the artifact.
+        run: python3 -m json.tool dist/eval-ai-review.json
       - uses: actions/upload-artifact@v7
         if: ${{ !cancelled() && hashFiles('dist/eval-results.json') != '' }}
         with:
