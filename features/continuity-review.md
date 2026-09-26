@@ -23,7 +23,8 @@ contradiction ships anyway. Silence must mean "read and clean", never "could not
 ## Behavior
 **Trigger.** Every push to a pull request from a branch of this repository that adds or changes
 passages. The review runs after the build, on the exe.dev runner; if that runner is offline, it
-says so (see Edge cases).
+says so (see Edge cases). All AI work shares a monthly spend cap (see `PRIORITIES.md`,
+Constraints); once it is reached, reviews say they did not run until the 1st.
 
 **Two editors**, each reviewing every new or changed passage:
 - **Continuity Editor** reads the passage with the passages that lead to it on its routes and the
@@ -94,10 +95,20 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-28: When the review did not run for a commit, each editor's comment says it did not run for that commit, gives the reason, says nothing was checked, and shows no earlier result, and its check run on that commit is failure.
 - AC-continuity-review-29: When a push's build fails or the AI runner check fails, that push's run posts the AC-continuity-review-28 comments and check runs, and so does `/check-continuity` when its build or runner check fails. (verify: workflow)
 - AC-continuity-review-30: After `/check-continuity passage=<name>`, each editor's comment keeps every other passage's findings and could-not-review entries from the last review of the same commit; with no such review, its title says only that passage was re-checked and it says the other passages are not shown.
+- AC-continuity-review-31: When this month's estimated AI spend has reached the cap, no model call is made, and each editor's comment and check run are those of AC-continuity-review-28 with the reason `monthly AI spend cap reached: $X.XX of $C.CC in YYYY-MM (resets YYYY-MM-01 UTC)`, naming the reset date instead of suggesting a retry; the check run is failure, never success or neutral.
+- AC-continuity-review-32: A call that would take this month's estimated spend past the cap is refused before it is sent; every passage not yet reviewed is listed as could-not-review with the AC-continuity-review-31 reason, passages already reviewed keep their findings, and the check run is failure.
+- AC-continuity-review-33: An unreadable or invalid spend ledger stops AI review before any model call with a visible reason naming the ledger problem, and the comments and check runs are those of AC-continuity-review-28; it is never counted as zero spend.
+- AC-continuity-review-34: When the monthly spend cap is reached, the build, the preview and the structure check still run and report as usual. (verify: workflow)
+- AC-continuity-review-35: `/check-continuity all` whose estimated cost would take this month's spend past the cap starts no review, calls no model, and replies with the AC-continuity-review-31 reason instead of an estimate. (verify: planned)
 
 ## Edge cases
 - **Runner offline or gateway out of tokens**: "AI review unavailable" with the reason, a failed
   check run, and no findings shown as if the review happened (AC-continuity-review-9).
+- **Monthly AI spend cap reached**: both comments say the review did not run, give the spend and
+  the reset date, and both check runs fail; a review that reaches the cap part-way lists the
+  unread passages as could not check. One `/check-continuity all` (AC-continuity-review-20) may
+  use up to half the month's cap, so it is refused when less than its estimate remains
+  (AC-continuity-review-31 to AC-continuity-review-35).
 - **Passage too long for the model**: listed as "could not check (skipped): too long", check run
   failure.
 - **Build failed, or the AI runner check failed** (for example a mistyped `AI_RUNNER` setting):

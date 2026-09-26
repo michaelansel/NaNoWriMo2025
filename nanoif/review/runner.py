@@ -5,8 +5,10 @@ Honesty rules the runner enforces:
 - each unit gets one application-level re-attempt after an ``LLMError``, then status
   ``error`` with the reason;
 - a unit still over budget after truncation is ``skipped: too long (N tokens)``;
-- ``LLMBudgetExceeded`` stops further units, which become ``skipped: token budget
-  exhausted``;
+- an ``LLMRunHalted`` (per-job token budget, monthly spend cap, unreadable spend ledger)
+  stops further units, which become ``skipped`` with the halt's reason; a run whose
+  spend check fails before it starts skips every editor with that reason and calls no
+  model;
 - an editor is ``ok`` only when every unit was reviewed, ``error`` when any unit was not,
   and ``skipped`` (with a reason) when it could not start;
 - the verdict is computed from the units, never taken from the model.
@@ -29,7 +31,8 @@ from nanoif.build.paths import ProjectPaths
 from nanoif.errors import ReviewConfigError
 from nanoif.git.service import GitService
 from nanoif.llm.client import Completer, LLMClient
-from nanoif.llm.errors import LLMBudgetExceeded, LLMError
+from nanoif.llm.errors import BUDGET_EXHAUSTED_REASON, LLMError, LLMRunHalted
+from nanoif.llm.ledger import spend_line
 from nanoif.llm.profiles import DEFAULT_MAX_CONCURRENCY, Settings
 from nanoif.review import continuity, style
 from nanoif.review.findings import Finding, UnitFindings, is_dismissed, merge_findings
@@ -48,7 +51,7 @@ EDITORS: tuple[str, ...] = ("continuity", "style")
 RUNNER_ENV = "NANOIF_RUNNER"
 RUNNERS = ("exe", "hosted", "local")
 DEFAULT_RUNNER = "local"
-BUDGET_EXHAUSTED = "token budget exhausted"
+BUDGET_EXHAUSTED = BUDGET_EXHAUSTED_REASON
 ARTIFACT_VERSION = 1
 
 UnitStatus = Literal["reviewed", "error", "skipped"]
@@ -136,25 +139,38 @@ def load_dismissals(path: Path) -> dict[str, list[dict[str, str]]]:
     return dismissals
 
 
+class _Halt:
+    """The first run-halting reason seen by any unit; later units skip with it."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self.reason: str | None = None
+
+    def set(self, reason: str) -> None:
+        with self._lock:
+            if self.reason is None:
+                self.reason = reason
+
+
 def _run_unit(
     client: Completer,
     story: ReviewStory,
     editor: str,
     unit: ReviewUnit,
-    stop: threading.Event,
+    halt: _Halt,
 ) -> UnitOutcome:
     if unit.over_budget:
         return UnitOutcome("skipped", f"too long ({unit.tokens} tokens)")
     call = _EDITOR_CALLS[editor]
     last: LLMError | None = None
     for _attempt in range(2):
-        if stop.is_set():
-            return UnitOutcome("skipped", BUDGET_EXHAUSTED)
+        if halt.reason is not None:
+            return UnitOutcome("skipped", halt.reason)
         try:
             result = call(client, story, unit)
-        except LLMBudgetExceeded:
-            stop.set()
-            return UnitOutcome("skipped", BUDGET_EXHAUSTED)
+        except LLMRunHalted as exc:
+            halt.set(exc.reason)
+            return UnitOutcome("skipped", halt.reason or exc.reason)
         except LLMError as exc:
             last = exc
             continue
@@ -314,12 +330,17 @@ def review(
     dismissals = load_dismissals(dismissals_path or paths.repo / "ai" / "dismissals.jsonl")
     commit_sha = GitService(paths.repo).rev_parse("HEAD")
 
-    plans = {name: _plan(name, story, names, budget) for name in editors}
+    try:
+        client.check_spend()
+    except LLMRunHalted as exc:
+        plans = {name: (exc.reason, []) for name in editors}
+    else:
+        plans = {name: _plan(name, story, names, budget) for name in editors}
     jobs = [(name, unit) for name in editors for unit in plans[name][1]]
-    stop = threading.Event()
+    halt = _Halt()
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
         futures = [
-            pool.submit(_run_unit, client, story, name, unit, stop) for name, unit in jobs
+            pool.submit(_run_unit, client, story, name, unit, halt) for name, unit in jobs
         ]
         outcomes = [future.result() for future in futures]
 
@@ -352,7 +373,8 @@ def summary_lines(artifact: Mapping[str, Any]) -> list[str]:
         artifact: An ``ai_review`` artifact.
 
     Returns:
-        Lines such as ``continuity: ok, 13 of 13 units reviewed, 2 finding(s), ...``.
+        Lines such as ``continuity: ok, 13 of 13 units reviewed, 2 finding(s), ...``, then
+        the monthly spend line when the client keeps a spend ledger.
     """
     lines = []
     for editor in artifact["editors"]:
@@ -369,4 +391,6 @@ def summary_lines(artifact: Mapping[str, Any]) -> list[str]:
         if editor["reason"]:
             line += f" ({editor['reason']})"
         lines.append(line)
+    if spend := spend_line(artifact["llm"]):
+        lines.append(spend)
     return lines

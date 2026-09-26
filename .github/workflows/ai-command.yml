@@ -34,6 +34,9 @@ env:
   HARLOWE_URL: "https://raw.githubusercontent.com/klembot/twinejs/2.10.0/public/story-formats/harlowe-3.3.9/format.js"
   HARLOWE_SHA256: "803a0d9d4fb8c3c1c99eaf16f37db6feaad72e36fc7e5f6c5a168465419895f3"
   DOTGRAPH_VERSION: "2.2.0"
+  # Self-imposed monthly AI spend cap in USD (ADR-023). Empty means the default ($10);
+  # "0" stops all paid inference; "off" disables the cap.
+  NANOIF_LLM_MONTHLY_USD: ${{ vars.LLM_MONTHLY_USD }}
 
 jobs:
   parse:

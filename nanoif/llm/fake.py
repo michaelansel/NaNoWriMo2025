@@ -196,6 +196,9 @@ class FakeLLM:
             "budget_remaining": 0,
         }
 
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        """Never refuses: a fake spends nothing. Subclass to script a halted run."""
+
     def _next(self, call: FakeCall) -> ScriptedResponse:
         if callable(self._script):
             return self._script(call)
@@ -278,6 +281,10 @@ class RecordingLLM:
         """Return the wrapped completer's usage."""
         return self.inner.usage_summary()
 
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        """Delegate to the wrapped completer's spend check."""
+        self.inner.check_spend(estimate_usd)
+
     def _write(self, tag: str, record: dict[str, Any]) -> None:
         self.directory.mkdir(parents=True, exist_ok=True)
         path = self.directory / _fixture_name(tag, record["n"])
@@ -355,6 +362,9 @@ class ReplayLLM:
             attempts=int(response.get("attempts", 1)),
             finish_reason=response.get("finish_reason"),
         )
+
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        """Never refuses: replayed calls spend nothing."""
 
     def usage_summary(self) -> dict[str, Any]:
         """Return totals over the replayed results."""

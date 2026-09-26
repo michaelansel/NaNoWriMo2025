@@ -50,4 +50,6 @@
 </details>
 {% endif %}
 
+{% if not cap_reached %}
 <sub>Reply `{{ retry }}` to re-run on changed passages, `{{ retry }} all` for every passage, or `{{ retry }} passage=<name>` for one.</sub>
+{% endif %}

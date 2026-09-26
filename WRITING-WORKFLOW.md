@@ -106,7 +106,8 @@ An editor's check is grey when it has findings and red when it could not read so
 never blocks merging.
 
 **"AI review unavailable"** means the editors could not read your passages this time. It is not
-an all-clear. Your pull request still builds and can still be merged.
+an all-clear. Your pull request still builds and can still be merged. If the reason is the monthly
+AI spend cap, AI review comes back on the date it names; nothing you do changes that.
 
 **"Did not run"** on an editor's comment means the editors did not read this push at all, usually
 because the build failed. The old result is removed and the check is red: nothing was checked.

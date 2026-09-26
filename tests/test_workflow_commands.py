@@ -149,3 +149,12 @@ def test_workflow_call_parses(path, line, text):
 )
 def test_checker_rejects_bad_calls(text):
     assert parse_error(text) is not None
+
+
+@pytest.mark.parametrize(
+    "name", ["build-and-deploy.yml", "ai-command.yml", "ai-maintenance.yml"]
+)
+def test_ai_workflows_pass_the_monthly_cap_from_a_repository_variable(name):
+    text = (REPO / ".github" / "workflows" / name).read_text(encoding="utf-8")
+    top_env = text.split("\njobs:", 1)[0]
+    assert "NANOIF_LLM_MONTHLY_USD: ${{ vars.LLM_MONTHLY_USD }}" in top_env

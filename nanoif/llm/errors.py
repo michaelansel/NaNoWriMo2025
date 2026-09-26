@@ -49,11 +49,44 @@ class LLMSchemaError(LLMError):
         self.errors = errors or []
 
 
-class LLMBudgetExceeded(LLMError):
+BUDGET_EXHAUSTED_REASON = "token budget exhausted"
+
+
+class LLMRunHalted(LLMError):
+    """The client will make no more calls in this run; ``reason`` says why, for reports.
+
+    Attributes:
+        reason: One line a reader sees as the reason units or editors did not run.
+    """
+
+    def __init__(self, message: str, *, reason: str) -> None:
+        super().__init__(message)
+        self.reason = reason
+
+
+class LLMBudgetExceeded(LLMRunHalted):
     """The per-job token budget would be exceeded by the next call."""
 
     def __init__(self, message: str, *, spent: int, budget: int, projected: int) -> None:
-        super().__init__(message)
+        super().__init__(message, reason=BUDGET_EXHAUSTED_REASON)
         self.spent = spent
         self.budget = budget
         self.projected = projected
+
+
+class LLMSpendCapReached(LLMRunHalted):
+    """This month's estimated spend has reached, or the next call would pass, the cap.
+
+    Attributes:
+        month_usd: Estimated spend recorded this month when the call was refused.
+        cap_usd: The monthly cap.
+    """
+
+    def __init__(self, message: str, *, reason: str, month_usd: float, cap_usd: float) -> None:
+        super().__init__(message, reason=reason)
+        self.month_usd = month_usd
+        self.cap_usd = cap_usd
+
+
+class LLMLedgerError(LLMRunHalted):
+    """The spend ledger could not be read or written; no spend is ever assumed to be zero."""

@@ -27,6 +27,17 @@ if [ ! -x ./run.sh ]; then
 fi
 ./config.sh --unattended --url "https://github.com/${REPO}" --token "$TOKEN" \
   --name "nano-runner" --labels "exe" --replace
+
+echo "== spend ledger"
+# The monthly AI spend cap (ADR-023) counts spend in this directory. Naming it in the
+# runner's .env makes a lost or moved directory an error instead of a silent reset to $0.
+LEDGER_DIR="$HOME/.local/state/nanoif/spend"
+mkdir -p "$LEDGER_DIR"
+touch .env
+if ! grep -q '^NANOIF_LLM_LEDGER_DIR=' .env; then
+  echo "NANOIF_LLM_LEDGER_DIR=$LEDGER_DIR" >> .env
+fi
+
 sudo ./svc.sh install "$USER"
 sudo ./svc.sh start
 

@@ -57,3 +57,26 @@ force either value.
 - Gateway model list: from the VM, `curl -s https://llm.int.exe.xyz/v1/models | python3 -m json.tool`.
 - Optional Mac mini backhaul: join the VM to the tailnet (see the brain note
   `areas/home-tailnet.md`) and set `LLM_PROFILE=ollama` on a manual `ai-maintenance` run.
+
+## Monthly spend cap
+
+Every model call from CI runs on this VM and is recorded, at estimated list price, in
+`~/.local/state/nanoif/spend/YYYY-MM.jsonl` (one file per UTC month). When this month's
+total reaches the cap, AI review stops and the pull request says so, with the reset date.
+Design: [ADR-023](../architecture/023-monthly-spend-cap.md).
+
+- Change the cap: repository variable `LLM_MONTHLY_USD` (Settings → Secrets and variables →
+  Actions → Variables). Unset means $10; `0` stops all paid inference; `off` removes the cap.
+- This month's spend so far, on the VM:
+  `python3 -c "import json,sys; print(sum(json.loads(l)['usd'] for l in open(sys.argv[1])))" ~/.local/state/nanoif/spend/$(date -u +%Y-%m).jsonl`.
+  Every AI job's step summary also ends with `monthly AI spend: $X.XX of $C.CC in YYYY-MM`.
+- The runner's `.env` (`~/actions-runner/.env`) names the directory in
+  `NANOIF_LLM_LEDGER_DIR`, so a missing directory fails loudly. A VM set up before the cap
+  existed can add it: `mkdir -p ~/.local/state/nanoif/spend && echo
+  "NANOIF_LLM_LEDGER_DIR=$HOME/.local/state/nanoif/spend" >> ~/actions-runner/.env &&
+  sudo ~/actions-runner/svc.sh stop && sudo ~/actions-runner/svc.sh start`.
+- "spend ledger unreadable: <file>:<line>" stops all AI work until that line is fixed or
+  removed on the VM. It is never read as zero spend. Removing lines lowers the recorded
+  spend, so fix rather than delete where you can.
+- Rebuilding the VM or deleting the directory starts the month again at $0.
+

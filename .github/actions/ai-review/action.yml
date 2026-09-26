@@ -129,10 +129,13 @@ runs:
         # Capture the exit code instead of failing here: the result (or its absence) is
         # published first, and the last step fails the job on a non-zero code.
         set +e
-        nanoif ai review "${args[@]}"
+        nanoif ai review "${args[@]}" > "$RUNNER_TEMP/ai-review.txt"
         code=$?
         set -e
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+        # Per-editor lines and the monthly AI spend line (ADR-023), in the log and the summary.
+        cat "$RUNNER_TEMP/ai-review.txt"
+        cat "$RUNNER_TEMP/ai-review.txt" >> "$GITHUB_STEP_SUMMARY"
         echo "nanoif ai review --mode $MODE exited $code" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Merge the re-check into the last AI review

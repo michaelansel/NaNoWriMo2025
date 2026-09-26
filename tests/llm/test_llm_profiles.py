@@ -137,3 +137,23 @@ def test_reasoning_model_detection():
 def test_exe_default_model_is_a_gateway_id():
     # The exe.dev gateway lists models with a provider prefix, e.g. "fireworks/gpt-oss-120b".
     assert Settings.from_env({}).model == "fireworks/gpt-oss-120b"
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [(None, 10.0), ("", 10.0), ("25", 25.0), ("2.5", 2.5), ("0", 0.0), ("off", None)],
+)
+def test_monthly_cap_parses(raw, expected):
+    env = {} if raw is None else {"NANOIF_LLM_MONTHLY_USD": raw}
+    assert Settings.from_env(env).monthly_usd == expected
+
+
+@pytest.mark.parametrize("raw", ["-1", "ten", "OFF", "nan", "inf"])
+def test_monthly_cap_rejects_anything_else(raw):
+    with pytest.raises(LLMConfigError, match="NANOIF_LLM_MONTHLY_USD"):
+        Settings.from_env({"NANOIF_LLM_MONTHLY_USD": raw})
+
+
+def test_ledger_dir_is_explicit_only_when_set(tmp_path):
+    assert Settings.from_env({}).ledger_dir is None
+    assert Settings.from_env({"NANOIF_LLM_LEDGER_DIR": str(tmp_path)}).ledger_dir == tmp_path

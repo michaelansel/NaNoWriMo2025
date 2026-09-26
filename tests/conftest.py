@@ -61,3 +61,17 @@ def story_repo(tmp_path: Path) -> Path:
     (repo / "src" / "AB-20251102.twee").write_text(ENDINGS, encoding="utf-8")
     commit_all(repo, "endings", "2025-11-02T10:00:00+00:00")
     return repo
+
+
+@pytest.fixture(autouse=True)
+def isolated_spend_ledger(tmp_path_factory, monkeypatch) -> Path:
+    """Point the default spend ledger at a throwaway directory for every test.
+
+    No test may read or append to the real ``~/.local/state/nanoif/spend`` ledger, and an
+    ambient cap or run id from the environment must not change a test's outcome.
+    """
+    state = tmp_path_factory.mktemp("state")
+    monkeypatch.setenv("XDG_STATE_HOME", str(state))
+    for name in ("NANOIF_LLM_LEDGER_DIR", "NANOIF_LLM_MONTHLY_USD", "GITHUB_RUN_ID"):
+        monkeypatch.delenv(name, raising=False)
+    return state / "nanoif" / "spend"

@@ -29,6 +29,7 @@ from jinja2 import Environment, FileSystemLoader, StrictUndefined
 
 from nanoif.github.comments import MARKER_BUILD, MARKER_CONTINUITY, MARKER_STYLE
 from nanoif.github.sanitize import sanitize
+from nanoif.llm.ledger import next_month_start
 from nanoif.schemas.artifacts import load_artifact
 
 TEMPLATE_DIR = Path(__file__).resolve().parents[1] / "templates" / "github"
@@ -198,17 +199,32 @@ def _partial(units: Sequence[Mapping[str, Any]], count: int) -> tuple[str, str]:
     return f"only {', '.join(names)} {were} re-checked", lead
 
 
-def _status(editor: Mapping[str, Any], mode: str) -> tuple[str, str]:
+def _cap_reset(llm: Mapping[str, Any]) -> str | None:
+    """The reset date when the monthly spend cap stopped this run (ADR-023), else ``None``."""
+    if not llm.get("month_cap_reached") or not llm.get("month"):
+        return None
+    return next_month_start(str(llm["month"]))
+
+
+def _status(
+    editor: Mapping[str, Any], mode: str, llm: Mapping[str, Any] | None = None
+) -> tuple[str, str]:
     """Return (headline, lead paragraph) for an editor."""
     title = EDITORS[editor["name"]].title
     units = editor["units"]
     failed = [unit for unit in units if unit["status"] != "reviewed"]
     reason = _unit_reason(editor)
+    reset = _cap_reset(llm or {})
+    next_step = (
+        f"AI review resumes on {reset} UTC, or sooner if the owner raises the monthly cap."
+        if reset
+        else f"Retry with `{RETRY}`."
+    )
     if editor["status"] == "skipped":
         return (
             "unavailable",
             f"The {title} did not run: {reason}. Nothing was checked, so this is not a "
-            f"pass. Retry with `{RETRY}`.",
+            f"pass. {next_step}",
         )
     if editor["status"] == "error":
         if len(failed) < len(units):
@@ -216,12 +232,12 @@ def _status(editor: Mapping[str, Any], mode: str) -> tuple[str, str]:
                 "partially unavailable",
                 f"{len(failed)} of {_plural(len(units), 'passage')} could not be checked "
                 f"({reason}). Findings below cover only the passages that were reviewed. "
-                f"Retry with `{RETRY}`.",
+                f"{next_step}",
             )
         return (
             "unavailable",
             f"No passage could be checked: {reason}. Nothing was checked, so this is not "
-            f"a pass. Retry with `{RETRY}`.",
+            f"a pass. {next_step}",
         )
     count = len(editor["findings"])
     if mode == "passage" and units:
@@ -271,7 +287,7 @@ def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> 
     """
     editor = next(e for e in review["editors"] if e["name"] == editor_name)
     spec = EDITORS[editor_name]
-    headline, lead = _status(editor, review["mode"])
+    headline, lead = _status(editor, review["mode"], review["llm"])
     groups = []
     for severity in SEVERITIES:
         matching = [f for f in editor["findings"] if f["severity"] == severity]
@@ -305,6 +321,7 @@ def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> 
         "unverified_overflow": unverified_overflow,
         "not_checked": not_checked,
         "retry": RETRY,
+        "cap_reached": _cap_reset(review["llm"]) is not None,
     }
     body = _environment().get_template("editor.md.jinja2").render(**context)
     check = CheckPayload(

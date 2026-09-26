@@ -9,6 +9,7 @@ nothing here returns a default-shaped success.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import threading
 import time
@@ -23,11 +24,15 @@ from nanoif.llm.errors import (
     LLMBudgetExceeded,
     LLMConfigError,
     LLMError,
+    LLMLedgerError,
+    LLMRunHalted,
     LLMSchemaError,
+    LLMSpendCapReached,
     LLMTransportError,
     LLMTruncatedError,
 )
-from nanoif.llm.pricing import estimate_usd
+from nanoif.llm.ledger import LEDGER_DIR_ENV, SpendLedger, next_month_start, resolve_ledger_dir
+from nanoif.llm.pricing import cap_rate, cap_usd, estimate_usd
 from nanoif.llm.profiles import REASONING_MIN_MAX_TOKENS, Settings, is_reasoning_model
 from nanoif.llm.schema import extract_json, validate
 
@@ -159,6 +164,10 @@ class Completer(Protocol):
         """Return accumulated usage; see :meth:`LLMClient.usage_summary`."""
         ...
 
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        """Refuse up front when the run cannot start; see :meth:`LLMClient.check_spend`."""
+        ...
+
 
 class OpenAITransport:
     """Transport backed by ``openai.OpenAI().chat.completions.create``.
@@ -244,13 +253,19 @@ class _Totals:
 
 
 class LLMClient:
-    """Structured-output chat client with one repair round and a hard token budget.
+    """Structured-output chat client with one repair round, a per-job token budget and a
+    monthly spend cap (ADR-023).
 
     Args:
         settings: Effective settings, normally ``Settings.from_env()``.
         transport: Callable that performs the network call; defaults to
             :class:`OpenAITransport`. Tests pass a fake here.
         log: Sink for the per-call JSON log line; defaults to one line on stderr.
+        ledger: The spend ledger; defaults to ``settings.ledger_dir`` or the default state
+            directory. Tests pass one in a temporary directory.
+
+    Raises:
+        LLMConfigError: The configured ledger directory does not exist.
     """
 
     def __init__(
@@ -258,6 +273,7 @@ class LLMClient:
         settings: Settings,
         transport: Transport | None = None,
         log: Callable[[str], None] | None = None,
+        ledger: SpendLedger | None = None,
     ) -> None:
         self.settings = settings
         self._transport: Transport = transport or OpenAITransport(settings)
@@ -267,6 +283,17 @@ class LLMClient:
         self._totals = _Totals()
         self._json_mode = settings.json_mode
         self._logged_config = False
+        if ledger is None:
+            if settings.ledger_dir is not None:
+                ledger = SpendLedger(settings.ledger_dir, explicit=True)
+            else:
+                directory, _ = resolve_ledger_dir({**os.environ, LEDGER_DIR_ENV: ""})
+                ledger = SpendLedger(directory, explicit=False)
+        self._ledger = ledger
+        self._run_id = os.environ.get("GITHUB_RUN_ID") or None
+        self._reserved = 0.0
+        self._halted: LLMRunHalted | None = None
+        self._cap_refused = False
 
     def complete(
         self,
@@ -296,6 +323,8 @@ class LLMClient:
 
         Raises:
             LLMBudgetExceeded: The call would push the job past its token budget.
+            LLMSpendCapReached: The call could take this month's spend past the cap.
+            LLMLedgerError: The spend ledger cannot be read or an earlier append failed.
             LLMTransportError: The provider could not be reached or answered with an error.
             LLMTruncatedError: The model hit ``max_tokens``.
             LLMSchemaError: Output was not valid JSON for the schema after one repair round.
@@ -318,7 +347,9 @@ class LLMClient:
         data: Any = None
         try:
             messages = self._build_messages(system, user, schema)
-            response, messages = self._send(messages, schema, max_tokens, temperature, effort)
+            response, messages = self._send(
+                messages, schema, max_tokens, temperature, effort, tag
+            )
             attempts += 1
             spent = spent + response.usage
             text, finish_reason = response.text, response.finish_reason
@@ -333,7 +364,7 @@ class LLMClient:
                     {"role": "assistant", "content": text},
                     {"role": "user", "content": _repair_message(text, first)},
                 ]
-                response, _ = self._send(repair, schema, max_tokens, temperature, effort)
+                response, _ = self._send(repair, schema, max_tokens, temperature, effort, tag)
                 attempts += 1
                 spent = spent + response.usage
                 text, finish_reason = response.text, response.finish_reason
@@ -361,8 +392,12 @@ class LLMClient:
         Returns:
             Keys ``profile``, ``model``, ``json_mode``, ``calls``, ``prompt_tokens``,
             ``completion_tokens``, ``reasoning_tokens``, ``total_tokens``, ``usd``,
-            ``usd_known``, ``budget_tokens``, ``budget_remaining``.
+            ``usd_known``, ``budget_tokens``, ``budget_remaining``, and the monthly cap's
+            ``month``, ``month_usd``, ``month_usd_known``, ``month_cap_usd`` (``None`` when
+            off) and ``month_cap_reached``. ``month_usd`` is ``None`` when the ledger
+            cannot be read.
         """
+        month = self._month_summary()
         with self._lock:
             totals = self._totals
             usage = totals.usage
@@ -379,7 +414,23 @@ class LLMClient:
                 "usd_known": totals.usd_known,
                 "budget_tokens": self.settings.max_tokens_per_job,
                 "budget_remaining": max(self.settings.max_tokens_per_job - usage.total_tokens, 0),
+                **month,
             }
+
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        """Refuse before any work when this month's cap leaves no room for ``estimate_usd``.
+
+        Args:
+            estimate_usd: Estimated cost of the work about to start; ``0`` asks only
+                whether the cap is already reached.
+
+        Raises:
+            LLMSpendCapReached: Month-to-date spend is at the cap, or plus the estimate
+                would pass it.
+            LLMLedgerError: The ledger cannot be read, or an earlier append failed.
+        """
+        with self._lock:
+            self._check_spend_locked(estimate_usd)
 
     # -- internals -----------------------------------------------------------------
 
@@ -407,13 +458,13 @@ class LLMClient:
         max_tokens: int,
         temperature: float,
         effort: str | None,
+        tag: str = "",
     ) -> tuple[TransportResponse, list[dict[str, str]]]:
         """Send once, falling back from ``json_schema`` to ``json_object`` on a 400.
 
         Returns:
             The response and the messages actually sent (they change on fallback).
         """
-        self._check_budget(messages, max_tokens)
         request = TransportRequest(
             model=self.settings.model,
             messages=messages,
@@ -423,8 +474,7 @@ class LLMClient:
             reasoning_effort=effort,
         )
         try:
-            with self._slots:
-                return self._transport(request), messages
+            return self._charged_call(request, tag), messages
         except LLMTransportError as exc:
             if not (schema is not None and self._json_mode == "schema" and _rejects_format(exc)):
                 raise
@@ -444,7 +494,6 @@ class LLMClient:
             {"role": "system", "content": self._build_messages(system, "", schema)[0]["content"]},
             *messages[1:],
         ]
-        self._check_budget(rebuilt, max_tokens)
         request = TransportRequest(
             model=self.settings.model,
             messages=rebuilt,
@@ -453,23 +502,125 @@ class LLMClient:
             response_format=self._response_format(schema),
             reasoning_effort=effort,
         )
-        with self._slots:
-            return self._transport(request), rebuilt
+        return self._charged_call(request, tag), rebuilt
 
-    def _check_budget(self, messages: list[dict[str, str]], max_tokens: int) -> None:
-        projected_prompt = sum(_estimate_tokens(m["content"]) for m in messages)
+    def _charged_call(self, request: TransportRequest, tag: str) -> TransportResponse:
+        """Check both limits, reserve the call's worst case, send, and charge the ledger."""
+        prompt = sum(_estimate_tokens(m["content"]) for m in request.messages)
+        reserved = self._reserve(prompt, request.max_tokens)
+        try:
+            with self._slots:
+                response = self._transport(request)
+        except LLMTransportError as exc:
+            if exc.status is None or exc.status >= 500:
+                # The provider may have generated tokens before failing: charge the worst case.
+                self._charge(prompt, request.max_tokens, request.model, tag, estimated=True)
+            self._release(reserved)
+            raise
+        except BaseException:
+            self._release(reserved)
+            raise
+        usage = response.usage
+        self._charge(
+            usage.prompt_tokens, usage.completion_tokens, response.model or request.model, tag
+        )
+        self._release(reserved)
+        return response
+
+    def _reserve(self, prompt_tokens: int, max_tokens: int) -> float:
+        """Refuse a call either limit forbids; otherwise hold its worst-case cost."""
         budget = self.settings.max_tokens_per_job
+        rate, _known = cap_rate(self.settings.model, self.settings.profile)
+        worst = cap_usd(rate, prompt_tokens, max_tokens)
         with self._lock:
             spent = self._totals.usage.total_tokens
-        projected = spent + projected_prompt
-        if spent >= budget or projected > budget:
-            raise LLMBudgetExceeded(
-                f"token budget {budget} would be exceeded: {spent} spent, "
-                f"about {projected_prompt} more in the next prompt",
-                spent=spent,
-                budget=budget,
-                projected=projected,
+            projected = spent + prompt_tokens
+            if spent >= budget or projected > budget:
+                raise LLMBudgetExceeded(
+                    f"token budget {budget} would be exceeded: {spent} spent, "
+                    f"about {prompt_tokens} more in the next prompt",
+                    spent=spent,
+                    budget=budget,
+                    projected=projected,
+                )
+            self._check_spend_locked(worst)
+            self._reserved += worst
+        return worst
+
+    def _release(self, reserved: float) -> None:
+        with self._lock:
+            self._reserved = max(self._reserved - reserved, 0.0)
+
+    def _check_spend_locked(self, estimate: float) -> None:
+        """Raise when the ledger is unusable or ``estimate`` does not fit; caller holds the lock."""
+        if self._halted is not None:
+            raise self._halted
+        spend = self._ledger.month_to_date()
+        cap = self.settings.monthly_usd
+        if cap is None:
+            return
+        if spend.usd >= cap or spend.usd + self._reserved + estimate > cap:
+            self._cap_refused = True
+            reason = (
+                f"monthly AI spend cap reached: ${spend.usd:.2f} of ${cap:.2f} in "
+                f"{spend.month} (resets {next_month_start(spend.month)} UTC)"
             )
+            raise LLMSpendCapReached(
+                f"{reason}; about ${estimate:.4f} more would not fit",
+                reason=reason,
+                month_usd=spend.usd,
+                cap_usd=cap,
+            )
+
+    def _charge(
+        self,
+        prompt_tokens: int,
+        completion_tokens: int,
+        model: str,
+        tag: str,
+        *,
+        estimated: bool = False,
+    ) -> None:
+        """Append one line to the ledger; a failed append halts the client, not this result."""
+        rate, known = cap_rate(model, self.settings.profile)
+        try:
+            self._ledger.append(
+                profile=self.settings.profile,
+                model=model,
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                usd=cap_usd(rate, prompt_tokens, completion_tokens),
+                usd_known=known,
+                estimated=estimated,
+                tag=tag,
+                run=self._run_id,
+            )
+        except LLMLedgerError as exc:
+            with self._lock:
+                self._halted = exc
+            self._emit({"event": "ledger_error", "reason": exc.reason})
+
+    def _month_summary(self) -> dict[str, Any]:
+        cap = self.settings.monthly_usd
+        try:
+            spend = self._ledger.month_to_date()
+        except LLMLedgerError:
+            return {
+                "month": self._ledger.month(),
+                "month_usd": None,
+                "month_usd_known": False,
+                "month_cap_usd": cap,
+                "month_cap_reached": False,
+            }
+        with self._lock:
+            refused = self._cap_refused
+        return {
+            "month": spend.month,
+            "month_usd": round(spend.usd, 6),
+            "month_usd_known": spend.known,
+            "month_cap_usd": cap,
+            "month_cap_reached": cap is not None and (refused or spend.usd >= cap),
+        }
 
     @staticmethod
     def _raise_if_truncated(response: TransportResponse, max_tokens: int) -> None:
@@ -530,6 +681,8 @@ class LLMClient:
                 "max_retries": s.max_retries,
                 "max_concurrency": s.max_concurrency,
                 "budget_tokens": s.max_tokens_per_job,
+                "monthly_usd": s.monthly_usd if s.monthly_usd is not None else "off",
+                "ledger_dir": str(self._ledger.directory),
             }
         )
 

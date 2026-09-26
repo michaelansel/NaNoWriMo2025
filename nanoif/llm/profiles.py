@@ -7,9 +7,11 @@ overridden by its ``NANOIF_LLM_*`` variable.
 
 from __future__ import annotations
 
+import math
 import os
 from collections.abc import Mapping
 from dataclasses import dataclass, replace
+from pathlib import Path
 
 from nanoif.llm.errors import LLMConfigError
 
@@ -21,6 +23,8 @@ DEFAULT_MAX_RETRIES = 4
 DEFAULT_MAX_CONCURRENCY = 4
 DEFAULT_MAX_TOKENS_PER_JOB = 2_000_000
 DEFAULT_JSON_MODE = "schema"
+DEFAULT_MONTHLY_USD = 10.0
+MONTHLY_CAP_OFF = "off"
 
 JSON_MODES = ("schema", "object", "prompt")
 REASONING_EFFORTS = ("minimal", "low", "medium", "high")
@@ -86,6 +90,10 @@ class Settings:
         reasoning_effort: Default ``reasoning_effort`` sent with every call, or ``None``.
         max_tokens_per_job: Total token budget (prompt + completion) per process.
         json_mode: ``schema`` (json_schema strict), ``object`` (json_object), or ``prompt``.
+        monthly_usd: Self-imposed cap on estimated spend per UTC month (ADR-023); ``0``
+            blocks all paid inference and ``None`` (``off``) disables the cap.
+        ledger_dir: ``NANOIF_LLM_LEDGER_DIR`` when set (it must exist), else ``None`` for
+            the default state directory.
     """
 
     profile: str = DEFAULT_PROFILE
@@ -98,6 +106,8 @@ class Settings:
     reasoning_effort: str | None = None
     max_tokens_per_job: int = DEFAULT_MAX_TOKENS_PER_JOB
     json_mode: str = DEFAULT_JSON_MODE
+    monthly_usd: float | None = DEFAULT_MONTHLY_USD
+    ledger_dir: Path | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None) -> Settings:
@@ -204,6 +214,10 @@ class Settings:
             if mode not in JSON_MODES:
                 raise LLMConfigError(f"NANOIF_LLM_JSON_MODE {mode!r} not in {JSON_MODES}")
             changes["json_mode"] = mode
+        if cap := env.get(f"{ENV_PREFIX}MONTHLY_USD", "").strip():
+            changes["monthly_usd"] = _parse_monthly_cap(cap)
+        if ledger := env.get(f"{ENV_PREFIX}LEDGER_DIR", "").strip():
+            changes["ledger_dir"] = Path(ledger).expanduser()
         settings = replace(self, **changes)  # type: ignore[arg-type]
         if settings.max_concurrency < 1:
             raise LLMConfigError("NANOIF_LLM_MAX_CONCURRENCY must be at least 1")
@@ -227,6 +241,21 @@ def is_reasoning_model(model: str) -> bool:
     """
     lowered = model.lower()
     return any(marker in lowered for marker in REASONING_MODEL_MARKERS)
+
+
+def _parse_monthly_cap(raw: str) -> float | None:
+    if raw == MONTHLY_CAP_OFF:
+        return None
+    try:
+        value = float(raw)
+    except ValueError:
+        value = math.nan
+    if not math.isfinite(value) or value < 0:
+        raise LLMConfigError(
+            f"NANOIF_LLM_MONTHLY_USD {raw!r} must be a non-negative number of dollars or "
+            f"{MONTHLY_CAP_OFF!r}"
+        )
+    return value
 
 
 def _parse_number(raw: str, key: str, kind: type) -> float | int:

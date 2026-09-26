@@ -182,6 +182,8 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
         + ("" if totals.get("usd_known") else " (rate unknown)")
         + f" on {totals.get('profile') or '?'} ({totals.get('model') or '?'}).",
     ]
+    if scores.get("spend"):
+        detail.append(f"{scores['spend'][0].upper()}{scores['spend'][1:]}.")
     pronouns = scores.get("pronouns", {})
     if "skipped" in pronouns:
         detail.append(f"Pronouns: skipped ({pronouns['skipped']}).")

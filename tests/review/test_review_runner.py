@@ -12,10 +12,10 @@ from review_helpers import FIXTURES, answer, path_finding
 
 from nanoif.errors import ReviewConfigError
 from nanoif.eval.run import prepare_eval_repo
-from nanoif.llm.errors import LLMBudgetExceeded
+from nanoif.llm.errors import LLMBudgetExceeded, LLMLedgerError, LLMSpendCapReached
 from nanoif.llm.fake import FakeLLM
 from nanoif.review.findings import finding_key
-from nanoif.review.runner import BUDGET_EXHAUSTED, load_dismissals, review
+from nanoif.review.runner import BUDGET_EXHAUSTED, load_dismissals, review, summary_lines
 from nanoif.schemas.artifacts import validate_artifact
 from nanoif.twee.passages import content_hash
 
@@ -234,3 +234,62 @@ def test_config_errors(repo):
         run(repo, fake, passage=TOLL, env={"NANOIF_RUNNER": "laptop"})
     with pytest.raises(ReviewConfigError):
         run(repo, fake, passage="StoryData")
+
+
+CAP_REASON = "monthly AI spend cap reached: $10.00 of $10.00 in 2026-11 (resets 2026-12-01 UTC)"
+
+
+class CappedFake(FakeLLM):
+    """A fake whose monthly cap is already reached, or whose ledger cannot be read."""
+
+    def __init__(self, error, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.error = error
+
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        raise self.error
+
+
+@pytest.mark.intent("AC-continuity-review-31")
+def test_cap_already_reached_runs_no_editor_and_calls_no_model(repo):
+    error = LLMSpendCapReached("capped", reason=CAP_REASON, month_usd=10.0, cap_usd=10.0)
+    fake = CappedFake(error, lambda call: pytest.fail("no model call may be made"))
+    artifact = run(repo, fake, mode="all", editors=("continuity", "style"))
+    validate_artifact(artifact, "ai_review")
+    assert [e["status"] for e in artifact["editors"]] == ["skipped", "skipped"]
+    assert all(e["reason"] == CAP_REASON for e in artifact["editors"])
+    assert fake.calls == []
+
+
+@pytest.mark.intent("AC-continuity-review-33")
+def test_unreadable_ledger_runs_no_editor(repo):
+    reason = "spend ledger unreadable: /state/2026-11.jsonl:3: not JSON"
+    fake = CappedFake(LLMLedgerError("bad", reason=reason), lambda call: pytest.fail("no call"))
+    artifact = run(repo, fake, mode="all", editors=("continuity", "style"))
+    assert [(e["status"], e["reason"]) for e in artifact["editors"]] == [("skipped", reason)] * 2
+
+
+@pytest.mark.intent("AC-continuity-review-32")
+def test_cap_reached_mid_run_marks_the_rest_not_run_with_the_cap_reason(repo):
+    calls = []
+
+    def script(call):
+        calls.append(call.tag)
+        if len(calls) == 3:
+            raise LLMSpendCapReached("capped", reason=CAP_REASON, month_usd=10.0, cap_usd=10.0)
+        return answer()
+
+    artifact = run(repo, FakeLLM(script), mode="all", editors=("continuity", "style"))
+    continuity, style = artifact["editors"]
+    units = continuity["units"] + style["units"]
+    assert [u["status"] for u in units[:2]] == ["reviewed", "reviewed"]
+    assert {u["status"] for u in units[2:]} == {"skipped"}
+    assert {u["reason"] for u in units[2:]} == {CAP_REASON}
+    assert continuity["status"] == "error" and style["status"] == "error"
+
+
+def test_summary_lines_end_with_the_monthly_spend(repo):
+    fake = FakeLLM({f"continuity:{TOLL}": answer(), f"style:{TOLL}": answer()})
+    artifact = run(repo, fake, passage=TOLL)
+    artifact["llm"].update(month="2026-11", month_usd=1.5, month_cap_usd=10.0)
+    assert summary_lines(artifact)[-1] == "monthly AI spend: $1.50 of $10.00 in 2026-11"

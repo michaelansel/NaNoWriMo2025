@@ -151,3 +151,9 @@ def test_markdown_lists_each_finding_with_its_outcome(truth):
         "| false positive (clean-crossing, clean-widow) | continuity | f-0000000a | "
         "contradiction | minor | Day 2 EV | Pip \\| is older. |"
     ) in text
+
+
+def test_markdown_shows_the_monthly_spend_when_known(truth):
+    scores = run_scoring(truth, {"findings": [], "conflicts": []})
+    scores["spend"] = "monthly AI spend: $0.03 of $10.00 in 2026-11"
+    assert "- Monthly AI spend: $0.03 of $10.00 in 2026-11." in render_markdown(scores)

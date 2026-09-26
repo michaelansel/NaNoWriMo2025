@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/spend_ledger_line.schema.json",
+  "title": "spend_ledger_line",
+  "description": "One line of the monthly spend ledger (<ledger dir>/YYYY-MM.jsonl): one provider response or charged failure, estimated at list price (ADR-023).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["at", "month", "profile", "model", "prompt_tokens", "completion_tokens", "usd", "usd_known", "estimated", "tag", "run"],
+  "properties": {
+    "at": {"type": "string", "description": "UTC timestamp, ISO 8601 with Z"},
+    "month": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$"},
+    "profile": {"type": "string"},
+    "model": {"type": "string"},
+    "prompt_tokens": {"type": "integer", "minimum": 0},
+    "completion_tokens": {"type": "integer", "minimum": 0},
+    "usd": {"type": "number", "minimum": 0, "description": "estimated list-price cost; unpriced models at the fallback cap rate"},
+    "usd_known": {"type": "boolean", "description": "false when the model had no price row"},
+    "estimated": {"type": "boolean", "description": "true when no usage was reported and the pessimistic cost was charged"},
+    "tag": {"type": "string"},
+    "run": {"type": ["string", "null"], "description": "GITHUB_RUN_ID when set"}
+  }
+}

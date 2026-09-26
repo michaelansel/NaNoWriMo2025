@@ -396,3 +396,23 @@ def test_run_info_from_env():
     )
     assert run.label == "[run #7](https://github.com/owner/story/actions/runs/7)"
     assert RunInfo.from_env({}).label == "local run"
+
+
+@pytest.mark.intent("AC-continuity-review-31")
+def test_cap_reached_names_the_reset_date_instead_of_a_retry():
+    reason = "monthly AI spend cap reached: $10.00 of $10.00 in 2026-11 (resets 2026-12-01 UTC)"
+    review = make_review(
+        make_editor(status="skipped", units=[], reason=reason),
+        make_editor("style", status="skipped", units=[], reason=reason),
+    )
+    review["llm"].update(
+        month="2026-11", month_usd=10.0, month_usd_known=True, month_cap_usd=10.0,
+        month_cap_reached=True,
+    )
+    validate_artifact(review, "ai_review")
+    rendered = render_editor(review, "continuity", RUN)
+    assert rendered.body.splitlines()[1] == "### Continuity Editor: unavailable"
+    assert reason in rendered.body
+    assert "AI review resumes on 2026-12-01 UTC" in rendered.body
+    assert "Retry with" not in rendered.body and "to re-run" not in rendered.body
+    assert editor_conclusion(review["editors"][0], review["mode"]) == "failure"

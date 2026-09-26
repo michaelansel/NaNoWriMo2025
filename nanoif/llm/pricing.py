@@ -46,6 +46,11 @@ MODEL_RATES: dict[str, Rate] = {
     "deepseek-v4-flash": Rate(0.14, 0.28),
 }
 
+# The monthly spend cap (ADR-023) charges a model with no row at this rate, above every
+# priced row, so an unpriced model can never slip past the cap. Reports still say "cost
+# unknown" for it.
+UNPRICED_CAP_RATE = Rate(1.00, 4.00)
+
 # Profiles that bill by the underlying model rate. The ``exe`` gateway serves the same
 # model families as Fireworks, so its row reuses the model lookup rather than a flat rate.
 PROFILE_RATE_SOURCE: dict[str, str] = {
@@ -114,3 +119,22 @@ def estimate_usd(model: str, usage: _UsageLike, profile: str | None = None) -> E
     cost = usage.prompt_tokens * rate.input_per_m + usage.completion_tokens * rate.output_per_m
     usd = cost / 1e6
     return Estimate(usd, True, key)
+
+
+def cap_rate(model: str, profile: str | None = None) -> tuple[Rate, bool]:
+    """Return the rate the monthly spend cap charges for a model.
+
+    Args:
+        model: Model id as sent to or reported by the provider.
+        profile: Profile name used for the rate source.
+
+    Returns:
+        ``(rate, known)``: the table rate, or :data:`UNPRICED_CAP_RATE` with ``False``.
+    """
+    rate, _key = rate_for(model, profile)
+    return (rate, True) if rate is not None else (UNPRICED_CAP_RATE, False)
+
+
+def cap_usd(rate: Rate, prompt_tokens: int, completion_tokens: int) -> float:
+    """USD for a token count at ``rate``."""
+    return (prompt_tokens * rate.input_per_m + completion_tokens * rate.output_per_m) / 1e6

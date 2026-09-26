@@ -22,6 +22,7 @@ from nanoif.eval.score import run_scoring
 from nanoif.formats.allpaths import AllPathsConfig, run
 from nanoif.git.service import snapshot_repository
 from nanoif.llm.client import Completer
+from nanoif.llm.ledger import spend_line
 from nanoif.review.runner import review
 from nanoif.schemas.artifacts import write_artifact
 from nanoif.twee.parse import parse_twee_dir
@@ -221,4 +222,6 @@ def run_eval(
     scores = mark_extraction_skipped(run_scoring(truth, results_from_review(artifact)))
     scores["review"] = review_summary(artifact)
     diff = diff_against_baseline(scores, baseline) if baseline is not None else None
+    if spend := spend_line(artifact["llm"]):
+        scores["spend"] = spend
     return EvalOutcome(scores, artifact, diff, render_markdown(scores, baseline))

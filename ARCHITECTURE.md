@@ -17,7 +17,7 @@ it is and links the ADR that explains each part. Superseded ADRs are kept for th
 | `nanoif/` | The one Python package and `nanoif` CLI | [015](architecture/015-nanoif-package.md) |
 | `.github/workflows/` | `build-and-deploy.yml`, `ai-command.yml`, `ai-maintenance.yml`, `intent.yml` | [014](architecture/014-actions-automation-exe-runner.md), [021](architecture/021-intent-gate.md) |
 | exe runner | Self-hosted Actions runner on an exe.dev VM, label `exe`; runs only AI jobs; `deploy/exe/`, `docs/exe-runner.md` | [014](architecture/014-actions-automation-exe-runner.md) |
-| LLM gateway | OpenAI-compatible endpoint reached from the exe runner with no key | [016](architecture/016-llm-client-and-prompt-contract.md) |
+| LLM gateway | OpenAI-compatible endpoint reached from the exe runner with no key; our spend on it is capped monthly | [016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md) |
 | `ai/` | State written only by Actions jobs on `main` | [014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md), [020](architecture/020-story-bible-v2.md) |
 | `dist/` | Build output; uploaded as `story-preview` on PRs, deployed to Pages from `main`; never committed | [017](architecture/017-git-based-categorization.md) |
 | `landing/` | Static landing page copied to `dist/index.html` | [011](architecture/011-landing-page-design.md) |
@@ -112,6 +112,7 @@ push to main
 | `ai/outcomes.jsonl` | `pr-closed` on main | false-positive review |
 | `story-overrides.txt` | writers | `nanoif check structure`, Story Bible |
 | `dist/**`, `lib/artifacts/**` | every build | pages, AI jobs via `story-preview` |
+| spend ledger `<NANOIF_LLM_LEDGER_DIR>/YYYY-MM.jsonl` (on the exe VM, not in git) | every model call | the monthly cap ([023](architecture/023-monthly-spend-cap.md)) |
 
 Only those three `main` jobs have `contents: write`, and only for `ai/`. No automation commits
 to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)). Until Story Bible v2
@@ -133,12 +134,13 @@ Every JSON artifact that crosses a job or process boundary has a schema in
 | `structure --format json` | `structure_findings` | `check structure` → Structure check run ([018](architecture/018-structure-check-and-report-only-lint.md)) |
 | `ai-review.json` | `ai_review` | `ai review`, `github merge-review` → GitHub reporter, `/dismiss` ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | model output | `nanoif/prompts/<name>.schema.json` | model → editors ([016](architecture/016-llm-client-and-prompt-contract.md)) |
+| spend ledger line | `spend_ledger_line` | `LLMClient` → `LLMClient` in later jobs ([023](architecture/023-monthly-spend-cap.md)) |
 
 Other contracts: `ai-review-head-sha.txt` beside `ai-review.json` in the `ai-review-pr-<N>`
 artifact (unvalidated; missing means commit unknown), comment markers `<!-- nano:build -->`
 and `<!-- nano:<editor> -->`, env
-`NANOIF_LLM_*` and `NANOIF_REVIEW_UNIT_BUDGET`, repository variables `LLM_PROFILE`,
-`LLM_MODEL`, `EXE_HEALTH_URL`, `AI_RUNNER`.
+`NANOIF_LLM_*` (including `MONTHLY_USD` and `LEDGER_DIR`) and `NANOIF_REVIEW_UNIT_BUDGET`,
+repository variables `LLM_PROFILE`, `LLM_MODEL`, `LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
 
 ## Where each concern lives in `nanoif/`
 
@@ -153,7 +155,7 @@ and `<!-- nano:<editor> -->`, env
 | `formats/` | `allpaths`, `metrics`, `passages`, `story_bible` pages from core artifacts; HTML in `templates/html/` |
 | `check/` | `structure` checks and the `story-overrides.txt` syntax parser |
 | `schemas/` | artifact schemas and write/read validation |
-| `llm/` | client, profiles, schema parsing, pricing, test doubles ([016](architecture/016-llm-client-and-prompt-contract.md)) |
+| `llm/` | client, profiles, schema parsing, pricing, spend ledger (`ledger`), test doubles ([016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md)) |
 | `prompts/` | Jinja prompts with sibling output schemas |
 | `review/` | review units, Continuity and Style editors, finding keys, editor status (`runner.editor_status`) ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `github/` | the GitHub reporter: sticky comments and check runs, `/dismiss` records, passage re-check merge (`merge`), slash-command parsing ([014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md)) |
@@ -175,6 +177,9 @@ and `<!-- nano:<editor> -->`, env
 - No `|| true`, `exit 0` or `continue-on-error` hides a failure; report-only steps still leave
   annotations, a check run or a step-summary line.
 - The token budget per job (`NANOIF_LLM_MAX_TOKENS_PER_JOB`) stops a runaway job with an error.
+  The monthly spend cap (`NANOIF_LLM_MONTHLY_USD`, default $10) refuses a call before it
+  would pass the cap; the review then shows both editors as not run, with the reset date. An
+  unreadable ledger blocks calls rather than counting as zero ([023](architecture/023-monthly-spend-cap.md)).
 
 ## Intent
 

@@ -24,7 +24,8 @@ tweego -o dist/play.html -f harlowe-3.3.9 src/   # play build (CI pins Harlowe 3
 ```
 
 Inference env: `NANOIF_LLM_PROFILE` (`exe` default and the CI default, `fireworks`, `ollama`),
-`NANOIF_LLM_BASE_URL|API_KEY|MODEL|TIMEOUT_S|MAX_RETRIES|MAX_CONCURRENCY|REASONING_EFFORT|MAX_TOKENS_PER_JOB|JSON_MODE`.
+`NANOIF_LLM_BASE_URL|API_KEY|MODEL|TIMEOUT_S|MAX_RETRIES|MAX_CONCURRENCY|REASONING_EFFORT|MAX_TOKENS_PER_JOB|JSON_MODE`,
+`NANOIF_LLM_MONTHLY_USD` (monthly spend cap, default 10, `off`) and `NANOIF_LLM_LEDGER_DIR` (ADR-023).
 
 ## Layout
 

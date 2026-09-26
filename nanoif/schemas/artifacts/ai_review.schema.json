@@ -88,7 +88,12 @@
         "prompt_tokens": {"type": "integer", "minimum": 0},
         "completion_tokens": {"type": "integer", "minimum": 0},
         "usd": {"type": "number", "minimum": 0},
-        "usd_known": {"type": "boolean"}
+        "usd_known": {"type": "boolean"},
+        "month": {"type": "string", "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])$", "description": "UTC month of the monthly spend cap (ADR-023)"},
+        "month_usd": {"type": ["number", "null"], "minimum": 0, "description": "estimated spend this month on this machine; null when the spend ledger could not be read"},
+        "month_usd_known": {"type": "boolean"},
+        "month_cap_usd": {"type": ["number", "null"], "minimum": 0, "description": "the monthly cap; null when the cap is off"},
+        "month_cap_reached": {"type": "boolean", "description": "the cap refused a call in this run, or spend is at the cap"}
       }
     },
     "editors": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/editor"}}
