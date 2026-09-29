@@ -84,7 +84,7 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-15: Run over the eval story, the Continuity Editor reports the contradictions `c-tam-years` and `c-pip-age`. (verify: workflow)
 - AC-continuity-review-16: Run over the eval story, the Continuity Editor reports at least two of the planted defects `d-marsh-alive`, `d-lantern-rule` and `d-timeline`. (verify: workflow)
 - AC-continuity-review-17: Run over the eval story, both editors together report at most one finding across the clean routes `clean-crossing` and `clean-widow`. (verify: workflow)
-- AC-continuity-review-18: Run over the eval story, the Style Editor reports `d-pov` and `d-tense`, each as minor. (verify: workflow)
+- AC-continuity-review-18: Run over the eval story, the Style Editor reports `d-pov` and `d-tense`, each a whole paragraph, each as major. (verify: workflow)
 - AC-continuity-review-19: Of pull requests that change up to three passages, 95 in 100 are reviewed within 10 minutes of their build finishing, and each costs under $0.25. (verify: manual)
 - AC-continuity-review-20: `/check-continuity all` on a story of up to 100 passages uses at most 1.5M input tokens and costs under $5. (verify: workflow)
 - AC-continuity-review-21: A model answer cut off by the length limit is an error for that call, never an empty result.

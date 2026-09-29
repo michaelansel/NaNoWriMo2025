@@ -115,8 +115,8 @@ def planted_defects_llm() -> FakeLLM:
     def slip(finding_type: str, quote: str) -> dict:
         return {
             "type": finding_type,
-            "description": "Leaves the house style.",
-            "severity": "minor",
+            "description": "Leaves the house style for a whole paragraph.",
+            "severity": "major",
             "confidence": "high",
             "quotes": [{"text": quote}],
         }

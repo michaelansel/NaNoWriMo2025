@@ -280,7 +280,7 @@
       "type": "pov_slip",
       "passages": ["Gull Chapel at dusk"],
       "quotes": ["I could hear the bell still humming in the beams above us"],
-      "expected_severity": "minor",
+      "expected_severity": "major",
       "description": "One paragraph slips into first person in a third-person story."
     },
     {
@@ -288,7 +288,7 @@
       "type": "tense_slip",
       "passages": ["The last ferry"],
       "quotes": ["Wren steps aboard and takes the pole from Tam's hands"],
-      "expected_severity": "minor",
+      "expected_severity": "major",
       "description": "One paragraph slips into present tense in a past-tense story."
     }
   ],
