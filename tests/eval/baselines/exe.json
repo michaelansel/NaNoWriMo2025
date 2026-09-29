@@ -1,25 +1,25 @@
 {
   "profile": "exe",
   "model": "fireworks/glm-5p3-flash",
-  "note": "Worse value of two runs per metric (2026-09-26, eval story with Story Bible extraction). Regenerate with `nanoif ai eval` in the same PR as any prompt or model change that moves it.",
+  "note": "Worse value of three complete runs per metric (2026-09-29, eval story with Story Bible extraction; conflicts matched by truth quotes, ADR-024). Regenerate with `nanoif ai eval` in the same PR as any prompt or model change that moves it.",
   "metrics": {
     "entity_recall": 1.0,
-    "entity_precision": 0.68,
-    "fact_recall": 0.8,
-    "fact_precision": 0.131,
-    "conflict_recall": 1.0,
-    "conflict_precision": 0.6667,
-    "intentional_flagged": 0,
-    "review_conflict_recall": 1.0,
-    "review_conflict_precision": 0.6,
+    "entity_precision": 0.6667,
+    "fact_recall": 0.88,
+    "fact_precision": 0.1494,
+    "conflict_recall": 0.3333,
+    "conflict_precision": 0.3333,
+    "intentional_flagged": 1,
+    "review_conflict_recall": 0.3333,
+    "review_conflict_precision": 0.25,
     "defects_detected": 6,
     "defect_severity_matches": 4,
-    "pronoun_accuracy": 0.5,
+    "pronoun_accuracy": 0.625,
     "distractor_hits": 0,
-    "scene_state_leaks": 1,
+    "scene_state_leaks": 5,
     "clean_path_false_positives": 2,
     "intentional_leaks": 0,
-    "total_tokens": 178274,
-    "usd": 0.0484
+    "total_tokens": 177346,
+    "usd": 0.0479
   }
 }
