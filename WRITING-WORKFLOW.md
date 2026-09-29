@@ -84,6 +84,7 @@ your branch.
 |---|---|---|
 | **Build** | The `build` check, and a **Build & Structure** comment | Red: the comment says the build failed and links the run that shows why |
 | **Preview** | `story-preview`, linked from the Build & Structure comment | Download, unzip, open `dist/index.html`, play your branch |
+| **Story Bible preview** | `story-bible-preview`, linked from the **Story Bible** comment | Your new passages' characters and facts, before merge |
 | **Structure notes** | The `Structure` check, the Build & Structure comment, and notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
 | **Formatting notes** | Notes on your lines in **Files changed** | Optional: spacing suggestions only |
 | **Continuity Editor** | One comment and a `Continuity Editor` check, updated on every push | Read the quotes; fix, or dismiss (below) |
@@ -129,9 +130,8 @@ text on one page), **All paths** (every route through the story), **Metrics** (w
 (the cast, places and rules; a placeholder until the Bible is first extracted), and **Graph** (a
 map of the story).
 
-In a pull request's preview, the Story Bible also shows your new passages' characters and facts,
-marked as from this pull request, once the AI has read them. Until then, or if it could not, the
-Freshness section lists them as not read and says why.
+After the editors, the **Story Bible** comment links `story-bible-preview`: the Story Bible with
+your new passages' characters and facts, marked as from this pull request, or says why it could not.
 
 `story-overrides.txt` at the top of the repository is where you teach the Story Bible things
 (two names for one person, a word that is not a character, a fact to always keep, a deliberate

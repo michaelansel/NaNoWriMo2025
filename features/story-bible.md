@@ -44,13 +44,16 @@ stable id; a fact that is gone is retired and its id is never reused. The page i
 the saved result on every build, with no AI call.
 
 **In a pull request** from a branch of this repository, the AI job also extracts the pull
-request's new or changed passages, after the build, and commits nothing. Once it finishes, the
-pull request's preview Story Bible adds those passages' characters and facts, each marked as from
-this pull request (not merged yet), and says their ids and merged names may differ after merge.
-Until then, and for every passage whose extraction failed, was stopped by the spend cap, or could
-not start because the AI runner was unavailable, the preview shows the Bible as of `main` and its
-Freshness section names those passages as not read, with the reason. The Build comment says how
-many passages the Bible has not read.
+request's new or changed passages on every push, after the review, and commits nothing. The Story
+Bible in the Build comment's `story-preview` is always the Bible as of `main`, names the pull
+request's passages as not read, and the Build comment says how many passages the Bible has not
+read. The Story Bible with the pull request's passages is a separate download,
+`story-bible-preview`, linked from the Story Bible comment and a "Story Bible preview" check run;
+on every push that comment reports the preview, or says it did not run and why. That page adds the
+read passages' characters and facts, each marked as from this pull request (not merged yet), and
+says their ids and merged names may differ after merge. A passage whose extraction failed, was
+stopped by the spend cap, or could not start because the AI runner was unavailable keeps `main`'s
+facts, is named in Freshness as not read with the reason, and fails the check.
 
 **Overrides** live in `story-overrides.txt` at the repository root, one directive per line,
 `#` for comments. Using eval-story names:
@@ -111,10 +114,10 @@ what would change and what the run cost, or "did not run" with the reason; it co
 - AC-story-bible-30: When extraction fails or is skipped after a merge, the site still deploys with the latest saved Bible. (verify: workflow)
 - AC-story-bible-31: The `/extract-story-bible` result is one comment per pull request, found by its `<!-- nano:bible -->` marker and edited in place, headed "dry run: nothing was saved" and listing the entities, facts and conflicts that would be added, changed or retired and what the run cost; when the run did not happen or failed, it says "did not run" with the reason and shows no earlier result.
 - AC-story-bible-32: When this month's AI spend has reached the cap, or the extraction's estimate would pass it, extraction makes no model call and saves nothing; a run stopped by the cap part-way saves nothing; and `/extract-story-bible` says "did not run" with the reason of AC-continuity-review-31.
-- AC-story-bible-33: On every push to a pull request from a branch of this repository that adds or changes passages, the AI job extracts those passages and commits nothing; a pull request from a fork gets no extraction and spends nothing. (verify: planned)
-- AC-story-bible-34: When a pull request's extraction succeeds for a passage, the preview Story Bible linked from the Build & Structure comment shows that passage's entities and facts marked "from this pull request (not merged)", says ids and merged names may change after merge, and its Freshness section does not list that passage as not read. (verify: planned)
-- AC-story-bible-35: When a pull request's extraction fails for a passage, is stopped by the spend cap, or does not run because the AI runner is unavailable, the preview Story Bible shows `main`'s Bible and its Freshness section lists that passage as not read with the reason; a passage is never shown as read when it was not. (verify: planned)
-- AC-story-bible-36: After merge, a passage whose text is identical to the text its pull request extracted is not sent to the model again, and fact ids and entity merges are assigned only by the extraction on `main`. (verify: planned)
+- AC-story-bible-33: On every push to a pull request from a branch of this repository that adds or changes passages, the AI job extracts those passages and commits nothing; a pull request from a fork gets no extraction and spends nothing. (verify: workflow)
+- AC-story-bible-34: When a pull request's extraction succeeds for a passage, the `story-bible-preview` Story Bible, named in the Story Bible comment (`<!-- nano:bible -->`) and the "Story Bible preview" check run for that push, shows that passage's entities and facts marked "from this pull request (not merged)", says ids and merged names may change after merge, and its Freshness section does not list that passage as not read.
+- AC-story-bible-35: When a pull request's extraction fails for a passage, is stopped by the spend cap, or does not run because the AI runner is unavailable, the "Story Bible preview" check run fails and the Story Bible comment gives the reason; any Story Bible preview shows that passage with `main`'s facts only, none marked from this pull request, and its Freshness section lists it as not read, with the reason on the `story-bible-preview` page; a passage is never shown as read when it was not.
+- AC-story-bible-36: After merge, a passage whose text is identical to the text its pull request extracted is not sent to the model again, and fact ids and entity merges are assigned only by the extraction on `main`.
 
 ## Edge cases
 - **No extraction yet** (a fresh story): the placeholder page; every landing link still works.
@@ -138,10 +141,12 @@ what would change and what the run cost, or "did not run" with the reason; it co
   not offered for that review; a changed passage's pin counts among the out-of-date facts the
   Continuity Editor comment reports, and is offered again once the next extraction reads it.
 - **Two merges close together**: the second extraction starts from the first one's saved result.
-- **Pull request from a fork**: no extraction; its preview shows `main`'s Bible and names its
-  passages as not read (AC-story-bible-33).
+- **Pull request from a fork**: no extraction, no Story Bible comment and no `story-bible-preview`;
+  the Build comment's `story-preview` shows `main`'s Bible and names its passages as not read
+  (AC-story-bible-16, AC-story-bible-33).
 - **Pull request passages in the preview differ from the published Bible after merge**: expected
-  for fact ids and merged names, which only `main` assigns; the preview says so (AC-story-bible-34).
+  for fact ids and merged names, which only `main` assigns; the `story-bible-preview` page says so
+  (AC-story-bible-34).
 - **A deliberate mystery is also flagged by the Continuity Editor**: findings on its facts are
   suppressed ([continuity-review](continuity-review.md), AC-continuity-review-14).
 
