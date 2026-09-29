@@ -1,7 +1,8 @@
 name: Build and deploy
 
-# Pull requests: test, build + Structure check, probe, AI review (exe runner), or a
-# "did not run" notice on the editors when the build or probe failed.
+# Pull requests: test, build + Structure check, probe, AI review then the Story Bible
+# preview of the pull request's passages (exe runner), or a "did not run" notice on the
+# editors and the Story Bible comment when the build or probe failed.
 # Main: test, build, probe, Story Bible extraction (exe runner; commits only
 # ai/story-bible-cache.json to main), then deploy to Pages with the Bible re-rendered
 # from the newest cache. Nothing here pushes to a pull request branch.
@@ -171,10 +172,13 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      pull-requests: write # Continuity and Style sticky comments
-      checks: write # Continuity Editor and Style Editor check runs
+      pull-requests: write # Continuity, Style and Story Bible sticky comments
+      checks: write # Continuity Editor, Style Editor and Story Bible preview check runs
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      RUNNER_KIND: ${{ needs.probe.outputs.runner }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -191,11 +195,150 @@ jobs:
           llm-model: ${{ vars.LLM_MODEL }}
           python-version: ${{ env.PYTHON_VERSION }}
 
+      # Story Bible preview (ADR-026): after the review has published, so the review has the
+      # first claim on the runner and on the monthly budget. Its result is the
+      # <!-- nano:bible --> comment and the "Story Bible preview" check run on this head;
+      # a preview failure is never a review failure. Tooling comes from the default branch,
+      # in its own venv; src/, story-overrides.txt and ai/story-bible-cache.json are the
+      # merge commit's, checked out above. It commits nothing and never builds canon-pack.json.
+      - name: Story Bible preview tooling (default branch)
+        id: bible-tooling
+        if: ${{ !cancelled() && env.RUNNER_KIND == 'exe' }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.base_ref }}
+          path: .bible-tooling
+          persist-credentials: false
+
+      - name: Install the Story Bible preview tooling
+        id: bible-install
+        if: ${{ !cancelled() && steps.bible-tooling.outcome == 'success' }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/bible-venv"
+          "$RUNNER_TEMP/bible-venv/bin/python" -m pip install -e ./.bible-tooling
+
+      - name: Check that the merge commit is this push's
+        id: bible-merge
+        if: ${{ !cancelled() && steps.bible-install.outcome == 'success' }}
+        run: |
+          # The checkout is shallow, but the commit object still names both parents.
+          second=$(git cat-file -p HEAD | awk '/^parent / { n++; if (n == 2) print $2 }')
+          if [ "$second" != "$HEAD_SHA" ]; then
+            echo "::error::The merge commit's second parent is ${second:-missing}, not this push's head $HEAD_SHA; the Story Bible preview reads nothing"
+            exit 1
+          fi
+
+      - name: Extract this pull request's passages for the preview
+        id: bible-extract
+        if: ${{ !cancelled() && steps.bible-merge.outcome == 'success' }}
+        timeout-minutes: 10
+        env:
+          NANOIF_LLM_PROFILE: ${{ vars.LLM_PROFILE || 'exe' }}
+          NANOIF_LLM_MODEL: ${{ vars.LLM_MODEL }}
+        # Exit 0 ok, 3 partial, 1 nothing written (spend cap, invalid cache, error). The code
+        # is captured so the page and the comment say what happened; a missing code means
+        # the step stopped (the 10-minute limit) before it could say.
+        run: |
+          export PATH="$RUNNER_TEMP/bible-venv/bin:$PATH"
+          out="$RUNNER_TEMP/bible-preview"
+          mkdir -p "$out/site"
+          set +e
+          nanoif bible extract --repo . --preview --cache-out "$out/story-bible-cache.json" --diff-out "$out/site/bible-diff.json" > "$out/extract.txt" 2> "$out/extract-err.txt"
+          code=$?
+          set -e
+          cat "$out/extract.txt" "$out/extract-err.txt"
+          cat "$out/extract.txt" "$out/extract-err.txt" >> "$GITHUB_STEP_SUMMARY"
+          echo "nanoif bible extract --preview exited $code" >> "$GITHUB_STEP_SUMMARY"
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+
+      - name: Say why the Story Bible preview did not run, if it did not
+        id: bible-why
+        if: ${{ !cancelled() && env.RUNNER_KIND == 'exe' }}
+        env:
+          INSTALL: ${{ steps.bible-install.outcome }}
+          MERGE: ${{ steps.bible-merge.outcome }}
+          CODE: ${{ steps.bible-extract.outputs.exit_code }}
+        run: |
+          reason=""
+          if [ "$INSTALL" != success ]; then
+            reason="the default branch's Story Bible tooling could not be installed; the job log says why"
+          elif [ "$MERGE" != success ]; then
+            reason="the merge commit this job checked out is not this push's; push again to retry"
+          elif [ -z "$CODE" ]; then
+            reason="the extraction stopped before it finished (the 10-minute limit, or an error in the job log)"
+          elif [ "$CODE" != 0 ] && [ "$CODE" != 3 ]; then
+            # The CLI's last stderr line; for the spend cap it carries the reset date (ADR-023).
+            reason="$(tail -n 1 "$RUNNER_TEMP/bible-preview/extract-err.txt")"
+            reason="${reason#bible extract did not run: }"
+            reason="${reason#bible extract failed: }"
+            reason="${reason%; nothing was written}"
+            reason="${reason:-the extraction exited $CODE and gave no reason}"
+          fi
+          echo "reason=$reason" >> "$GITHUB_OUTPUT"
+          if [ -n "$reason" ]; then
+            echo "::warning::Story Bible preview did not run: $reason"
+            echo "Story Bible preview did not run: $reason" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Build the preview Story Bible
+        id: bible-page
+        # From the would-be cache when the extraction ran, else from main's cache with the
+        # reason in Freshness (AC-story-bible-35). No canon pack: the review keeps main's.
+        if: ${{ !cancelled() && steps.bible-merge.outcome == 'success' && steps.bible-why.outcome == 'success' }}
+        env:
+          REASON: ${{ steps.bible-why.outputs.reason }}
+        run: |
+          export PATH="$RUNNER_TEMP/bible-venv/bin:$PATH"
+          out="$RUNNER_TEMP/bible-preview"
+          if [ -z "$REASON" ]; then
+            nanoif build story-bible --repo . --out "$out/site" --cache "$out/story-bible-cache.json" --preview-passages dist/changes.json --preview-diff "$out/site/bible-diff.json"
+          else
+            nanoif build story-bible --repo . --out "$out/site" --preview-passages dist/changes.json --preview-reason "$REASON"
+          fi
+
+      - name: Upload the preview Story Bible
+        id: bible-upload
+        # Its own artifact: story-preview is never overwritten, so the Build comment's link
+        # keeps working while someone downloads it.
+        if: ${{ !cancelled() && steps.bible-page.outcome == 'success' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: story-bible-preview
+          path: ${{ runner.temp }}/bible-preview/site/
+          retention-days: 30
+
+      - name: Report the Story Bible preview
+        if: ${{ !cancelled() && env.RUNNER_KIND == 'exe' }}
+        env:
+          REASON: ${{ steps.bible-why.outputs.reason }}
+          UPLOAD: ${{ steps.bible-upload.outcome }}
+        run: |
+          # Published with the tooling that published the review, like the editor comments;
+          # the default branch's venv only when that one is missing.
+          export PATH="$PATH:$RUNNER_TEMP/bible-venv/bin"
+          if [ -z "$REASON" ] && [ "$UPLOAD" != success ]; then
+            REASON="the preview Story Bible page could not be built or uploaded; the job log says why"
+          fi
+          if [ -z "$REASON" ]; then
+            nanoif github bible-report --preview --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --diff "$RUNNER_TEMP/bible-preview/site/bible-diff.json"
+          else
+            nanoif github bible-report --preview --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$REASON"
+          fi
+
+      - name: Say the Story Bible preview did not run (hosted runner)
+        # No extraction without the exe runner: the comment and a failed check say why, and
+        # the Build comment's preview shows main's Bible with these passages as not read.
+        if: ${{ !cancelled() && env.RUNNER_KIND != 'exe' }}
+        env:
+          PROBE_REASON: ${{ needs.probe.outputs.reason }}
+        run: |
+          nanoif github bible-report --preview --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "${PROBE_REASON:-the exe runner is not available}"
+
   ai-review-not-run:
     # The review never started for this push (the build failed, or the probe failed, for
     # example on an invalid vars.AI_RUNNER), so ai-review was skipped. Replace both editor
-    # comments and fail both editor checks on this commit, so an earlier result is never
-    # shown as current (AC-continuity-review-28). !cancelled() rather than always(): a
+    # comments and the Story Bible comment, and fail their checks on this commit, so an
+    # earlier result is never shown as current (AC-continuity-review-28, ADR-026). !cancelled() rather than always(): a
     # newer push cancels this run, and its comments must not be overwritten.
     name: ai-review-not-run
     needs: [build, probe]
@@ -207,8 +350,8 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      pull-requests: write # Continuity and Style sticky comments
-      checks: write # Continuity Editor and Style Editor check runs
+      pull-requests: write # Continuity, Style and Story Bible sticky comments
+      checks: write # Continuity Editor, Style Editor and Story Bible preview check runs
     env:
       GITHUB_TOKEN: ${{ github.token }}
       PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -233,6 +376,8 @@ jobs:
             reason="the AI runner is not set up correctly (${PROBE_REASON:-see the probe job's log}); ask whoever looks after the repository to fix it"
           fi
           nanoif github not-run --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$reason"
+          # The Story Bible preview did not run either: replace the previous push's (ADR-026).
+          nanoif github bible-report --preview --pr "$PR_NUMBER" --head-sha "$HEAD_SHA" --reason "$reason"
           echo "::error::AI review did not run: $reason"
           exit 1
 

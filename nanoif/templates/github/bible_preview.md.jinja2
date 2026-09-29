@@ -1,0 +1,43 @@
+{{ marker }}
+### Story Bible: {{ headline }}
+<sub>{{ header }}</sub>
+{% if not ran %}
+
+The Story Bible preview did not run for commit `{{ sha }}`: {{ reason }}. The preview Story Bible shows `main`'s Bible, and its Freshness section lists this pull request's passages as not read. No earlier preview is shown here; the next push tries again.
+{% elif up_to_date %}
+
+Nothing to read: no passage of commit `{{ sha }}` needs reading, so no model was called. The preview Story Bible is `main`'s.
+{% else %}
+
+The AI read this pull request's new and changed passages for commit `{{ sha }}`. To see them in the Story Bible, download the `{{ artifact }}` artifact from {{ run }}, unzip it, and open `story-bible.html`. Their facts are marked *from this pull request (not merged)*: fact ids and merged names may change after merge, and conflicts with them are found after merge. Nothing was saved.
+
+- **Entities:** {{ entities }}
+- **Facts:** {{ facts }}
+{% if reused %}
+- **Reused:** {{ reused }}
+{% endif %}
+{% if read %}
+
+<details><summary>{{ read | length }} passage{{ "" if read | length == 1 else "s" }} read</summary>
+
+{% for name in read %}
+- *{{ name }}*
+{% endfor %}
+
+</details>
+{% endif %}
+{% if failed %}
+
+**Could not read {{ failed | length }} passage{{ "" if failed | length == 1 else "s" }}**, so the preview Story Bible lists {{ "it" if failed | length == 1 else "them" }} as not read (the next push tries again):
+{% for item in failed %}
+- *{{ item.passage }}*: {{ item.reason }}
+{% endfor %}
+{% endif %}
+{% if pending %}
+
+**Names not yet resolved:**
+{% for item in pending %}
+- *{{ item.entity }}*: {{ item.reason }}
+{% endfor %}
+{% endif %}
+{% endif %}

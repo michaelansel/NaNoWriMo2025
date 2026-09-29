@@ -16,7 +16,12 @@ from pathlib import Path
 
 from nanoif.errors import ArtifactValidationError, BuildError
 from nanoif.github.api import GitHubAPI
-from nanoif.github.bible import render_bible_diff, render_bible_not_run
+from nanoif.github.bible import (
+    render_bible_diff,
+    render_bible_not_run,
+    render_bible_preview,
+    render_bible_preview_not_run,
+)
 from nanoif.github.commands import parse_command, write_github_output
 from nanoif.github.comments import MARKER_BIBLE, upsert_sticky
 from nanoif.github.dismiss import (
@@ -199,11 +204,24 @@ def _build_report(args: argparse.Namespace) -> int:
 
 def _bible_report(args: argparse.Namespace) -> int:
     run = RunInfo.from_env()
+    diff = None
     if args.diff is not None:
         try:
             diff = load_artifact(args.diff, "bible_diff")
         except (BuildError, ArtifactValidationError) as exc:
             return _usage(str(exc))
+    if args.preview:
+        # The preview (ADR-026): the comment and a Story Bible preview check run on the head.
+        if args.pr is not None and not args.head_sha:
+            return _usage("--preview with --pr needs --head-sha (the push it is for)")
+        sha = args.head_sha or "unknown"
+        if diff is not None:
+            rendered = render_bible_preview(diff, run, sha)
+        else:
+            rendered = render_bible_preview_not_run(args.reason, run, sha)
+        _publish([rendered], args.pr, args.head_sha)
+        return EXIT_OK
+    if diff is not None:
         body = render_bible_diff(diff, run)
     else:
         body = render_bible_not_run(args.reason, run)
@@ -367,12 +385,21 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     build.set_defaults(handler=_build_report)
 
     bible = commands.add_parser(
-        "bible-report", help="the /extract-story-bible dry-run comment (<!-- nano:bible -->)"
+        "bible-report",
+        help="the Story Bible comment (<!-- nano:bible -->): /extract-story-bible dry run, or "
+        "with --preview a push's preview and its check run",
     )
     bible.add_argument("--pr", type=int, help="pull request (omit: step summary only)")
+    bible.add_argument(
+        "--preview",
+        action="store_true",
+        help="the push's preview Story Bible (ADR-026): also posts the Story Bible preview "
+        "check run on --head-sha",
+    )
+    bible.add_argument("--head-sha", help="with --preview: the pull request head it is for")
     source = bible.add_mutually_exclusive_group(required=True)
-    source.add_argument("--diff", type=Path, help="bible-diff.json of the dry run")
-    source.add_argument("--reason", help="why the dry run did not run")
+    source.add_argument("--diff", type=Path, help="bible-diff.json of the dry run or preview")
+    source.add_argument("--reason", help="why the dry run or preview did not run")
     bible.set_defaults(handler=_bible_report)
 
     merge = commands.add_parser(
