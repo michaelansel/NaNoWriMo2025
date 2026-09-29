@@ -22,12 +22,13 @@ Rules:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from nanoif.errors import LintError
 from nanoif.twee.files import PASSAGE_HEADER_RE
+from nanoif.twee.links import find_links
+from nanoif.twee.prose import HTML_TAG_RE, macro_spans
 
 SPECIAL_PASSAGE_NAMES = frozenset(
     {"StoryData", "StoryTitle", "StoryStylesheet", "StoryBanner", "StoryMenu", "StoryInit"}
@@ -35,7 +36,9 @@ SPECIAL_PASSAGE_NAMES = frozenset(
 SPECIAL_PASSAGE_TAGS = frozenset({"stylesheet", "script"})
 
 SMART_QUOTES = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
-_MACRO_START_RE = re.compile(r"\([A-Za-z0-9_-]+:")
+"""What the ``smart-quotes`` fix writes."""
+CANONICAL_QUOTES = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
+"""What the no-changed-words check compares with; fixed, whatever :data:`SMART_QUOTES` is."""
 
 
 @dataclass(frozen=True)
@@ -117,48 +120,61 @@ def _blank(line: str) -> bool:
     return line.strip() == ""
 
 
-def _protected_spans(line: str) -> list[tuple[int, int]]:
-    """Return ``[start, end)`` spans of ``[[links]]`` and Harlowe macro calls."""
-    spans: list[tuple[int, int]] = []
-    index = 0
-    while index < len(line):
-        if line.startswith("[[", index):
-            close = line.find("]]", index + 2)
-            end = len(line) if close == -1 else close + 2
-            spans.append((index, end))
-            index = end
-            continue
-        macro = _MACRO_START_RE.match(line, index)
-        if macro is not None:
-            depth, end = 0, len(line)
-            for position in range(index, len(line)):
-                if line[position] == "(":
-                    depth += 1
-                elif line[position] == ")":
-                    depth -= 1
-                    if depth == 0:
-                        end = position + 1
-                        break
-            spans.append((index, end))
-            index = end
-            continue
-        index += 1
-    return spans
+def _protected(text: str) -> list[bool]:
+    """Mark every character the smart-quotes rule must leave alone.
+
+    Passage headers, special passages, ``[[links]]`` and link macros, Harlowe macro calls
+    (see :func:`nanoif.twee.prose.macro_spans`) and HTML tags.
+    """
+    mask = [False] * len(text)
+
+    def protect(start: int, end: int) -> None:
+        mask[start:end] = [True] * (end - start)
+
+    offset = 0
+    special = False
+    for raw in text.splitlines(keepends=True):
+        header = parse_passage_header(raw.rstrip("\n\r"))
+        if header is not None:
+            special = is_special_passage(*header)
+            protect(offset, offset + len(raw))
+        elif special:
+            protect(offset, offset + len(raw))
+        offset += len(raw)
+    for link in find_links(text):
+        protect(link.start, link.end)
+    for start, end in macro_spans(text):
+        protect(start, end)
+    for match in HTML_TAG_RE.finditer(text):
+        protect(match.start(), match.end())
+    return mask
 
 
-def _fix_smart_quotes(line: str) -> tuple[str, int]:
-    """Replace curly quotes outside links and macros; return the line and the count."""
-    pieces: list[str] = []
-    count = 0
-    cursor = 0
-    for start, end in [*_protected_spans(line), (len(line), len(line))]:
-        prose = line[cursor:start]
-        fixed = prose.translate(SMART_QUOTES)
-        count += sum(1 for a, b in zip(prose, fixed, strict=True) if a != b)
-        pieces.append(fixed)
-        pieces.append(line[start:end])
-        cursor = end
-    return "".join(pieces), count
+def _smart_quotes(text: str, file: Path) -> tuple[list[Violation], str]:
+    """Report curly quotes in prose, one violation per line; return them and the fixed text."""
+    mask = _protected(text)
+    fixed: list[str] = []
+    per_line: dict[int, int] = {}
+    line = 1
+    for index, char in enumerate(text):
+        replacement = char.translate(SMART_QUOTES)
+        if replacement != char and not mask[index]:
+            per_line[line] = per_line.get(line, 0) + 1
+            fixed.append(replacement)
+        else:
+            fixed.append(char)
+        if char == "\n":
+            line += 1
+    violations = [
+        Violation(file, number, "smart-quotes", f"Found {count} smart quote(s)")
+        for number, count in sorted(per_line.items())
+    ]
+    return violations, "".join(fixed)
+
+
+def _words(text: str) -> str:
+    """The text with quote marks made plain and all whitespace removed."""
+    return "".join(text.translate(CANONICAL_QUOTES).split())
 
 
 def _run(text: str, file: Path, fix: bool) -> tuple[list[Violation], list[str]]:
@@ -187,13 +203,6 @@ def _run(text: str, file: Path, fix: bool) -> tuple[list[Violation], list[str]]:
                 line = line.rstrip()
 
         header = parse_passage_header(line)
-        if header is None and not (last_header is not None and is_special_passage(*last_header)):
-            fixed_quotes, quotes = _fix_smart_quotes(line)
-            if quotes:
-                report(number, "smart-quotes", f"Found {quotes} smart quote(s)")
-                if fix:
-                    line = fixed_quotes
-
         if is_block_link(line):
             if not in_link_block:
                 if last_non_blank_was_narrative and out and not _blank(out[-1]):
@@ -293,7 +302,7 @@ def lint_text(text: str, file: Path) -> list[Violation]:
     Returns:
         Violations in line order of detection; empty for a well-formatted file.
     """
-    return _run(text, file, fix=False)[0]
+    return _run(text, file, fix=False)[0] + _smart_quotes(text, file)[0]
 
 
 def fix_text(text: str, file: Path) -> tuple[str, list[Violation]]:
@@ -306,12 +315,20 @@ def fix_text(text: str, file: Path) -> tuple[str, list[Violation]]:
     Returns:
         The fixed text (the input unchanged when there was nothing to fix) and
         the violations that were fixed.
+
+    Raises:
+        LintError: The fix would change a word (anything but whitespace and quote marks).
     """
-    violations, out = _run(text, file, fix=True)
+    quote_violations, unquoted = _smart_quotes(text, file)
+    violations, out = _run(unquoted, file, fix=True)
+    violations += quote_violations
     if not violations:
         return text, []
     fixed = "\n".join(out)
-    return (fixed + "\n" if fixed else fixed), violations
+    fixed = fixed + "\n" if fixed else fixed
+    if _words(fixed) != _words(text):
+        raise LintError(f"fixing {file} would change its words; nothing was written")
+    return fixed, violations
 
 
 def _read(path: Path) -> str:
@@ -346,7 +363,7 @@ def fix_file(path: Path) -> list[Violation]:
         The violations that were fixed; empty when the file was left untouched.
 
     Raises:
-        LintError: If the file cannot be read as UTF-8.
+        LintError: If the file cannot be read as UTF-8, or the fix would change a word.
     """
     fixed, violations = fix_text(_read(path), path)
     if violations:

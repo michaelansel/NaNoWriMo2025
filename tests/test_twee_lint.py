@@ -653,6 +653,42 @@ class TestSmartQuotes:
             ":: Start\n\nShe'd gone to [[the widow\u2019s door]] at dusk.\n"
         )
 
+    @pytest.mark.intent("AC-structure-check-24")
+    def test_multiline_macros_html_and_stylesheets_keep_their_quotes(self, tmp_path):
+        text = (
+            ":: Start\n\n"
+            "(if: $name is \"Wren\u2019s (first)\")[\n"
+            "  She said \u201chello\u201d.\n"
+            "]\n"
+            "(set: $line to \"a \u201cquote\u201d\n"
+            "that runs on\")\n"
+            "<span title=\"Tam\u2019s\">Tam\u2019s pole</span>\n\n"
+            ":: Style [stylesheet]\n"
+            "body::after { content: \"\u201c\"; }\n"
+        )
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(text, encoding="utf-8")
+        fix_file(test_file)
+        fixed = test_file.read_text(encoding="utf-8")
+        # The hook body and the text around the tag are prose; the macros, tag and CSS are not.
+        assert "She said \"hello\"." in fixed
+        assert "\">Tam's pole</span>" in fixed
+        assert "(if: $name is \"Wren\u2019s (first)\")[" in fixed
+        assert "(set: $line to \"a \u201cquote\u201d\nthat runs on\")" in fixed
+        assert "<span title=\"Tam\u2019s\">" in fixed
+        assert "content: \"\u201c\";" in fixed
+
+    def test_a_fix_that_would_change_a_word_is_refused(self, monkeypatch, tmp_path):
+        import nanoif.twee.lint as lint_module
+
+        monkeypatch.setattr(lint_module, "SMART_QUOTES", str.maketrans({"\u2019": "x"}))
+        test_file = tmp_path / "test.twee"
+        original = ":: Start\n\nWren\u2019s lamp.\n"
+        test_file.write_text(original, encoding="utf-8")
+        with pytest.raises(LintError, match="would change"):
+            fix_file(test_file)
+        assert test_file.read_text(encoding="utf-8") == original
+
     def test_fixing_quotes_and_whitespace_together_is_idempotent(self, tmp_path):
         test_file = tmp_path / "test.twee"
         test_file.write_text(":: Start\nIt\u2019s late.   \n\n\n", encoding="utf-8")
