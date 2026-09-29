@@ -58,6 +58,10 @@ def test_pack_holds_entities_facts_conflicts_and_alias_index():
             "label": "c-pip-halloway-1",
         }
     ]
+    assert result["intentional_facts"] == {
+        "pip-halloway#1": "c-pip-halloway-1",
+        "pip-halloway#2": "c-pip-halloway-1",
+    }
     index = result["alias_index"]
     assert index["tamsin reeve"] == index["old tam"] == index["tam"] == "tamsin-reeve"
     assert index["captain marsh"] == "oriel-marsh"
@@ -167,3 +171,25 @@ def test_load_canon_pack_missing_or_invalid_is_an_error(tmp_path):
     good = tmp_path / "canon-pack.json"
     good.write_text(json.dumps(pack()), encoding="utf-8")
     assert load_canon_pack(good)["version"] == 1
+
+
+@pytest.mark.intent("ADR-024")
+def test_pack_marks_the_facts_a_mystery_lists_and_the_slice_carries_the_label():
+    result = pack("intentional-conflict: tam-braid = Tamsin Reeve | grey braid\n")
+    assert result["intentional_facts"] == {"tamsin-reeve#1": "tam-braid"}
+    assert all(c["intentional"] is False for c in result["conflicts"])
+    piece = select_canon(result, CROSSING, TEXTS[CROSSING], HASHES)
+    assert "tamsin-reeve#1" in [f.id for f in piece.facts]
+    assert piece.intentional == {"tamsin-reeve#1": "tam-braid"}
+
+
+@pytest.mark.intent("ADR-024")
+@pytest.mark.parametrize("breakage", ["no map", "one-fact conflict"])
+def test_pack_without_the_map_or_with_a_one_fact_conflict_is_invalid(breakage):
+    result = pack()
+    if breakage == "no map":
+        del result["intentional_facts"]
+    else:
+        result["conflicts"][0]["fact_ids"] = result["conflicts"][0]["fact_ids"][:1]
+    with pytest.raises(ArtifactValidationError):
+        validate_artifact(result, "canon_pack")

@@ -8,8 +8,9 @@ manifest and a *results* object built by the CLI from extractor and reviewer out
     results = {
       "entities":  [{"name": str, "type": str?, "aliases": [str]?}],
       "facts":     [{"entity": str?, "claim": str, "passage": str?, "evidence_phrase": str?}],
-      "conflicts": [{"passages": [str], "intentional": bool?}],                 # the Bible's
-      "review_conflicts": [{"passages": [str], "intentional": bool?}],          # the editor's
+      "conflicts": [{"passages": [str], "quotes": [str]?, "intentional": bool?,
+                     "declared": bool?}],                                        # the Bible's
+      "review_conflicts": [{"passages": [str], "quotes": [str]?}],                 # the editor's
       "pronouns":  [{"passage": str, "sentence": str, "entity": str | None}],   # optional
       "findings":  [{"type": str, "passages": [str], "severity": str, "route": [str]?}],
       "usage":     <LLMClient.usage_summary()>                                  # optional
@@ -24,7 +25,12 @@ import re
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any
 
+from nanoif.twee.quotes import clean_quote, normalize_text
+
 CLAIM_OVERLAP_THRESHOLD = 0.6
+
+# A reported quote shorter than this never counts as containing part of a truth quote.
+MIN_QUOTE_FRAGMENT = 12
 
 # Defect types that are also contradictions between passages; a reported conflict that
 # lands on one of these is a true positive for conflict precision.
@@ -228,15 +234,51 @@ def score_facts(truth: Mapping[str, Any], facts: Sequence[Mapping[str, Any]]) ->
 
 def _conflict_targets(truth: Mapping[str, Any]) -> list[dict[str, Any]]:
     targets = [
-        {"id": c["id"], "passages": _passage_set(c["passages"]), "intentional": c["intentional"]}
+        {"id": c["id"], "passages": _passage_set(c["passages"]),
+         "quotes": list(c.get("quotes", ())), "intentional": c["intentional"]}
         for c in truth.get("contradictions", [])
     ]
     targets += [
-        {"id": d["id"], "passages": _passage_set(d["passages"]), "intentional": False}
+        {"id": d["id"], "passages": _passage_set(d["passages"]),
+         "quotes": list(d.get("quotes", ())), "intentional": False}
         for d in truth.get("defects", [])
         if d["type"] in CONFLICT_LIKE_DEFECTS
     ]
     return targets
+
+
+def _quote_form(text: str) -> str:
+    return normalize_text(clean_quote(text)).casefold().strip(" .,;:!?'")
+
+
+def _quote_hit(truth_quote: str, reported: str) -> bool:
+    """A reported quote contains the truth quote, or is a long enough part of it."""
+    planted, quoted = _quote_form(truth_quote), _quote_form(reported)
+    if not planted or not quoted:
+        return False
+    return planted in quoted or (len(quoted) >= MIN_QUOTE_FRAGMENT and quoted in planted)
+
+
+def _quote_hits(target: Mapping[str, Any], quotes: Sequence[str]) -> int:
+    return sum(1 for q in target["quotes"] if any(_quote_hit(q, r) for r in quotes))
+
+
+def _lands_on(target: Mapping[str, Any], passages: frozenset[str], quotes: Sequence[str]) -> bool:
+    """Whether a reported conflict lands on a planted one.
+
+    With quotes, as many truth quotes must be hit as the report quotes, up to all of them;
+    without them, the report must cite every passage the target spans.
+    """
+    if quotes and target["quotes"]:
+        return _quote_hits(target, quotes) >= min(len(target["quotes"]), len(quotes))
+    return target["passages"] <= passages
+
+
+def _holds_all(target: Mapping[str, Any], passages: frozenset[str], quotes: Sequence[str]) -> bool:
+    """Whether a report carries the whole planted contradiction (every truth quote)."""
+    if quotes and target["quotes"]:
+        return _quote_hits(target, quotes) == len(target["quotes"])
+    return target["passages"] <= passages
 
 
 def score_conflicts(
@@ -244,41 +286,60 @@ def score_conflicts(
 ) -> dict[str, Any]:
     """Conflict recall over planted contradictions and precision over all planted targets.
 
-    A reported conflict matches a target when it cites every passage the target spans.
+    A reported conflict with quotes matches a target by the target's truth quotes; one
+    without quotes matches when it cites every passage the target spans. An entry marked
+    ``declared`` (a fact a writer's mystery lists, ADR-024) never counts toward recall,
+    precision or ``reported``; it only lets an intentional contradiction count as flagged,
+    and only through a quote that overlaps a truth quote.
 
     Args:
         truth: Parsed ``truth.json``.
-        conflicts: Reported conflicts with ``passages`` and optional ``intentional``.
+        conflicts: Reported conflicts with ``passages`` and optional ``quotes``,
+            ``intentional`` and ``declared``.
 
     Returns:
         ``recall`` (contradictions found), ``precision`` (reports that land on a
-        contradiction or conflict-like defect), ``intentional_flagged``, and lists.
+        contradiction or conflict-like defect), ``intentional_flagged`` (intentional
+        contradictions under an intentional mystery and in no unflagged conflict), and lists.
     """
     contradictions = truth.get("contradictions", [])
     targets = _conflict_targets(truth)
-    reported = [
-        (_passage_set(c.get("passages", ())), bool(c.get("intentional"))) for c in conflicts
-    ]
+    detected: list[tuple[frozenset[str], list[str], bool]] = []
+    declared: list[list[str]] = []
+    for c in conflicts:
+        quotes = [q for q in c.get("quotes", ()) or () if q]
+        if c.get("declared"):
+            declared.append(quotes)
+        else:
+            detected.append((_passage_set(c.get("passages", ())), quotes,
+                             bool(c.get("intentional"))))
     found: list[str] = []
     intentional_flagged = 0
-    for contradiction in contradictions:
-        span = _passage_set(contradiction["passages"])
-        hits = [flag for passages, flag in reported if span <= passages]
+    for target in targets[: len(contradictions)]:
+        hits = [flag for passages, quotes, flag in detected if _lands_on(target, passages, quotes)]
         if hits:
-            found.append(contradiction["id"])
-            if contradiction["intentional"] and any(hits):
-                intentional_flagged += 1
+            found.append(target["id"])
+        if not target["intentional"]:
+            continue
+        leaked = any(
+            not flag and _holds_all(target, passages, quotes)
+            for passages, quotes, flag in detected
+        )
+        marked = any(hits) or any(quotes and _quote_hits(target, quotes) for quotes in declared)
+        if marked and not leaked:
+            intentional_flagged += 1
     true_positives = sum(
-        1 for passages, _flag in reported if any(t["passages"] <= passages for t in targets)
+        1 for passages, quotes, _flag in detected
+        if any(_lands_on(t, passages, quotes) for t in targets)
     )
     intentional_total = sum(1 for c in contradictions if c["intentional"])
     return {
         "expected": len(contradictions),
-        "reported": len(conflicts),
+        "reported": len(detected),
         "found": found,
         "missed": [c["id"] for c in contradictions if c["id"] not in found],
         "recall": _ratio(len(found), len(contradictions)),
-        "precision": _ratio(true_positives, len(conflicts)),
+        "precision": _ratio(true_positives, len(detected)),
         "intentional_expected": intentional_total,
         "intentional_flagged": intentional_flagged,
     }

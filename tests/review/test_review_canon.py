@@ -45,8 +45,11 @@ def fact(fid, claim, quote, passage, kind="trait"):
             "duplicate_of": None}
 
 
-def write_bible(repo: Path, overrides: str = "") -> None:
-    """Save a small v2 cache for the eval story and build the canon pack from it."""
+def write_bible(repo: Path, overrides: str = "", *, conflict: bool = True) -> None:
+    """Save a small v2 cache for the eval story and build the canon pack from it.
+
+    With ``conflict=False`` the cache has no detected conflict on Pip's age.
+    """
     hashes = {p.name: p.content_hash for p in bible_passages(repo)}
 
     def entity(slug, name, facts, aliases):
@@ -81,7 +84,8 @@ def write_bible(repo: Path, overrides: str = "") -> None:
         "resolution": {"pip": "pip-halloway", "tam": "tamsin-reeve"},
         "conflicts": {"c-pip-halloway-1": {"id": "c-pip-halloway-1", "entity": "pip-halloway",
                                            "fact_ids": ["pip-halloway#1", "pip-halloway#2"],
-                                           "note": "twelve or eleven", "status": "open"}},
+                                           "note": "twelve or eleven", "status": "open"}}
+        if conflict else {},
     }
     path = repo / "ai" / "story-bible-cache.json"
     path.parent.mkdir(exist_ok=True)
@@ -181,6 +185,18 @@ def test_finding_on_an_intentional_conflict_is_suppressed_with_the_reason(repo, 
     assert suppressed["suppressed_reason"] == f"intentional-conflict:{label}"
     body = render_editor(artifact, "continuity", RUN).body
     assert "0 findings, 1 suppressed" in body
+
+
+@pytest.mark.intent("AC-continuity-review-14", "ADR-024")
+def test_finding_on_a_fact_a_mystery_lists_is_suppressed_without_a_conflict(repo):
+    write_bible(repo, "intentional-conflict: pip-age = Pip | Eleven years old\n", conflict=False)
+    pack = json.loads((repo / "dist" / "canon-pack.json").read_text())
+    assert pack["conflicts"] == [] and pack["intentional_facts"] == {"pip-halloway#2": "pip-age"}
+    artifact, _ = run(repo, lambda call: answer(canon_finding(repo)))
+    editor = artifact["editors"][0]
+    assert editor["findings"] == []
+    (suppressed,) = editor["suppressed"]
+    assert suppressed["suppressed_reason"] == "intentional-conflict:pip-age"
 
 
 @pytest.mark.intent("AC-continuity-review-36")

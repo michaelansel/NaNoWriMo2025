@@ -8,7 +8,9 @@ the next preview without extraction:
 - ``not-entity:`` removes an entity whose normalized name or alias is the phrase;
 - ``pin:`` adds a pinned fact ``<slug>#pin-<hash>``, flagged when its quote is not found;
 - ``intentional-conflict:`` moves the conflicts it names (by id, or by entity and quote
-  fragment) to Intentional mysteries.
+  fragment) to Intentional mysteries; the entity-and-fragment form also lists the entity's
+  facts whose quote holds the fragment, so a mystery the model never saw as a conflict is
+  still declared.
 
 A line that has no effect is listed in :attr:`Bible.unmatched`.
 """
@@ -104,11 +106,20 @@ class BibleConflict:
 
 @dataclass(frozen=True)
 class Mystery:
-    """An ``intentional-conflict:`` line and the conflicts it moved."""
+    """An ``intentional-conflict:`` line, the conflicts it moved and the facts it names.
+
+    Attributes:
+        label: The override's conflict id or label.
+        line: Its line in ``story-overrides.txt``.
+        conflicts: The conflicts it moved from Conflicts.
+        facts: For the label form, the entity's facts whose quote holds the fragment and
+            that none of ``conflicts`` already shows.
+    """
 
     label: str
     line: int
     conflicts: tuple[BibleConflict, ...]
+    facts: tuple[BibleFact, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -196,14 +207,18 @@ class Bible:
         return tuple((e.name, rule) for e in self.entities for rule in e.rules)
 
     def intentional_facts(self) -> dict[str, str]:
-        """Fact id to the override that marks a conflict it is in as intentional."""
-        return {
+        """Fact id to the override that marks it intentional (in a conflict or by quote)."""
+        marked = {
             fact.id: conflict.intentional
             for mystery in self.mysteries
             for conflict in mystery.conflicts
             for fact in conflict.facts
             if conflict.intentional is not None
         }
+        for mystery in self.mysteries:
+            for fact in mystery.facts:
+                marked.setdefault(fact.id, mystery.label)
+        return marked
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize for ``story-bible.json`` (schema ``story_bible``)."""
@@ -223,7 +238,8 @@ class Bible:
             "conflicts": [_conflict_dict(c) for c in self.conflicts],
             "intentional_mysteries": [
                 {"label": m.label, "line": m.line,
-                 "conflicts": [_conflict_dict(c) for c in m.conflicts]}
+                 "conflicts": [_conflict_dict(c) for c in m.conflicts],
+                 "facts": [_fact_dict(f) for f in m.facts]}
                 for m in self.mysteries
             ],
             "unmatched_overrides": [{"line": line, "text": text} for line, text in self.unmatched],
@@ -401,25 +417,36 @@ def assemble(
 
     mysteries: list[Mystery] = []
     taken: set[str] = set()
+    claimed: set[str] = set()
     for line in overrides.intentional_conflicts:
+        declared: list[BibleFact] = []
         if line.conflict_id is not None:
             hits = [c for c in conflicts if c.id == line.conflict_id and c.id not in taken]
         else:
             key = normalize_name(line.entity or "")
             slug = next((s for s, w in work.items() if key in w.names), None)
             fragment = normalize_text(line.fragment or "").casefold()
+
+            def holds(fact: BibleFact, fragment: str = fragment) -> bool:
+                return bool(fragment) and fragment in normalize_text(fact.quote).casefold()
+
             hits = [
                 c for c in conflicts
-                if c.entity == slug and c.id not in taken and fragment
-                and any(fragment in normalize_text(f.quote).casefold() for f in c.facts)
+                if c.entity == slug and c.id not in taken and any(holds(f) for f in c.facts)
             ]
-        if not hits:
+            shown = {f.id for c in hits for f in c.facts}
+            owner = visible.get(slug or "")
+            if owner is not None:
+                declared = [f for f in (*owner.facts, *owner.rules)
+                            if holds(f) and f.id not in shown and f.id not in claimed]
+        if not hits and not declared:
             unmatched.append((line.line, _describe(line)))
             continue
         taken |= {c.id for c in hits}
+        claimed |= {f.id for c in hits for f in c.facts} | {f.id for f in declared}
         marked = tuple(BibleConflict(c.id, c.entity, c.entity_name, c.note, c.facts, line.name)
                        for c in hits)
-        mysteries.append(Mystery(line.name, line.line, marked))
+        mysteries.append(Mystery(line.name, line.line, marked, tuple(declared)))
 
     extraction = cache.extraction
     return Bible(

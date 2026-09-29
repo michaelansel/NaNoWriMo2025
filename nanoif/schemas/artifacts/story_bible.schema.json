@@ -81,11 +81,16 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["label", "line", "conflicts"],
+        "required": ["label", "line", "conflicts", "facts"],
         "properties": {
           "label": { "type": "string" },
           "line": { "type": "integer", "minimum": 1 },
-          "conflicts": { "type": "array", "items": { "$ref": "#/definitions/conflict" } }
+          "conflicts": { "type": "array", "items": { "$ref": "#/definitions/conflict" } },
+          "facts": {
+            "type": "array",
+            "description": "Label form only: the entity's facts whose quote holds the fragment, not already in one of the conflicts.",
+            "items": { "$ref": "#/definitions/fact" }
+          }
         }
       }
     },

@@ -151,6 +151,7 @@ def build_canon_pack(bible: Bible) -> dict[str, Any]:
         "passages": dict(bible.passages),
         "entities": entities,
         "conflicts": sorted(conflicts, key=lambda c: c["id"]),
+        "intentional_facts": dict(sorted(bible.intentional_facts().items())),
         "alias_index": {
             form: next(iter(slugs)) for form, slugs in sorted(forms.items()) if len(slugs) == 1
         },
@@ -247,10 +248,6 @@ def select_canon(
             )
     offered = {fact.id for fact in facts}
     intentional = {
-        fid: conflict["label"] or conflict["id"]
-        for conflict in pack["conflicts"]
-        if conflict["intentional"]
-        for fid in conflict["fact_ids"]
-        if fid in offered
+        fid: label for fid, label in pack["intentional_facts"].items() if fid in offered
     }
     return CanonSlice(tuple(facts), tuple(mentioned), own, stale, capped, intentional)

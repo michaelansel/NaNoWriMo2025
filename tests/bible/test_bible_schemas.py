@@ -75,6 +75,7 @@ def _pack(facts=1):
                 "label": None,
             }
         ],
+        "intentional_facts": {},
         "alias_index": {"pip halloway": "pip-halloway", "pip": "pip-halloway"},
     }
 

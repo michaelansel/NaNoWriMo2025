@@ -105,3 +105,46 @@ def test_a_partial_extraction_is_scored_but_fails_the_eval(tmp_path):
     outcome = run_eval(FIXTURE, FakeLLM(flaky), tmp_path / "story", env={"NANOIF_RUNNER": "local"})
     assert outcome.extraction["status"] == "partial" and not outcome.ok
     assert "entity_recall" in outcome.scores["metrics"]
+
+
+def test_review_conflicts_carry_the_finding_quotes():
+    artifact = {
+        "llm": {},
+        "editors": [
+            {
+                "name": "continuity",
+                "findings": [
+                    {
+                        "type": "number",
+                        "severity": "major",
+                        "key": "f-00000001",
+                        "description": "Pip's age differs.",
+                        "passages": [{"name": "Hollin Reach"}, {"name": "The widow's door"}],
+                        "quotes": [
+                            {"passage": "Hollin Reach", "text": "Wren's brother was twelve"},
+                            {"passage": "The widow's door", "text": "Eleven years old"},
+                        ],
+                    }
+                ],
+            }
+        ],
+    }
+    (conflict,) = eval_run.results_from_review(artifact)["review_conflicts"]
+    assert conflict["quotes"] == ["Wren's brother was twelve", "Eleven years old"]
+
+
+@pytest.mark.intent("ADR-024")
+def test_a_mysterys_facts_are_scored_as_declared_entries():
+    from nanoif.bible.assemble import Bible, BibleFact, Freshness, Mystery
+
+    fact = BibleFact("widow-kestle#4", "The Widow Kestle was never anyone's wife",
+                     "I was never anyone's wife", "The widow's door", "trait")
+    bible = Bible(
+        cache_present=True, passage_count=1, entities=(), conflicts=(),
+        mysteries=(Mystery("c-widow-never-wife", 14, (), (fact,)),), unmatched=(),
+        freshness=Freshness(None, None, None, "success", (), (), (), ()),
+    )
+    (entry,) = eval_run.results_from_bible(bible, None)["conflicts"]
+    assert entry == {"id": "c-widow-never-wife", "passages": ["The widow's door"],
+                     "quotes": ["I was never anyone's wife"], "intentional": True,
+                     "declared": True}

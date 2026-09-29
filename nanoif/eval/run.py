@@ -168,12 +168,19 @@ def results_from_bible(bible: Bible, cache: BibleCache | None) -> dict[str, Any]
         for ref in record.references
     ]
     conflicts = [
-        {"id": c.id, "passages": [f.passage for f in c.facts], "intentional": False}
+        {"id": c.id, "passages": [f.passage for f in c.facts],
+         "quotes": [f.quote for f in c.facts], "intentional": False}
         for c in bible.conflicts
     ] + [
-        {"id": c.id, "passages": [f.passage for f in c.facts], "intentional": True}
+        {"id": c.id, "passages": [f.passage for f in c.facts],
+         "quotes": [f.quote for f in c.facts], "intentional": True}
         for mystery in bible.mysteries
         for c in mystery.conflicts
+    ] + [
+        {"id": mystery.label, "passages": [f.passage], "quotes": [f.quote],
+         "intentional": True, "declared": True}
+        for mystery in bible.mysteries
+        for f in mystery.facts
     ]
     return {"entities": entities, "facts": facts, "pronouns": pronouns, "conflicts": conflicts}
 
@@ -205,7 +212,11 @@ def results_from_review(artifact: Mapping[str, Any]) -> dict[str, Any]:
                 }
             )
             if editor["name"] == "continuity":
-                conflicts.append({"passages": names, "intentional": False})
+                conflicts.append({
+                    "passages": names,
+                    "quotes": [quote["text"] for quote in finding["quotes"]],
+                    "intentional": False,
+                })
     return {"findings": findings, "review_conflicts": conflicts, "usage": artifact["llm"]}
 
 

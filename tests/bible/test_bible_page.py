@@ -156,6 +156,20 @@ def test_intentional_conflict_is_shown_under_intentional_mysteries(bible_repo):
     assert document["intentional_mysteries"][0]["conflicts"][0]["intentional"] == "pip-age"
 
 
+@pytest.mark.intent("AC-story-bible-25")
+def test_mystery_facts_are_listed_under_its_label(bible_repo):
+    write_cache(bible_repo)
+    (bible_repo / "story-overrides.txt").write_text(
+        "intentional-conflict: tam-braid = Tamsin Reeve | grey braid\n", encoding="utf-8"
+    )
+    _, html, document = page(bible_repo)
+    mysteries = html[html.index('id="intentional-mysteries"') : html.index('id="freshness"')]
+    assert "<h3>tam-braid</h3>" in mysteries and "<q>her grey braid</q>" in mysteries
+    assert "unmatched" not in mysteries
+    (mystery,) = document["intentional_mysteries"]
+    assert mystery["conflicts"] == [] and [f["id"] for f in mystery["facts"]] == ["tamsin-reeve#1"]
+
+
 @pytest.mark.intent("AC-story-bible-15")
 def test_freshness_names_unread_and_deleted_passages(bible_repo):
     write_cache(bible_repo)

@@ -120,6 +120,36 @@ def test_intentional_conflict_moves_to_intentional_mysteries(line):
     }
 
 
+@pytest.mark.intent("AC-story-bible-25")
+def test_mystery_with_no_detected_conflict_lists_the_facts_its_fragment_quotes():
+    result = bible("intentional-conflict: tam-braid = Tamsin Reeve | grey braid\n")
+    (mystery,) = result.mysteries
+    assert mystery.label == "tam-braid" and mystery.conflicts == ()
+    assert [(f.id, f.quote) for f in mystery.facts] == [("tamsin-reeve#1", "her grey braid")]
+    assert result.intentional_facts() == {"tamsin-reeve#1": "tam-braid"}
+    assert result.unmatched == () and len(result.conflicts) == 1
+    tam = named(result.cast, "Tamsin Reeve")
+    assert "tamsin-reeve#1" in [f.id for f in tam.facts]
+
+
+@pytest.mark.intent("ADR-024")
+def test_a_fact_belongs_to_the_first_mystery_that_names_it():
+    result = bible(
+        "intentional-conflict: braid = Tamsin Reeve | grey braid\n"
+        "intentional-conflict: again = Tam | braid\n"
+    )
+    (mystery,) = result.mysteries
+    assert mystery.label == "braid"
+    assert result.intentional_facts() == {"tamsin-reeve#1": "braid"}
+    assert [line for line, _ in result.unmatched] == [2]
+
+
+@pytest.mark.intent("AC-story-bible-25")
+def test_mystery_does_not_list_a_fact_again_that_its_conflict_already_shows():
+    (mystery,) = bible("intentional-conflict: pip-age = Pip | eleven years\n").mysteries
+    assert [c.id for c in mystery.conflicts] == ["c-pip-halloway-1"] and mystery.facts == ()
+
+
 @pytest.mark.intent("AC-story-bible-26")
 def test_mystery_whose_fragment_matches_no_conflict_is_unmatched():
     result = bible("intentional-conflict: mystery = Pip Halloway | never anyone's wife\n")

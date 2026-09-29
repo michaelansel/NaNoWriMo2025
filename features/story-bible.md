@@ -29,7 +29,8 @@ against facts established on other branches.
 3. **World rules**: facts true of the world rather than one entity (for example, no crossing
    without a lit lantern).
 4. **Conflicts**: pairs of facts that disagree, each with its id (`c-...`) and both quotes.
-5. **Intentional mysteries**: conflicts the writers marked as deliberate, under their id or label.
+5. **Intentional mysteries**: conflicts the writers marked as deliberate, under their id or label;
+   a label also lists the facts it marks (below).
 6. **Freshness**: the commit and date the Bible was extracted from; every passage it has not read
    in its current text (new, changed, or failed to extract); passages it read that no longer
    exist; and, when the latest extraction did not complete, a line saying so with the date of the
@@ -52,6 +53,10 @@ intentional-conflict: c-widow-never-wife = Widow Kestle | never anyone's wife
 ```
 `intentional-conflict:` has two forms: an id copied from the Conflicts section
 (`intentional-conflict: c-<id>`), or a label with an entity and a fragment of one quote, as above.
+A label lists every conflict on that entity with a quote containing the fragment, and every other
+fact of that entity (extracted or pinned) whose quote contains it, so a mystery inside one passage
+that no conflict was detected for still shows; those facts stay in their entity's entry too. If
+the Bible missed the fact a mystery is about, pin its quote and the label will find it.
 A pinned fact whose quote is not in the named passage is still pinned, flagged `quote not found`.
 Override edits show in the next build, without a new extraction. Malformed lines in this file,
 including a payload that does not fit its directive, are reported by the structure check
@@ -77,7 +82,7 @@ what would change and what the run cost, or "did not run" with the reason; it co
 - AC-story-bible-10: Extracted from the eval story, at least 20 of the 25 planted facts appear, and every extracted fact shown has a quote found verbatim in its cited passage. (verify: workflow)
 - AC-story-bible-11: Extracted from the eval story, none of the 4 planted scene-state statements appears as a fact. (verify: workflow)
 - AC-story-bible-12: Extracted from the eval story, at least 5 of the 6 resolvable pronoun cases are attributed to the right character and both ambiguous cases are left unattributed. (verify: workflow)
-- AC-story-bible-13: Extracted from the eval story with its `story-overrides.txt`, Conflicts has an entry matching each of `c-tam-years` and `c-pip-age` by their truth quotes, and `c-widow-never-wife` appears only under Intentional mysteries. (verify: workflow)
+- AC-story-bible-13: Extracted from the eval story with its `story-overrides.txt`, for each of `c-tam-years` and `c-pip-age` Conflicts has an entry whose fact quotes overlap both of its truth quotes, no Conflicts entry overlaps both truth quotes of `c-widow-never-wife`, and Intentional mysteries lists the label `c-widow-never-wife` with at least one conflict or fact whose quote overlaps one of its truth quotes. (verify: workflow)
 - AC-story-bible-14: An `alias:` override merges every entity whose name or alias matches into one entry under the canonical name; a `not-entity:` override removes the entity whose name or alias matches; a `pin:` override shows the fact with its quote and passage even if extraction missed it; each takes effect in the next build without a new extraction.
 - AC-story-bible-15: The Freshness section shows the commit and date of the extraction, and lists by name every passage the extraction has not read in its current text (new, changed, or failed to extract) and every passage it read that no longer exists.
 - AC-story-bible-16: The Build comment states how many passages the Story Bible has not read in their current text, and in a pull request preview the Freshness section names the pull request's new or changed passages among them.
@@ -89,8 +94,8 @@ what would change and what the run cost, or "did not run" with the reason; it co
 - AC-story-bible-22: A full extraction of a story of up to 100 passages costs at most $1 at the default profile's prices. (verify: workflow)
 - AC-story-bible-23: An extracted fact whose quote is not found in its passage, a fact that is momentary scene state, and an entity whose name starts with a quantifier or number word (`no one`, `thirteen people`) never reach the page or the canon, and the saved extraction records per passage how many of each were dropped.
 - AC-story-bible-24: A `pin:` whose quote is not found in the named passage is still shown and still pinned, flagged `quote not found`.
-- AC-story-bible-25: `intentional-conflict: c-<id>` moves the conflict with that id from Conflicts to Intentional mysteries; `intentional-conflict: <label> = <entity> | <quote fragment>` lists the label under Intentional mysteries and moves there every conflict on that entity with a quote containing the fragment.
-- AC-story-bible-26: An `intentional-conflict:` line that matches no conflict changes nothing and is listed on the page as `unmatched`.
+- AC-story-bible-25: `intentional-conflict: c-<id>` moves the conflict with that id from Conflicts to Intentional mysteries; `intentional-conflict: <label> = <entity> | <quote fragment>` lists the label under Intentional mysteries, moves there every conflict on that entity with a quote containing the fragment, and lists under the label every other fact of that entity, extracted or pinned, whose quote contains the fragment, while that fact stays in its entity's entry.
+- AC-story-bible-26: An `intentional-conflict: c-<id>` line whose id matches no conflict, or a label line whose entity is unknown or has no conflict and no fact with a quote containing the fragment, changes nothing and is listed on the page as `unmatched`.
 - AC-story-bible-27: An `alias:`, `not-entity:` or `pin:` line that names no entity the Bible knows changes nothing and is listed on the page as `unmatched`.
 - AC-story-bible-28: The canon offered for a passage never includes facts, pinned or extracted, drawn from that passage or from a passage whose text changed since the extraction.
 - AC-story-bible-29: Only the extraction job on `main` commits the saved extraction, as a commit of `ai/story-bible-cache.json` alone to `main`; it never runs for a pull request, and nothing commits to a pull request branch. (verify: workflow)
@@ -111,9 +116,11 @@ what would change and what the run cost, or "did not run" with the reason; it co
   latest extraction did not complete (AC-story-bible-32).
 - **A passage is deleted**: its facts are retired, their ids are not reused, and Freshness lists
   it until the next extraction.
-- **Overrides name an entity or conflict that does not exist**: the line has no effect and is
-  listed as `unmatched` (AC-story-bible-26, AC-story-bible-27). A later extraction that finds the
-  entity applies it.
+- **Overrides name an entity or conflict that does not exist**, or a mystery label's fragment is
+  in no quote of its entity: the line has no effect and is listed as `unmatched`
+  (AC-story-bible-26, AC-story-bible-27). A later extraction, or a pin, that supplies it applies it.
+- **A mystery fragment is very short** and matches many of the entity's facts: every matched fact
+  is listed under the label, so the writer sees the over-match on the page.
 - **A pin cites the passage under review, or a passage changed since the extraction**: the pin is
   not offered for that review; a changed passage's pin counts among the out-of-date facts the
   Continuity Editor comment reports, and is offered again once the next extraction reads it.

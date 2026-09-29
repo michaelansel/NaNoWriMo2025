@@ -141,7 +141,7 @@ Every JSON artifact that crosses a job or process boundary has a schema in
 | `structure --format json` | `structure_findings` | `check structure` → Structure check run ([018](architecture/018-structure-check-and-report-only-lint.md)) |
 | `ai-review.json` | `ai_review` | `ai review`, `github merge-review` → GitHub reporter, `/dismiss` ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `ai/story-bible-cache.json` | `story_bible_cache` | `bible extract` → `bible.assemble` ([020](architecture/020-story-bible-v2.md)) |
-| `story-bible.json`, `canon-pack.json` | `story_bible`, `canon_pack` | `build story-bible`, `build canon-pack` → Pages; pack → Continuity Editor ([020](architecture/020-story-bible-v2.md)) |
+| `story-bible.json`, `canon-pack.json` | `story_bible`, `canon_pack` | `build story-bible`, `build canon-pack` → Pages; pack → Continuity Editor, whose suppression reads only the pack's `intentional_facts` ([020](architecture/020-story-bible-v2.md), [024](architecture/024-intentional-mystery-facts.md)) |
 | `bible-diff.json` | `bible_diff` | `bible extract` → step summary, `<!-- nano:bible -->` ([020](architecture/020-story-bible-v2.md)) |
 | model output | `nanoif/prompts/<name>.schema.json` | model → editors ([016](architecture/016-llm-client-and-prompt-contract.md)) |
 | spend ledger line | `spend_ledger_line` | `LLMClient` → `LLMClient` in later jobs ([023](architecture/023-monthly-spend-cap.md)) |

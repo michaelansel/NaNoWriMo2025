@@ -5,7 +5,7 @@
   "description": "dist/canon-pack.json, built by `nanoif build canon-pack` from the assembled Story Bible with no model (ADR-020). The Continuity Editor's only source of canon facts.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["version", "source", "passages", "entities", "conflicts", "alias_index"],
+  "required": ["version", "source", "passages", "entities", "conflicts", "intentional_facts", "alias_index"],
   "definitions": {
     "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
     "fact_id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*#([1-9][0-9]*|pin-[0-9a-f]{8})$" }
@@ -73,6 +73,12 @@
           }
         }
       }
+    },
+    "intentional_facts": {
+      "type": "object",
+      "description": "Fact id to the intentional-conflict override (conflict id or mystery label) that marks it: the facts of intentional conflicts and the facts a mystery lists (ADR-024). The Continuity Editor's only source of intentional marking.",
+      "propertyNames": { "$ref": "#/definitions/fact_id" },
+      "additionalProperties": { "type": "string", "minLength": 1 }
     },
     "alias_index": {
       "type": "object",

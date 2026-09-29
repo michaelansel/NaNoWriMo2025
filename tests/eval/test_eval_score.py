@@ -43,7 +43,7 @@ def perfect_results(truth):
             for f in truth["facts"]
         ],
         "conflicts": [
-            {"passages": c["passages"], "intentional": c["intentional"]}
+            {"passages": c["passages"], "quotes": c["quotes"], "intentional": c["intentional"]}
             for c in truth["contradictions"]
         ],
         "pronouns": [
@@ -249,6 +249,67 @@ def test_conflict_precision_credits_conflict_like_defects_only(truth):
     scores = score_conflicts(truth, reported)
     assert scores["recall"] == 0.0
     assert scores["precision"] == 0.5
+
+
+@pytest.mark.intent("AC-story-bible-13")
+def test_conflict_with_quotes_matches_by_its_truth_quotes_not_its_passages(truth):
+    pip = {
+        "passages": ["Hollin Reach", "The widow's door"],
+        "quotes": ["Wren's brother was twelve that spring", "Eleven years old and out after the bell"],
+    }
+    scores = score_conflicts(truth, [pip])
+    # By passages alone the Pip report would also cover the one-passage widow mystery.
+    assert scores["found"] == ["c-pip-age"]
+    assert scores["precision"] == 1.0
+
+
+def test_conflict_quotes_must_cover_both_truth_quotes(truth):
+    half = {
+        "passages": ["Day 1 EV", "Back at the ferry"],
+        "quotes": ["every working day of those forty years", "Tam leaned on the pole"],
+    }
+    scores = score_conflicts(truth, [half])
+    assert scores["found"] == [] and scores["precision"] == 0.0
+
+
+def test_quote_matching_ignores_case_and_quote_marks(truth):
+    tam = {
+        "passages": ["Day 1 EV", "Back at the ferry"],
+        "quotes": ["Every working day of those forty years",
+                   "\u201cThirty years I\u2019ve poled this river,\u201d"],
+    }
+    assert score_conflicts(truth, [tam])["found"] == ["c-tam-years"]
+
+
+WIDOW_QUOTES = ["The Widow Kestle lived in the last house", "I was never anyone's wife"]
+
+
+@pytest.mark.intent("AC-story-bible-13", "ADR-024")
+def test_declared_fact_flags_the_intentional_contradiction_without_counting_as_found(truth):
+    declared = {"passages": ["The widow's door"], "quotes": ["I was never anyone's wife"],
+                "intentional": True, "declared": True}
+    scores = score_conflicts(truth, [declared])
+    assert scores["intentional_flagged"] == 1
+    assert scores["found"] == [] and scores["reported"] == 0
+    assert scores["recall"] == 0.0 and scores["precision"] == 0.0
+
+
+@pytest.mark.intent("AC-story-bible-13", "ADR-024")
+@pytest.mark.parametrize("quotes", [["She went back to her apple."], []])
+def test_declared_fact_from_the_passage_that_misses_the_truth_quotes_is_not_flagged(truth, quotes):
+    declared = {"passages": ["The widow's door"], "quotes": quotes,
+                "intentional": True, "declared": True}
+    assert score_conflicts(truth, [declared])["intentional_flagged"] == 0
+
+
+@pytest.mark.intent("AC-story-bible-13")
+def test_intentional_contradiction_also_left_in_conflicts_is_not_flagged(truth):
+    both = [
+        {"passages": ["The widow's door"], "quotes": WIDOW_QUOTES},
+        {"passages": ["The widow's door"], "quotes": WIDOW_QUOTES[1:], "intentional": True,
+         "declared": True},
+    ]
+    assert score_conflicts(truth, both)["intentional_flagged"] == 0
 
 
 def test_intentional_conflict_must_be_flagged_to_count_as_flagged(truth):

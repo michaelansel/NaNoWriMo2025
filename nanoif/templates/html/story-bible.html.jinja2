@@ -159,6 +159,13 @@
             {% for m in bible.mysteries %}
             <h3>{{ m.label }}</h3>
             {% for c in m.conflicts %}{{ conflict_block(c, "mystery") }}{% endfor %}
+            {% if m.facts %}
+            <div class="mystery">
+                <ul class="facts">
+                    {% for fact in m.facts %}{{ fact_line(fact) }}{% endfor %}
+                </ul>
+            </div>
+            {% endif %}
             {% else %}
             <p class="empty">No conflict is marked intentional in <code>story-overrides.txt</code>.</p>
             {% endfor %}

@@ -2,7 +2,7 @@
 
 ## Status
 
-Status: Accepted
+Status: Accepted; the label form of `intentional-conflict:` and the canon pack's intentional marking are Superseded by ADR-024
 Supersedes: ADR-010
 
 ## Context

@@ -135,8 +135,9 @@ map of the story).
 
 `story-overrides.txt` at the top of the repository is where you teach the Story Bible things
 (two names for one person, a word that is not a character, a fact to always keep, a deliberate
-mystery). Your edit shows in the next preview's Story Bible; a mystery line that matched no
-conflict is marked `unmatched` there. The [Story Bible note](features/story-bible.md#behavior) shows one example of
+mystery). Your edit shows in the next preview's Story Bible; a line that matched nothing is
+marked `unmatched` there. If a mystery stays `unmatched`, add a `pin:` line for the quote it is
+about. The [Story Bible note](features/story-bible.md#behavior) shows one example of
 each kind of line.
 
 ## Checklist
