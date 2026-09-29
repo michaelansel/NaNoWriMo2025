@@ -241,7 +241,7 @@ def verdicts(user, special):
     return {"entities": [special.get(s, {"slug": s, "duplicates": [], "conflicts": []}) for s in slugs]}
 
 
-def scripted(answers=ANSWERS, fail=(), reconcile=None, resolve=None, halt_on=None):
+def scripted(answers=ANSWERS, fail=(), reconcile=None, resolve=None, halt_on=None, cls=FakeLLM):
     reconcile = reconcile or {}
 
     def respond(call):
@@ -258,7 +258,7 @@ def scripted(answers=ANSWERS, fail=(), reconcile=None, resolve=None, halt_on=Non
             return reconcile
         return verdicts(call.user, reconcile)
 
-    return FakeLLM(respond)
+    return cls(respond)
 
 
 PIP_CONFLICT = {

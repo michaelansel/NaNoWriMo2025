@@ -107,6 +107,8 @@ def test_bible_diff_schema_accepts_an_up_to_date_run():
             "facts": {"added": [], "reworded": [], "retired": []},
             "conflicts": {"added": [], "retired": []},
             "usage": {"calls": 0, "usd": 0.0, "usd_known": True},
+            "store": {"status": "used", "hits": [], "misses": 0, "invalid": 0,
+                      "write_failed": 0, "reason": ""},
         },
         "bible_diff",
     )

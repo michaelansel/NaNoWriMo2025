@@ -34,6 +34,8 @@ def diff(**overrides):
         "conflicts": {"added": ["c-pip-halloway-1"], "retired": []},
         "usage": {"calls": 3, "usd": 0.0123, "usd_known": True, "profile": "exe",
                   "model": "gpt-oss-120b"},
+        "store": {"status": "used", "hits": ["Hollin Reach"], "misses": 1, "invalid": 0,
+                  "write_failed": 0, "reason": ""},
     }
     data.update(overrides)
     return data

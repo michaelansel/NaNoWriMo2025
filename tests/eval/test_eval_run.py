@@ -53,10 +53,12 @@ def respond(call):
     return NO_FINDINGS
 
 
-@pytest.mark.intent("ADR-020")
-def test_eval_scores_the_extracted_bible(tmp_path):
+@pytest.mark.intent("ADR-020", "ADR-026")
+def test_eval_scores_the_extracted_bible(tmp_path, isolated_extract_store):
     client = FakeLLM(respond)
     outcome = run_eval(FIXTURE, client, tmp_path / "story", env={"NANOIF_RUNNER": "local"})
+    # The eval measures the prompts, so it never reads or writes the extraction store.
+    assert not isolated_extract_store.exists()
     scores = outcome.scores
     assert outcome.extraction["status"] == "ok" and outcome.ok
     assert "Tamsin Reeve" in scores["entities"]["matched"]

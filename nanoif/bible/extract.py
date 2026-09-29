@@ -20,6 +20,7 @@ from typing import Any
 from nanoif.bible.cache import Dropped
 from nanoif.bible.ids import WORLD_SLUG, is_generic_name, normalize_name
 from nanoif.bible.source import SourcePassage
+from nanoif.bible.store import StoreKey
 from nanoif.llm.client import Completer
 from nanoif.llm.prompts import prompt_schema, render_prompt
 from nanoif.twee.links import display_text
@@ -97,13 +98,34 @@ def extract_tag(name: str) -> str:
     return f"bible-extract:{name}"
 
 
-def extract_passage(
+def store_key(passage: SourcePassage, profile: str, model: str) -> StoreKey:
+    """Return the extraction store key of this passage's ``bible_extract`` request (ADR-026).
+
+    Args:
+        passage: The passage to read.
+        profile: The completer's inference profile.
+        model: The completer's model id.
+
+    Returns:
+        The key; the roster and the ``not-entity:`` phrases are not part of it.
+    """
+    return StoreKey.build(
+        passage_name=passage.name,
+        content_hash=passage.content_hash,
+        profile=profile,
+        model=model,
+        reasoning_effort=REASONING_EFFORT,
+        max_tokens=EXTRACT_MAX_TOKENS,
+    )
+
+
+def extract_answer(
     client: Completer,
     passage: SourcePassage,
     roster: Sequence[RosterEntry],
     not_entities: Sequence[str],
-) -> PassageExtraction:
-    """Extract one passage.
+) -> dict[str, Any]:
+    """Ask the model to extract one passage, and return its raw, schema-valid answer.
 
     Args:
         client: The completer.
@@ -112,7 +134,7 @@ def extract_passage(
         not_entities: ``not-entity:`` phrases from the overrides.
 
     Returns:
-        The filtered extraction.
+        The ``bible_extract`` answer, before :func:`filter_extraction`.
 
     Raises:
         LLMError: The call failed; the caller decides whether to re-attempt.
@@ -135,7 +157,30 @@ def extract_passage(
         reasoning_effort=REASONING_EFFORT,
         tag=extract_tag(passage.name),
     )
-    return filter_extraction(passage, result.data)
+    return dict(result.data)
+
+
+def extract_passage(
+    client: Completer,
+    passage: SourcePassage,
+    roster: Sequence[RosterEntry],
+    not_entities: Sequence[str],
+) -> PassageExtraction:
+    """Extract one passage.
+
+    Args:
+        client: The completer.
+        passage: The passage to read.
+        roster: Known entities, so the model reuses their names.
+        not_entities: ``not-entity:`` phrases from the overrides.
+
+    Returns:
+        The filtered extraction.
+
+    Raises:
+        LLMError: The call failed; the caller decides whether to re-attempt.
+    """
+    return filter_extraction(passage, extract_answer(client, passage, roster, not_entities))
 
 
 def _clean_aliases(name: str, aliases: Sequence[str]) -> list[str]:

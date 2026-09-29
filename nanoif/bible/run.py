@@ -6,9 +6,12 @@ Order of work (ADR-020):
 2. Plan: ``incremental`` sends passages whose hash differs from the cache; ``full`` sends
    every passage. Deleted passages need no call. With nothing to do the run is
    ``up_to_date`` and calls no model.
-3. ``check_spend`` with a pessimistic estimate before any call.
-4. Extract (one re-attempt per passage), resolve, reconcile.
-5. Save the cache only when the set of ``(passage, content_hash)`` changed and this is not a
+3. Look each planned passage up in the extraction store (ADR-026), except with ``full``;
+   a hit is filtered against the current text again and costs no call.
+4. ``check_spend`` with a pessimistic estimate of the misses before any call.
+5. Extract the misses (one re-attempt per passage) and save each answer to the store,
+   then resolve and reconcile.
+6. Save the cache only when the set of ``(passage, content_hash)`` changed and this is not a
    dry run; always write the diff.
 
 An :class:`~nanoif.llm.errors.LLMRunHalted` anywhere stops the run with nothing written.
@@ -42,7 +45,9 @@ from nanoif.bible.extract import (
     EXTRACT_MAX_TOKENS,
     PassageExtraction,
     RosterEntry,
-    extract_passage,
+    extract_answer,
+    filter_extraction,
+    store_key,
 )
 from nanoif.bible.extract import (
     PROMPT as EXTRACT_PROMPT,
@@ -59,6 +64,7 @@ from nanoif.bible.ids import (
 from nanoif.bible.reconcile import MAX_INPUT_TOKENS, reconcile
 from nanoif.bible.resolve import Resolution, resolve
 from nanoif.bible.source import SourcePassage, bible_passages
+from nanoif.bible.store import ExtractStore, StoreKey, bypassed_report
 from nanoif.check.overrides import Overrides, read_overrides
 from nanoif.errors import BibleError
 from nanoif.git.service import GitService
@@ -74,6 +80,9 @@ EXIT_OK = 0
 EXIT_PARTIAL = 3
 PROMPTS = ("bible_extract", "bible_resolve", "bible_reconcile")
 PASSAGES_PER_RECONCILE_CALL = 10
+NO_STORE = "no extraction store for this run"
+FULL_BYPASS = "--full re-reads every passage: answers are saved to the store, never read from it"
+MAX_NAMED_HITS = 10
 
 
 @dataclass(frozen=True)
@@ -86,6 +95,7 @@ class ExtractOutcome:
         cache_written: Whether the cache file was written.
         diff: The ``bible_diff`` artifact.
         summary: One line for the log and the step summary, with the cost.
+        warnings: Extraction store problems that cost money, not correctness.
     """
 
     status: str
@@ -93,6 +103,7 @@ class ExtractOutcome:
     cache_written: bool
     diff: dict[str, Any]
     summary: str
+    warnings: tuple[str, ...] = ()
 
 
 @dataclass
@@ -127,7 +138,22 @@ def _roster(cache: BibleCache | None, overrides: Overrides) -> list[RosterEntry]
     return roster
 
 
-def estimate_usd(client: Completer, plan: Sequence[SourcePassage], roster_size: int) -> float:
+def _identity(client: Completer) -> tuple[str, str]:
+    """The completer's ``(profile, model)``, from its settings or its usage summary."""
+    settings = getattr(client, "settings", None)
+    summary = client.usage_summary()
+    model = getattr(settings, "model", None) or str(summary.get("model") or "")
+    profile = getattr(settings, "profile", None) or str(summary.get("profile") or "")
+    return profile, model
+
+
+def estimate_usd(
+    client: Completer,
+    plan: Sequence[SourcePassage],
+    roster_size: int,
+    *,
+    planned: int | None = None,
+) -> float:
     """Return the pessimistic cost of a run, for ``check_spend``.
 
     Every extract call is charged its prompt estimate plus the full ``max_tokens``; one
@@ -136,22 +162,22 @@ def estimate_usd(client: Completer, plan: Sequence[SourcePassage], roster_size: 
 
     Args:
         client: The completer (its model and profile pick the rate).
-        plan: Passages to extract.
+        plan: Passages to extract with a model call (store hits are not among them).
         roster_size: Entities in the roster sent with each passage.
+        planned: Passages the run reads in all, hits included, which size the reconcile
+            calls; defaults to ``len(plan)``.
 
     Returns:
         Estimated USD at the monthly cap's rate (the unpriced rate for unknown models).
     """
-    settings = getattr(client, "settings", None)
-    summary = client.usage_summary()
-    model = getattr(settings, "model", None) or str(summary.get("model") or "")
-    profile = getattr(settings, "profile", None) or str(summary.get("profile") or "")
+    profile, model = _identity(client)
     rate, _known = cap_rate(model, profile)
     overhead = render_prompt(EXTRACT_PROMPT, passage_name="", passage_text="", roster=[],
                              not_entities=[])
     base = (len(overhead.system) + len(overhead.user)) // 4 + 1 + roster_size * 12
     total = sum(cap_usd(rate, base + len(p.text) // 4, EXTRACT_MAX_TOKENS) for p in plan)
-    calls = 1 + -(-len(plan) // PASSAGES_PER_RECONCILE_CALL)
+    count = len(plan) if planned is None else planned
+    calls = 1 + -(-count // PASSAGES_PER_RECONCILE_CALL)
     return total + calls * cap_usd(rate, MAX_INPUT_TOKENS, DEFAULT_MAX_TOKENS)
 
 
@@ -162,6 +188,8 @@ def _extract_all(
     not_entities: Sequence[str],
     workers: int,
     run: _Run,
+    store: ExtractStore | None = None,
+    keys: Mapping[str, StoreKey] | None = None,
 ) -> dict[str, PassageExtraction]:
     halt = _Halt()
 
@@ -171,7 +199,10 @@ def _extract_all(
             if halt.error is not None:
                 return None
             try:
-                return extract_passage(client, passage, roster, not_entities)
+                answer = extract_answer(client, passage, roster, not_entities)
+                if store is not None and keys is not None:
+                    store.save(keys[passage.name], answer)
+                return filter_extraction(passage, answer)
             except LLMRunHalted as exc:
                 halt.set(exc)
                 return None
@@ -307,6 +338,20 @@ def _passage_set(cache: BibleCache | None) -> set[tuple[str, str]]:
     return {(name, record.content_hash) for name, record in cache.passages.items()}
 
 
+def _store_summary(store: Mapping[str, Any]) -> str:
+    if store["status"] != "used":
+        return f"store {store['status']} ({store['reason']})"
+    hits = store["hits"]
+    named = ""
+    if hits:
+        more = f" and {len(hits) - MAX_NAMED_HITS} more" if len(hits) > MAX_NAMED_HITS else ""
+        named = f" ({', '.join(hits[:MAX_NAMED_HITS])}{more})"
+    return (
+        f"store used: {len(hits)} hit(s){named}, {store['misses']} miss(es), "
+        f"{store['invalid']} invalid, {store['write_failed']} write failed"
+    )
+
+
 def _summary(status: str, diff: Mapping[str, Any]) -> str:
     usage = diff["usage"]
     cost = f"${usage['usd']:.4f}" + ("" if usage["usd_known"] else " (cost unknown)")
@@ -324,7 +369,8 @@ def _summary(status: str, diff: Mapping[str, Any]) -> str:
         f"~{len(entities['changed'])}; facts +{len(facts['added'])} "
         f"~{len(facts['reworded'])} -{len(facts['retired'])}; conflicts "
         f"+{len(conflicts['added'])} -{len(conflicts['retired'])}; "
-        f"{len(diff['pending'])} pending; {saved}; {usage['calls']} call(s), {cost}"
+        f"{len(diff['pending'])} pending; {saved}; {_store_summary(diff['store'])}; "
+        f"{usage['calls']} call(s), {cost}"
     )
 
 
@@ -339,6 +385,7 @@ def extract_bible(
     overrides_path: Path | None = None,
     now: datetime | None = None,
     max_workers: int | None = None,
+    store: ExtractStore | None = None,
 ) -> ExtractOutcome:
     """Run one extraction.
 
@@ -352,6 +399,9 @@ def extract_bible(
         overrides_path: Defaults to ``<repo>/story-overrides.txt``.
         now: Timestamp for ``extracted_at``.
         max_workers: Concurrent extract calls; defaults to the client's ``max_concurrency``.
+        store: The extraction store (ADR-026). ``incremental`` reads and writes it,
+            ``full`` only writes it; ``None`` (``nanoif ai eval``, library calls) neither
+            reads nor writes one.
 
     Returns:
         The outcome; the diff file is written.
@@ -389,13 +439,26 @@ def extract_bible(
     if plan or deleted:
         roster = _roster(old, overrides)
         not_entities = [line.phrase for line in overrides.not_entities]
+        keys: dict[str, StoreKey] = {}
+        reused: dict[str, PassageExtraction] = {}
+        if store is not None and plan:
+            profile, model = _identity(client)
+            keys = {p.name: store_key(p, profile, model) for p in plan}
+        if store is not None and mode != "full":
+            for passage in plan:
+                answer = store.lookup(keys[passage.name])
+                if answer is not None:
+                    reused[passage.name] = filter_extraction(passage, answer)
+        misses = [p for p in plan if p.name not in reused]
         if plan:
-            client.check_spend(estimate_usd(client, plan, len(roster)))
+            client.check_spend(estimate_usd(client, misses, len(roster), planned=len(plan)))
         settings = getattr(client, "settings", None)
         workers = max_workers or getattr(settings, "max_concurrency", None)
         extractions = _extract_all(
-            client, plan, roster, not_entities, workers or DEFAULT_MAX_CONCURRENCY, run
+            client, misses, roster, not_entities, workers or DEFAULT_MAX_CONCURRENCY, run,
+            store, keys,
         )
+        extractions.update(reused)
         commit = GitService(repo).rev_parse("HEAD")
         ordered = [extractions[name] for name in sorted(extractions)]
         resolution = resolve(client, ordered, new, overrides)
@@ -449,6 +512,10 @@ def extract_bible(
         ],
         **diff_caches(old, new),
         "usage": client.usage_summary(),
+        "store": (
+            bypassed_report(NO_STORE) if store is None
+            else store.report(read=mode != "full", reason=FULL_BYPASS)
+        ),
     }
     write_artifact(diff_out or repo / "dist" / "bible-diff.json", diff, "bible_diff")
     return ExtractOutcome(
@@ -457,4 +524,5 @@ def extract_bible(
         cache_written=written,
         diff=diff,
         summary=_summary(status, diff),
+        warnings=tuple(store.warnings) if store is not None else (),
     )

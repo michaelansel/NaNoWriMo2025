@@ -303,6 +303,7 @@ def _ai_eval(args: argparse.Namespace) -> int:
 
 def _bible_extract(args: argparse.Namespace) -> int:
     from nanoif.bible.run import extract_bible
+    from nanoif.bible.store import ExtractStore, resolve_store_dir
     from nanoif.llm.client import LLMClient
     from nanoif.llm.errors import LLMRunHalted
     from nanoif.llm.profiles import Settings
@@ -310,17 +311,27 @@ def _bible_extract(args: argparse.Namespace) -> int:
     paths = ProjectPaths.from_repo(args.repo, cache=args.cache)
     mode = "full" if args.full else "incremental"
     diff_out = args.diff_out or paths.bible_diff
+    store = ExtractStore.open(resolve_store_dir())
+
+    def warn() -> None:
+        # Store problems cost money, not correctness: GitHub annotations, never a failure.
+        for warning in store.warnings:
+            print(f"::warning::{warning}")
+
     try:
         client = args.llm_client or LLMClient(Settings.from_env())
         outcome = extract_bible(
-            paths.repo, mode, client, paths.cache, args.dry_run, diff_out=diff_out
+            paths.repo, mode, client, paths.cache, args.dry_run, diff_out=diff_out, store=store
         )
     except LLMRunHalted as exc:
+        warn()
         print(f"bible extract did not run: {exc.reason}; nothing was written", file=sys.stderr)
         return 1
     except NanoifError as exc:
+        warn()
         print(f"bible extract failed: {exc}; nothing was written", file=sys.stderr)
         return 1
+    warn()
     print(outcome.summary)
     for failure in outcome.diff["passages_failed"]:
         print(f"not read: {failure['passage']}: {failure['reason']}")

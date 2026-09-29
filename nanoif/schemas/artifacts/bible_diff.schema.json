@@ -7,7 +7,7 @@
   "additionalProperties": false,
   "required": [
     "status", "mode", "dry_run", "cache_written", "base", "passages_read", "passages_failed",
-    "passages_deleted", "pending", "entities", "facts", "conflicts", "usage"
+    "passages_deleted", "pending", "entities", "facts", "conflicts", "usage", "store"
   ],
   "definitions": {
     "names": { "type": "array", "items": { "type": "string" } }
@@ -99,6 +99,23 @@
         "calls": { "type": "integer", "minimum": 0 },
         "usd": { "type": "number", "minimum": 0 },
         "usd_known": { "type": "boolean" }
+      }
+    },
+    "store": {
+      "type": "object",
+      "description": "How the run used the stage-1 extraction store (ADR-026). used: planned passages were looked up; unavailable: the store directory could not be used, so every passage was a miss; bypassed: not read (--full, or a run with no store such as nanoif ai eval).",
+      "additionalProperties": false,
+      "required": ["status", "hits", "misses", "invalid", "write_failed", "reason"],
+      "properties": {
+        "status": { "enum": ["used", "unavailable", "bypassed"] },
+        "hits": {
+          "$ref": "#/definitions/names",
+          "description": "Passages whose stored answer was reused: no model call, $0."
+        },
+        "misses": { "type": "integer", "minimum": 0, "description": "Lookups that found no usable entry, invalid ones included." },
+        "invalid": { "type": "integer", "minimum": 0, "description": "Entries that existed but could not be used (warned by path)." },
+        "write_failed": { "type": "integer", "minimum": 0, "description": "Answers that could not be saved (warned)." },
+        "reason": { "type": "string", "description": "Why the store was unavailable or bypassed; empty when used." }
       }
     }
   }
