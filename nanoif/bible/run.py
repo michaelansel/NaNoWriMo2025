@@ -14,6 +14,10 @@ Order of work (ADR-020):
 6. Save the cache only when the set of ``(passage, content_hash)`` changed and this is not a
    dry run; always write the diff.
 
+A ``preview`` run (ADR-026) is an incremental dry run without reconcile: conflicts, final
+ids and merges come only from ``main``. It writes the would-be cache to ``cache_out``,
+never to ``ai/``, for the pull request's preview Story Bible.
+
 An :class:`~nanoif.llm.errors.LLMRunHalted` anywhere stops the run with nothing written.
 A passage that fails twice is left unrecorded, an entity whose resolve or reconcile failed
 stays pending, and the run is ``partial`` (exit 3) but still saves what it paid for.
@@ -96,6 +100,7 @@ class ExtractOutcome:
         diff: The ``bible_diff`` artifact.
         summary: One line for the log and the step summary, with the cost.
         warnings: Extraction store problems that cost money, not correctness.
+        cache_out_written: Whether the would-be cache was written to ``cache_out``.
     """
 
     status: str
@@ -104,6 +109,7 @@ class ExtractOutcome:
     diff: dict[str, Any]
     summary: str
     warnings: tuple[str, ...] = ()
+    cache_out_written: bool = False
 
 
 @dataclass
@@ -352,11 +358,13 @@ def _store_summary(store: Mapping[str, Any]) -> str:
     )
 
 
-def _summary(status: str, diff: Mapping[str, Any]) -> str:
+def _summary(status: str, diff: Mapping[str, Any], preview: bool) -> str:
     usage = diff["usage"]
     cost = f"${usage['usd']:.4f}" + ("" if usage["usd_known"] else " (cost unknown)")
     if diff["cache_written"]:
         saved = "cache saved"
+    elif preview:
+        saved = "preview, not reconciled, nothing saved to ai/"
     elif diff["dry_run"]:
         saved = "dry run, nothing saved"
     else:
@@ -386,6 +394,8 @@ def extract_bible(
     now: datetime | None = None,
     max_workers: int | None = None,
     store: ExtractStore | None = None,
+    preview: bool = False,
+    cache_out: Path | None = None,
 ) -> ExtractOutcome:
     """Run one extraction.
 
@@ -402,12 +412,16 @@ def extract_bible(
         store: The extraction store (ADR-026). ``incremental`` reads and writes it,
             ``full`` only writes it; ``None`` (``nanoif ai eval``, library calls) neither
             reads nor writes one.
+        preview: An incremental dry run that skips reconcile (ADR-026).
+        cache_out: Where to write the would-be cache, validated as ``story_bible_cache``;
+            never the saved cache. Nothing is written when there is no extraction at all.
 
     Returns:
         The outcome; the diff file is written.
 
     Raises:
-        BibleError: Unknown mode, or no ``src/``.
+        BibleError: Unknown mode, no ``src/``, a preview in ``full`` mode, or a
+            ``cache_out`` that is the saved cache.
         BibleCacheError: The cache exists but is invalid; nothing is written.
         LLMRunHalted: The spend cap, token budget or ledger stopped the run; nothing is
             written.
@@ -415,6 +429,13 @@ def extract_bible(
     """
     if mode not in MODES:
         raise BibleError(f"unknown extraction mode {mode!r}; expected one of {MODES}")
+    if preview and mode != "incremental":
+        raise BibleError("a preview extraction is incremental; --full re-reads what main has")
+    if cache_out is not None and cache_out.resolve() == Path(cache_path).resolve():
+        raise BibleError(
+            f"{cache_out} is the saved cache; a dry run or preview never writes ai/"
+        )
+    dry_run = dry_run or preview
     repo = Path(repo)
     sources = bible_passages(repo)
     overrides = read_overrides(overrides_path or repo / "story-overrides.txt")
@@ -478,7 +499,8 @@ def extract_bible(
                     entity.passages.remove(name)
             del new.passages[name]
         _retire_conflicts(new)
-        _reconcile(client, new, run)
+        if not preview:
+            _reconcile(client, new, run)
         usage = client.usage_summary()
         new.extraction = Extraction(
             commit=commit,
@@ -496,6 +518,9 @@ def extract_bible(
     if changed and not dry_run and status != "up_to_date":
         write_cache(cache_path, new)
         written = True
+    cache_out_written = cache_out is not None and new.extraction is not None
+    if cache_out is not None and cache_out_written:
+        write_cache(cache_out, new)
     diff = {
         "status": status,
         "mode": mode,
@@ -523,6 +548,7 @@ def extract_bible(
         exit_code=EXIT_PARTIAL if status == "partial" else EXIT_OK,
         cache_written=written,
         diff=diff,
-        summary=_summary(status, diff),
+        summary=_summary(status, diff, preview),
         warnings=tuple(store.warnings) if store is not None else (),
+        cache_out_written=cache_out_written,
     )

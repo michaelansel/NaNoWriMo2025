@@ -308,6 +308,9 @@ def _bible_extract(args: argparse.Namespace) -> int:
     from nanoif.llm.errors import LLMRunHalted
     from nanoif.llm.profiles import Settings
 
+    if args.preview != (args.cache_out is not None):
+        print("error: --preview and --cache-out go together", file=sys.stderr)
+        return 2
     paths = ProjectPaths.from_repo(args.repo, cache=args.cache)
     mode = "full" if args.full else "incremental"
     diff_out = args.diff_out or paths.bible_diff
@@ -321,7 +324,8 @@ def _bible_extract(args: argparse.Namespace) -> int:
     try:
         client = args.llm_client or LLMClient(Settings.from_env())
         outcome = extract_bible(
-            paths.repo, mode, client, paths.cache, args.dry_run, diff_out=diff_out, store=store
+            paths.repo, mode, client, paths.cache, args.dry_run, diff_out=diff_out, store=store,
+            preview=args.preview, cache_out=args.cache_out,
         )
     except LLMRunHalted as exc:
         warn()
@@ -339,6 +343,11 @@ def _bible_extract(args: argparse.Namespace) -> int:
         print(f"pending: {pending['entity']}: {pending['reason']}")
     if outcome.cache_written:
         print(f"Wrote {paths.cache}")
+    if args.cache_out is not None:
+        if outcome.cache_out_written:
+            print(f"Wrote {args.cache_out}")
+        else:
+            print(f"No would-be cache written to {args.cache_out}: nothing has been extracted")
     print(f"Wrote {diff_out}")
     return outcome.exit_code
 
@@ -506,8 +515,20 @@ def build_parser() -> argparse.ArgumentParser:
         "--incremental", action="store_true", help="only passages whose text changed (default)"
     )
     which.add_argument("--full", action="store_true", help="re-read every passage, keeping ids")
+    which.add_argument(
+        "--preview",
+        action="store_true",
+        help="pull request preview: incremental, no reconcile, never writes ai/ (needs "
+        "--cache-out)",
+    )
     extract.add_argument(
         "--dry-run", action="store_true", help="write only the diff, never the cache"
+    )
+    extract.add_argument(
+        "--cache-out",
+        type=Path,
+        default=None,
+        help="with --preview: where to write the would-be cache for the preview Story Bible",
     )
     extract.add_argument(
         "--cache", type=Path, default=None, help="default: <repo>/ai/story-bible-cache.json"
