@@ -425,3 +425,14 @@ def test_pronoun_scoring_uses_aliases_and_null_for_ambiguous(truth):
     assert scores["resolvable_correct"] == 2
     assert scores["ambiguous_correct"] == 1
     assert scores["accuracy"] == 0.375
+
+
+@pytest.mark.intent("AC-continuity-review-37")
+def test_finding_in_the_widows_passage_about_something_else_is_not_an_intentional_leak(truth):
+    key = {
+        "type": "object", "passages": ["Day 2 EV", "The widow's door"], "severity": "minor",
+        "quotes": ["Pip asleep on the far jetty", "the key in Wren's palm"],
+    }
+    widow = {**key, "type": "identity", "quotes": ["I was never anyone's wife"]}
+    assert classify_findings(truth, [key])[0]["outcome"] == "false_positive"
+    assert classify_findings(truth, [widow])[0]["outcome"] == "intentional_leak"

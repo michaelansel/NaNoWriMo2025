@@ -12,7 +12,8 @@ manifest and a *results* object built by the CLI from extractor and reviewer out
                      "declared": bool?}],                                        # the Bible's
       "review_conflicts": [{"passages": [str], "quotes": [str]?}],                 # the editor's
       "pronouns":  [{"passage": str, "sentence": str, "entity": str | None}],   # optional
-      "findings":  [{"type": str, "passages": [str], "severity": str, "route": [str]?}],
+      "findings":  [{"type": str, "passages": [str], "severity": str, "route": [str]?,
+                     "quotes": [str]?}],
       "usage":     <LLMClient.usage_summary()>                                  # optional
     }
 
@@ -391,12 +392,13 @@ def score_defects(
 def _matches_planted(finding: Mapping[str, Any], truth: Mapping[str, Any]) -> str | None:
     """Return the id of the planted item a finding lands on, or ``None``."""
     passages = _passage_set(finding.get("passages", ()))
+    quotes = [q for q in finding.get("quotes", ()) or () if q]
     for defect in truth.get("defects", []):
         if _finding_matches_defect(finding, defect):
             return defect["id"]
-    for contradiction in truth.get("contradictions", []):
-        if _passage_set(contradiction["passages"]) <= passages:
-            return contradiction["id"]
+    for target in _conflict_targets(truth)[: len(truth.get("contradictions", []))]:
+        if _lands_on(target, passages, quotes):
+            return target["id"]
     return None
 
 

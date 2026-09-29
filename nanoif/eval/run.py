@@ -209,6 +209,7 @@ def results_from_review(artifact: Mapping[str, Any]) -> dict[str, Any]:
                     "editor": editor["name"],
                     "key": finding.get("key"),
                     "description": finding.get("description", ""),
+                    "quotes": [quote["text"] for quote in finding["quotes"]],
                 }
             )
             if editor["name"] == "continuity":
