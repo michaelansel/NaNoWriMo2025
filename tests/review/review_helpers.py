@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from nanoif.review.units import ReviewStory, read_story_style
-from nanoif.twee.files import passage_locations
-from nanoif.twee.parse import parse_twee_dir
+from nanoif.review.units import ReviewStory
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 EVAL_SRC = FIXTURES / "eval-story" / "src"
@@ -15,14 +13,7 @@ REGRESSIONS = FIXTURES / "regressions"
 
 def load_review_story(src: Path) -> ReviewStory:
     """Build the review view of a fixture story straight from its twee source."""
-    locations = passage_locations(src)
-    return ReviewStory.from_graph(
-        parse_twee_dir(src),
-        {name: location.tags for name, location in locations.items()},
-        locations,
-        read_story_style(src),
-        src.parent,
-    )
+    return ReviewStory.from_source(src)
 
 
 def path_finding(

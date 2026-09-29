@@ -31,6 +31,7 @@ from nanoif.bible.canon import write_canon_pack
 from nanoif.bible.run import extract_bible
 from nanoif.build.paths import ProjectPaths
 from nanoif.errors import BuildError
+from nanoif.eval.regressions import review_regressions
 from nanoif.eval.report import diff_against_baseline, render_markdown
 from nanoif.eval.score import run_scoring
 from nanoif.formats.allpaths import AllPathsConfig, run
@@ -62,7 +63,7 @@ class EvalOutcome:
     """What an eval run produced.
 
     Attributes:
-        scores: Scores, with a ``review`` and an ``extraction`` block.
+        scores: Scores, with ``review``, ``extraction`` and ``regressions`` blocks.
         review: The ``ai_review`` artifact of the run.
         diff: Baseline comparison, when a baseline was given.
         markdown: The report.
@@ -86,10 +87,18 @@ class EvalOutcome:
         return self.extraction["status"] == "ok"
 
     @property
+    def regressions_ok(self) -> bool:
+        """Whether every regression fixture was reviewed (none failed to run)."""
+        return self.scores.get("regressions", {"ok": True})["ok"]
+
+    @property
     def ok(self) -> bool:
-        """Extraction and review complete, and no metric below the baseline."""
+        """Extraction, review and regressions complete, and no metric below the baseline."""
         return (
-            self.review_ok and self.extraction_ok and (self.diff is None or self.diff["ok"])
+            self.review_ok
+            and self.extraction_ok
+            and self.regressions_ok
+            and (self.diff is None or self.diff["ok"])
         )
 
 
@@ -286,6 +295,7 @@ def run_eval(
     workdir: Path,
     baseline: Mapping[str, Any] | None = None,
     env: Mapping[str, str] | None = None,
+    regressions: Path | None = None,
 ) -> EvalOutcome:
     """Extract, review and score the eval story with ``client``.
 
@@ -295,6 +305,8 @@ def run_eval(
         workdir: Scratch directory to build the story in.
         baseline: Parsed baseline JSON to diff against, if any.
         env: Environment for the review (runner, unit budget); defaults to ``os.environ``.
+        regressions: The regression fixtures directory; defaults to ``regressions`` beside
+            the eval story, skipped when that does not exist.
 
     Returns:
         Scores, the review artifact, the baseline diff, the report and the extraction status.
@@ -330,6 +342,10 @@ def run_eval(
         scores = mark_extraction_skipped(scores, extraction["reason"])
     scores["extraction"] = extraction
     scores["review"] = review_summary(artifact)
+    regressions = regressions or fixture.parent / "regressions"
+    if regressions.is_dir():
+        scores["regressions"] = review_regressions(regressions, client)
+        scores["metrics"]["regression_false_positives"] = scores["regressions"]["false_positives"]
     diff = diff_against_baseline(scores, baseline) if baseline is not None else None
     if spend := spend_line(artifact["llm"]):
         scores["spend"] = spend

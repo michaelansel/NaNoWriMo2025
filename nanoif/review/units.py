@@ -33,7 +33,7 @@ from nanoif.graph.ids import passage_id_mapping
 from nanoif.schemas.artifacts import load_artifact
 from nanoif.twee.files import PassageLocation, find_twee_files, passage_locations, split_twee
 from nanoif.twee.links import display_text
-from nanoif.twee.parse import StoryGraph
+from nanoif.twee.parse import StoryGraph, parse_twee_dir
 from nanoif.twee.passages import content_hash
 from nanoif.twee.prose import NON_PROSE_TAGS, is_infra
 
@@ -164,6 +164,30 @@ class ReviewStory:
     locations: dict[str, PassageLocation] = field(default_factory=dict)
     style: StoryStyleConfig = field(default_factory=lambda: StoryStyleConfig({}, "not read"))
     repo: Path | None = None
+
+    @classmethod
+    def from_source(cls, src: Path) -> ReviewStory:
+        """Build straight from a directory of ``.twee`` files, with no build step.
+
+        Used for small fixture stories (the eval's regression fixtures).
+
+        Args:
+            src: The directory holding the story's ``.twee`` files.
+
+        Returns:
+            The review view of the story, rooted at ``src.parent``.
+
+        Raises:
+            ReviewConfigError: The start passage is missing or is infrastructure.
+        """
+        locations = passage_locations(src)
+        return cls.from_graph(
+            parse_twee_dir(src),
+            {name: location.tags for name, location in locations.items()},
+            locations,
+            read_story_style(src),
+            src.parent,
+        )
 
     @classmethod
     def from_graph(

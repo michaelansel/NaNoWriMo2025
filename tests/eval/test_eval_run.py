@@ -76,6 +76,26 @@ def test_eval_scores_the_extracted_bible(tmp_path):
     assert "Extraction: ok" in outcome.markdown
 
 
+@pytest.mark.intent("AC-continuity-review-27")
+def test_eval_replays_the_2025_false_positives(tmp_path):
+    outcome = run_eval(FIXTURE, FakeLLM(respond), tmp_path / "story", env={"NANOIF_RUNNER": "local"})
+    assert outcome.scores["metrics"]["regression_false_positives"] == 0
+    assert [f["name"] for f in outcome.scores["regressions"]["fixtures"]] == [
+        "height-sitting-vs-standing", "sword-hand-after-fall"]
+    assert "Regressions: height-sitting-vs-standing 0 findings, sword-hand-after-fall 0 findings." in outcome.markdown
+
+
+def test_a_regression_that_could_not_run_fails_the_eval(tmp_path):
+    def flaky(call):
+        if call.tag == "continuity:The fall":
+            return FakeLLM.transport_error()
+        return respond(call)
+
+    outcome = run_eval(FIXTURE, FakeLLM(flaky), tmp_path / "story", env={"NANOIF_RUNNER": "local"})
+    assert not outcome.ok and outcome.review_ok
+    assert "sword-hand-after-fall could not run" in outcome.markdown
+
+
 class CappedLLM(FakeLLM):
     def check_spend(self, estimate_usd: float = 0.0) -> None:
         raise LLMSpendCapReached(

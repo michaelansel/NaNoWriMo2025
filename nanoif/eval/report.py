@@ -29,6 +29,7 @@ LOWER_IS_BETTER = (
     "scene_state_leaks",
     "clean_path_false_positives",
     "intentional_leaks",
+    "regression_false_positives",
     "total_tokens",
     "usd",
 )
@@ -53,6 +54,7 @@ _LABELS = {
     "pronoun_accuracy": "Pronoun accuracy",
     "clean_path_false_positives": "Clean-path false positives",
     "intentional_leaks": "Intentional-conflict leaks",
+    "regression_false_positives": "2025 false positives repeated",
     "total_tokens": "Tokens",
     "usd": "USD",
 }
@@ -208,6 +210,14 @@ def render_markdown(scores: Mapping[str, Any], baseline: Mapping[str, Any] | Non
         if editor.get("reason"):
             line += f" ({editor['reason']})"
         detail.append(line + ".")
+    if scores.get("regressions"):
+        parts = [
+            f"{row['name']} {row['findings']} finding{'s' if row['findings'] != 1 else ''}"
+            if row["status"] == "ok"
+            else f"{row['name']} could not run ({row['reason']})"
+            for row in scores["regressions"]["fixtures"]
+        ]
+        detail.append("Regressions: " + ", ".join(parts) + ".")
     if scores.get("skipped_metrics"):
         reasons = sorted(set(scores["skipped_metrics"].values()))
         detail.append(
