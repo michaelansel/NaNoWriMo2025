@@ -39,7 +39,7 @@ mystery) go in [`story-overrides.txt`](story-overrides.txt).
 
 | When | What | Where to look |
 |---|---|---|
-| Every push to a pull request | Build, preview, structure check; Continuity and Style editors on the changed passages | Comments on the pull request, and its checks |
+| Every push to a pull request | Build, preview, structure check; Continuity and Style editors on the changed passages; the preview's Story Bible adds the pull request's passages once they are read | Comments on the pull request, and its checks |
 | A collaborator comments `/check-continuity [all] [passage=<name>]` | The editors again | The same comments, updated in place |
 | A collaborator comments `/extract-story-bible` | A dry run of what the Story Bible would learn | A Story Bible comment; nothing is saved |
 | Merge to `main` | Story Bible extraction, then the site is published | The site, a few minutes later |

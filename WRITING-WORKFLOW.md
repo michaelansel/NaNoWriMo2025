@@ -94,13 +94,9 @@ a passage name someone else already used, or a problem in `StoryData`. **Warning
 passage nothing links to yet, and a file name that does not follow the pattern.
 
 **Editor findings** each show two quotes that disagree and the passages they come from. You
-decide. If the editor is wrong, reply on the pull request:
-
-```
-/dismiss f-1a2b3c4d it's a dream sequence
-```
-
-using the id shown on the finding. It will not come back unless one of those passages changes.
+decide. If the editor is wrong, reply on the pull request with the id shown on the finding, for
+example `/dismiss f-1a2b3c4d it's a dream sequence`. It will not come back unless one of those
+passages changes.
 
 An editor's check is grey when it has findings and red when it could not read some passages; it
 never blocks merging.
@@ -132,6 +128,10 @@ text on one page), **All paths** (every route through the story), **Metrics** (w
 **Passages** (every passage name, its file, and its links: handy for linking), **Story Bible**
 (the cast, places and rules; a placeholder until the Bible is first extracted), and **Graph** (a
 map of the story).
+
+In a pull request's preview, the Story Bible also shows your new passages' characters and facts,
+marked as from this pull request, once the AI has read them. Until then, or if it could not, the
+Freshness section lists them as not read and says why.
 
 `story-overrides.txt` at the top of the repository is where you teach the Story Bible things
 (two names for one person, a word that is not a character, a fact to always keep, a deliberate

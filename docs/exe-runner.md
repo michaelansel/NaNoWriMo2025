@@ -80,3 +80,24 @@ Design: [ADR-023](../architecture/023-monthly-spend-cap.md).
   spend, so fix rather than delete where you can.
 - Rebuilding the VM or deleting the directory starts the month again at $0.
 
+## Story Bible extraction store
+
+Every Story Bible answer the model gives is kept in `~/.local/state/nanoif/extract-store/`
+(one JSON file per passage text, prompt and model). A pull request's preview fills it; the
+extraction after the merge reuses those answers, so a passage whose text did not change since
+its pull request is not paid for twice. Design:
+[ADR-026](../architecture/026-pr-preview-bible-and-extract-store.md).
+
+- The runner's `.env` names it in `NANOIF_BIBLE_STORE_DIR`. A VM set up before the store
+  existed can add it the same way as the ledger: `mkdir -p ~/.local/state/nanoif/extract-store
+  && echo "NANOIF_BIBLE_STORE_DIR=$HOME/.local/state/nanoif/extract-store" >>
+  ~/actions-runner/.env`, then restart the runner service. Without the line, nanoif uses the
+  same default directory.
+- Losing or deleting it costs money, never correctness: the next runs extract again. A
+  missing directory is created; one that cannot be used shows as `store unavailable` in the
+  extraction's summary line. A damaged file is skipped with a `::warning::` naming it and is
+  replaced by the next answer for that passage.
+- Each run's step summary says how many passages were reused (`store used: N hit(s) (...)`).
+- It is never pruned: about 10 KB per passage text, under 100 MB a season. Delete the
+  directory at the new-year reset.
+

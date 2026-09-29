@@ -38,6 +38,16 @@ if ! grep -q '^NANOIF_LLM_LEDGER_DIR=' .env; then
   echo "NANOIF_LLM_LEDGER_DIR=$LEDGER_DIR" >> .env
 fi
 
+echo "== extraction store"
+# Story Bible answers already paid for, reused when the same passage text is read again
+# (ADR-026): a pull request's preview fills it, the extraction after the merge reads it.
+# Losing it costs money, never correctness; nanoif creates it again when it is missing.
+STORE_DIR="$HOME/.local/state/nanoif/extract-store"
+mkdir -p "$STORE_DIR"
+if ! grep -q '^NANOIF_BIBLE_STORE_DIR=' .env; then
+  echo "NANOIF_BIBLE_STORE_DIR=$STORE_DIR" >> .env
+fi
+
 sudo ./svc.sh install "$USER"
 sudo ./svc.sh start
 

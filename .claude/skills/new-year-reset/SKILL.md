@@ -25,6 +25,7 @@ Work through the steps in order. Before each step marked **destructive**, show e
 
 - Delete `ai/story-bible-cache.json`; truncate `ai/dismissals.jsonl` and `ai/outcomes.jsonl` to empty; reset `story-overrides.txt` to its comment header.
 - Confirm no other cache or generated file is tracked: `git ls-files | grep -Ei 'cache|status|Resource'`.
+- On the exe runner VM, delete the Story Bible extraction store, `~/.local/state/nanoif/extract-store/` (ADR-026, `docs/exe-runner.md`); the next extraction recreates it.
 
 ## 4. Strings and examples
 
