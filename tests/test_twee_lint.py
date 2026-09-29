@@ -1,8 +1,7 @@
 """Tests for ``nanoif.twee.lint`` (ported from the 2025 scripts/test_lint_twee.py).
 
 Each rule is tested in check mode (``lint_file``), fix mode (``fix_file``),
-and for idempotency. The 2025 smart-quotes rule is gone; one test proves
-curly quotes are no longer reported.
+and for idempotency.
 """
 
 from pathlib import Path
@@ -611,17 +610,56 @@ class TestIntegration:
         assert isinstance(violations, list)
 
 
-class TestSmartQuotesAreAllowed:
-    """The 2025 smart-quotes rule rewrote prose; it is removed."""
+class TestSmartQuotes:
+    """Curly quotes in prose become ASCII; names, links and macros are never touched."""
 
-    @pytest.mark.intent("AC-structure-check-24", "ADR-018")
-    def test_curly_quotes_are_not_reported(self, tmp_path):
+    @pytest.mark.intent("AC-structure-check-24")
+    def test_curly_quotes_in_prose_are_reported_and_fixed(self, tmp_path):
         test_file = tmp_path / "test.twee"
-        test_file.write_text(":: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d\n", encoding="utf-8")
-        violations, modified = lint(test_file, fix=False)
-        assert violations == []
+        test_file.write_text(
+            ":: Start\n\n\u201cHe said, \u2018Yes\u2019\u201d, and Wren\u2019s lamp went out.\n",
+            encoding="utf-8",
+        )
+        violations, _ = lint(test_file)
+        assert violations == [f"{test_file}:3: [smart-quotes] Found 5 smart quote(s)"]
+        lint(test_file, fix=True)
+        assert test_file.read_text(encoding="utf-8") == (
+            ":: Start\n\n\"He said, 'Yes'\", and Wren's lamp went out.\n"
+        )
+        assert lint(test_file) == ([], False)
+
+    @pytest.mark.intent("AC-structure-check-24")
+    def test_passage_names_links_and_macros_keep_their_quotes(self, tmp_path):
+        # Changing any of these could break a link to or from another file.
+        text = (
+            ":: The widow\u2019s door\n\n"
+            "[[Knock at the widow\u2019s door->The widow\u2019s door]]\n\n"
+            "(link-goto: \"Go\", \"The widow\u2019s door\")\n"
+        )
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(text, encoding="utf-8")
+        assert lint(test_file) == ([], False)
         assert fix_file(test_file) == []
-        assert "\u201c" in test_file.read_text(encoding="utf-8")
+        assert test_file.read_text(encoding="utf-8") == text
+
+    @pytest.mark.intent("AC-structure-check-24")
+    def test_prose_around_a_link_is_fixed_but_the_link_is_not(self, tmp_path):
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(
+            ":: Start\n\nShe\u2019d gone to [[the widow\u2019s door]] at dusk.\n", encoding="utf-8"
+        )
+        lint(test_file, fix=True)
+        assert test_file.read_text(encoding="utf-8") == (
+            ":: Start\n\nShe'd gone to [[the widow\u2019s door]] at dusk.\n"
+        )
+
+    def test_fixing_quotes_and_whitespace_together_is_idempotent(self, tmp_path):
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(":: Start\nIt\u2019s late.   \n\n\n", encoding="utf-8")
+        lint(test_file, fix=True)
+        once = test_file.read_text(encoding="utf-8")
+        assert once == ":: Start\n\nIt's late.\n"
+        assert fix_file(test_file) == [] and test_file.read_text(encoding="utf-8") == once
 
 
 class TestViolation:

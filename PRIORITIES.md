@@ -23,7 +23,8 @@ from a browser, with nothing blocking them.
   fresh, and the story settings are filled in.
 - Every pull request builds, previews and runs the structure check; every merge deploys; tests run
   in CI as a required check.
-- No automation commits to a writer's branch or rewrites prose.
+- No automation commits to a writer's branch or rewrites prose, except the formatting linter,
+  which pushes its whitespace and quote fixes to the pull request branch.
 - Writer docs (`README.md`, `CONTRIBUTING.md`, `WRITING-WORKFLOW.md`) are current.
 
 **Done by:** Oct 25, when `/nov1-checklist` prints `READY`.
@@ -54,11 +55,13 @@ from a browser, with nothing blocking them.
 
 - Story Bible v2 (per-entity merge, stable fact ids, the overrides file, freshness) is live and
   feeds canon to the Continuity Editor.
+- The pull request preview shows the Story Bible with that pull request's changed passages, and the
+  post-merge extraction reuses those results rather than paying for them twice.
 - An eval baseline is committed for the default profile, and every prompt change cites its eval
   delta.
 - Quality keeps improving through November by prompt and config changes only.
 
-**Done by:** Story Bible v2 Oct 18; eval tuning Oct 25. The Story Bible ships on Nov 1 as it stands
+**Done by:** Story Bible v2 Oct 18; the pull request's Story Bible and eval tuning Oct 25. The Story Bible ships on Nov 1 as it stands
 on Oct 25; later fixes to it follow the change windows below.
 
 ## Schedule (2026 season)
@@ -68,7 +71,7 @@ on Oct 25; later fixes to it follow the change windows below.
 | Sep 26 - Oct 2 | Package and CI tests, structure check, LLM client, eval story, runner online |
 | Oct 3 - Oct 10 | Critical path: move to the new repository; Continuity and Style editors; workflows; green on a real pull request |
 | Oct 11 - Oct 18 | Story Bible v2, overrides, dismissals and outcomes |
-| Oct 19 - Oct 25 | Eval and prompt tuning, remaining bugs, docs, content reset; `/nov1-checklist` READY |
+| Oct 19 - Oct 25 | Linter fix push; the pull request's Story Bible in the preview; eval and prompt tuning, remaining bugs, docs, content reset; `/nov1-checklist` READY |
 | Oct 26 - Oct 31 | Freeze: a dry-run pull request each day; fixes only |
 | Nov 1 - Nov 30 | Writing. Only writer-blocking bugs and prompt or config changes; weekly false-positive review from `ai/outcomes.jsonl`; spend watch |
 | December | Retro (`new-year-reset`), anything cut, structural changes |

@@ -15,12 +15,14 @@ Rules:
 6. ``single-blank-lines``: no runs of blank lines.
 7. ``link-block-spacing``: a blank line before and after a block of
    one-link-per-line choices, and none between the links.
-
-The 2025 ``smart-quotes`` rule is gone: curly quotes are the writer's choice.
+8. ``smart-quotes``: curly quotes and apostrophes in prose become ASCII. Passage
+   headers, ``[[links]]``, Harlowe macro calls and special passages are never
+   touched, so a fix can never break a link to or from another file.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,6 +33,9 @@ SPECIAL_PASSAGE_NAMES = frozenset(
     {"StoryData", "StoryTitle", "StoryStylesheet", "StoryBanner", "StoryMenu", "StoryInit"}
 )
 SPECIAL_PASSAGE_TAGS = frozenset({"stylesheet", "script"})
+
+SMART_QUOTES = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
+_MACRO_START_RE = re.compile(r"\([A-Za-z0-9_-]+:")
 
 
 @dataclass(frozen=True)
@@ -112,6 +117,50 @@ def _blank(line: str) -> bool:
     return line.strip() == ""
 
 
+def _protected_spans(line: str) -> list[tuple[int, int]]:
+    """Return ``[start, end)`` spans of ``[[links]]`` and Harlowe macro calls."""
+    spans: list[tuple[int, int]] = []
+    index = 0
+    while index < len(line):
+        if line.startswith("[[", index):
+            close = line.find("]]", index + 2)
+            end = len(line) if close == -1 else close + 2
+            spans.append((index, end))
+            index = end
+            continue
+        macro = _MACRO_START_RE.match(line, index)
+        if macro is not None:
+            depth, end = 0, len(line)
+            for position in range(index, len(line)):
+                if line[position] == "(":
+                    depth += 1
+                elif line[position] == ")":
+                    depth -= 1
+                    if depth == 0:
+                        end = position + 1
+                        break
+            spans.append((index, end))
+            index = end
+            continue
+        index += 1
+    return spans
+
+
+def _fix_smart_quotes(line: str) -> tuple[str, int]:
+    """Replace curly quotes outside links and macros; return the line and the count."""
+    pieces: list[str] = []
+    count = 0
+    cursor = 0
+    for start, end in [*_protected_spans(line), (len(line), len(line))]:
+        prose = line[cursor:start]
+        fixed = prose.translate(SMART_QUOTES)
+        count += sum(1 for a, b in zip(prose, fixed, strict=True) if a != b)
+        pieces.append(fixed)
+        pieces.append(line[start:end])
+        cursor = end
+    return "".join(pieces), count
+
+
 def _run(text: str, file: Path, fix: bool) -> tuple[list[Violation], list[str]]:
     """Apply every rule; return the violations and the fixed lines."""
     lines = text.splitlines(keepends=True)
@@ -138,6 +187,13 @@ def _run(text: str, file: Path, fix: bool) -> tuple[list[Violation], list[str]]:
                 line = line.rstrip()
 
         header = parse_passage_header(line)
+        if header is None and not (last_header is not None and is_special_passage(*last_header)):
+            fixed_quotes, quotes = _fix_smart_quotes(line)
+            if quotes:
+                report(number, "smart-quotes", f"Found {quotes} smart quote(s)")
+                if fix:
+                    line = fixed_quotes
+
         if is_block_link(line):
             if not in_link_block:
                 if last_non_blank_was_narrative and out and not _blank(out[-1]):
