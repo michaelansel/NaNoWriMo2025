@@ -75,3 +75,14 @@ def isolated_spend_ledger(tmp_path_factory, monkeypatch) -> Path:
     for name in ("NANOIF_LLM_LEDGER_DIR", "NANOIF_LLM_MONTHLY_USD", "GITHUB_RUN_ID"):
         monkeypatch.delenv(name, raising=False)
     return state / "nanoif" / "spend"
+
+
+@pytest.fixture(autouse=True)
+def isolated_extract_store(isolated_spend_ledger, monkeypatch) -> Path:
+    """Point the default extraction store at the same throwaway state directory.
+
+    No test may read or write the real ``~/.local/state/nanoif/extract-store``: a stored
+    answer from an earlier run would turn a test's model call into a silent hit.
+    """
+    monkeypatch.delenv("NANOIF_BIBLE_STORE_DIR", raising=False)
+    return isolated_spend_ledger.parent / "extract-store"

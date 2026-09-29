@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/extract_store_entry.schema.json",
+  "title": "extract_store_entry",
+  "description": "One stage-1 extraction answer in the shared extraction store, <store dir>/<key[:2]>/<key>.json, where key is the SHA-256 of the canonical JSON of key_fields (ADR-026). Written and read only by nanoif/bible/store.py.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "key_fields", "answer", "created_at", "run"],
+  "properties": {
+    "version": { "const": 1 },
+    "key_fields": {
+      "type": "object",
+      "description": "Everything that determines the answer except the roster and the not-entity phrases, which are left out on purpose (AC-story-bible-36).",
+      "additionalProperties": false,
+      "required": [
+        "passage_name", "content_hash", "prompt_hash", "schema_hash", "profile", "model",
+        "reasoning_effort", "max_tokens"
+      ],
+      "properties": {
+        "passage_name": { "type": "string", "minLength": 1 },
+        "content_hash": { "type": "string", "minLength": 1 },
+        "prompt_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+        "schema_hash": { "type": "string", "pattern": "^[0-9a-f]{12}$" },
+        "profile": { "type": "string" },
+        "model": { "type": "string" },
+        "reasoning_effort": { "type": ["string", "null"] },
+        "max_tokens": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "answer": {
+      "type": "object",
+      "description": "The raw, schema-valid bible_extract answer, before the deterministic filters."
+    },
+    "created_at": { "type": "string", "description": "UTC timestamp, ISO 8601 with Z" },
+    "run": { "type": ["string", "null"], "description": "GITHUB_RUN_ID when set" }
+  }
+}

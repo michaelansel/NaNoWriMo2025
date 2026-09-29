@@ -95,3 +95,21 @@ def prompt_hash(name: str) -> str:
         FileNotFoundError: No such prompt.
     """
     return hashlib.sha256((PROMPTS_DIR / f"{name}.md").read_bytes()).hexdigest()[:12]
+
+
+def schema_hash(name: str) -> str:
+    """Return the first 12 hex digits of the SHA-256 of a prompt's output schema file.
+
+    Part of the extraction store's key (ADR-026), so a schema change is never answered
+    from an entry written under the old one.
+
+    Args:
+        name: Prompt name.
+
+    Returns:
+        12 lower-case hex digits.
+
+    Raises:
+        FileNotFoundError: No such schema.
+    """
+    return hashlib.sha256((PROMPTS_DIR / f"{name}.schema.json").read_bytes()).hexdigest()[:12]
