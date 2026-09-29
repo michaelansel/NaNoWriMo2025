@@ -13,11 +13,15 @@ the next preview without extraction:
   still declared.
 
 A line that has no effect is listed in :attr:`Bible.unmatched`.
+
+A pull request's preview (ADR-026) passes the pull request's passages: facts from those
+of them the cache has read in their current text are marked ``provisional``, and each of
+them it has not read is listed in Freshness with the reason.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Collection, Mapping
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -38,6 +42,7 @@ from nanoif.twee.links import display_text
 from nanoif.twee.quotes import normalize_text, quote_found
 
 EXTRACTION_RESULTS = ("success", "failure", "cancelled", "skipped")
+NOT_READ = "this pull request's extraction did not read it"
 SECTION_TYPES = {"cast": "character", "places": "location", "items": "item", "groups": "group"}
 
 
@@ -55,6 +60,8 @@ class BibleFact:
         quote_found: False when a pinned fact's quote is not in its passage.
         evidence: 1 plus the number of facts that restate it.
         restatements: Ids of the facts marked ``duplicate_of`` this one.
+        provisional: From a pull request's passage in its preview (not merged); its id
+            and its entity's merged name may change after merge.
     """
 
     id: str
@@ -66,6 +73,7 @@ class BibleFact:
     quote_found: bool = True
     evidence: int = 1
     restatements: tuple[str, ...] = ()
+    provisional: bool = False
 
 
 @dataclass(frozen=True)
@@ -136,6 +144,7 @@ class Freshness:
         new: Passages the extraction never read.
         deleted: Passages the cache has that no longer exist.
         pending: Entities whose reconciliation is still pending.
+        reasons: In a pull request preview, why each unread passage was not read.
     """
 
     commit: str | None
@@ -146,6 +155,7 @@ class Freshness:
     new: tuple[str, ...]
     deleted: tuple[str, ...]
     pending: tuple[str, ...]
+    reasons: dict[str, str] = field(default_factory=dict)
 
     @property
     def unread(self) -> tuple[str, ...]:
@@ -166,6 +176,7 @@ class Bible:
         unmatched: ``(line, text)`` of override lines that had no effect.
         freshness: How current it is.
         passages: Passage name to the content hash the extraction read.
+        preview: Rendered for a pull request's preview (ADR-026).
     """
 
     cache_present: bool
@@ -176,6 +187,7 @@ class Bible:
     unmatched: tuple[tuple[int, str], ...]
     freshness: Freshness
     passages: dict[str, str] = field(default_factory=dict)
+    preview: bool = False
 
     def section(self, name: str) -> tuple[BibleEntity, ...]:
         """Entities of one page section: ``cast``, ``places``, ``items`` or ``groups``."""
@@ -230,6 +242,18 @@ class Bible:
             return data
 
         fresh = self.freshness
+        freshness: dict[str, Any] = {
+            "commit": fresh.commit,
+            "extracted_at": fresh.extracted_at,
+            "mode": fresh.mode,
+            "extraction_result": fresh.extraction_result,
+            "changed": list(fresh.changed),
+            "new": list(fresh.new),
+            "deleted": list(fresh.deleted),
+            "pending": list(fresh.pending),
+        }
+        if self.preview:
+            freshness["reasons"] = dict(fresh.reasons)
         return {
             "cache_present": self.cache_present,
             "passage_count": self.passage_count,
@@ -243,22 +267,15 @@ class Bible:
                 for m in self.mysteries
             ],
             "unmatched_overrides": [{"line": line, "text": text} for line, text in self.unmatched],
-            "freshness": {
-                "commit": fresh.commit,
-                "extracted_at": fresh.extracted_at,
-                "mode": fresh.mode,
-                "extraction_result": fresh.extraction_result,
-                "changed": list(fresh.changed),
-                "new": list(fresh.new),
-                "deleted": list(fresh.deleted),
-                "pending": list(fresh.pending),
-            },
+            "freshness": freshness,
         }
 
 
 def _fact_dict(fact: BibleFact) -> dict[str, Any]:
     data = asdict(fact)
     data["restatements"] = list(fact.restatements)
+    if not fact.provisional:
+        del data["provisional"]
     return data
 
 
@@ -323,6 +340,8 @@ def assemble(
     *,
     texts: Mapping[str, str] | None = None,
     extraction_result: str = "success",
+    preview_passages: Collection[str] | None = None,
+    unread_reasons: Mapping[str, str] | None = None,
 ) -> Bible:
     """Assemble the Bible.
 
@@ -333,12 +352,19 @@ def assemble(
         texts: Passage name to text now, to check pinned quotes; without it a pin's
             quote counts as not found.
         extraction_result: How the latest extraction job ended.
+        preview_passages: For a pull request's preview (ADR-026), its new and changed
+            passages; ``None`` for any other build.
+        unread_reasons: Passage name to why it was not read, for the preview's Freshness;
+            an unread pull request passage with no reason given gets :data:`NOT_READ`.
 
     Returns:
         The Bible.
     """
     texts = texts or {}
+    preview = preview_passages is not None
+    ours = set(preview_passages or ())
     if cache is None:
+        unread = sorted(current_hashes)
         return Bible(
             cache_present=False,
             passage_count=len(current_hashes),
@@ -346,9 +372,13 @@ def assemble(
             conflicts=(),
             mysteries=(),
             unmatched=tuple((o.line, _describe(o)) for o in _all_lines(overrides)),
-            freshness=Freshness(None, None, None, extraction_result, (),
-                                tuple(sorted(current_hashes)), (), ()),
+            freshness=Freshness(None, None, None, extraction_result, (), tuple(unread), (), (),
+                                _reasons(unread, ours, unread_reasons)),
+            preview=preview,
         )
+    read_now = {n for n, h in current_hashes.items()
+                if n in cache.passages and cache.passages[n].content_hash == h}
+    provisional = ours & read_now
     unmatched: list[tuple[int, str]] = []
     work = {e.slug: _Working(_copy(e), _forms(e)) for e in cache.live_entities()}
     moved: dict[str, str] = {}
@@ -398,7 +428,7 @@ def assemble(
                       pinned=True, quote_found=found)
         )
 
-    entities = [_finish(w) for w in work.values()]
+    entities = [_finish(w, provisional) for w in work.values()]
     entities = [e for e in entities if e.passages or e.facts or e.rules]
     entities.sort(key=lambda e: (e.name.casefold(), e.slug))
     visible = {e.slug: e for e in entities}
@@ -412,7 +442,7 @@ def assemble(
         facts = {f.id: f for f in work[slug].entity.facts}
         if not all(fid in facts for fid in conflict.fact_ids):
             continue
-        pair = tuple(_plain(facts[fid]) for fid in conflict.fact_ids)
+        pair = tuple(_plain(facts[fid], provisional=provisional) for fid in conflict.fact_ids)
         conflicts.append(BibleConflict(conflict.id, slug, entity.name, conflict.note, pair))
 
     mysteries: list[Mystery] = []
@@ -449,6 +479,7 @@ def assemble(
         mysteries.append(Mystery(line.name, line.line, marked, tuple(declared)))
 
     extraction = cache.extraction
+    unread = sorted(set(current_hashes) - read_now)
     return Bible(
         cache_present=True,
         passage_count=len(current_hashes),
@@ -466,9 +497,22 @@ def assemble(
             new=tuple(sorted(n for n in current_hashes if n not in cache.passages)),
             deleted=tuple(sorted(n for n in cache.passages if n not in current_hashes)),
             pending=tuple(e.name for e in entities if e.pending),
+            reasons=_reasons(unread, ours, unread_reasons),
         ),
         passages={name: record.content_hash for name, record in sorted(cache.passages.items())},
+        preview=preview,
     )
+
+
+def _reasons(
+    unread: list[str], ours: set[str], given: Mapping[str, str] | None
+) -> dict[str, str]:
+    given = given or {}
+    return {
+        name: given.get(name) or NOT_READ
+        for name in unread
+        if name in given or name in ours
+    }
 
 
 def _all_lines(overrides: Overrides) -> list[Payload]:
@@ -477,19 +521,27 @@ def _all_lines(overrides: Overrides) -> list[Payload]:
     return sorted(lines, key=lambda line: line.line)
 
 
-def _plain(fact: Fact, evidence: int = 1, restatements: tuple[str, ...] = ()) -> BibleFact:
+def _plain(
+    fact: Fact,
+    evidence: int = 1,
+    restatements: tuple[str, ...] = (),
+    *,
+    provisional: Collection[str] = (),
+) -> BibleFact:
     return BibleFact(fact.id, fact.claim, fact.quote, fact.passage, fact.kind,
-                     evidence=evidence, restatements=restatements)
+                     evidence=evidence, restatements=restatements,
+                     provisional=fact.passage in provisional)
 
 
-def _finish(work: _Working) -> BibleEntity:
+def _finish(work: _Working, provisional: Collection[str] = ()) -> BibleEntity:
     entity = work.entity
     restated: dict[str, list[str]] = {}
     for fact in entity.facts:
         if fact.duplicate_of is not None:
             restated.setdefault(fact.duplicate_of, []).append(fact.id)
     shown = sorted(
-        (_plain(f, 1 + len(restated.get(f.id, [])), tuple(restated.get(f.id, [])))
+        (_plain(f, 1 + len(restated.get(f.id, [])), tuple(restated.get(f.id, [])),
+                provisional=provisional)
          for f in entity.facts if f.duplicate_of is None),
         key=lambda f: fact_number(f.id),
     )
@@ -513,6 +565,8 @@ def load_bible(
     overrides_path: Path | None = None,
     src: Path | None = None,
     extraction_result: str = "success",
+    preview_passages: Collection[str] | None = None,
+    unread_reasons: Mapping[str, str] | None = None,
 ) -> Bible:
     """Read ``src/``, the cache and the overrides, and assemble the Bible.
 
@@ -522,6 +576,8 @@ def load_bible(
         overrides_path: Defaults to ``<repo>/story-overrides.txt``.
         src: Defaults to ``<repo>/src``.
         extraction_result: How the latest extraction job ended.
+        preview_passages: A pull request preview's passages (see :func:`assemble`).
+        unread_reasons: Why passages were not read (see :func:`assemble`).
 
     Returns:
         The Bible.
@@ -543,4 +599,6 @@ def load_bible(
         current_hashes(sources),
         texts={passage.name: passage.text for passage in sources},
         extraction_result=extraction_result,
+        preview_passages=preview_passages,
+        unread_reasons=unread_reasons,
     )

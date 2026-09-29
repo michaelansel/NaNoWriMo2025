@@ -24,7 +24,11 @@
         "pinned": { "type": "boolean" },
         "quote_found": { "type": "boolean" },
         "evidence": { "type": "integer", "minimum": 1 },
-        "restatements": { "type": "array", "items": { "type": "string" } }
+        "restatements": { "type": "array", "items": { "type": "string" } },
+        "provisional": {
+          "type": "boolean",
+          "description": "Present and true only in a pull request's preview (ADR-026): the fact comes from one of its passages, not merged; its id and its entity's merged name may change after merge."
+        }
       }
     },
     "entity": {
@@ -118,7 +122,12 @@
         "changed": { "$ref": "#/definitions/names" },
         "new": { "$ref": "#/definitions/names" },
         "deleted": { "$ref": "#/definitions/names" },
-        "pending": { "$ref": "#/definitions/names" }
+        "pending": { "$ref": "#/definitions/names" },
+        "reasons": {
+          "type": "object",
+          "description": "Pull request preview only (ADR-026): unread passage name to why it was not read (failed, spend cap, runner unavailable).",
+          "additionalProperties": { "type": "string" }
+        }
       }
     }
   }

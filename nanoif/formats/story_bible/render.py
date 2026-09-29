@@ -9,7 +9,8 @@ page is never replaced by a placeholder.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,9 @@ class StoryBibleConfig:
         output_dir: Where ``story-bible.html`` and ``story-bible.json`` go.
         extraction_result: How the latest extraction job ended.
         generated_at: Timestamp shown on the page; defaults to now.
+        preview_passages: For a pull request's preview Story Bible (ADR-026), the pull
+            request's new and changed passages; ``None`` otherwise.
+        unread_reasons: In a preview, why passages were not read.
     """
 
     repo_root: Path
@@ -45,6 +49,8 @@ class StoryBibleConfig:
     output_dir: Path
     extraction_result: str = "success"
     generated_at: datetime | None = None
+    preview_passages: tuple[str, ...] | None = None
+    unread_reasons: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -134,6 +140,8 @@ def build_story_bible(config: StoryBibleConfig) -> StoryBibleResult:
         overrides_path=config.overrides_path,
         src=config.src_dir,
         extraction_result=config.extraction_result,
+        preview_passages=config.preview_passages,
+        unread_reasons=config.unread_reasons,
     )
     commit = GitService(config.repo_root).rev_parse("HEAD")
     generated_at = config.generated_at or datetime.now()

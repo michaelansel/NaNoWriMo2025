@@ -114,10 +114,44 @@ def _build_metrics(args: argparse.Namespace) -> int:
     return 0
 
 
+def _preview_inputs(
+    args: argparse.Namespace,
+) -> tuple[tuple[str, ...] | None, dict[str, str]]:
+    """The pull request's passages and why any were not read, for a preview Story Bible.
+
+    Raises:
+        NanoifError: ``changes.json`` or the preview's ``bible-diff.json`` is missing or
+            invalid.
+    """
+    from nanoif.schemas.artifacts import load_artifact
+
+    changes_path = getattr(args, "preview_passages", None)
+    if changes_path is None:
+        return None, {}
+    changes = load_artifact(changes_path, "changes")
+    passages = tuple(sorted(set(changes["changed"]) | set(changes["new"])))
+    reasons: dict[str, str] = {}
+    diff_path = getattr(args, "preview_diff", None)
+    if diff_path is not None:
+        diff = load_artifact(diff_path, "bible_diff")
+        reasons = {item["passage"]: item["reason"] for item in diff["passages_failed"]}
+    reason = getattr(args, "preview_reason", None)
+    if reason:
+        reasons = {name: reasons.get(name, reason) for name in passages} | reasons
+    return passages, reasons
+
+
 def _build_story_bible(args: argparse.Namespace) -> int:
     from nanoif.formats.story_bible import StoryBibleConfig, build_story_bible
 
+    if getattr(args, "preview_passages", None) is None and (
+        getattr(args, "preview_diff", None) is not None or getattr(args, "preview_reason", None)
+    ):
+        print("error: --preview-diff and --preview-reason need --preview-passages",
+              file=sys.stderr)
+        return 2
     paths = _paths(args)
+    preview_passages, reasons = _preview_inputs(args)
     result = build_story_bible(
         StoryBibleConfig(
             repo_root=paths.repo,
@@ -127,6 +161,8 @@ def _build_story_bible(args: argparse.Namespace) -> int:
             story_graph_path=paths.story_graph,
             output_dir=paths.dist,
             extraction_result=getattr(args, "extraction_result", None) or "success",
+            preview_passages=preview_passages,
+            unread_reasons=reasons,
         )
     )
     bible = result.bible
@@ -145,6 +181,8 @@ def _build_story_bible(args: argparse.Namespace) -> int:
         f"text, {len(fresh.deleted)} no longer in the story; latest extraction: "
         f"{fresh.extraction_result}"
     )
+    for name, reason in fresh.reasons.items():
+        print(f"not read in this pull request's preview: {name}: {reason}")
     for line, text in bible.unmatched:
         print(f"story-overrides.txt:{line}: unmatched: {text}")
     print(f"Wrote {result.html_path} and {result.json_path}")
@@ -418,6 +456,26 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["success", "failure", "cancelled", "skipped"],
         default="success",
         help="how the latest extraction job ended; the page says when it did not succeed",
+    )
+    bible.add_argument(
+        "--preview-passages",
+        type=Path,
+        default=None,
+        help="pull request preview (ADR-026): dist/changes.json; facts from these passages are "
+        "marked as from this pull request, and no canon pack is built",
+    )
+    bible.add_argument(
+        "--preview-diff",
+        type=Path,
+        default=None,
+        help="the preview extraction's bible-diff.json; its failed passages are listed as not "
+        "read with the reason",
+    )
+    bible.add_argument(
+        "--preview-reason",
+        default=None,
+        help="why the preview extraction did not run; given for every unread pull request "
+        "passage",
     )
     canon = _add_build(
         targets, "canon-pack", "the Continuity Editor's canon (no model)", _build_canon_pack

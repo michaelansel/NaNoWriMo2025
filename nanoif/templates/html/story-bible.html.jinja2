@@ -39,6 +39,7 @@
             background: #ede9fe; color: #4c3fae; margin-left: 0.3rem;
         }
         .badge.warn { background: #fee2e2; color: #991b1b; }
+        .badge.provisional { background: #fef3c7; color: #92400e; }
         .conflict { border-left: 4px solid #dc2626; padding-left: 0.8rem; margin: 0.8rem 0; }
         .mystery { border-left: 4px solid #7c3aed; padding-left: 0.8rem; margin: 0.8rem 0; }
         .id { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; color: #666; }
@@ -51,6 +52,7 @@
 <li>{% if entity %}<strong>{{ entity }}:</strong> {% endif %}<span class="claim">{{ fact.claim }}</span>
     <q>{{ fact.quote }}</q> <span class="passage">({{ fact.passage }})</span>
     <span class="id">{{ fact.id }}</span>
+    {%- if fact.provisional %}<span class="badge provisional">from this pull request (not merged)</span>{% endif %}
     {%- if fact.pinned %}<span class="badge">pinned</span>{% endif %}
     {%- if not fact.quote_found %}<span class="badge warn">quote not found</span>{% endif %}
     {%- if fact.evidence > 1 %}<span class="badge">stated in {{ fact.evidence }} places</span>{% endif %}</li>
@@ -91,6 +93,15 @@
         <p class="subtitle">{{ story_title }} · <a href="index.html">back to the story</a></p>
     </div>
     <div class="container">
+{% if bible.preview %}
+        <div class="panel notice" id="preview">
+            <h2>Pull request preview</h2>
+            <p>This Story Bible adds this pull request's passages once the AI has read them. Facts marked <span class="badge provisional">from this pull request (not merged)</span> come from them: their ids and merged names may change after merge, and conflicts with them are found after merge.</p>
+            {% if fresh.reasons %}
+            <p>{{ fresh.reasons | length }} passage{{ "" if fresh.reasons | length == 1 else "s" }} {{ "was" if fresh.reasons | length == 1 else "were" }} not read by this pull request's extraction, so for {{ "it" if fresh.reasons | length == 1 else "them" }} this page shows the Story Bible of <code>main</code>; <a href="#freshness">Freshness</a> says why.</p>
+            {% endif %}
+        </div>
+{% endif %}
 {% if not bible.cache_present %}
         <div class="panel notice" id="placeholder">
             <h2>Placeholder Story Bible</h2>
@@ -190,7 +201,7 @@
             {% if fresh.unread %}
             <h3>Not yet read in their current text ({{ fresh.unread | length }})</h3>
             <ul class="facts">
-                {% for name in fresh.unread %}<li>{{ name }}{% if name in fresh.changed %} <span class="badge">changed</span>{% else %} <span class="badge">new</span>{% endif %}</li>
+                {% for name in fresh.unread %}<li>{{ name }}{% if name in fresh.changed %} <span class="badge">changed</span>{% else %} <span class="badge">new</span>{% endif %}{% if name in fresh.reasons %} not read: {{ fresh.reasons[name] }}{% endif %}</li>
                 {% endfor %}
             </ul>
             {% else %}
