@@ -3,10 +3,8 @@
 Writers add Twee passages to `src/` through pull requests. GitHub Actions builds a playable
 story and reading aids, runs deterministic checks, and runs AI editors that read only the new
 and changed passages. Every result lands on the PR as one sticky comment and one check run per
-check type, and nothing a check could not do is ever shown as a pass.
-
-Decisions are recorded in [`architecture/`](architecture/); this page describes the system as
-it is and links the ADR that explains each part. Superseded ADRs are kept for their record.
+check type, and nothing a check could not do is ever shown as a pass. This page describes the
+system as it is; each part links its ADR in [`architecture/`](architecture/).
 
 ## Components
 
@@ -66,6 +64,7 @@ PR opened / pushed
   ├─ ai-review (needs build, probe; same-repo PRs only; timeout 45 min)
   │     runner=exe:    nanoif ai review --mode changed → ai-review.json + head sha
   │                    → <!-- nano:continuity --> and <!-- nano:style --> comments + check runs
+  │                    then bible extract --preview → story-bible-preview, <!-- nano:bible -->
   │     runner=hosted: "AI review unavailable" comment, failing check, no model call
   └─ ai-review-not-run (hosted; when build or probe did not succeed)
         → both editor comments "did not run for <sha>", failing checks, job fails
@@ -89,6 +88,9 @@ PR opened / pushed
   ([022](architecture/022-ai-review-lineage-and-not-run.md)). `/extract-story-bible` is a dry
   run on the PR merged with `main` that never writes `ai/`; its result or "did not run" is the
   `<!-- nano:bible -->` comment ([020](architecture/020-story-bible-v2.md)).
+- After the review, `ai-review` extracts the PR's changed passages (no reconcile, nothing saved)
+  into `story-bible-preview`, `<!-- nano:bible -->` and a `Story Bible preview` check, or says
+  "did not run"; review canon stays `main`'s ([026](architecture/026-pr-preview-bible-and-extract-store.md)).
 
 ## Main branch flow
 
@@ -110,7 +112,9 @@ push to main (or dispatch with bible-mode=full)
 - A failed or skipped extraction still deploys, with the previous cache and a banner naming
   the failure and the date of the Bible shown.
 - `ai-maintenance.yml` (manual, and a daily `runner-check` in November) runs `check-all`,
-  `eval` and `runner-check`; `pr-closed` records finding outcomes on merge.
+  `eval` and `runner-check`. `pr-closed` (outcomes on merge) is decided but not built.
+- Extract reuses stored stage-1 answers, so text a PR already extracted costs nothing on
+  `main`; `--full` never reads the store ([026](architecture/026-pr-preview-bible-and-extract-store.md)).
 
 ## State
 
@@ -118,13 +122,14 @@ push to main (or dispatch with bible-mode=full)
 |---|---|---|
 | `ai/story-bible-cache.json` (v2, the only Bible cache) | `bible-extract` on main | `bible.assemble` → Story Bible page, canon pack; `/extract-story-bible` dry run |
 | `ai/dismissals.jsonl` | `/dismiss` job on main | `nanoif ai review` (suppression) |
-| `ai/outcomes.jsonl` | `pr-closed` on main | false-positive review |
+| `ai/outcomes.jsonl` | `pr-closed` on main (not built) | false-positive review |
 | `story-overrides.txt` | writers | `nanoif check structure`, Story Bible |
 | `dist/**`, `lib/artifacts/**` | every build | pages, AI jobs via `story-preview` |
 | spend ledger `<NANOIF_LLM_LEDGER_DIR>/YYYY-MM.jsonl` (on the exe VM, not in git) | every model call | the monthly cap ([023](architecture/023-monthly-spend-cap.md)) |
+| extraction store `<NANOIF_BIBLE_STORE_DIR>/` (on the exe VM, not in git; loss = re-extract) | `bible extract` (PR and `main`) | `bible extract` ([026](architecture/026-pr-preview-bible-and-extract-store.md)) |
 
-Only those three `main` jobs have `contents: write`, and only for `ai/`. No automation commits
-to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)).
+Only `bible-extract` and `/dismiss` have `contents: write`, only for `ai/` on `main`. No
+automation commits to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)).
 
 ## Data contracts
 
@@ -142,14 +147,16 @@ Every JSON artifact that crosses a job or process boundary has a schema in
 | `ai-review.json` | `ai_review` | `ai review`, `github merge-review` → GitHub reporter, `/dismiss` ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `ai/story-bible-cache.json` | `story_bible_cache` | `bible extract` → `bible.assemble` ([020](architecture/020-story-bible-v2.md)) |
 | `story-bible.json`, `canon-pack.json` | `story_bible`, `canon_pack` | `build story-bible`, `build canon-pack` → Pages; pack → Continuity Editor, whose suppression reads only the pack's `intentional_facts` ([020](architecture/020-story-bible-v2.md), [024](architecture/024-intentional-mystery-facts.md)) |
-| `bible-diff.json` | `bible_diff` | `bible extract` → step summary, `<!-- nano:bible -->` ([020](architecture/020-story-bible-v2.md)) |
+| `bible-diff.json` (with `store` counts) | `bible_diff` | `bible extract` → step summary, `<!-- nano:bible -->` ([020](architecture/020-story-bible-v2.md), [026](architecture/026-pr-preview-bible-and-extract-store.md)) |
+| extraction store entry | `extract_store_entry` | `bible extract` → `bible extract` in later jobs ([026](architecture/026-pr-preview-bible-and-extract-store.md)) |
 | model output | `nanoif/prompts/<name>.schema.json` | model → editors ([016](architecture/016-llm-client-and-prompt-contract.md)) |
 | spend ledger line | `spend_ledger_line` | `LLMClient` → `LLMClient` in later jobs ([023](architecture/023-monthly-spend-cap.md)) |
 
 Other contracts: `ai-review-head-sha.txt` beside `ai-review.json` in the `ai-review-pr-<N>`
 artifact (unvalidated; missing means commit unknown), the `bible-cache` artifact (`bible-extract`
-→ `deploy`), markers `<!-- nano:build -->`, `<!-- nano:<editor> -->`, `<!-- nano:bible -->`,
-workflow input `bible-mode`, env `NANOIF_LLM_*` (including `MONTHLY_USD`, `LEDGER_DIR`) and
+→ `deploy`), the `story-bible-preview` artifact, markers `<!-- nano:build -->`,
+`<!-- nano:<editor> -->`, `<!-- nano:bible -->`, workflow input `bible-mode`, env `NANOIF_LLM_*`
+(including `MONTHLY_USD`, `LEDGER_DIR`), `NANOIF_BIBLE_STORE_DIR` and
 `NANOIF_REVIEW_UNIT_BUDGET`, and repository variables `LLM_PROFILE`, `LLM_MODEL`,
 `LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
 
@@ -170,7 +177,7 @@ workflow input `bible-mode`, env `NANOIF_LLM_*` (including `MONTHLY_USD`, `LEDGE
 | `prompts/` | Jinja prompts with sibling output schemas |
 | `review/` | review units, Continuity and Style editors, finding keys, editor status (`runner.editor_status`) ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `github/` | the GitHub reporter: sticky comments and check runs, `/dismiss` records, passage re-check merge (`merge`), slash-command parsing ([014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md)) |
-| `bible/` | Story Bible v2: `source`, `extract`, `resolve`, `reconcile`, `ids`, `cache`, `assemble`, canon pack and retrieval (`canon`), `bible extract` (`run`); imports `twee/`, `llm/`, `check/`, never `review/` ([020](architecture/020-story-bible-v2.md)) |
+| `bible/` | Story Bible v2: `source`, `extract`, `resolve`, `reconcile`, `ids`, `cache`, `assemble`, canon pack and retrieval (`canon`), stage-1 store (`store`), `bible extract` (`run`); imports `twee/`, `llm/`, `check/`, never `review/` ([020](architecture/020-story-bible-v2.md)) |
 | `eval/` | scoring against `tests/fixtures/eval-story/truth.json` and baseline diffs |
 | `intent/` | criterion and ADR index, citation check, commit gate ([021](architecture/021-intent-gate.md)) |
 
@@ -179,21 +186,14 @@ workflow input `bible-mode`, env `NANOIF_LLM_*` (including `MONTHLY_USD`, `LEDGE
 - A build step that cannot read or validate its input raises a typed error; the CLI prints one
   `error:` line and exits 1, and the job fails.
 - An AI job that cannot reach its runner or model says "unavailable" or marks the unit `error`;
-  an editor reports zero findings as a pass only when every unit was reviewed. A review that
-  never started (build or probe failed) replaces both editor comments with "did not run"
-  ([022](architecture/022-ai-review-lineage-and-not-run.md)).
-- When checkout or the package install fails, the Build report cannot run and the previous
-  Build comment stays; the red `build` check is the signal (accepted gap,
-  [022](architecture/022-ai-review-lineage-and-not-run.md)).
+  zero findings is a pass only when every unit was reviewed. A review that never started
+  replaces both editor comments with "did not run" ([022](architecture/022-ai-review-lineage-and-not-run.md)).
+- When checkout or the package install fails, the previous Build comment stays; the red `build`
+  check is the signal (accepted gap, [022](architecture/022-ai-review-lineage-and-not-run.md)).
 - No `|| true`, `exit 0` or `continue-on-error` hides a failure; report-only steps still leave
   annotations, a check run or a step-summary line.
-- The token budget per job (`NANOIF_LLM_MAX_TOKENS_PER_JOB`) stops a runaway job with an error.
-  The monthly spend cap (`NANOIF_LLM_MONTHLY_USD`, default $10) refuses a call before it
-  would pass the cap; the review then shows both editors as not run, with the reset date. An
+- `NANOIF_LLM_MAX_TOKENS_PER_JOB` stops a runaway job. The monthly cap refuses a call before it
+  would pass the cap, and the review shows both editors as not run with the reset date; an
   unreadable ledger blocks calls rather than counting as zero ([023](architecture/023-monthly-spend-cap.md)).
-
-## Intent
-
-Feature notes (`features/`), ADRs and this page are checked by `nanoif intent check`, and
-governed code changes carry an intent update or an `Intent: unchanged (...)` trailer
-([021](architecture/021-intent-gate.md)).
+- Intent: `nanoif intent check` and the commit gate keep features, ADRs and this page in step
+  with governed code ([021](architecture/021-intent-gate.md)).
