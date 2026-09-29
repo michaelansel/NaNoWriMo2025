@@ -58,9 +58,8 @@ from a browser, with nothing blocking them.
   delta.
 - Quality keeps improving through November by prompt and config changes only.
 
-**Done by:** Story Bible v2 Oct 18; eval tuning Oct 25. If Story Bible v2 is not green by Oct 25 it
-does not ship on Nov 1: the Continuity Editor runs on earlier passages only, and the Story Bible
-lands in December.
+**Done by:** Story Bible v2 Oct 18; eval tuning Oct 25. The Story Bible ships on Nov 1 as it stands
+on Oct 25; later fixes to it follow the change windows below.
 
 ## Schedule (2026 season)
 
