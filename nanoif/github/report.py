@@ -626,6 +626,78 @@ def _kb(size: int | None) -> str:
     return "missing" if size is None else f"{size / 1024:.1f} KB"
 
 
+FORMAT_KINDS = ("fixed", "refused", "push-failed", "dispatch-failed")
+
+
+@dataclass(frozen=True)
+class FormatNote:
+    """What the formatting bot did for the Build comment (ADR-025).
+
+    Attributes:
+        kind: ``fixed`` (this head is the bot's commit), ``refused`` (the fixer would not
+            fix it), ``push-failed`` (the fix was not pushed) or ``dispatch-failed`` (the fix
+            was pushed but the checks for it could not be started).
+        count: Issues the bot fixed (``fixed`` and ``dispatch-failed``).
+        files: File names the bot changed (``fixed`` and ``dispatch-failed``).
+        sha: The bot's commit (``fixed`` and ``dispatch-failed``).
+        reason: Why formatting was not applied or not checked (the failure kinds).
+    """
+
+    kind: str
+    count: int
+    files: tuple[str, ...]
+    sha: str | None
+    reason: str | None
+
+
+def format_line(note: FormatNote, run: RunInfo) -> str:
+    """Return the Build comment's formatting sentence.
+
+    Args:
+        note: What the formatting bot did.
+        run: The workflow run, for where the formatting warnings are.
+
+    Returns:
+        One Markdown line; the reason and file names are sanitized.
+    """
+    files = ", ".join(f"`{sanitize(name, 100)}`" for name in note.files)
+    fixed = f"the bot fixed {_plural(note.count, 'issue')} in {files} as `{(note.sha or '')[:7]}`"
+    reason = sanitize(note.reason, 300).rstrip(".")
+    if note.kind == "fixed":
+        return f"**Formatting:** {fixed}; your next edit starts from it."
+    if note.kind == "refused":
+        return (
+            f"**Formatting could not be fixed automatically:** {reason}. Nothing was changed; "
+            f"the formatting warnings are in {run.label}."
+        )
+    if note.kind == "push-failed":
+        return f"**Formatting was not applied:** {reason}."
+    return (
+        f"**Formatting:** {fixed}, but the checks for that commit could not start: {reason}; "
+        "edit any file or ask a maintainer to re-run."
+    )
+
+
+def render_format_not_started(note: FormatNote, run: RunInfo) -> str:
+    """Render the Build comment for a bot commit whose checks could not be started.
+
+    The ``format`` job posts it without a check run (it has no ``checks: write``); the red
+    ``format`` job is the other signal (ADR-025).
+
+    Args:
+        note: A ``dispatch-failed`` note.
+        run: The run that pushed the commit.
+
+    Returns:
+        The sticky comment body.
+    """
+    return (
+        _environment()
+        .get_template("format_not_started.md.jinja2")
+        .render(marker=MARKER_BUILD, run=run.label, line=format_line(note, run))
+    )
+
+
 def render_build(
     findings: Sequence[Mapping[str, Any]] | None,
     stats: BuildStats | None,
@@ -633,6 +705,7 @@ def render_build(
     build_ok: bool,
     *,
     structure_crashed: bool = False,
+    formatting: FormatNote | None = None,
 ) -> Rendered:
     """Render the Build & Structure sticky comment and the ``Structure`` check run.
 
@@ -644,6 +717,7 @@ def render_build(
         build_ok: Whether the story build step succeeded.
         structure_crashed: With ``findings`` ``None``: the structure check itself failed
             (``True``) or an earlier step failed before it could run (``False``).
+        formatting: What the formatting bot did for this push (ADR-025), if anything.
 
     Returns:
         The comment body and the ``Structure`` check payload. Without a structure result
@@ -697,6 +771,7 @@ def render_build(
         "infos_overflow": max(0, infos - MAX_LISTED),
         "sizes": [] if stats is None else [(label, name, _kb(s)) for label, name, s in stats.sizes],
         "bible": bible_line(stats),
+        "formatting": format_line(formatting, run) if formatting is not None else None,
     }
     body = _environment().get_template("build.md.jinja2").render(**context)
     if not structure_ran:

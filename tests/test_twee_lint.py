@@ -4,6 +4,7 @@ Each rule is tested in check mode (``lint_file``), fix mode (``fix_file``),
 and for idempotency.
 """
 
+import json
 from pathlib import Path
 
 import pytest
@@ -678,6 +679,7 @@ class TestSmartQuotes:
         assert "<span title=\"Tam\u2019s\">" in fixed
         assert "content: \"\u201c\";" in fixed
 
+    @pytest.mark.intent("AC-structure-check-23", "ADR-025")
     def test_a_fix_that_would_change_a_word_is_refused(self, monkeypatch, tmp_path):
         import nanoif.twee.lint as lint_module
 
@@ -688,6 +690,62 @@ class TestSmartQuotes:
         with pytest.raises(LintError, match="would change"):
             fix_file(test_file)
         assert test_file.read_text(encoding="utf-8") == original
+
+    @pytest.mark.intent("AC-structure-check-23", "ADR-025")
+    @pytest.mark.parametrize(
+        ("text", "what"),
+        [
+            (":: The widow’s door\n\nShe knocked.\n", "passage names"),
+            (":: Start [Wren’s]\n\nShe knocked.\n", "tags"),
+            (":: Start\n\n[[Knock->The widow’s door]]\n", "link targets"),
+        ],
+    )
+    def test_a_fix_that_would_change_a_name_tag_or_link_is_refused(
+        self, monkeypatch, tmp_path, text, what
+    ):
+        # If the protected spans ever failed, the smart-quotes fix would rename a passage,
+        # a tag or a link target without changing a word; the invariant still refuses it.
+        import nanoif.twee.lint as lint_module
+
+        monkeypatch.setattr(lint_module, "_protected", lambda source: [False] * len(source))
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(text, encoding="utf-8")
+        with pytest.raises(LintError, match=f"would change its {what}"):
+            fix_file(test_file)
+        assert test_file.read_text(encoding="utf-8") == text
+
+    @pytest.mark.intent("ADR-025")
+    def test_a_fix_that_is_not_idempotent_is_refused(self, monkeypatch):
+        import nanoif.twee.lint as lint_module
+
+        original = lint_module._run
+
+        def drifting(text, file, fix):
+            violations, out = original(text, file, fix)
+            # Each pass adds another blank line at the top: no word changes, but a second
+            # fix would change the text again.
+            return violations + [Violation(file, 1, "drift", "drift")], ["", *out]
+
+        monkeypatch.setattr(lint_module, "_run", drifting)
+        with pytest.raises(LintError, match="fixing it again would change it"):
+            fix_text(":: Start\n\nText\n", Path("x.twee"))
+
+    @pytest.mark.intent("ADR-025")
+    @pytest.mark.parametrize("seed", range(40))
+    def test_fixing_twice_gives_the_text_of_fixing_once(self, seed):
+        import random
+
+        fragments = [
+            ":: Start", "::Wren’s room", ":: Tam [ending]", "", "", "   ", "\t",
+            "Text.", "Text.  ", "She said “hi”.", "[[Go->Start]]", "[[Tam]]",
+            "  [[Wren’s room]]  ", "[[a]] and [[b]]", "(if: $x)[“ok”]",
+            "(set: $a to \"b’\")", "<span>‘q’</span>", ":: StoryData",
+        ]
+        rng = random.Random(seed)
+        lines = [rng.choice(fragments) for _ in range(rng.randint(1, 14))]
+        text = "\n".join(lines) + rng.choice(["", "\n", "\n\n", "\r\n"])
+        once, _ = fix_text(text, Path("x.twee"))
+        assert fix_text(once, Path("x.twee")) == (once, [])
 
     def test_fixing_quotes_and_whitespace_together_is_idempotent(self, tmp_path):
         test_file = tmp_path / "test.twee"
@@ -776,13 +834,14 @@ class TestLintCli:
         assert main(["lint", str(tmp_path), "--format", "github"]) == 1
         assert capsys.readouterr().out.startswith("::warning file=")
 
-    @pytest.mark.intent("AC-structure-check-23", "ADR-018")
-    def test_there_is_no_fix_flag(self, tmp_path, capsys):
-        (tmp_path / "test.twee").write_text("::Start\n")
-        with pytest.raises(SystemExit) as exc:
-            main(["lint", str(tmp_path), "--fix"])
-        assert exc.value.code == 2
-        assert (tmp_path / "test.twee").read_text() == "::Start\n"
+    @pytest.mark.intent("AC-structure-check-23")
+    def test_reporting_a_named_prose_file_never_edits_it(self, tmp_path, capsys):
+        prose = tmp_path / "src" / "EV-20261101.twee"
+        prose.parent.mkdir()
+        prose.write_text(":: Day 1 EV\n\nWren’s lamp.  \n", encoding="utf-8")
+        assert main(["lint", str(prose)]) == 1
+        assert prose.read_text(encoding="utf-8") == ":: Day 1 EV\n\nWren’s lamp.  \n"
+
 
     def test_missing_path_reports_error(self, tmp_path, capsys):
         assert main(["lint", str(tmp_path / "nope")]) == 1
@@ -799,3 +858,114 @@ class TestLintCli:
     def test_exit_zero_still_fails_when_the_linter_cannot_run(self, tmp_path, capsys):
         assert main(["lint", str(tmp_path / "nope"), "--exit-zero"]) == 1
         assert "error:" in capsys.readouterr().err
+
+
+def _prose(tmp_path: Path, name: str, text: str) -> Path:
+    path = tmp_path / "src" / name
+    path.parent.mkdir(exist_ok=True)
+    path.write_text(text, encoding="utf-8")
+    return path
+
+
+class TestLintFixCli:
+    """``nanoif lint --fix FILE... --summary-out PATH`` (ADR-025)."""
+
+    @pytest.mark.intent("AC-structure-check-23", "AC-structure-check-24", "ADR-025")
+    def test_fixes_named_prose_files_and_writes_the_summary(self, tmp_path, capsys):
+        first = _prose(tmp_path, "EV-20261101.twee", ":: Day 1 EV\n\nWren’s lamp.  \n")
+        second = _prose(tmp_path, "EV-20261102.twee", ":: Day 2 EV\n\nClean.\n")
+        summary = tmp_path / "out" / "lint-fix.json"
+        argv = ["lint", "--fix", str(first), str(second), "--summary-out", str(summary)]
+        assert main(argv) == 0
+        assert first.read_text(encoding="utf-8") == ":: Day 1 EV\n\nWren's lamp.\n"
+        assert second.read_text(encoding="utf-8") == ":: Day 2 EV\n\nClean.\n"
+        assert json.loads(summary.read_text(encoding="utf-8")) == {
+            "files": [
+                {"file": str(first), "fixed": {"smart-quotes": 1, "trailing-whitespace": 1}},
+                {"file": str(second), "fixed": {}},
+            ],
+            "total": 2,
+        }
+        assert "2 formatting issue(s) fixed in 1 file(s)" in capsys.readouterr().err
+
+    @pytest.mark.intent("ADR-025")
+    def test_nothing_to_fix_exits_0_with_a_zero_total(self, tmp_path):
+        clean = _prose(tmp_path, "EV-20261101.twee", ":: Day 1 EV\n\nClean.\n")
+        summary = tmp_path / "lint-fix.json"
+        assert main(["lint", "--fix", str(clean), "--summary-out", str(summary)]) == 0
+        assert json.loads(summary.read_text(encoding="utf-8")) == {
+            "files": [{"file": str(clean), "fixed": {}}],
+            "total": 0,
+        }
+
+    @pytest.mark.intent("AC-structure-check-23", "ADR-025")
+    def test_one_refused_file_means_no_file_is_written(self, monkeypatch, tmp_path, capsys):
+        import nanoif.twee.lint as lint_module
+
+        fixable = ":: Day 1 EV\n\nText.  \n"
+        renaming = ":: The widow’s door\n\nText.\n"
+        first = _prose(tmp_path, "EV-20261101.twee", fixable)
+        second = _prose(tmp_path, "EV-20261102.twee", renaming)
+        monkeypatch.setattr(lint_module, "_protected", lambda source: [False] * len(source))
+        summary = tmp_path / "lint-fix.json"
+        argv = ["lint", "--fix", str(first), str(second), "--summary-out", str(summary)]
+        assert main(argv) == 1
+        assert first.read_text(encoding="utf-8") == fixable
+        assert second.read_text(encoding="utf-8") == renaming
+        assert not summary.exists()
+        err = capsys.readouterr().err
+        assert "would change its passage names" in err and "nothing was written" in err
+
+    @pytest.mark.intent("ADR-025")
+    def test_an_unreadable_file_means_no_file_is_written(self, tmp_path, capsys):
+        first = _prose(tmp_path, "EV-20261101.twee", ":: Day 1 EV\n\nText.  \n")
+        bad = tmp_path / "src" / "EV-20261102.twee"
+        bad.write_bytes(b":: Day 2 EV\n\n\xff\n")
+        summary = tmp_path / "lint-fix.json"
+        argv = ["lint", "--fix", str(first), str(bad), "--summary-out", str(summary)]
+        assert main(argv) == 1
+        assert first.read_text(encoding="utf-8") == ":: Day 1 EV\n\nText.  \n"
+        assert not summary.exists()
+        assert "cannot read" in capsys.readouterr().err
+
+    @pytest.mark.intent("AC-structure-check-23", "ADR-025")
+    @pytest.mark.parametrize(
+        "relative",
+        [
+            "src",
+            "src/StoryData.twee",
+            "src/notes.twee",
+            "src/EV-20261301.twee",
+            "src/EV-20261101.txt",
+            "other/EV-20261101.twee",
+            "src/EV-20261105.twee",
+        ],
+    )
+    def test_anything_but_an_existing_prose_file_is_a_usage_error(
+        self, tmp_path, capsys, relative
+    ):
+        for name in ("StoryData.twee", "notes.twee", "EV-20261301.twee", "EV-20261101.txt"):
+            _prose(tmp_path, name, "::Start\n")
+        (tmp_path / "other").mkdir()
+        (tmp_path / "other" / "EV-20261101.twee").write_text("::Start\n", encoding="utf-8")
+        summary = tmp_path / "lint-fix.json"
+        argv = ["lint", "--fix", str(tmp_path / relative), "--summary-out", str(summary)]
+        assert main(argv) == 2
+        assert "--fix" in capsys.readouterr().err
+        assert not summary.exists()
+        for path in (tmp_path / "src").iterdir():
+            assert path.read_text(encoding="utf-8") == "::Start\n"
+
+    @pytest.mark.intent("ADR-025")
+    def test_fix_needs_a_summary_path(self, tmp_path, capsys):
+        prose = _prose(tmp_path, "EV-20261101.twee", "::Day 1 EV\n")
+        assert main(["lint", "--fix", str(prose)]) == 2
+        assert prose.read_text(encoding="utf-8") == "::Day 1 EV\n"
+
+    @pytest.mark.intent("ADR-025")
+    def test_summary_path_and_exit_zero_belong_to_their_own_modes(self, tmp_path):
+        prose = _prose(tmp_path, "EV-20261101.twee", "::Day 1 EV\n")
+        summary = str(tmp_path / "s.json")
+        assert main(["lint", str(prose), "--summary-out", summary]) == 2
+        assert main(["lint", "--fix", str(prose), "--summary-out", summary, "--exit-zero"]) == 2
+        assert prose.read_text(encoding="utf-8") == "::Day 1 EV\n"
