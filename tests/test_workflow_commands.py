@@ -91,6 +91,8 @@ def _concrete(argv: list[str]) -> list[str]:
             out.append(sorted(action.choices)[0])
         elif action is not None and action.type is int:
             out.append("1")
+        elif action is not None and action.type is float:
+            out.append("1.5")
         else:
             out.append("x")
     return out
@@ -158,3 +160,34 @@ def test_ai_workflows_pass_the_monthly_cap_from_a_repository_variable(name):
     text = (REPO / ".github" / "workflows" / name).read_text(encoding="utf-8")
     top_env = text.split("\njobs:", 1)[0]
     assert "NANOIF_LLM_MONTHLY_USD: ${{ vars.LLM_MONTHLY_USD }}" in top_env
+
+
+def _action_steps() -> list[str]:
+    """The ai-review composite action's steps, as the text of each ``- name:`` block."""
+    action = REPO / ".github" / "actions" / "ai-review" / "action.yml"
+    text = action.read_text(encoding="utf-8").split("\n  steps:\n", 1)[1]
+    return ["    - name:" + block for block in text.split("\n    - name:")[1:]]
+
+
+def _step(steps: list[str], marker: str) -> str:
+    return next(step for step in steps if marker in step)
+
+
+@pytest.mark.intent("AC-continuity-review-11", "AC-continuity-review-35")
+def test_mode_all_is_estimated_and_cap_checked_before_the_comments_say_running():
+    steps = _action_steps()
+    estimate = _step(steps, "id: estimate\n")
+    assert "if: inputs.runner == 'exe' && inputs.mode == 'all'\n" in estimate
+    assert "--mode all --estimate-only --out dist/ai-review.json" in estimate
+    pending = _step(steps, "- name: Mark the AI comments as running")
+    review = _step(steps, "id: review\n")
+    publish = _step(steps, "- name: Publish the review")
+    assert steps.index(estimate) < steps.index(pending) < steps.index(review)
+    # A refused estimate posts no "running" comment and starts no review; the publish step
+    # posts the refusal the estimate step wrote.
+    assert "(inputs.mode != 'all' || steps.estimate.outputs.exit_code == '0')" in pending
+    assert "ESTIMATE_CODE: ${{ steps.estimate.outputs.exit_code }}" in review
+    assert 'code="${ESTIMATE_CODE:-1}"' in review
+    for step in (pending, publish):
+        assert "ESTIMATE_USD: ${{ steps.estimate.outputs.estimate_usd }}" in step
+        assert "--estimate-usd" in step

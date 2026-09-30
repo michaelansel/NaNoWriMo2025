@@ -14,6 +14,7 @@ from nanoif.github.comments import MARKER_BUILD, MARKER_CONTINUITY, MARKER_STYLE
 from nanoif.github.report import (
     MAX_LISTED,
     BuildStats,
+    RunEstimate,
     RunInfo,
     collect_build_stats,
     editor_conclusion,
@@ -325,6 +326,38 @@ def test_pending_body_has_marker_and_run_link():
     body = render_pending("style", RUN)
     assert body.startswith(MARKER_STYLE + "\n### Style Editor: running")
     assert "run #4242" in body
+    assert "stimate" not in body
+
+
+ESTIMATE = RunEstimate(usd=2.3104, calls=212)
+
+
+@pytest.mark.intent("AC-continuity-review-11")
+def test_pending_all_states_the_estimate_before_the_run_matches_golden():
+    body = render_pending("continuity", RUN, ESTIMATE)
+    assert body == (GOLDEN / "continuity_pending_all.md").read_text(encoding="utf-8")
+
+
+@pytest.mark.intent("AC-continuity-review-11")
+def test_finished_all_shows_the_actual_cost_beside_the_estimate_matches_golden():
+    review = make_review(make_editor(), make_editor("style"), mode="all")
+    validate_artifact(review, "ai_review")
+    rendered = render_editor(review, "continuity", RUN, ESTIMATE)
+    assert rendered.body == (GOLDEN / "continuity_ok_all.md").read_text(encoding="utf-8")
+    assert "≈ $0.0042 (estimate before the run: at most $2.32)" in rendered.check.summary
+    assert rendered.check.conclusion == "success"
+
+
+@pytest.mark.intent("AC-continuity-review-11")
+def test_estimates_round_up_and_an_unpriced_model_is_named_as_such():
+    small = render_pending("style", RUN, RunEstimate(usd=0.00421, calls=3))
+    assert "at most $0.0043**" in small
+    unpriced = render_pending("style", RUN, RunEstimate(usd=2.3104, calls=212, priced=False))
+    assert "no known price" in unpriced and "list prices" not in unpriced
+    review = make_review(mode="all")
+    review["llm"]["usd_known"] = False
+    header = header_line(review, review["editors"][0], RUN, RunEstimate(2.3104, 212, False))
+    assert "cost unknown (estimate before the run: at most $2.32)" in header
 
 
 @pytest.mark.intent("AC-structure-check-20")

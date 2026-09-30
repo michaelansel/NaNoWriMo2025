@@ -19,6 +19,7 @@ Honesty rules the rendering enforces:
 
 from __future__ import annotations
 
+import math
 import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
@@ -93,6 +94,29 @@ class RunInfo:
 
 
 @dataclass(frozen=True)
+class RunEstimate:
+    """The cost estimate a ``/check-continuity all`` run posted before it started.
+
+    Attributes:
+        usd: The upper bound in USD (``nanoif ai review --estimate-only``).
+        calls: Model calls it counts.
+        priced: Whether the model has a list price; otherwise the bound uses the spend
+            cap's rate for an unpriced model.
+    """
+
+    usd: float
+    calls: int
+    priced: bool = True
+
+    @property
+    def at_most(self) -> str:
+        """``$2.32``, rounded up; four decimals below a cent."""
+        places = 4 if self.usd < 0.01 else 2
+        scale = 10**places
+        return f"${math.ceil(round(self.usd * scale, 6)) / scale:.{places}f}"
+
+
+@dataclass(frozen=True)
 class CheckPayload:
     """Everything :meth:`GitHubAPI.create_check_run` needs besides the head SHA."""
 
@@ -155,21 +179,31 @@ def _cost(llm: Mapping[str, Any]) -> str:
     return f"≈ ${llm['usd']:.4f}" if llm["usd"] < 0.01 else f"≈ ${llm['usd']:.2f}"
 
 
-def header_line(review: Mapping[str, Any], editor: Mapping[str, Any], run: RunInfo) -> str:
+def header_line(
+    review: Mapping[str, Any],
+    editor: Mapping[str, Any],
+    run: RunInfo,
+    estimate: RunEstimate | None = None,
+) -> str:
     """Return the cost header (Contract F) for one editor.
 
     ``Continuity Editor · N passages reviewed · X findings, Y suppressed · in/out tokens ·
     ≈ $cost · <profile> (<model>) · run #<id>``. Token and cost figures cover the whole
-    review run (both editors), as ``LLMClient.usage_summary()`` reports them.
+    review run (both editors), as ``LLMClient.usage_summary()`` reports them. Given the
+    estimate a ``/check-continuity all`` run posted before it started, the cost reads
+    ``≈ $actual (estimate before the run: at most $estimate)`` (AC-continuity-review-11).
     """
     llm = review["llm"]
+    cost = _cost(llm)
+    if estimate is not None:
+        cost += f" (estimate before the run: at most {estimate.at_most})"
     reviewed = sum(1 for unit in editor["units"] if unit["status"] == "reviewed")
     parts = [
         EDITORS[editor["name"]].title,
         f"{_plural(reviewed, 'passage')} reviewed",
         f"{_plural(len(editor['findings']), 'finding')}, {len(editor['suppressed'])} suppressed",
         f"{llm['prompt_tokens']:,} in / {llm['completion_tokens']:,} out tokens",
-        _cost(llm),
+        cost,
         f"{sanitize(llm['profile'], 60)} ({sanitize(llm['model'], 120)})",
         run.label,
     ]
@@ -302,13 +336,20 @@ def _capped(findings: Sequence[Mapping[str, Any]]) -> tuple[list[dict[str, Any]]
     return views, max(0, len(findings) - MAX_LISTED)
 
 
-def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> Rendered:
+def render_editor(
+    review: Mapping[str, Any],
+    editor_name: str,
+    run: RunInfo,
+    estimate: RunEstimate | None = None,
+) -> Rendered:
     """Render one editor's sticky comment and check run from ``ai-review.json``.
 
     Args:
         review: The validated ``ai-review.json`` document.
         editor_name: ``continuity`` or ``style``.
         run: The workflow run.
+        estimate: The estimate a ``/check-continuity all`` run posted before it started;
+            the header then shows it beside the actual cost.
 
     Returns:
         The comment body (starting with the editor's marker) and check payload.
@@ -336,7 +377,7 @@ def render_editor(review: Mapping[str, Any], editor_name: str, run: RunInfo) -> 
         for unit in editor["units"]
         if unit["status"] != "reviewed"
     ]
-    header = header_line(review, editor, run)
+    header = header_line(review, editor, run, estimate)
     context = {
         "marker": spec.marker,
         "title": spec.title,
@@ -437,12 +478,14 @@ def render_not_run(editor_name: str, reason: str, head_sha: str, run: RunInfo) -
     return Rendered(spec.marker, body, check)
 
 
-def render_pending(editor_name: str, run: RunInfo) -> str:
+def render_pending(editor_name: str, run: RunInfo, estimate: RunEstimate | None = None) -> str:
     """Render the "review running" body that replaces a stale comment at job start.
 
     Args:
         editor_name: ``continuity`` or ``style``.
         run: The workflow run.
+        estimate: For ``/check-continuity all``, its cost estimate, stated before the run
+            (AC-continuity-review-11).
 
     Returns:
         The comment body.
@@ -451,7 +494,7 @@ def render_pending(editor_name: str, run: RunInfo) -> str:
     return (
         _environment()
         .get_template("pending.md.jinja2")
-        .render(marker=spec.marker, title=spec.title, run=run.label)
+        .render(marker=spec.marker, title=spec.title, run=run.label, estimate=estimate)
     )
 
 

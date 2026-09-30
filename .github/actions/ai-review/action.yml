@@ -101,12 +101,44 @@ runs:
         github-token: ${{ github.token }}
         path: ${{ runner.temp }}/previous-review
 
+    - name: Estimate the cost of reviewing every passage
+      # /check-continuity all states its estimated cost before the run
+      # (AC-continuity-review-11). When the estimate does not fit under this month's AI
+      # spend cap, or the spend ledger cannot be read, it writes ai-review.json with both
+      # editors not run and the reason, calls no model and exits 1; the review below does
+      # not start and the publish step posts that result (AC-continuity-review-35).
+      id: estimate
+      if: inputs.runner == 'exe' && inputs.mode == 'all'
+      shell: bash
+      env:
+        NANOIF_LLM_PROFILE: ${{ inputs.llm-profile }}
+        NANOIF_LLM_MODEL: ${{ inputs.llm-model }}
+        NANOIF_RUNNER: exe
+      run: |
+        rm -f dist/ai-review.json
+        set +e
+        nanoif ai review --repo . --mode all --estimate-only --out dist/ai-review.json --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/ai-estimate.txt"
+        code=$?
+        set -e
+        echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+        cat "$RUNNER_TEMP/ai-estimate.txt"
+        cat "$RUNNER_TEMP/ai-estimate.txt" >> "$GITHUB_STEP_SUMMARY"
+        echo "nanoif ai review --mode all --estimate-only exited $code" >> "$GITHUB_STEP_SUMMARY"
+
     - name: Mark the AI comments as running
-      if: inputs.runner == 'exe' && inputs.pr != ''
+      if: inputs.runner == 'exe' && inputs.pr != '' && (inputs.mode != 'all' || steps.estimate.outputs.exit_code == '0')
       shell: bash
       env:
         PR: ${{ inputs.pr }}
-      run: nanoif github pending --pr "$PR"
+        ESTIMATE_USD: ${{ steps.estimate.outputs.estimate_usd }}
+        ESTIMATE_CALLS: ${{ steps.estimate.outputs.estimate_calls }}
+        ESTIMATE_PRICED: ${{ steps.estimate.outputs.estimate_priced }}
+      run: |
+        args=(--pr "$PR")
+        if [ -n "$ESTIMATE_USD" ]; then
+          args+=(--estimate-usd "$ESTIMATE_USD" --estimate-calls "$ESTIMATE_CALLS" --estimate-priced "$ESTIMATE_PRICED")
+        fi
+        nanoif github pending "${args[@]}"
 
     - name: Run the editors
       id: review
@@ -119,24 +151,32 @@ runs:
         MODE: ${{ inputs.mode }}
         PASSAGE: ${{ inputs.passage }}
         HEAD_SHA: ${{ inputs.head-sha }}
+        ESTIMATE_CODE: ${{ steps.estimate.outputs.exit_code }}
       run: |
         args=(--repo . --mode "$MODE" --out dist/ai-review.json)
         if [ "$MODE" = passage ]; then args+=(--passage "$PASSAGE"); fi
-        rm -f dist/ai-review.json dist/ai-review-head-sha.txt
+        rm -f dist/ai-review-head-sha.txt
         # The pull-request head this review is for, uploaded with it so a later
         # /check-continuity passage=<name> merges only into a review of the same commit.
         if [ -n "$HEAD_SHA" ]; then printf '%s\n' "$HEAD_SHA" > dist/ai-review-head-sha.txt; fi
         # Capture the exit code instead of failing here: the result (or its absence) is
         # published first, and the last step fails the job on a non-zero code.
-        set +e
-        nanoif ai review "${args[@]}" > "$RUNNER_TEMP/ai-review.txt"
-        code=$?
-        set -e
+        if [ "$MODE" = all ] && [ "$ESTIMATE_CODE" != 0 ]; then
+          # The estimate step refused (its ai-review.json says why) or failed: no review.
+          code="${ESTIMATE_CODE:-1}"
+          echo "The review of every passage did not start: the estimate step exited $code." >> "$GITHUB_STEP_SUMMARY"
+        else
+          rm -f dist/ai-review.json
+          set +e
+          nanoif ai review "${args[@]}" > "$RUNNER_TEMP/ai-review.txt"
+          code=$?
+          set -e
+          # Per-editor lines and the monthly AI spend line (ADR-023), in the log and the summary.
+          cat "$RUNNER_TEMP/ai-review.txt"
+          cat "$RUNNER_TEMP/ai-review.txt" >> "$GITHUB_STEP_SUMMARY"
+          echo "nanoif ai review --mode $MODE exited $code" >> "$GITHUB_STEP_SUMMARY"
+        fi
         echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-        # Per-editor lines and the monthly AI spend line (ADR-023), in the log and the summary.
-        cat "$RUNNER_TEMP/ai-review.txt"
-        cat "$RUNNER_TEMP/ai-review.txt" >> "$GITHUB_STEP_SUMMARY"
-        echo "nanoif ai review --mode $MODE exited $code" >> "$GITHUB_STEP_SUMMARY"
 
     - name: Merge the re-check into the last AI review
       # A single-passage re-check replaces only that passage's result, so one clean
@@ -169,13 +209,23 @@ runs:
         PR: ${{ inputs.pr }}
         HEAD_SHA: ${{ inputs.head-sha }}
         CODE: ${{ steps.review.outputs.exit_code }}
+        ESTIMATE_USD: ${{ steps.estimate.outputs.estimate_usd }}
+        ESTIMATE_CALLS: ${{ steps.estimate.outputs.estimate_calls }}
+        ESTIMATE_PRICED: ${{ steps.estimate.outputs.estimate_priced }}
       run: |
         target=()
         if [ -n "$PR" ]; then target+=(--pr "$PR"); fi
         if [ -n "$HEAD_SHA" ]; then target+=(--head-sha "$HEAD_SHA"); fi
+        # /check-continuity all: the estimate posted before the run, shown beside the
+        # actual cost (AC-continuity-review-11). Empty for every other mode and for a
+        # refused estimate.
+        estimate=()
+        if [ -n "$ESTIMATE_USD" ]; then
+          estimate+=(--estimate-usd "$ESTIMATE_USD" --estimate-calls "$ESTIMATE_CALLS" --estimate-priced "$ESTIMATE_PRICED")
+        fi
         if [ -f dist/ai-review.json ]; then
           # Suppressed findings come from the review itself (it read ai/dismissals.jsonl).
-          nanoif github report "${target[@]}" --review dist/ai-review.json
+          nanoif github report "${target[@]}" "${estimate[@]}" --review dist/ai-review.json
         else
           nanoif github unavailable "${target[@]}" \
             --reason "nanoif ai review exited $CODE before writing ai-review.json"
