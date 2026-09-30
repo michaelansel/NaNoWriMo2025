@@ -77,8 +77,8 @@ Your text here.
 
 ## What happens automatically
 
-You do not need to ask for any of this. Nothing here ever changes your files or adds commits to
-your branch.
+You do not need to ask for any of this. Only **Formatting** ever adds a commit to your branch, and
+it never changes a word.
 
 | What | Where you see it | What to do |
 |---|---|---|
@@ -86,7 +86,7 @@ your branch.
 | **Preview** | `story-preview`, linked from the Build & Structure comment | Download, unzip, open `dist/index.html`, play your branch |
 | **Story Bible preview** | `story-bible-preview`, linked from the **Story Bible** comment | Your new passages' characters and facts, before merge |
 | **Structure notes** | The `Structure` check, the Build & Structure comment, and notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
-| **Formatting notes** | Notes on your lines in **Files changed** | Optional: spacing suggestions only |
+| **Formatting** | A `style: fix … formatting issues` commit on your branch, named in the Build & Structure comment | Nothing: spacing and curly quotes are fixed for you. If the web editor then says the file changed, copy your text and reload |
 | **Continuity Editor** | One comment and a `Continuity Editor` check, updated on every push | Read the quotes; fix, or dismiss (below) |
 | **Style Editor** | One comment and a `Style Editor` check, updated on every push | Checks point of view, tense and main character |
 
