@@ -16,7 +16,7 @@ pytest                                    # all tests (CI required check)
 ruff check nanoif tests                   # lint, E722 (bare except) is an error
 nanoif build all --repo .                 # dist/ artifacts: allpaths, metrics, story bible, passages
 nanoif check structure src/               # broken links, duplicates, orphans, naming drift (report-only)
-nanoif lint src/                          # twee formatting (report-only; --fix is denied)
+nanoif lint src/                          # twee formatting (report-only here; --fix runs only in the CI format job)
 nanoif ai review --repo . --mode changed  # Continuity + Style editors on a built repo; paid inference
 nanoif ai eval --repo . [--baseline tests/eval/baselines/<profile>.json]  # score the editors on the eval story
 nanoif intent check --repo .              # criteria, test citations, ADR statuses
@@ -53,7 +53,9 @@ dist/                build output, never committed
 
 ## Hard rules
 
-- No automation ever commits to a PR branch. Only three main-branch jobs have `contents: write`.
+- No automation commits to a PR branch except the `format` job, which pushes at most one
+  whitespace-and-quotes commit to a same-repo PR's changed prose files (ADR-025). Only `bible-extract`
+  and `/dismiss` have `contents: write` on `main`, and only for `ai/`.
 - No paid inference from an unauthenticated trigger: slash commands are `author_association`-gated.
 - No `|| true`, `exit 0`, or `continue-on-error` that hides a failure; every failure has a visible check or comment.
 - One sticky comment per check type per PR, found by its HTML marker, never by footer text.

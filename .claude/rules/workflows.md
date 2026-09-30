@@ -5,7 +5,7 @@ paths:
 
 # GitHub Actions
 
-- Nothing pushes to a PR branch. Only `bible-extract`, the `/dismiss` job, and `pr-closed` have `contents: write`, and they write only under `ai/` on `main`. PR builds run with `contents: read`.
+- Only the `format` job pushes to a PR branch: one commit, the PR's changed prose files only, same-repo `pull_request` runs only, then it dispatches the rebuild of the new head (ADR-025). `bible-extract` and `/dismiss` (and `pr-closed` once built) have `contents: write` only for `ai/` on `main`. Every other PR job runs with `contents: read`, and every job that needs `format` uses `!cancelled()`.
 - No `|| true`, `exit 0`, or `continue-on-error` that hides a failure. If a step may fail without blocking, it must still produce a visible check run, comment, or step-summary line saying what did not run.
 - Every AI job: `if: github.event.pull_request.head.repo.full_name == github.repository`, `timeout-minutes: 45`, `runs-on` from the `probe` job's output, and a sticky "unavailable" comment plus non-zero exit when the runner is offline.
 - `issue_comment` handlers check `author_association` in `OWNER, MEMBER, COLLABORATOR` before anything that spends tokens.
