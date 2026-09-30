@@ -1,0 +1,115 @@
+# ADR-025: The formatting fixer commits to same-repository pull request branches, and the fixed commit is rebuilt by dispatch
+
+Status: Proposed
+
+On acceptance, this ADR supersedes ADR-018 in part (the report-only linter and the removal of the smart-quotes rule) and ADR-014 in part (no automation commits to a PR branch; the list of `contents: write` jobs). It becomes Accepted, and those two ADRs' `Status:` lines are amended, only when the user approves the formatting exception drafted in `PRINCIPLES.md` §2. Until then ADR-014 and ADR-018 stand, and no job may push to a PR branch.
+
+## Context
+
+ADR-018 stopped the 2025 linter from committing to writers' branches, because it rewrote prose and produced dozens of bot commits. The proposal reverses that for the formatting linter only (the exception drafted in `PRINCIPLES.md` §2): it may commit fixes that change whitespace and quote characters, never wording, never inside Harlowe macros or links.
+
+Four constraints shape how:
+- A push made with `GITHUB_TOKEN` starts no `pull_request` or `push` run. A fixed commit would get no build, preview, AI review, `test` or `Intent` check of its own.
+- There is no GitHub App, PAT or secret (ADR-014).
+- A job's check run attaches to the commit its run started on. Only check runs posted through the API can name another sha.
+- Writers edit in the GitHub web UI.
+
+## Decision
+
+### The fixer (`nanoif/twee/lint.py`)
+
+- Eight rules: the seven layout rules plus `smart-quotes`. That rule maps U+2018, U+2019, U+201C and U+201D to ASCII.
+- It never touches:
+  - passage header lines, because a renamed passage breaks links from other files;
+  - `[[links]]` and link macros, with spans from `nanoif.twee.links.find_links`;
+  - Harlowe macro calls, including calls that span lines, nested parentheses and string literals;
+  - HTML tags;
+  - special passages (`StoryData`, `[stylesheet]`, `[script]`).
+- Spans are computed over the whole passage text, not per line. The one macro-span scanner lives in `nanoif/twee/prose.py`, and `prose` uses it too. `prose.HARLOWE_MACRO_RE` and any linter-local link or macro regex are deleted.
+- **Invariant.** `fix_text` checks two things before it returns, and raises `LintError` when either fails:
+  - per file, passage names, tags and `find_links` targets are unchanged;
+  - with whitespace removed and the four quotes mapped, the fixed text equals the original.
+- Fixing twice gives the same text as fixing once.
+- **CLI.** `nanoif lint --fix FILE... --summary-out PATH` takes only explicit `src/<INITIALS>-<YYYYMMDD>.twee` files. A directory or any other name is usage error 2.
+  - It fixes every file in memory first and writes only when all of them pass: all or nothing.
+  - The summary is the `lint_fix` artifact: `{files: [{file, fixed: {rule: count}}], total}`.
+  - Exit 0 whether or not anything changed; exit 1 when nothing was written.
+  - `nanoif lint` without `--fix` stays report-only for every file.
+
+### The `format` job (`build-and-deploy.yml`, hosted)
+
+- **When:** only on `pull_request` events from a branch of this repository. It never runs on `main`, on forks or in dispatched runs.
+- `timeout-minutes: 5`.
+- **Permissions:**
+  - `contents: write`, to push to the head branch;
+  - `actions: write`, to dispatch;
+  - `pull-requests: write`, for the Build comment when the dispatch fails.
+- **Tooling** comes from the base branch, checked out with `persist-credentials: false`. The PR head sha is checked out separately, so no pull request code runs with a write token.
+- **Files:** the prose files the PR adds, modifies or renames against its merge base. Infrastructure files stay report-only.
+- **Loop guard:** the job does nothing when the head commit is by `github-actions[bot]` and carries the trailer `Nanoif-Format: <sha>`.
+  - Structurally, only `pull_request` runs push, and a bot push starts no `pull_request` run.
+  - The fixer is idempotent, so a rerun has nothing to fix.
+- **Commit:** exactly one commit on top of the head sha.
+  - Author `github-actions[bot]`.
+  - Subject `style: fix N formatting issues in <files>`.
+  - Trailer `Nanoif-Format: <previous head sha>`.
+- **Push:** `HEAD:refs/heads/<head_ref>`, never forced.
+  - A rejection means the writer pushed again. The job does not retry; it writes a step-summary line ("branch moved; the newer run formats it") and sets `pushed=false`.
+- **Dispatch:** after a push the job runs `gh workflow run build-and-deploy.yml --ref <head_ref> -f pr=<N>` and `gh workflow run intent.yml --ref <head_ref>`, each retried once.
+  - If either still fails, the job writes the `<!-- nano:build -->` comment through `nanoif github build-report`: "fixed in `<sha7>`, but the checks for that commit could not start: <reason>; edit any file or ask a maintainer to re-run". Then the job fails.
+- **Outputs:** `pushed`, `new_sha`.
+
+### The run that pushed, and the dispatched run
+
+- In the run that pushed, `build` has `needs: format` and `if: !cancelled() && needs.format.outputs.pushed != 'true'`.
+- `ai-review-not-run` also requires `pushed != 'true'`. Without that it would post "did not run" for a commit that is no longer the head.
+- Every job that needs `format` uses `!cancelled()`, because `format` is skipped on `main` and on forks and a plain `needs` would skip them silently.
+- **Dispatch mode:** `workflow_dispatch` gains the input `pr`.
+  - A hosted `context` job gives every PR job `pr`, `head_sha`, `head_ref`, `base_ref`, `base_sha` and `same_repo`, taken from the event or from `gh api pulls/<pr>`.
+  - It fails with a reason when the PR is not open or when `github.sha` is not its head (a stale dispatch).
+  - PR jobs read `needs.context.outputs`, never `github.event.pull_request.*`.
+- **Concurrency:** the dispatched run joins `ci-pr-<pr>`, which cancels the run that pushed.
+- **Merge ref:** a job that checks out `refs/pull/<N>/merge` in dispatch mode first checks that the ref's second parent is `head_sha`, because GitHub updates the merge ref asynchronously. It retries up to 5 × 10 s, then fails with the reason.
+- **Intent:** `intent.yml` in dispatch mode runs `intent check` only. The bot commit touches only prose, which is not governed code.
+
+### What the writer sees
+
+- The Build comment of the dispatched run says: "Formatting: the bot fixed N issues in <files> as `<sha7>`; your next edit starts from it."
+- When the fixer refuses, the run that did not push says: "Formatting could not be fixed automatically: <reason>". The warnings are listed as before, and the `format` job is red.
+
+### `contents: write`
+
+- On `main`, writing only under `ai/`:
+  - `bible-extract`;
+  - the `/dismiss` job;
+  - `pr-closed`, which ADR-014 and ADR-022 decided on but which is not built.
+- On the head branch of a same-repository PR, writing only formatting in prose files: `format`.
+
+## Consequences
+
+### Positive
+
+- Formatting is fixed without writer effort, and the fixed commit gets every check, including the required ones.
+- The invariant makes "only whitespace and quotes" a checked property, not a promise.
+
+### Negative
+
+- A bot commit sits on the writer's branch. There are three effects:
+  - A writer who opened the web editor before the bot pushed gets GitHub's "file changed" error, and must copy the text and reload.
+  - A local clone must pull before its next push.
+  - Every passage the fixer touches gets a new content hash. It is being re-read anyway, because the writer just changed it.
+- Each PR push waits about 40 s for `format` before `build` starts.
+- If the dispatch fails, the new head has no checks until the next push. The Build comment and the red `format` job are the only signals.
+- Every PR job now takes its context from `context`. This is the largest workflow change before Oct 25.
+
+## Alternatives Considered
+
+1. **Continue the build on the fixed tree in the same run.** Rejected. Job check runs (`test`, `build`, `ai-review`) and `Intent` would attach to the old sha, so the required checks on the new head would wait forever.
+2. **Push with an App or PAT token so CI retriggers.** Rejected: ADR-014 allows no secret.
+3. **Fix on `main` after merge.** Rejected: it conflicts with writers' open branches, and it is not what was approved.
+4. **Suggested changes in review comments.** Rejected in ADR-018.
+
+## References
+
+- ADR-014, ADR-018, ADR-021, ADR-022; `PRINCIPLES.md` §2
+- `nanoif/twee/{lint,links,prose}.py`, `.github/workflows/{build-and-deploy,intent}.yml`

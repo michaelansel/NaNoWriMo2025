@@ -7,7 +7,7 @@ from collections.abc import Iterable
 
 from nanoif.twee.links import display_text
 
-HARLOWE_MACRO_RE = re.compile(r"\([a-z\-]+:.*?\)", re.IGNORECASE)
+MACRO_START_RE = re.compile(r"\([a-z0-9_\-]+:", re.IGNORECASE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 NON_PROSE_TAGS = frozenset({"script", "stylesheet", "footer", "header", "startup"})
@@ -35,6 +35,56 @@ def is_infra(name: str, tags: Iterable[str] = ()) -> bool:
     return name in INFRA_PASSAGES or not NON_PROSE_TAGS.isdisjoint(tags)
 
 
+def macro_spans(text: str) -> list[tuple[int, int]]:
+    """Return the ``[start, end)`` span of every Harlowe macro call, outermost only.
+
+    Parentheses are balanced and string literals (``"..."`` or ``'...'``, with backslash
+    escapes) are skipped, so ``(if: $x is "a (b)")`` and a call running over several lines
+    are one span each. An unclosed call runs to the end of the text.
+
+    Args:
+        text: Raw passage text.
+
+    Returns:
+        Spans in document order.
+    """
+    spans: list[tuple[int, int]] = []
+    index = 0
+    while (match := MACRO_START_RE.search(text, index)) is not None:
+        start, depth, quote, position = match.start(), 0, "", match.start()
+        end = len(text)
+        while position < len(text):
+            char = text[position]
+            if quote:
+                if char == "\\":
+                    position += 1
+                elif char == quote:
+                    quote = ""
+            elif char in "\"'":
+                quote = char
+            elif char == "(":
+                depth += 1
+            elif char == ")":
+                depth -= 1
+                if depth == 0:
+                    end = position + 1
+                    break
+            position += 1
+        spans.append((start, end))
+        index = end
+    return spans
+
+
+def strip_macros(text: str) -> str:
+    """Return ``text`` with every Harlowe macro call removed (see :func:`macro_spans`)."""
+    pieces, cursor = [], 0
+    for start, end in macro_spans(text):
+        pieces.append(text[cursor:start])
+        cursor = end
+    pieces.append(text[cursor:])
+    return "".join(pieces)
+
+
 def prose_text(text: str) -> str:
     """Return what a reader sees: links as their text, macros and HTML tags removed.
 
@@ -44,7 +94,7 @@ def prose_text(text: str) -> str:
     Returns:
         The prose.
     """
-    return HTML_TAG_RE.sub("", HARLOWE_MACRO_RE.sub("", display_text(text)))
+    return HTML_TAG_RE.sub("", strip_macros(display_text(text)))
 
 
 def word_count(text: str) -> int:

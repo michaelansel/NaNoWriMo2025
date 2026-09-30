@@ -25,20 +25,25 @@ users may find the workflow limiting.
 ## 2. Automation Over Gatekeeping
 
 **Principle:** Quality comes from tooling, not from manual review gates or restrictive permissions.
-Automation advises; writers edit; a bot never modifies prose on a writer's branch.
+Automation advises; writers edit; a bot never changes a writer's words on a writer's branch.
 
 **This means:**
 - Automate what can be automated; give feedback, not barriers.
-- Checks report. They never rewrite a writer's files or commit to a writer's branch.
+- Checks report. They never rewrite a writer's files or commit to a writer's branch, with one
+  exception: the formatting linter commits its fixes, which change only whitespace and quote
+  characters (never inside Harlowe macros or links) and never wording. No other automation writes
+  to a pull request branch.
 - An AI finding is advice. A writer decides whether to fix it or dismiss it.
 - Trust contributors; verify with tooling.
 
 **Trade-offs we accept:** build infrastructure to maintain; occasional false positives, which
-writers dismiss.
+writers dismiss; a bot formatting commit on a writer's branch, which the writer's next edit builds
+on.
 
 **Examples:**
 - Yes: AI review on every pull request. No: senior-author approval before merge.
-- Yes: the linter reports a formatting problem with its file and line. No: a bot commits the fix.
+- Yes: the linter pushes its whitespace and quote fixes to the branch. No: a bot commits a cache, a
+  generated file, AI state or a wording change to the branch.
 
 ---
 

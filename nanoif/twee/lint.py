@@ -15,8 +15,9 @@ Rules:
 6. ``single-blank-lines``: no runs of blank lines.
 7. ``link-block-spacing``: a blank line before and after a block of
    one-link-per-line choices, and none between the links.
-
-The 2025 ``smart-quotes`` rule is gone: curly quotes are the writer's choice.
+8. ``smart-quotes``: curly quotes and apostrophes in prose become ASCII. Passage
+   headers, ``[[links]]``, Harlowe macro calls and special passages are never
+   touched, so a fix can never break a link to or from another file.
 """
 
 from __future__ import annotations
@@ -26,11 +27,18 @@ from pathlib import Path
 
 from nanoif.errors import LintError
 from nanoif.twee.files import PASSAGE_HEADER_RE
+from nanoif.twee.links import find_links
+from nanoif.twee.prose import HTML_TAG_RE, macro_spans
 
 SPECIAL_PASSAGE_NAMES = frozenset(
     {"StoryData", "StoryTitle", "StoryStylesheet", "StoryBanner", "StoryMenu", "StoryInit"}
 )
 SPECIAL_PASSAGE_TAGS = frozenset({"stylesheet", "script"})
+
+SMART_QUOTES = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
+"""What the ``smart-quotes`` fix writes."""
+CANONICAL_QUOTES = str.maketrans({"\u201c": '"', "\u201d": '"', "\u2018": "'", "\u2019": "'"})
+"""What the no-changed-words check compares with; fixed, whatever :data:`SMART_QUOTES` is."""
 
 
 @dataclass(frozen=True)
@@ -110,6 +118,63 @@ def is_block_link(line: str) -> bool:
 
 def _blank(line: str) -> bool:
     return line.strip() == ""
+
+
+def _protected(text: str) -> list[bool]:
+    """Mark every character the smart-quotes rule must leave alone.
+
+    Passage headers, special passages, ``[[links]]`` and link macros, Harlowe macro calls
+    (see :func:`nanoif.twee.prose.macro_spans`) and HTML tags.
+    """
+    mask = [False] * len(text)
+
+    def protect(start: int, end: int) -> None:
+        mask[start:end] = [True] * (end - start)
+
+    offset = 0
+    special = False
+    for raw in text.splitlines(keepends=True):
+        header = parse_passage_header(raw.rstrip("\n\r"))
+        if header is not None:
+            special = is_special_passage(*header)
+            protect(offset, offset + len(raw))
+        elif special:
+            protect(offset, offset + len(raw))
+        offset += len(raw)
+    for link in find_links(text):
+        protect(link.start, link.end)
+    for start, end in macro_spans(text):
+        protect(start, end)
+    for match in HTML_TAG_RE.finditer(text):
+        protect(match.start(), match.end())
+    return mask
+
+
+def _smart_quotes(text: str, file: Path) -> tuple[list[Violation], str]:
+    """Report curly quotes in prose, one violation per line; return them and the fixed text."""
+    mask = _protected(text)
+    fixed: list[str] = []
+    per_line: dict[int, int] = {}
+    line = 1
+    for index, char in enumerate(text):
+        replacement = char.translate(SMART_QUOTES)
+        if replacement != char and not mask[index]:
+            per_line[line] = per_line.get(line, 0) + 1
+            fixed.append(replacement)
+        else:
+            fixed.append(char)
+        if char == "\n":
+            line += 1
+    violations = [
+        Violation(file, number, "smart-quotes", f"Found {count} smart quote(s)")
+        for number, count in sorted(per_line.items())
+    ]
+    return violations, "".join(fixed)
+
+
+def _words(text: str) -> str:
+    """The text with quote marks made plain and all whitespace removed."""
+    return "".join(text.translate(CANONICAL_QUOTES).split())
 
 
 def _run(text: str, file: Path, fix: bool) -> tuple[list[Violation], list[str]]:
@@ -237,7 +302,7 @@ def lint_text(text: str, file: Path) -> list[Violation]:
     Returns:
         Violations in line order of detection; empty for a well-formatted file.
     """
-    return _run(text, file, fix=False)[0]
+    return _run(text, file, fix=False)[0] + _smart_quotes(text, file)[0]
 
 
 def fix_text(text: str, file: Path) -> tuple[str, list[Violation]]:
@@ -250,12 +315,20 @@ def fix_text(text: str, file: Path) -> tuple[str, list[Violation]]:
     Returns:
         The fixed text (the input unchanged when there was nothing to fix) and
         the violations that were fixed.
+
+    Raises:
+        LintError: The fix would change a word (anything but whitespace and quote marks).
     """
-    violations, out = _run(text, file, fix=True)
+    quote_violations, unquoted = _smart_quotes(text, file)
+    violations, out = _run(unquoted, file, fix=True)
+    violations += quote_violations
     if not violations:
         return text, []
     fixed = "\n".join(out)
-    return (fixed + "\n" if fixed else fixed), violations
+    fixed = fixed + "\n" if fixed else fixed
+    if _words(fixed) != _words(text):
+        raise LintError(f"fixing {file} would change its words; nothing was written")
+    return fixed, violations
 
 
 def _read(path: Path) -> str:
@@ -290,7 +363,7 @@ def fix_file(path: Path) -> list[Violation]:
         The violations that were fixed; empty when the file was left untouched.
 
     Raises:
-        LintError: If the file cannot be read as UTF-8.
+        LintError: If the file cannot be read as UTF-8, or the fix would change a word.
     """
     fixed, violations = fix_text(_read(path), path)
     if violations:
