@@ -53,9 +53,9 @@ src/*.twee
 ## Pull request flow
 
 ```
-PR opened / pushed, or dispatched with pr=<N> for a format commit (a context job resolves the PR)
-  ├─ format  (hosted, same-repo; not built) → lint --fix changed prose → unforced bot commit →
-  │           dispatch checks for it, this run's build skips; cannot fix or dispatch → red + comment
+PR opened / pushed, or dispatched with pr=<N> for a format commit (context: the PR + merge_sha)
+  ├─ format  (hosted, same-repo) → lint --fix changed prose → unforced bot commit → dispatch
+  │           checks for it, this run's build skips; cannot fix, push or dispatch → red + Build line
   ├─ build   (hosted, contents: read) → story-preview artifact, Structure check run,
   │                                     <!-- nano:build --> comment (report step on !cancelled())
   ├─ test    (hosted) → pytest + ruff, required
@@ -128,7 +128,7 @@ push to main (or dispatch with bible-mode=full)
 | spend ledger `<NANOIF_LLM_LEDGER_DIR>/YYYY-MM.jsonl` (on the exe VM, not in git) | every model call | the monthly cap ([023](architecture/023-monthly-spend-cap.md)) |
 | extraction store `<NANOIF_BIBLE_STORE_DIR>/` (on the exe VM, not in git; loss = re-extract) | `bible extract` (PR and `main`) | `bible extract` ([026](architecture/026-pr-preview-bible-and-extract-store.md)) |
 
-`contents: write`: `bible-extract` and `/dismiss`, only for `ai/` on `main`; `format` (not built),
+`contents: write`: `bible-extract` and `/dismiss`, only for `ai/` on `main`; `format`,
 only for whitespace and quote fixes to prose on a same-repository PR branch. No other automation
 commits to a PR branch ([025](architecture/025-format-commits-on-pr-branches.md)).
 
@@ -143,6 +143,7 @@ and is validated when written and when read ([015](architecture/015-nanoif-packa
 | `passages_deduplicated.json` | `passages_deduplicated` | `build core` → Story Bible |
 | `allpaths-index.json` | `allpaths_index` | `build allpaths` → pages, tools ([017](architecture/017-git-based-categorization.md)) |
 | `changes.json` | `changes` | `build allpaths` → `ai review --mode changed` ([017](architecture/017-git-based-categorization.md)) |
+| `lint --fix --summary-out` | `lint_fix` | `lint --fix` → `github format-message`, in the `format` job ([025](architecture/025-format-commits-on-pr-branches.md)) |
 | `structure --format json` | `structure_findings` | `check structure` → Structure check run ([018](architecture/018-structure-check-and-report-only-lint.md)) |
 | `ai-review.json` | `ai_review` | `ai review`, `github merge-review` → GitHub reporter, `/dismiss` ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `ai/story-bible-cache.json` | `story_bible_cache` | `bible extract` → `bible.assemble` ([020](architecture/020-story-bible-v2.md)) |
@@ -154,12 +155,11 @@ and is validated when written and when read ([015](architecture/015-nanoif-packa
 
 Other contracts: `ai-review-head-sha.txt` beside `ai-review.json` in the `ai-review-pr-<N>`
 artifact (unvalidated; missing means commit unknown), the `bible-cache` artifact (`bible-extract`
-→ `deploy`), the `story-bible-preview` artifact, the `lint_fix` summary and `Nanoif-Format: <sha>`
-commit trailer ([025](architecture/025-format-commits-on-pr-branches.md)), markers `<!-- nano:build -->`,
-`<!-- nano:<editor> -->`, `<!-- nano:bible -->`, workflow inputs `bible-mode` and `pr`, env
-`NANOIF_LLM_*` (including `MONTHLY_USD`, `LEDGER_DIR`), `NANOIF_BIBLE_STORE_DIR` and
-`NANOIF_REVIEW_UNIT_BUDGET`, and repository variables `LLM_PROFILE`, `LLM_MODEL`,
-`LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
+→ `deploy`), the `story-bible-preview` artifact, the format commit's subject and `Nanoif-Format:`
+trailer (`github.formatting`, [025](architecture/025-format-commits-on-pr-branches.md)), markers
+`<!-- nano:build -->`, `<!-- nano:<editor> -->`, `<!-- nano:bible -->`, workflow inputs `bible-mode`
+and `pr`, env `NANOIF_LLM_*`, `NANOIF_BIBLE_STORE_DIR` and `NANOIF_REVIEW_UNIT_BUDGET`, and
+repository variables `LLM_PROFILE`, `LLM_MODEL`, `LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
 
 ## Where each concern lives in `nanoif/`
 
@@ -177,7 +177,7 @@ commit trailer ([025](architecture/025-format-commits-on-pr-branches.md)), marke
 | `llm/` | client, profiles, schema parsing, prompt rendering and hashes (`prompts`), pricing, spend ledger (`ledger`), test doubles ([016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md)) |
 | `prompts/` | Jinja prompts with sibling output schemas |
 | `review/` | review units, Continuity and Style editors, finding keys, editor status (`runner.editor_status`) ([022](architecture/022-ai-review-lineage-and-not-run.md)) |
-| `github/` | the GitHub reporter: sticky comments and check runs, `/dismiss` records, passage re-check merge (`merge`), slash-command parsing ([014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md)) |
+| `github/` | the GitHub reporter: sticky comments and check runs, `/dismiss` records, passage re-check merge (`merge`), slash-command parsing, the format commit message (`formatting`, [025](architecture/025-format-commits-on-pr-branches.md)) ([014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md)) |
 | `bible/` | Story Bible v2: `source`, `extract`, `resolve`, `reconcile`, `ids`, `cache`, `assemble`, canon pack and retrieval (`canon`), stage-1 store (`store`), `bible extract` (`run`); imports `twee/`, `llm/`, `check/`, never `review/` ([020](architecture/020-story-bible-v2.md)) |
 | `eval/` | scoring against `tests/fixtures/eval-story/truth.json` and baseline diffs |
 | `intent/` | criterion and ADR index, citation check, commit gate ([021](architecture/021-intent-gate.md)) |
@@ -189,7 +189,7 @@ commit trailer ([025](architecture/025-format-commits-on-pr-branches.md)), marke
 - An AI job that cannot reach its runner or model says "unavailable" or marks the unit `error`;
   zero findings is a pass only when every unit was reviewed. A review that never started
   replaces both editor comments with "did not run" ([022](architecture/022-ai-review-lineage-and-not-run.md)).
-- When checkout or the package install fails, the previous Build comment stays; the red `build`
+- When `context`, checkout or the install fails, the previous Build comment stays; the red `build`
   check is the signal (accepted gap, [022](architecture/022-ai-review-lineage-and-not-run.md)).
 - No `|| true`, `exit 0` or `continue-on-error` hides a failure; report-only steps still leave
   annotations, a check run or a step-summary line.

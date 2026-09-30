@@ -57,7 +57,7 @@ in `Day 1 EV` but thirty in `Back at the ferry`"*, with one quote from each pass
 **Commands** (comment on the pull request; only the repository's owners, members and
 collaborators are obeyed, and nobody else's comment costs anything):
 - `/check-continuity` reviews the changed passages again; `/check-continuity all` reviews every
-  passage, stating the estimated cost first and the actual cost after;
+  passage, stating an upper-bound estimate of its cost first and the actual cost beside it after;
   `/check-continuity passage=<name>` reviews one passage again. When the editors already reviewed
   this same commit, that passage's new result replaces its old one and every other passage's
   result stays, so the check run still reflects the whole review. When they have not (for
@@ -77,7 +77,7 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-8: A passage that could not be reviewed (provider error after one retry, or too long for the model) is listed by name with the reason, and its editor's comment never reports "no issues" for it.
 - AC-continuity-review-9: When the exe.dev runner is offline, each editor's comment says "AI review unavailable" with the reason and its check run fails, while the build and structure check still run.
 - AC-continuity-review-10: `/check-continuity`, `/check-continuity all` and `/check-continuity passage=<name>` from an owner, member or collaborator start the matching review; the same comment from anyone else starts no job and spends no tokens.
-- AC-continuity-review-11: `/check-continuity all` posts its estimated cost before the run and the actual cost in the finished comment. (verify: planned)
+- AC-continuity-review-11: `/check-continuity all` shows in both running comments, before any model call, an estimated cost of at most $X for N model calls, and the run's actual cost never exceeds it; each finished comment's header shows the actual cost beside that estimate.
 - AC-continuity-review-12: `/dismiss f-xxxxxxxx [reason]` from a collaborator records the dismissal on `main` and re-renders the comment with that finding in the suppressed section, without calling a model.
 - AC-continuity-review-13: A dismissed finding stays suppressed on later runs while both of its passages are unchanged, and is reported again when either passage changes.
 - AC-continuity-review-14: A finding against an established fact that belongs to a conflict marked in `story-overrides.txt` as intentional (by `c-<id>` or by label), or that a label lists under Intentional mysteries (AC-story-bible-25), is listed only among suppressed findings with the reason `intentional-conflict:<id or label>`, and is not counted as a finding.
@@ -101,7 +101,7 @@ collaborators are obeyed, and nobody else's comment costs anything):
 - AC-continuity-review-32: A call that would take this month's estimated spend past the cap is refused before it is sent; every passage not yet reviewed is listed as could-not-review with the AC-continuity-review-31 reason, passages already reviewed keep their findings, and the check run is failure.
 - AC-continuity-review-33: An unreadable or invalid spend ledger stops AI review before any model call with a visible reason naming the ledger problem, and the comments and check runs are those of AC-continuity-review-28; it is never counted as zero spend.
 - AC-continuity-review-34: When the monthly spend cap is reached, the build, the preview and the structure check still run and report as usual. (verify: workflow)
-- AC-continuity-review-35: `/check-continuity all` whose estimated cost would take this month's spend past the cap starts no review, calls no model, and replies with the AC-continuity-review-31 reason instead of an estimate. (verify: planned)
+- AC-continuity-review-35: `/check-continuity all` whose estimated cost would take this month's spend past the cap starts no review, calls no model, and replies with the AC-continuity-review-31 reason instead of an estimate.
 - AC-continuity-review-36: The Continuity Editor comment header states the Story Bible canon it used: the extraction date and commit, the number of established facts offered, the number of out-of-date facts left out, and the reviewed passages the Bible has not read; with no saved extraction it says only earlier passages were checked. A missing or unreadable canon stops the review with the reason shown, never a review against no established facts.
 - AC-continuity-review-37: Run over the eval story with its `story-overrides.txt`, `c-widow-never-wife` is never reported as a finding. (verify: workflow)
 

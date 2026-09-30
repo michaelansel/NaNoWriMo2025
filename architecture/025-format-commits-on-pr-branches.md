@@ -44,8 +44,9 @@ Four constraints shape how:
   - `contents: write`, to push to the head branch;
   - `actions: write`, to dispatch;
   - `pull-requests: write`, for the Build comment when the dispatch fails.
-- **Tooling** comes from the base branch, checked out with `persist-credentials: false`. The PR head sha is checked out separately, so no pull request code runs with a write token.
+- **Tooling** comes from the base branch, checked out with `persist-credentials: false` and installed non-editable with no pip cache (a PR's own jobs can write that cache, and this job can push); `nanoif` runs as the installed script. The PR head sha is checked out separately, also without credentials, so no pull request code runs with a write token. The token reaches only the push, as an auth header.
 - **Files:** the prose files the PR adds, modifies or renames against its merge base. Infrastructure files stay report-only.
+- **Outdated branch:** when the head's `build-and-deploy.yml` has no `pr` dispatch input, the job refuses before fixing, with "update the branch from main". The rebuild runs the branch's copy of the workflow, so dispatching it would return HTTP 422 and leave a fixed commit that no workflow run can rebuild.
 - **Loop guard:** the job does nothing when the head commit is by `github-actions[bot]` and carries the trailer `Nanoif-Format: <sha>`.
   - Structurally, only `pull_request` runs push, and a bot push starts no `pull_request` run.
   - The fixer is idempotent, so a rerun has nothing to fix.
@@ -53,12 +54,11 @@ Four constraints shape how:
   - Author `github-actions[bot]`.
   - Subject `style: fix N formatting issues in <files>`.
   - Trailer `Nanoif-Format: <previous head sha>`.
-- **Push:** `HEAD:refs/heads/<head_ref>`, never forced.
-  - Only a non-fast-forward rejection means the writer pushed again. The job does not retry; it writes a step-summary line ("branch moved; the newer run formats it") and sets `pushed=false`.
-  - Any other push failure (permissions, protected branch, network) sets `pushed=false` and the output `not_applied=<reason>`, and the job fails; it never reports success. `build` still runs in this run and its Build comment says "Formatting was not applied: <reason>". The reason travels through the output, not a separate comment, because `build` rewrites the same `<!-- nano:build -->` comment after `format`.
-- **Dispatch:** after a push the job runs `gh workflow run build-and-deploy.yml --ref <head_ref> -f pr=<N>` and `gh workflow run intent.yml --ref <head_ref>`, each retried once.
-  - If either still fails, the job writes the `<!-- nano:build -->` comment through `nanoif github build-report`: "fixed in `<sha7>`, but the checks for that commit could not start: <reason>; edit any file or ask a maintainer to re-run". Then the job fails.
-- **Outputs:** `pushed`, `new_sha`, `not_applied`.
+- **Push:** `HEAD:refs/heads/<head_ref>`, never forced, never retried.
+  - Every push failure sets `pushed=false` and fails the job, including a non-fast-forward rejection because the writer pushed again (reason: "the branch moved while the bot was fixing it; the run for the newer push formats it"). One rule for every failure means a misread `git push` message cannot turn a failure into a quiet skip. The newer push's run joins `ci-pr-<N>`, cancels this one and rewrites the Build comment.
+- **Outputs:** `pushed`, `new_sha`, `problem` (`refused` | `push-failed` | `dispatch-failed`) and `reason`. A final `!cancelled()` step sets them from the step outcomes and fails the job whenever `problem` is set. For `refused` and `push-failed`, `build` in the same run passes them to `nanoif github build-report --format-problem/--format-reason`. They travel as outputs, not a separate comment, because `build` rewrites the same `<!-- nano:build -->` comment after `format`.
+- **Dispatch:** after a push the job starts `intent.yml`, then `build-and-deploy.yml -f pr=<N>`, both with `--ref <head_ref>` and each retried once after 10 s. Intent goes first because the rebuild joins `ci-pr-<N>` and cancels this run; if intent cannot be started, the rebuild is not started either.
+  - If a dispatch still fails, the job writes the `<!-- nano:build -->` comment itself (`build-report --format-problem dispatch-failed`, since `build` is skipped after a push): "fixed in `<sha7>`, but the checks for that commit could not start: <reason>; edit any file or ask a maintainer to re-run". Then the job fails. It creates no `Structure` check run on the new head: it has no `checks: write`, and the one job that can push gets no more permissions than it needs.
 
 ### The run that pushed, and the dispatched run
 
@@ -69,14 +69,15 @@ Four constraints shape how:
   - A hosted `context` job gives every PR job `pr`, `head_sha`, `head_ref`, `base_ref`, `base_sha` and `same_repo`, taken from the event or from `gh api pulls/<pr>`.
   - It fails with a reason when the PR is not open or when `github.sha` is not its head (a stale dispatch).
   - PR jobs read `needs.context.outputs`, never `github.event.pull_request.*`.
+  - If `context` fails, `build` fails with that reason rather than being skipped, because a skipped required check counts as passing. No Build or editor comment is written then; the red `build` check is the signal (the accepted gap of ADR-022).
 - **Concurrency:** the dispatched run joins `ci-pr-<pr>`, which cancels the run that pushed.
-- **Merge ref:** a job that checks out `refs/pull/<N>/merge` in dispatch mode first checks that the ref's second parent is `head_sha`, because GitHub updates the merge ref asynchronously. It retries up to 5 × 10 s, then fails with the reason.
+- **Merge commit:** GitHub updates the PR's merge commit asynchronously, so in dispatch mode `context` waits once, up to 5 retries 10 s apart, until `merge_commit_sha` has `head_sha` as its second parent. It outputs that commit as `merge_sha`, or fails with the reason (conflicts, or not ready after 50 s). `build`, `ai-review` and `ai-review-not-run` check out `merge_sha` itself, with no retry of their own; the ADR-026 preview's second-parent check still runs.
 - **Intent:** `intent.yml` in dispatch mode runs `intent check` only. The bot commit touches only prose, which is not governed code.
 
 ### What the writer sees
 
 - The Build comment of the dispatched run says: "Formatting: the bot fixed N issues in <files> as `<sha7>`; your next edit starts from it."
-- When the fixer refuses, the run that did not push says: "Formatting could not be fixed automatically: <reason>". The warnings are listed as before, and the `format` job is red.
+- When the fixer refuses, the run that did not push says: "Formatting could not be fixed automatically: <reason>". When the push fails it says "Formatting was not applied: <reason>". Either way the warnings are listed as before, and the `format` job is red.
 
 ### `contents: write`
 
@@ -100,7 +101,8 @@ Four constraints shape how:
   - A local clone must pull before its next push.
   - Every passage the fixer touches gets a new content hash. It is being re-read anyway, because the writer just changed it.
 - Each PR push waits about 40 s for `format` before `build` starts.
-- If the dispatch fails, the new head has no checks until the next push. The Build comment and the red `format` job are the only signals.
+- If the dispatch fails, the new head has no checks until the next push, and its required checks wait as "Expected" (merge blocked, never passed). The Build comment is the signal on the PR; the red `format` job belongs to the previous commit.
+- A branch older than this decision is not formatted until the writer updates it from `main`, and its `format` job is red until then.
 - Every PR job now takes its context from `context`. This is the largest workflow change before Oct 25.
 
 ## Alternatives Considered
@@ -113,4 +115,4 @@ Four constraints shape how:
 ## References
 
 - ADR-014, ADR-018, ADR-021, ADR-022; `PRINCIPLES.md` §2
-- `nanoif/twee/{lint,links,prose}.py`, `.github/workflows/{build-and-deploy,intent}.yml`
+- `nanoif/twee/{lint,links,prose}.py`, `nanoif/github/formatting.py`, `.github/workflows/{build-and-deploy,intent}.yml`

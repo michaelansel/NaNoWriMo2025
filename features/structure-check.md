@@ -64,8 +64,8 @@ as an annotation on its file and line, shown in the "Files changed" view. The Bu
 comment ([build-and-deploy](build-and-deploy.md)) counts errors, warnings and notes, lists each
 error with its file and line, and collapses the rest. Formatting notes are warning annotations
 and a line in the run summary. After a fix, the Build comment says "Formatting: the bot fixed N
-issues in <files> as `<sha7>`; your next edit starts from it"; when the fix was refused or its
-checks could not start, it says so and why. Findings never stop the preview from being built, so
+issues in <files> as `<sha7>`; your next edit starts from it"; when the fix was refused, was not
+pushed, or its checks could not start, it says so and why. Findings never stop the preview from being built, so
 the writer can still play the branch. On `main` and for pull requests from forks, findings go to
 the run summary and annotations only, and nothing is fixed.
 
@@ -96,10 +96,10 @@ the run summary and annotations only, and nothing is fixed.
 - AC-structure-check-24: Curly quotes and apostrophes (U+2018, U+2019, U+201C, U+201D) in prose are reported as `smart-quotes` and fixed to `'` and `"`; in passage headers, `[[links]]`, Harlowe macros, HTML tags and special passages they are neither reported nor changed.
 - AC-structure-check-25: `StoryData`, script and stylesheet passages are not required to have a blank line after their header.
 - AC-structure-check-26: On a pull request, formatting findings appear as warning annotations and never turn the build red. (verify: workflow)
-- AC-structure-check-27: On a push to a pull request from a branch of this repository whose added or changed prose files have fixable formatting findings, the bot adds exactly one commit that fixes those files and touches no other file, and the Build comment names the fixed files and the number of fixes. (verify: planned)
-- AC-structure-check-28: No formatting commit is made when the head commit is the bot's own formatting commit, for a pull request from a fork, or on `main`. (verify: planned)
-- AC-structure-check-29: When the formatting commit cannot be pushed for any reason other than a newer push by the writer, or the checks for the pushed commit cannot be started, the Build comment says so and why and the `format` check is red; after a newer push, that push's run fixes and reports instead. (verify: planned)
-- AC-structure-check-30: The bot's formatting commit gets the same build, preview, structure check, Story Bible preview, AI review and required checks as a writer's push, each reported on that commit. (verify: planned)
+- AC-structure-check-27: On a push to a pull request from a branch of this repository whose added or changed prose files have fixable formatting findings, the bot adds exactly one commit that fixes those files and touches no other file, and the Build comment names the fixed files and the number of fixes. (verify: workflow)
+- AC-structure-check-28: No formatting commit is made when the head commit is the bot's own formatting commit, for a pull request from a fork, or on `main`. (verify: workflow)
+- AC-structure-check-29: When the formatting commit cannot be pushed for any reason, a newer push by the writer included, the Build comment says formatting was not applied and why and the `format` check is red, and after a newer push that push's run fixes and reports instead; when the checks for a pushed commit cannot be started, the Build comment names that commit, says its checks could not start and why, and the `format` check is red. (verify: workflow)
+- AC-structure-check-30: The bot's formatting commit gets the same build, preview, structure check, Story Bible preview, AI review and required checks as a writer's push, each reported on that commit. (verify: workflow)
 
 ## Edge cases
 - **Empty story** (the `Start` stub only): no errors; `Start` is reported as a dead end (info)
@@ -114,8 +114,12 @@ the run summary and annotations only, and nothing is fixed.
   formatting fix is pushed.
 - **File open in the web editor when the bot commits**: GitHub says the file has changed; the
   writer copies their text, reloads the file, and pastes it back.
-- **Writer pushes again before the bot's commit lands**: the bot's push is refused and the newer
-  push's run fixes and reports instead.
+- **Writer pushes again before the bot's commit lands**: the bot's push is refused, that run's
+  `format` check is red and says formatting was not applied because the branch moved, and the
+  newer push's run fixes and reports instead.
+- **Pull request branch created before the formatting fix existed**: nothing is fixed, the
+  `format` check is red, and the Build comment says formatting could not be fixed automatically
+  and to update the branch from main; findings stay as notes until the writer does.
 - **A fix that would change a word** (a fixer bug): nothing is written, the `format` check is red,
   the Build comment says formatting could not be fixed and why, and the findings stay as notes.
 
