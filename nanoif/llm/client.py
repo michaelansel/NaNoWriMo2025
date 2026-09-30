@@ -51,6 +51,7 @@ __all__ = [
     "TransportRequest",
     "TransportResponse",
     "Usage",
+    "prompt_token_bound",
 ]
 
 DEFAULT_MAX_TOKENS = 16000
@@ -446,8 +447,7 @@ class LLMClient:
         self, system: str, user: str, schema: dict[str, Any] | None
     ) -> list[dict[str, str]]:
         if schema is not None and self._json_mode != "schema":
-            block = json.dumps(schema, indent=1)
-            system = f"{system}\n\n<output_schema>\n{block}\n</output_schema>"
+            system = _embed_schema(system, schema)
         return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
     def _response_format(self, schema: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -704,6 +704,31 @@ def _stderr_line(line: str) -> None:
 
 def _estimate_tokens(text: str) -> int:
     return len(text) // 4 + 1
+
+
+def _embed_schema(system: str, schema: dict[str, Any]) -> str:
+    block = json.dumps(schema, indent=1)
+    return f"{system}\n\n<output_schema>\n{block}\n</output_schema>"
+
+
+def prompt_token_bound(system: str, user: str, schema: dict[str, Any] | None) -> int:
+    """Return the prompt tokens the client counts for one call, before sending it.
+
+    The same estimate the client reserves spend against (ADR-023), taking the larger
+    message form: with a schema, the schema embedded in the system prompt as the
+    ``object`` and ``prompt`` JSON modes send it.
+
+    Args:
+        system: The system message.
+        user: The user message.
+        schema: The output schema, or ``None``.
+
+    Returns:
+        The estimated prompt tokens.
+    """
+    if schema is not None:
+        system = _embed_schema(system, schema)
+    return _estimate_tokens(system) + _estimate_tokens(user)
 
 
 def _rejects_format(exc: LLMTransportError) -> bool:

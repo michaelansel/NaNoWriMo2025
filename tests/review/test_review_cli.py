@@ -12,6 +12,7 @@ from review_helpers import FIXTURES, answer, path_finding
 from nanoif.cli import main
 from nanoif.eval.run import prepare_eval_repo
 from nanoif.graph.ids import passage_id_mapping
+from nanoif.llm.errors import LLMSpendCapReached
 from nanoif.llm.fake import FakeLLM
 from nanoif.schemas.artifacts import load_artifact
 from nanoif.twee.parse import parse_twee_dir
@@ -87,6 +88,67 @@ def test_exit_2_on_usage_and_config_errors(repo, capsys, no_llm_env):
         main(["ai", "review", "--repo", str(repo), "--mode", "sometimes"])
     assert exc.value.code == 2
     assert not (repo / "dist" / "ai-review.json").exists()
+
+
+CAP_REASON = "monthly AI spend cap reached: $9.50 of $10.00 in 2026-11 (resets 2026-12-01 UTC)"
+
+
+class CappedFake(FakeLLM):
+    """A fake whose monthly cap has no room for the estimate it is asked about."""
+
+    def check_spend(self, estimate_usd: float = 0.0) -> None:
+        raise LLMSpendCapReached("capped", reason=CAP_REASON, month_usd=9.5, cap_usd=10.0)
+
+
+def estimate_args(repo: Path, *extra: str) -> list[str]:
+    return ["ai", "review", "--repo", str(repo), "--mode", "all", "--estimate-only", *extra]
+
+
+@pytest.mark.intent("AC-continuity-review-11")
+def test_estimate_only_prints_the_estimate_and_writes_step_outputs(repo, tmp_path, capsys, no_llm_env):
+    fake = FakeLLM(lambda call: pytest.fail("no model call"), model="gpt-oss-120b")
+    outputs = tmp_path / "github-output"
+    assert main(estimate_args(repo, "--github-output", str(outputs)), client=fake) == 0
+    out = capsys.readouterr().out
+    assert out.startswith("estimated cost: at most $")
+    values, lines = {}, iter(outputs.read_text().splitlines())
+    for line in lines:
+        name, delimiter = line.split("<<", 1)
+        values[name] = "\n".join(iter(lambda: next(lines), delimiter))
+    assert set(values) == {"estimate_usd", "estimate_calls", "estimate_priced"}
+    assert float(values["estimate_usd"]) > 0 and int(values["estimate_calls"]) > 0
+    assert values["estimate_priced"] == "true"
+    assert fake.calls == []
+    assert not (repo / "dist" / "ai-review.json").exists()
+
+
+@pytest.mark.intent("AC-continuity-review-35")
+def test_estimate_only_over_the_cap_writes_the_not_run_review_and_exits_1(
+    repo, tmp_path, capsys, no_llm_env
+):
+    fake = CappedFake(lambda call: pytest.fail("no model call"))
+    outputs = tmp_path / "github-output"
+    out_path = repo / "dist" / "ai-review.json"
+    args = estimate_args(repo, "--github-output", str(outputs), "--out", str(out_path))
+    assert main(args, client=fake) == 1
+    out = capsys.readouterr().out
+    assert f"continuity: skipped ({CAP_REASON})" in out
+    assert "estimated cost" not in out
+    artifact = load_artifact(out_path, "ai_review")
+    assert artifact["mode"] == "all"
+    assert [(e["status"], e["reason"]) for e in artifact["editors"]] == [("skipped", CAP_REASON)] * 2
+    assert not outputs.exists() or "estimate_usd" not in outputs.read_text()
+    assert fake.calls == []
+
+
+def test_estimate_only_is_for_mode_all(repo, tmp_path, capsys, no_llm_env):
+    fake = FakeLLM(lambda call: pytest.fail("no model call"))
+    base = ["ai", "review", "--repo", str(repo)]
+    assert main([*base, "--mode", "changed", "--estimate-only"], client=fake) == 2
+    assert "--estimate-only needs --mode all" in capsys.readouterr().err
+    outputs = str(tmp_path / "github-output")
+    assert main([*base, "--mode", "all", "--github-output", outputs], client=fake) == 2
+    assert "--github-output needs --estimate-only" in capsys.readouterr().err
 
 
 def test_exit_2_when_the_story_is_not_built(tmp_path, capsys, no_llm_env):

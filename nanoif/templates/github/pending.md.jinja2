@@ -4,3 +4,7 @@
 
 Reviewing the latest commit now. This comment is replaced when the review finishes;
 if it still says running after 45 minutes, the job timed out and {{ run }} has the details.
+{% if estimate %}
+
+**Estimated cost before the run: at most {{ estimate.at_most }}** for {{ estimate.calls }} model call{{ "" if estimate.calls == 1 else "s" }} by both editors, {{ "at list prices" if estimate.priced else "at the spend cap's rate for a model with no known price" }}, counting every answer at its longest allowed length. It is an upper bound; the finished comment shows the actual cost beside it.
+{% endif %}

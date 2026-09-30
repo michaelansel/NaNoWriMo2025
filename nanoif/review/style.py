@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from nanoif.llm.client import Completer
+from nanoif.llm.client import DEFAULT_MAX_TOKENS, Completer
 from nanoif.llm.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.findings import (
     Finding,
@@ -29,6 +29,8 @@ from nanoif.review.units import STORY_STYLE_KEYS, ReviewStory, ReviewUnit
 EDITOR = "style"
 PROMPT = "style"
 REASONING_EFFORT = "low"
+MAX_TOKENS = DEFAULT_MAX_TOKENS
+"""Completion cap per call; the run's cost estimate counts every answer at this length."""
 
 TYPE_SETTING = {"pov_slip": "perspective", "tense_slip": "tense", "protagonist_name": "protagonist"}
 TYPE_SEVERITY: dict[str, tuple[str, str]] = {
@@ -73,6 +75,7 @@ def review_unit(client: Completer, story: ReviewStory, unit: ReviewUnit) -> Unit
         system=prompt.system,
         user=prompt.user,
         schema=prompt_schema(PROMPT),
+        max_tokens=MAX_TOKENS,
         reasoning_effort=REASONING_EFFORT,
         tag=unit.tag,
     )

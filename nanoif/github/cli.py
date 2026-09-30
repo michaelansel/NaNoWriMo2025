@@ -35,6 +35,7 @@ from nanoif.github.merge import HEAD_SHA_FILE, merge_passage_review
 from nanoif.github.report import (
     EDITORS,
     Rendered,
+    RunEstimate,
     RunInfo,
     collect_build_stats,
     render_build,
@@ -114,9 +115,41 @@ def _stale_review(sha_file: Path, head_sha: str) -> str:
     return ""
 
 
+def _add_estimate_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--estimate-usd",
+        type=float,
+        help="/check-continuity all: its estimated cost (nanoif ai review --estimate-only)",
+    )
+    parser.add_argument("--estimate-calls", type=int, help="with --estimate-usd: model calls")
+    parser.add_argument(
+        "--estimate-priced",
+        choices=("true", "false"),
+        default="true",
+        help="with --estimate-usd: false when the model has no known price",
+    )
+
+
+def _run_estimate(args: argparse.Namespace) -> RunEstimate | None:
+    """Return the estimate given on the command line, or ``None``.
+
+    Raises:
+        ValueError: Only one of ``--estimate-usd`` and ``--estimate-calls`` was given.
+    """
+    if args.estimate_usd is None and args.estimate_calls is None:
+        return None
+    if args.estimate_usd is None or args.estimate_calls is None:
+        raise ValueError("--estimate-usd and --estimate-calls go together")
+    return RunEstimate(args.estimate_usd, args.estimate_calls, args.estimate_priced == "true")
+
+
 def _report(args: argparse.Namespace) -> int:
     if args.review_head_sha_file is not None and (args.pr is None or not args.head_sha):
         return _usage("--review-head-sha-file needs --pr and --head-sha (the current PR head)")
+    try:
+        estimate = _run_estimate(args)
+    except ValueError as exc:
+        return _usage(str(exc))
     try:
         review = load_artifact(args.review, "ai_review")
         if args.dismissals is not None:
@@ -135,7 +168,9 @@ def _report(args: argparse.Namespace) -> int:
         _step_summary(f"AI comments not re-rendered: {stale}.")
         return EXIT_OK
     run = RunInfo.from_env()
-    rendered = [render_editor(review, editor["name"], run) for editor in review["editors"]]
+    rendered = [
+        render_editor(review, editor["name"], run, estimate) for editor in review["editors"]
+    ]
     _publish(rendered, args.pr, args.head_sha)
     failed = [e["name"] for e in review["editors"] if e["status"] != "ok"]
     if failed:
@@ -166,11 +201,15 @@ def _not_run(args: argparse.Namespace) -> int:
 
 
 def _pending(args: argparse.Namespace) -> int:
+    try:
+        estimate = _run_estimate(args)
+    except ValueError as exc:
+        return _usage(str(exc))
     run = RunInfo.from_env()
     api = api_factory()
     for name in args.editors:
         spec = EDITORS[name]
-        upsert_sticky(api, args.pr, spec.marker, render_pending(name, run))
+        upsert_sticky(api, args.pr, spec.marker, render_pending(name, run, estimate))
     return EXIT_OK
 
 
@@ -339,6 +378,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     report.add_argument(
         "--github-output", type=Path, help="append rendered=true|false to this file"
     )
+    _add_estimate_options(report)
     report.set_defaults(handler=_report)
 
     unavailable = commands.add_parser("unavailable", help="AI review could not run")
@@ -364,6 +404,7 @@ def register(subparsers: argparse._SubParsersAction) -> None:
     pending = commands.add_parser("pending", help="mark AI comments as running")
     pending.add_argument("--pr", type=int, required=True)
     pending.add_argument("--editors", type=_editor_names, default=list(EDITORS))
+    _add_estimate_options(pending)
     pending.set_defaults(handler=_pending)
 
     build = commands.add_parser("build-report", help="Build & Structure comment and check")

@@ -210,6 +210,62 @@ def test_pending_replaces_stale_comment_without_check_runs(wired):
     assert wired.check_runs == []
 
 
+ESTIMATE_ARGS = ["--estimate-usd", "2.3104", "--estimate-calls", "212", "--estimate-priced", "true"]
+
+
+@pytest.mark.intent("AC-continuity-review-11", "AC-continuity-review-2")
+def test_all_posts_the_estimate_before_and_the_actual_cost_after_in_one_comment_each(
+    wired, tmp_path
+):
+    wired.add_comment(12, BOT, f"{MARKER_CONTINUITY}\n### Continuity Editor: 1 finding")
+    wired.add_comment(12, BOT, f"{MARKER_STYLE}\n### Style Editor: No findings")
+    assert main(["github", "pending", "--pr", "12", *ESTIMATE_ARGS]) == 0
+    before = wired.bodies(12)
+    assert len(before) == 2
+    assert all("**Estimated cost before the run: at most $2.32** for 212 model calls" in b
+               for b in before)
+    assert wired.check_runs == []
+
+    path = _write_review(tmp_path, make_review(make_editor(), make_editor("style"), mode="all"))
+    assert main(["github", "report", "--pr", "12", "--review", str(path), *ESTIMATE_ARGS]) == 0
+    after = wired.bodies(12)
+    assert len(after) == 2
+    assert all("≈ $0.0042 (estimate before the run: at most $2.32)" in b for b in after)
+    assert [r["conclusion"] for r in wired.check_runs] == ["success", "success"]
+
+
+def test_estimate_options_go_together(wired):
+    with pytest.raises(SystemExit) as excinfo:
+        main(["github", "pending", "--pr", "12", "--estimate-priced", "yes"])
+    assert excinfo.value.code == 2
+    assert main(["github", "pending", "--pr", "12", "--estimate-calls", "3"]) == 2
+    assert wired.bodies(12) == []
+
+
+@pytest.mark.intent("AC-continuity-review-35")
+def test_all_refused_by_the_cap_posts_the_cap_reason_and_fails_both_checks(wired, tmp_path):
+    reason = "monthly AI spend cap reached: $9.50 of $10.00 in 2026-11 (resets 2026-12-01 UTC)"
+    review = make_review(
+        make_editor(status="skipped", units=[], reason=reason),
+        make_editor("style", status="skipped", units=[], reason=reason),
+        mode="all",
+    )
+    review["llm"].update(
+        month="2026-11", month_usd=9.5, month_usd_known=True, month_cap_usd=10.0,
+        month_cap_reached=True,
+    )
+    wired.add_comment(12, BOT, f"{MARKER_CONTINUITY}\n### Continuity Editor: No findings")
+    path = _write_review(tmp_path, review)
+    assert main(["github", "report", "--pr", "12", "--review", str(path)]) == 0
+    bodies = wired.bodies(12)
+    assert len(bodies) == 2
+    for body in bodies:
+        assert f"did not run: {reason}. Nothing was checked, so this is not a pass." in body
+        assert "AI review resumes on 2026-12-01 UTC" in body
+        assert "stimate" not in body and "No findings" not in body
+    assert [r["conclusion"] for r in wired.check_runs] == ["failure", "failure"]
+
+
 @pytest.mark.intent("AC-build-and-deploy-6", "AC-structure-check-20", "AC-structure-check-21")
 def test_build_report_posts_comment_and_structure_check(wired, tmp_path):
     structure = tmp_path / "structure.json"

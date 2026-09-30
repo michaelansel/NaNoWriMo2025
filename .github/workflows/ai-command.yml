@@ -209,6 +209,10 @@ jobs:
           if git cat-file -e refs/remotes/pr/head:story-overrides.txt 2>/dev/null; then
             git checkout refs/remotes/pr/head -- story-overrides.txt
           fi
+      # For mode all the action first estimates the cost and checks the monthly AI spend cap
+      # for it: the "running" comments state the estimate, the finished ones show it beside
+      # the actual cost, and an estimate that does not fit starts no review
+      # (AC-continuity-review-11, AC-continuity-review-35). Other modes are unchanged.
       - uses: ./.github/actions/ai-review
         with:
           runner: ${{ needs.probe.outputs.runner }}

@@ -119,7 +119,7 @@ Most days you need none of these.
 |---|---|
 | `/dismiss <id> [reason]` | Hides a finding you disagree with |
 | `/check-continuity` | Runs the editors again on your changed passages |
-| `/check-continuity all` | Reviews the whole story; the comment shows what it cost |
+| `/check-continuity all` | Reviews the whole story; the comments show the most it could cost before it starts and what it cost after. If this month's AI budget has no room for that, it does not start and says so |
 | `/check-continuity passage=<name>` | Reviews one passage again. The comments keep the other passages' results if this push was already reviewed; otherwise they show only that passage and say so |
 
 ## The pages
