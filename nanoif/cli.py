@@ -266,20 +266,40 @@ def _check_structure(args: argparse.Namespace) -> int:
 
 
 def _ai_review(args: argparse.Namespace) -> int:
+    from nanoif.github.commands import write_github_output
     from nanoif.llm.errors import LLMConfigError
-    from nanoif.review.runner import review, summary_lines
+    from nanoif.review.runner import preflight, review, summary_lines
     from nanoif.schemas.artifacts import write_artifact
 
     mode = args.mode or ("passage" if args.passage else "changed")
     if args.passage and mode != "passage":
         print("ai review could not run: --passage needs --mode passage", file=sys.stderr)
         return 2
+    if args.estimate_only and mode != "all":
+        print("ai review could not run: --estimate-only needs --mode all", file=sys.stderr)
+        return 2
+    if args.github_output is not None and not args.estimate_only:
+        print("ai review could not run: --github-output needs --estimate-only", file=sys.stderr)
+        return 2
     editors = tuple(name.strip() for name in args.editors.split(",") if name.strip())
     try:
-        artifact = review(args.repo, mode, args.passage, editors, client=args.llm_client)
+        if args.estimate_only:
+            estimate, refused = preflight(args.repo, mode, None, editors, client=args.llm_client)
+        else:
+            artifact = review(args.repo, mode, args.passage, editors, client=args.llm_client)
     except (LLMConfigError, NanoifError) as exc:
         print(f"ai review could not run: {exc}", file=sys.stderr)
         return 2
+    if args.estimate_only:
+        if refused is None:
+            # AC-continuity-review-11: the estimate is posted before the review starts.
+            print(estimate.summary())
+            if args.github_output is not None:
+                write_github_output(args.github_output, estimate.outputs())
+            return 0
+        # AC-continuity-review-35: the estimate does not fit under the monthly cap, so the
+        # review is not started; the refusal is written for the reporter to publish.
+        artifact = refused
     out = args.out or args.repo / "dist" / "ai-review.json"
     write_artifact(out, artifact, "ai_review")
     for line in summary_lines(artifact):
@@ -542,6 +562,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     ai_review.add_argument(
         "--out", type=Path, default=None, help="default: <repo>/dist/ai-review.json"
+    )
+    ai_review.add_argument(
+        "--estimate-only",
+        action="store_true",
+        help="with --mode all: print the estimated cost and check the monthly cap for it, "
+        "calling no model; exit 0 when the review may start, else write the not-run "
+        "review to --out and exit 1",
+    )
+    ai_review.add_argument(
+        "--github-output",
+        type=Path,
+        default=None,
+        help="with --estimate-only: append estimate_usd, estimate_calls and estimate_priced",
     )
     ai_review.set_defaults(handler=_ai_review)
     ai_eval = ai_commands.add_parser(

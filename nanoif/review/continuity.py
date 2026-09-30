@@ -19,7 +19,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 from nanoif.bible.canon import CanonFact
-from nanoif.llm.client import Completer
+from nanoif.llm.client import DEFAULT_MAX_TOKENS, Completer
 from nanoif.llm.prompts import Prompt, prompt_schema, render_prompt
 from nanoif.review.findings import (
     Finding,
@@ -37,6 +37,8 @@ from nanoif.review.units import ReviewStory, ReviewUnit
 EDITOR = "continuity"
 PROMPT = "continuity"
 REASONING_EFFORT = "medium"
+MAX_TOKENS = DEFAULT_MAX_TOKENS
+"""Completion cap per call; the run's cost estimate counts every answer at this length."""
 
 ANY_SEVERITY = ("minor", "critical")
 TYPE_SEVERITY: dict[str, tuple[str, str]] = {
@@ -101,6 +103,7 @@ def review_unit(
         system=prompt.system,
         user=prompt.user,
         schema=prompt_schema(PROMPT),
+        max_tokens=MAX_TOKENS,
         reasoning_effort=REASONING_EFFORT,
         tag=unit.tag,
     )
