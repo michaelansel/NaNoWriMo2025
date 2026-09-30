@@ -23,7 +23,7 @@ from nanoif.github.bible import (
     render_bible_preview_not_run,
 )
 from nanoif.github.commands import parse_command, write_github_output
-from nanoif.github.comments import MARKER_BIBLE, upsert_sticky
+from nanoif.github.comments import MARKER_BIBLE, MARKER_BUILD, upsert_sticky
 from nanoif.github.dismiss import (
     DismissalError,
     append_record,
@@ -31,14 +31,18 @@ from nanoif.github.dismiss import (
     build_record,
     load_dismissals,
 )
+from nanoif.github.formatting import commit_message, parse_format_commit
 from nanoif.github.merge import HEAD_SHA_FILE, merge_passage_review
 from nanoif.github.report import (
     EDITORS,
+    FORMAT_KINDS,
+    FormatNote,
     Rendered,
     RunInfo,
     collect_build_stats,
     render_build,
     render_editor,
+    render_format_not_started,
     render_not_run,
     render_pending,
     render_unavailable,
@@ -174,7 +178,66 @@ def _pending(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _format_note(args: argparse.Namespace) -> FormatNote | None:
+    """Read the ``--format-*`` options into what the Build comment says (ADR-025).
+
+    Raises:
+        ValueError: The options do not fit together or the commit message is unreadable;
+            the message is the usage error.
+    """
+    problem, reason = args.format_problem, args.format_reason
+    if (problem is None) != (reason is None):
+        raise ValueError("--format-problem and --format-reason go together")
+    commit = None
+    if args.format_commit is not None:
+        try:
+            commit = parse_format_commit(args.format_commit.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError) as exc:
+            raise ValueError(f"cannot read --format-commit: {exc}") from exc
+    if problem == "dispatch-failed":
+        if commit is None or not args.head_sha:
+            raise ValueError(
+                "--format-problem dispatch-failed needs --head-sha and the bot's commit "
+                "message in --format-commit"
+            )
+        return FormatNote(problem, commit.count, commit.files, args.head_sha, reason)
+    if problem is not None:
+        return FormatNote(problem, 0, (), None, reason)
+    if commit is not None:
+        if not args.head_sha:
+            raise ValueError("--format-commit needs --head-sha (the bot's commit)")
+        return FormatNote("fixed", commit.count, commit.files, args.head_sha, None)
+    return None
+
+
+def _format_message(args: argparse.Namespace) -> int:
+    try:
+        summary = load_artifact(args.summary, "lint_fix")
+        message = commit_message(summary, args.previous_sha)
+    except (BuildError, ArtifactValidationError) as exc:
+        return _usage(str(exc))
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(message, encoding="utf-8")
+    print(message.splitlines()[0])
+    return EXIT_OK
+
+
 def _build_report(args: argparse.Namespace) -> int:
+    try:
+        formatting = _format_note(args)
+    except ValueError as exc:
+        return _usage(str(exc))
+    if formatting is not None and formatting.kind == "dispatch-failed":
+        # The bot's commit has no run of its own: the comment says so and the red format job
+        # fails; no check run, since the format job has no checks: write (ADR-025).
+        body = render_format_not_started(formatting, RunInfo.from_env())
+        _step_summary(body.removeprefix(MARKER_BUILD))
+        if args.pr is not None:
+            result = upsert_sticky(api_factory(), args.pr, MARKER_BUILD, body)
+            print(f"Build: comment {result.action} ({result.comment_id})")
+        return EXIT_OK
+    if args.structure is None or args.dist is None:
+        return _usage("build-report needs --structure and --dist")
     # Without a structure result the comment and check say the check did not run: a
     # missing or failed structure step must never render as "0 errors" (AC-structure-check-18).
     build_ok = args.build_outcome == "success"
@@ -194,7 +257,12 @@ def _build_report(args: argparse.Namespace) -> int:
         return _usage(f"cannot read build inputs: {exc}")
     crashed = args.structure_outcome == "failure" or problem is not None
     rendered = render_build(
-        findings, stats, RunInfo.from_env(), build_ok, structure_crashed=crashed
+        findings,
+        stats,
+        RunInfo.from_env(),
+        build_ok,
+        structure_crashed=crashed,
+        formatting=formatting,
     )
     _publish([rendered], args.pr, args.head_sha)
     if problem is not None:
@@ -368,8 +436,16 @@ def register(subparsers: argparse._SubParsersAction) -> None:
 
     build = commands.add_parser("build-report", help="Build & Structure comment and check")
     build.add_argument("--pr", type=int)
-    build.add_argument("--structure", type=Path, required=True, help="structure JSON")
-    build.add_argument("--dist", type=Path, required=True, help="build output directory")
+    build.add_argument(
+        "--structure",
+        type=Path,
+        help="structure JSON (required unless --format-problem dispatch-failed)",
+    )
+    build.add_argument(
+        "--dist",
+        type=Path,
+        help="build output directory (required unless --format-problem dispatch-failed)",
+    )
     build.add_argument(
         "--build-outcome",
         choices=OUTCOMES,
@@ -382,7 +458,28 @@ def register(subparsers: argparse._SubParsersAction) -> None:
         help="outcome of the structure step; anything but success means no structure result",
     )
     build.add_argument("--head-sha")
+    build.add_argument(
+        "--format-commit",
+        type=Path,
+        help="the head commit's message; when it is the formatting bot's commit (ADR-025) the "
+        "comment says what the bot fixed",
+    )
+    build.add_argument(
+        "--format-problem",
+        choices=FORMAT_KINDS[1:],
+        help="formatting was not applied (refused, push-failed) or the bot's commit got no "
+        "checks (dispatch-failed: posts only the comment); needs --format-reason",
+    )
+    build.add_argument("--format-reason", help="why, for --format-problem")
     build.set_defaults(handler=_build_report)
+
+    message = commands.add_parser(
+        "format-message", help="the formatting bot's commit message from a lint_fix summary"
+    )
+    message.add_argument("--summary", type=Path, required=True, help="nanoif lint --fix summary")
+    message.add_argument("--previous-sha", required=True, help="the head the fix was made on")
+    message.add_argument("--out", type=Path, required=True, help="where to write the message")
+    message.set_defaults(handler=_format_message)
 
     bible = commands.add_parser(
         "bible-report",
