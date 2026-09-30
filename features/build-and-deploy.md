@@ -6,7 +6,7 @@
 A writer needs to see a passage working before merging it and to see the live story right after.
 Anything between "I pressed merge" and "readers can play it" that needs a person is a day's
 passage that does not go out. The pull request is also the writer's only window on the tooling:
-if it fills with repeated bot comments, or a bot changes the writer's branch, writers stop
+if it fills with repeated bot comments, or a bot changes the writer's words, writers stop
 reading it, and the one note that mattered goes unseen.
 
 ## User stories
@@ -18,7 +18,8 @@ reading it, and the one note that mattered goes unseen.
   not play.
 - As a writer, I want my merge to go live without anyone doing anything, so that readers see
   today's passage today.
-- As a writer, I want automation to leave my branch alone, so that every commit on it is mine.
+- As a writer, I want automation to add at most one formatting commit per push to my branch and
+  never change my words, so that the branch stays mine.
 
 ## Behavior
 **On every push to a pull request against `main`** a hosted runner builds the pull request's merge
@@ -40,10 +41,12 @@ A separate `test` job runs the package tests and lint on every pull request and 
 approves or triggers the deploy. Refreshing the Story Bible before the deploy is specified in
 [story-bible](story-bible.md) (AC-story-bible-17).
 
-**What automation never does**: commit or push to a pull request branch, or rewrite a writer's
-file. Each kind of bot comment appears once per pull request and is edited in place
-(AC-build-and-deploy-6 for the Build comment). Write access to the repository is reserved for the
-main-branch jobs that record the `ai/` state files (AC-build-and-deploy-10).
+**What automation never does**: change a writer's words, or push to a pull request branch
+anything but the formatting fix ([structure-check](structure-check.md), AC-structure-check-27),
+whose fixed commit is then built in place of the writer's. Each kind of bot comment appears once
+per pull request and is edited in place (AC-build-and-deploy-6 for the Build comment). Write
+access to the repository is reserved for the main-branch jobs that record the `ai/` state files
+and the formatting fix (AC-build-and-deploy-10).
 
 **What the writer sees, and where**
 
@@ -59,7 +62,7 @@ main-branch jobs that record the `ai/` state files (AC-build-and-deploy-10).
 The live site's address is the repository's GitHub Pages address; the landing page is its root.
 
 ## Acceptance criteria
-- AC-build-and-deploy-1: Every push to a pull request against `main` runs the build and uploads a `story-preview` artifact holding the landing page and every output page, kept for 30 days. (verify: workflow)
+- AC-build-and-deploy-1: Every push to a pull request against `main` runs the build and uploads a `story-preview` artifact holding the landing page and every output page, kept for 30 days; when the formatting fix commits, this happens for the fixed commit instead. (verify: workflow)
 - AC-build-and-deploy-2: `nanoif build all --repo <repo>` writes `allpaths.html`, `allpaths-index.json`, `changes.json`, `metrics.html`, `story-bible.html`, `story-bible.json`, `canon-pack.json` and `passages.html` to `dist/`, `story_graph.json` to `lib/artifacts/`, and a fresh `src/PathIdLookup.twee`.
 - AC-build-and-deploy-3: When the compiled story is missing, `nanoif build all` exits non-zero with an error naming it and writes none of the later pages.
 - AC-build-and-deploy-4: When any build step fails, the pull request's build check is red and the run log names the failing step; a failed build never shows as passed. (verify: workflow)
@@ -67,8 +70,8 @@ The live site's address is the repository's GitHub Pages address; the landing pa
 - AC-build-and-deploy-6: A pull request has exactly one Build comment, found by the HTML marker `<!-- nano:build -->` and edited in place on every push.
 - AC-build-and-deploy-7: When the build fails, the Build comment says it failed and links the failed run instead of keeping the last successful numbers.
 - AC-build-and-deploy-8: A push to `main` deploys `dist/` to GitHub Pages with no manual step, and the deployed landing page serves the merged content within 5 minutes of the merge. (verify: workflow)
-- AC-build-and-deploy-9: No workflow step commits or pushes to a pull request branch; after any number of automated runs, a pull request branch holds only its author's commits. (verify: workflow)
-- AC-build-and-deploy-10: Jobs triggered by a pull request have read-only access to repository contents; only the main-branch jobs that write `ai/` state can push, and only to `main`. (verify: workflow)
+- AC-build-and-deploy-9: No workflow step commits or pushes to a pull request branch except the formatting fix of AC-structure-check-27; after any number of automated runs, every commit on a pull request branch is its author's or a `github-actions[bot]` formatting commit carrying a `Nanoif-Format:` trailer. (verify: workflow)
+- AC-build-and-deploy-10: Jobs triggered by a pull request have read-only access to repository contents, except the formatting job, which can push only to the head branch of a pull request from this repository; the main-branch jobs that write `ai/` state push only to `main`. (verify: workflow)
 - AC-build-and-deploy-11: A new push to a pull request cancels that pull request's run in progress, and runs for different pull requests never queue behind each other. (verify: workflow)
 - AC-build-and-deploy-12: The `test` job runs the package tests and lint on every pull request and every push to `main`, and a failure turns its check red. (verify: workflow)
 

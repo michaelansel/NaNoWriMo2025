@@ -35,7 +35,8 @@ From the moment the pull request opens, automation runs on every push without be
 build and preview ([build-and-deploy](build-and-deploy.md)), the structure notes
 ([structure-check](structure-check.md)), and the editors' notes
 ([continuity-review](continuity-review.md)). Automation reads the branch and comments on the pull
-request; it never commits to the branch. The writer merges when satisfied, and the story goes
+request; its only commit to the branch is the formatting fix, which never changes a word
+([structure-check](structure-check.md)). The writer merges when satisfied, and the story goes
 live without further steps.
 
 The writer-facing guides are `WRITING-WORKFLOW.md` (the daily pattern) and `CONTRIBUTING.md` (the

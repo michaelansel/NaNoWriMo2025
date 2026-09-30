@@ -77,8 +77,8 @@ Your text here.
 
 ## What happens automatically
 
-You do not need to ask for any of this. Nothing here ever changes your files or adds commits to
-your branch.
+You do not need to ask for any of this. A bot may add one commit to your branch fixing spacing
+and curly quotes in the files you changed; it never changes your words.
 
 | What | Where you see it | What to do |
 |---|---|---|
@@ -86,7 +86,7 @@ your branch.
 | **Preview** | `story-preview`, linked from the Build & Structure comment | Download, unzip, open `dist/index.html`, play your branch |
 | **Story Bible preview** | `story-bible-preview`, linked from the **Story Bible** comment | Your new passages' characters and facts, before merge |
 | **Structure notes** | The `Structure` check, the Build & Structure comment, and notes on your lines in **Files changed** | Fix errors (for example a broken link); warnings are advice |
-| **Formatting notes** | Notes on your lines in **Files changed** | Optional: spacing suggestions only |
+| **Formatting fix** | A `style:` commit by the bot, named in the Build & Structure comment | Nothing. If the file is open in the GitHub editor, reload it before editing again |
 | **Continuity Editor** | One comment and a `Continuity Editor` check, updated on every push | Read the quotes; fix, or dismiss (below) |
 | **Style Editor** | One comment and a `Style Editor` check, updated on every push | Checks point of view, tense and main character |
 

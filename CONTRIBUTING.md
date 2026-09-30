@@ -76,7 +76,9 @@ Go back to your pull request. Within a few minutes you will see:
   [WRITING-WORKFLOW.md](WRITING-WORKFLOW.md) explains how to dismiss a note you disagree with.
 
 To fix something, open the file on your branch, edit it, and commit again. Everything re-runs by
-itself. No bot will ever change your files for you.
+itself. A bot may add one commit fixing spacing and curly quotes in the files you changed; it
+never changes your words. If you have the file open in the GitHub editor, reload it before
+editing again.
 
 ## Step 4: Merge
 

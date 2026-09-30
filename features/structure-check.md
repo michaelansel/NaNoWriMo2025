@@ -6,8 +6,10 @@
 Most of the defects that reach readers in a branching story are structural, not literary: a link
 to a passage that does not exist, two writers using the same passage name, a day's passage that
 nothing links to, a typo in `StoryData`. They need no AI to find, they can be pointed at an exact
-file and line, and a writer can fix them in a minute. Writers also need formatting advice that
-never touches their prose: a tool that rewrites a writer's file on their branch is not advice.
+file and line, and a writer can fix them in a minute. Writers also need tidy formatting without
+learning its rules, and without a tool ever changing their words: an earlier fixer rewrote prose
+and filled branches with bot commits, so this one may change only spacing and curly quotes, in
+one commit per push.
 
 ## User stories
 - As a writer, I want a broken link reported on the exact line, so that I fix it before readers
@@ -16,8 +18,8 @@ never touches their prose: a tool that rewrites a writer's file on their branch 
   silently go to someone else's passage.
 - As a writer, I want to know when nothing links to my day's passage, so that it does not sit
   unreachable after merge.
-- As a writer, I want formatting notes as suggestions only, so that my words stay exactly as I
-  wrote them.
+- As a writer, I want spacing and curly quotes in the files I changed fixed for me in one commit,
+  so that I need not learn formatting rules and my words stay exactly as I wrote them.
 - As a writer, I want the check to say when it could not run, so that silence always means clean.
 
 ## Behavior
@@ -42,19 +44,30 @@ On every pull request build, before the pages are built, two report-only tools r
 Passages tagged `footer`, `header`, `startup`, `script` or `stylesheet`, and the `StoryData` and
 `StoryTitle` passages, are page furniture: never orphans or dead ends.
 
-**`nanoif lint src/`**, formatting only, all warnings: a space after `::`; a blank line after a
-passage header (not for `StoryData`, scripts or stylesheets); one blank line between passages; no
-trailing whitespace; exactly one final newline; no runs of blank lines; a blank line around a
-block of one-per-line choices and none inside it. Curly quotes are the writer's choice and are
-never reported. The linter has no fix mode.
+**`nanoif lint src/`**, formatting only, all warnings, eight rules: a space after `::`; a blank
+line after a passage header (not for `StoryData`, scripts or stylesheets); one blank line between
+passages; no trailing whitespace; exactly one final newline; no runs of blank lines; a blank line
+around a block of one-per-line choices and none inside it; and `smart-quotes`, curly quotes and
+apostrophes in prose. Curly quotes in passage headers, `[[links]]`, Harlowe macros, HTML tags and
+special passages are never reported.
+
+**The formatting fix.** On a push to a pull request from a branch of this repository, the bot
+fixes those findings in the prose files the pull request adds or changes and pushes one commit,
+`style: fix N formatting issues in <files>`. Only spaces, blank lines and curly quotes change
+(curly quotes become `'` and `"`); headers, links, macros, HTML tags and special passages are
+never touched, and a fix that would change a word, passage name or link target is refused and
+writes nothing. The fixed commit gets every check a writer's push gets. Infrastructure files
+stay report-only.
 
 **Where the writer sees it.** A `Structure` check run on the pull request carries each finding
 as an annotation on its file and line, shown in the "Files changed" view. The Build & Structure
 comment ([build-and-deploy](build-and-deploy.md)) counts errors, warnings and notes, lists each
 error with its file and line, and collapses the rest. Formatting notes are warning annotations
-and a line in the run summary. Findings never stop the preview from being built, so the writer
-can still play the branch. On `main` and for pull requests from forks, findings go to the run
-summary and annotations only.
+and a line in the run summary. After a fix, the Build comment says "Formatting: the bot fixed N
+issues in <files> as `<sha7>`; your next edit starts from it"; when the fix was refused or its
+checks could not start, it says so and why. Findings never stop the preview from being built, so
+the writer can still play the branch. On `main` and for pull requests from forks, findings go to
+the run summary and annotations only, and nothing is fixed.
 
 ## Acceptance criteria
 - AC-structure-check-1: A link to a missing passage is an error on the line of the link, naming the passage it is in and the missing target.
@@ -78,11 +91,15 @@ summary and annotations only.
 - AC-structure-check-19: Structure findings, errors included, never stop the pull request preview from being built. (verify: workflow)
 - AC-structure-check-20: Every pull request from a branch of this repository has a `Structure` check run whose conclusion is failure when there is an error, neutral when there are warnings and no error, and success when there are only info notes or no findings.
 - AC-structure-check-21: The Build comment lists the number of structure errors, warnings and info notes, and each error with its file and line.
-- AC-structure-check-22: The linter reports each of its seven rules as `file:line: [rule] message`.
-- AC-structure-check-23: The linter never changes a file, and `nanoif lint --fix` is rejected as an unknown option.
-- AC-structure-check-24: Curly quotes and apostrophes are never reported by the linter.
+- AC-structure-check-22: The linter reports each of its eight rules, the seven layout rules and `smart-quotes`, as `file:line: [rule] message`.
+- AC-structure-check-23: `nanoif lint` without `--fix` never changes a file; with `--fix` it changes only spaces, blank lines and curly quotes outside passage headers, Harlowe macros, `[[links]]`, HTML tags and special passages, so every word is identical before and after, and a fix that would change a word, passage name or link target writes nothing to any file and fails with the reason.
+- AC-structure-check-24: Curly quotes and apostrophes (U+2018, U+2019, U+201C, U+201D) in prose are reported as `smart-quotes` and fixed to `'` and `"`; in passage headers, `[[links]]`, Harlowe macros, HTML tags and special passages they are neither reported nor changed.
 - AC-structure-check-25: `StoryData`, script and stylesheet passages are not required to have a blank line after their header.
 - AC-structure-check-26: On a pull request, formatting findings appear as warning annotations and never turn the build red. (verify: workflow)
+- AC-structure-check-27: On a push to a pull request from a branch of this repository whose added or changed prose files have fixable formatting findings, the bot adds exactly one commit that fixes those files and touches no other file, and the Build comment names the fixed files and the number of fixes. (verify: planned)
+- AC-structure-check-28: No formatting commit is made when the head commit is the bot's own formatting commit, for a pull request from a fork, or on `main`. (verify: planned)
+- AC-structure-check-29: When the formatting commit cannot be pushed for any reason other than a newer push by the writer, or the checks for the pushed commit cannot be started, the Build comment says so and why and the `format` check is red; after a newer push, that push's run fixes and reports instead. (verify: planned)
+- AC-structure-check-30: The bot's formatting commit gets the same build, preview, structure check, Story Bible preview, AI review and required checks as a writer's push, each reported on that commit. (verify: planned)
 
 ## Edge cases
 - **Empty story** (the `Start` stub only): no errors; `Start` is reported as a dead end (info)
@@ -93,7 +110,14 @@ summary and annotations only.
 - **`story-overrides.txt` absent**: nothing is reported; the file is optional.
 - **Check crashes on unexpected input**: the step fails and the run is red; the crash is a bug to
   fix, never a clean result.
-- **Fork pull requests**: the check runs with the build once a maintainer approves the run.
+- **Fork pull requests**: the check runs with the build once a maintainer approves the run; no
+  formatting fix is pushed.
+- **File open in the web editor when the bot commits**: GitHub says the file has changed; the
+  writer copies their text, reloads the file, and pastes it back.
+- **Writer pushes again before the bot's commit lands**: the bot's push is refused and the newer
+  push's run fixes and reports instead.
+- **A fix that would change a word** (a fixer bug): nothing is written, the `format` check is red,
+  the Build comment says formatting could not be fixed and why, and the findings stay as notes.
 
 ## Soft goals
 - A writer fixes a broken link from the annotation alone, without opening the run log.
@@ -102,5 +126,6 @@ summary and annotations only.
 ## Out of scope
 - Continuity, style and meaning ([continuity-review](continuity-review.md)).
 - What the overrides directives do to the Story Bible ([story-bible](story-bible.md)).
-- Automatic fixes of any kind.
+- Automatic fixes other than spacing and curly quotes in the prose files a pull request adds or
+  changes; fixes to infrastructure files.
 - Spelling and grammar.
