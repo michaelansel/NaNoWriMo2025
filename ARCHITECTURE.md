@@ -18,7 +18,8 @@ system as it is; each part links its ADR in [`architecture/`](architecture/).
 | LLM gateway | OpenAI-compatible endpoint reached from the exe runner with no key; our spend on it is capped monthly | [016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md) |
 | `ai/` | State written only by Actions jobs on `main` | [014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md), [020](architecture/020-story-bible-v2.md) |
 | `dist/` | Build output; uploaded as `story-preview` on PRs, deployed to Pages from `main`; never committed | [017](architecture/017-git-based-categorization.md) |
-| `landing/` | Static landing page copied to `dist/index.html` | [011](architecture/011-landing-page-design.md) |
+| `landing/` | Hand-written landing page; `build landing` fills in the `StoryTitle` and writes `dist/index.html` | [011](architecture/011-landing-page-design.md) |
+| `WRITERS-GUIDE.md` | Writer's guide, a build input: `build guide` renders it to `dist/guide.html`, linked from the landing page; links only `https://` or in-page `#` | [027](architecture/027-writers-guide-page.md) |
 
 ## Build pipeline
 
@@ -39,12 +40,12 @@ src/*.twee
         ├─ nanoif build metrics     ─→ metrics.html
         ├─ nanoif build passages    ─→ passages.html
         ├─ nanoif build story-bible ─→ story-bible.html, story-bible.json (cache + overrides, no model)
-        └─ nanoif build canon-pack  ─→ canon-pack.json (≤ 6 facts per entity, for the Continuity Editor)
+        ├─ nanoif build canon-pack  ─→ canon-pack.json (≤ 6 facts per entity, for the Continuity Editor)
+        └─ nanoif build guide, then landing ─→ guide.html (WRITERS-GUIDE.md), index.html (last)
 ```
 
-- Tweego versions and story formats are pinned in the workflow; `scripts/build-*.sh` are thin
-  wrappers around tweego and `nanoif` ([015](architecture/015-nanoif-package.md)).
-- `nanoif build core` parses once; every format reads the core artifacts and never another
+- Tweego versions and story formats are pinned in the workflow; `scripts/build-*.sh` wrap tweego
+  and `nanoif`. `build core` parses once; every format reads the core artifacts and never another
   format's output ([015](architecture/015-nanoif-package.md)).
 - Categories (new / modified / unchanged) and `changes.json` come from comparing the working
   tree with the PR's merge base in git; there is no validation cache
@@ -105,10 +106,9 @@ push to main (or dispatch with bible-mode=full)
         bible-cache artifact (or the cache at this commit) with --extraction-result → Pages
 ```
 
-- Stages: extract per changed passage (model), resolve names (deterministic, then one batched
-  model pass), reconcile touched entities (model returns fact ids only), assemble with
-  `story-overrides.txt` (deterministic). Fact ids `<slug>#<n>` are never reused
-  ([020](architecture/020-story-bible-v2.md)).
+- Stages: extract per changed passage (model), resolve names (deterministic, then one batched model
+  pass), reconcile touched entities (model returns fact ids only), assemble with `story-overrides.txt`
+  (deterministic). Fact ids `<slug>#<n>` are never reused ([020](architecture/020-story-bible-v2.md)).
 - A failed or skipped extraction still deploys, with the previous cache and a banner naming
   the failure and the date of the Bible shown.
 - `ai-maintenance.yml` (manual, and a daily `runner-check` in November) runs `check-all`,
@@ -171,7 +171,7 @@ repository variables `LLM_PROFILE`, `LLM_MODEL`, `LLM_MONTHLY_USD`, `EXE_HEALTH_
 | `graph/` | path enumeration (`paths`), base comparison and categories (`categorize`), passage ids and the path-id lookup (`ids`) |
 | `git/` | the one `git` service: cached, timed, one `git log` per build |
 | `build/` | repository layout (`paths`) and `build core` |
-| `formats/` | `allpaths`, `metrics`, `passages`, `story_bible` pages from core artifacts; HTML in `templates/html/` |
+| `formats/` | `allpaths`, `metrics`, `passages`, `story_bible` pages from core artifacts; `landing`; `guide`, the one Markdown-to-HTML renderer (`markdown-it-py`, raw HTML escaped, [027](architecture/027-writers-guide-page.md)); HTML in `templates/html/` |
 | `check/` | report-only `structure` checks ([018](architecture/018-structure-check-and-report-only-lint.md)) and the `story-overrides.txt` syntax parser |
 | `schemas/` | artifact schemas and write/read validation |
 | `llm/` | client, profiles, schema parsing, prompt rendering and hashes (`prompts`), pricing, spend ledger (`ledger`), test doubles ([016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md)) |

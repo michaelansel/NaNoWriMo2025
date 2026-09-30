@@ -19,21 +19,9 @@ https://michaelansel.github.io/NaNoWriMo2026/
 
 ## Writing
 
-Writers never need anything installed. Read **[WRITING-WORKFLOW.md](WRITING-WORKFLOW.md)** for the
-daily routine and **[CONTRIBUTING.md](CONTRIBUTING.md)** for a first pull request. In short: add
-`src/<INITIALS>-<YYYYMMDD>.twee` whose first passage is `:: Day <N> <INITIALS>`, link to it from an
-earlier passage, open a pull request, and read the Build, Continuity and Style comments.
-
-```twee
-:: Day 3 EV
-Wren took the long way down to the ferry.
-
-[[Wait for Tam->The crossing]]
-[[Go alone]]
-```
-
-Corrections to the Story Bible (merge two names, drop a false entry, pin a fact, mark a deliberate
-mystery) go in [`story-overrides.txt`](story-overrides.txt).
+Writers never need anything installed. Everything a writer needs, from the first pull request to
+the daily routine, the notes and fixing the Story Bible, is in the
+**[Writer's Guide](WRITERS-GUIDE.md)**.
 
 ## What runs automatically
 
