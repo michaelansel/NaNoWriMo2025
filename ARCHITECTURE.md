@@ -19,7 +19,7 @@ system as it is; each part links its ADR in [`architecture/`](architecture/).
 | `ai/` | State written only by Actions jobs on `main` | [014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md), [020](architecture/020-story-bible-v2.md) |
 | `dist/` | Build output; uploaded as `story-preview` on PRs, deployed to Pages from `main`; never committed | [017](architecture/017-git-based-categorization.md) |
 | `landing/` | Hand-written landing page; `build landing` fills in the `StoryTitle` and writes `dist/index.html` | [011](architecture/011-landing-page-design.md) |
-| `WRITERS-GUIDE.md` | Writer's guide, a build input: `build guide` renders it to `dist/guide.html`, linked from the landing page; links only `https://` or in-page `#` | [027](architecture/027-writers-guide-page.md) |
+| `WRITERS-GUIDE.md` | Writer's guide, a build input: `build guide` renders it to `dist/writers-guide.html`, linked from the landing page; links only `https://` or in-page `#` | [027](architecture/027-writers-guide-page.md) |
 
 ## Build pipeline
 
@@ -41,7 +41,7 @@ src/*.twee
         ├─ nanoif build passages    ─→ passages.html
         ├─ nanoif build story-bible ─→ story-bible.html, story-bible.json (cache + overrides, no model)
         ├─ nanoif build canon-pack  ─→ canon-pack.json (≤ 6 facts per entity, for the Continuity Editor)
-        └─ nanoif build guide, then landing ─→ guide.html (WRITERS-GUIDE.md), index.html (last)
+        └─ nanoif build guide, then landing ─→ writers-guide.html, index.html (last)
 ```
 
 - Tweego versions and story formats are pinned in the workflow; `scripts/build-*.sh` wrap tweego

@@ -69,6 +69,11 @@ class ProjectPaths:
         return self.repo / "story-overrides.txt"
 
     @property
+    def writers_guide(self) -> Path:
+        """``WRITERS-GUIDE.md``, rendered to ``dist/writers-guide.html`` (ADR-027)."""
+        return self.repo / "WRITERS-GUIDE.md"
+
+    @property
     def canon_pack(self) -> Path:
         """``canon-pack.json``, the Continuity Editor's canon."""
         return self.dist / "canon-pack.json"

@@ -27,13 +27,14 @@ def paperthin(repo):
     )
 
 
-@pytest.mark.intent("AC-build-and-deploy-2", "AC-output-formats-19")
+@pytest.mark.intent("AC-build-and-deploy-2", "AC-output-formats-19", "AC-output-formats-21")
 def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
     monkeypatch.delenv("GITHUB_BASE_REF", raising=False)
     monkeypatch.delenv("GITHUB_MERGE_BASE", raising=False)
     paperthin(story_repo)
     (story_repo / "landing").mkdir()
     (story_repo / "landing" / "index.html").write_text("<h1>{{STORY_TITLE}}</h1>", encoding="utf-8")
+    (story_repo / "WRITERS-GUIDE.md").write_text("# Guide\n\nWrite daily.\n", encoding="utf-8")
     assert main(["build", "all", "--repo", str(story_repo)]) == 0
     out = capsys.readouterr().out
     order = [
@@ -43,7 +44,8 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
         "rendered the placeholder page",
         "Canon pack with no saved extraction",
         "Passage index: 5 passages",
-        "index.html",
+        "writers-guide.html",
+        "dist/index.html",
     ]
     positions = [out.index(marker) for marker in order]
     assert positions == sorted(positions)
@@ -57,6 +59,7 @@ def test_build_all_runs_every_step_in_order(story_repo, capsys, monkeypatch):
         "story-bible.json",
         "canon-pack.json",
         "passages.html",
+        "writers-guide.html",
         "index.html",
     ):
         assert (dist / name).is_file(), name

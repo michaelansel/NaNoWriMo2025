@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+        }
+        .header a { color: white; font-weight: 600; text-decoration: none; }
+        .header a:hover, .header a:focus { text-decoration: underline; }
+        .container { max-width: 52rem; margin: 0 auto; padding: 1rem; }
+        .guide {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1.5rem 1rem;
+            overflow-wrap: break-word;
+        }
+        .guide h1 { color: #4c3d8f; font-size: 1.9rem; line-height: 1.25; margin-bottom: 0.75rem; }
+        .guide h2 {
+            color: #667eea;
+            font-size: 1.4rem;
+            margin: 2rem 0 0.75rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid #eef0fb;
+        }
+        .guide h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
+        .guide p, .guide ul, .guide ol, .guide pre, .guide table { margin-bottom: 1rem; }
+        .guide ul, .guide ol { padding-left: 1.5rem; }
+        .guide li { margin-bottom: 0.35rem; }
+        .guide li > ul, .guide li > ol { margin: 0.35rem 0 0; }
+        .guide .contains-task-list { list-style: none; padding-left: 0.25rem; }
+        .guide .task-list-item-checkbox { margin-right: 0.5rem; transform: scale(1.2); }
+        .guide a { color: #5a4bd1; }
+        .guide code {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.9em;
+            background: #f3f3f8;
+            border-radius: 4px;
+            padding: 0.1em 0.3em;
+        }
+        .guide pre {
+            background: #f3f3f8;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            overflow-x: auto;
+        }
+        .guide pre code { background: none; padding: 0; font-size: 0.9rem; white-space: pre; }
+        .guide table {
+            display: block;
+            max-width: 100%;
+            overflow-x: auto;
+            border-collapse: collapse;
+        }
+        .guide th, .guide td {
+            border: 1px solid #e2e2ea;
+            padding: 0.5rem 0.6rem;
+            text-align: left;
+            vertical-align: top;
+            min-width: 8rem;
+        }
+        .guide th { background: #f8f9fa; color: #4c3d8f; }
+        @media (min-width: 40rem) {
+            .container { padding: 1.5rem; }
+            .guide { padding: 2rem 2.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html">&larr; Back to the story's site</a>
+    </header>
+    <main class="container">
+        <article class="guide">
+{{ body|safe }}
+        </article>
+    </main>
+</body>
+</html>

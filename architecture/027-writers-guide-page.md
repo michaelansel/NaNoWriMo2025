@@ -1,4 +1,4 @@
-# ADR-027: The writer's guide is rendered from Markdown into `dist/guide.html`
+# ADR-027: The writer's guide is rendered from Markdown into `dist/writers-guide.html`
 
 Status: Accepted
 
@@ -28,15 +28,16 @@ A relative link resolves in only one of them. The package's runtime dependencies
   writes Markdown and `github.sanitize` neutralizes it; those are separate concerns.
 - **Placement.** `nanoif/formats/guide.py` has `build_guide(source: Path, out_dir: Path) -> Path`.
   `ProjectPaths.writers_guide` is `<repo>/WRITERS-GUIDE.md`. The page template is
-  `nanoif/templates/html/guide.html.jinja2`, loaded through `formats.common.html_environment()`
+  `nanoif/templates/html/writers-guide.html.jinja2`, loaded through
+  `formats.common.html_environment()`
   and styled like the other pages. The rendered body is the template's only `|safe` value. The
   page title comes from the guide's first level-1 heading.
-- **CLI and order.** `nanoif build guide --repo <repo>` writes `dist/guide.html`. `build all` runs
-  it after `passages` and before `landing`, so the landing page is still the last step and every
-  page it links to exists before it is written. The guide reads no core artifact.
-- **Landing.** `landing/index.html` gets a static "For writers" section that links `guide.html`
-  (ADR-011: the landing links stay hand-written). The build either writes `guide.html` or fails,
-  so this link cannot point at a missing page.
+- **CLI and order.** `nanoif build guide --repo <repo>` writes `dist/writers-guide.html`.
+  `build all` runs it after `passages` and before `landing`, so the landing page is still the last
+  step and every page it links to exists before it is written. The guide reads no core artifact.
+- **Landing.** `landing/index.html` gets a static "For writers" section that links
+  `writers-guide.html` (ADR-011: the landing links stay hand-written). The build either writes
+  `writers-guide.html` or fails, so this link cannot point at a missing page.
 - **Links.** Every link and image target in the guide must be one of two things:
   - an `https://` URL
   - a `#fragment` that matches a heading id on the rendered page
@@ -55,7 +56,7 @@ A relative link resolves in only one of them. The package's runtime dependencies
   - `markdown-it-py` or `mdit-py-plugins` cannot be imported
 
   The page is rendered completely before anything is written, so a failed build leaves no empty
-  or partial `guide.html`.
+  or partial `writers-guide.html`.
 
 ## Consequences
 

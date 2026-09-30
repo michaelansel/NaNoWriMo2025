@@ -22,7 +22,7 @@ Each day is two small changes in one pull request: add a choice to an earlier pa
 your new passage. It takes about fifteen minutes the first time.
 
 **First time only:** you need a GitHub account, and the story's organiser must add you as a
-collaborator. Accept the invitation email, then pick your **initials** (for example EV). You use
+collaborator. Accept the invitation email, then pick your **initials**, 1 to 10 letters (for example EV). You use
 them every day.
 
 **Step 1: add the choice that leads to your passage**
@@ -33,7 +33,7 @@ them every day.
 3. At the end of that passage, add a choice that points at your new passage, for example
    `[[Wait for morning->Day 2 EV]]`.
 4. Click **Commit changes**, choose **Create a new branch for this commit and start a pull
-   request**, and click **Propose changes**.
+   request**, give the branch a short name like `ev-day-2`, and click **Propose changes**.
 5. Click **Create pull request**. Do not merge yet.
 
 **Step 2: write your passage**
@@ -41,7 +41,7 @@ them every day.
 1. On your pull request, click your branch name near the top.
 2. Click **Add file**, then **Create new file**.
 3. Name the file and write your passage (the next section shows how).
-4. Click **Commit changes**, making sure it saves to your branch.
+4. Click **Commit changes**, making sure it saves to your branch, not `main`.
 
 **Step 3: read the notes and merge**
 
@@ -86,9 +86,8 @@ comment that updates itself, so you never have to scroll through repeats.
 
 | Note | What it tells you | What you do |
 | --- | --- | --- |
-| **Build & Structure** | Whether the story still fits together, and a link to a playable preview | Fix anything marked as an **error**, such as a choice pointing at a passage that doesn't exist. Warnings are only advice. |
-| **Preview** (inside Build & Structure) | A copy of the whole story with your passage in it | Download `story-preview`, open it, go into the `dist` folder, then open `index.html` and play through your part |
-| **Formatting** | A helper tidied spacing and curly quotes in your file, as a small extra save on your draft | Nothing. It never changes your words. If you had the file open for editing, reload the page first. |
+| **Build & Structure** | Whether the story still builds and fits together, what the formatting helper tidied, and how to get the preview | Fix anything listed as an **error**, such as a choice pointing at a passage that doesn't exist; errors also show on your lines in the **Files changed** tab. Warnings are only advice. |
+| **Preview** (inside Build & Structure) | A copy of the whole story with your passage in it | Download `story-preview`, open it, go into the `dist` folder, then open `index.html` and play through your part. On a phone you usually can't open it; play the live story after you merge. |
 | **Continuity Editor** | Places where your passage seems to disagree with what came before, each with the two quotes side by side | Decide. Fix it, or tell it you meant it (see below). |
 | **Style Editor** | Places where the point of view, tense or main character slips | Decide, the same way |
 | **Story Bible** | The characters, places and facts the story now knows about, including yours | Glance at it. If it got something wrong, see the next section. |
@@ -97,7 +96,27 @@ comment that updates itself, so you never have to scroll through repeats.
 note, and a short reason, for example `/dismiss f-1a2b3c4d it's a dream sequence`. It won't raise
 that note again unless one of those passages changes.
 
-**None of the notes stop you merging.** They are there to help, and you have the final say.
+**The checks.** Each helper also shows a check near the bottom of your pull request. Green means
+all good. A red **build** or **Structure** check means something to fix, and Build & Structure says
+what. An editor's check is grey when it has notes for you and red when it could not read some of
+your passages.
+
+**The editors' notes never stop you merging.** They are advice, and you have the final say.
+
+**The formatting helper.** When your file has untidy spacing or curly quotes, a helper fixes them
+as a small extra save on your draft, and Build & Structure says so. It never changes your words.
+If you had the file open for editing, reload the page first.
+
+## Commands you can comment
+
+Most days you need none of these. Type them as a comment on your pull request.
+
+| Comment | What happens |
+| --- | --- |
+| `/dismiss <code> <reason>` | Hides an editor's note you disagree with |
+| `/check-continuity` | The editors read your changed passages again |
+| `/check-continuity all` | The editors read the whole story. The note says the most it could cost before it starts, and what it did cost after. If this month's AI budget has no room, it doesn't start and says so. |
+| `/check-continuity passage=<name>` | The editors read that one passage again. If they already read this save, the other passages' notes stay; otherwise the note shows only that passage and says so. |
 
 ## The Story Bible
 
@@ -129,24 +148,29 @@ the page. If a deliberate mystery stays unmatched, add a `pin:` line for the quo
 
 ## When something looks wrong
 
-**The build check is red.** Open the Build & Structure note; it says what broke. It is almost
-always a choice pointing at a passage name that doesn't exist, or a passage name someone already
-used. Fix the name and save again.
+**A check is red.** Open the Build & Structure note; it says what broke. It is almost always a
+choice pointing at a passage name that doesn't exist, or a passage name someone already used. Fix
+the name and save again. If it says the story build failed, it links the page that shows why; ask
+the organiser if that doesn't help.
 
 **My choice is reported as broken.** The name after `->` must match the passage name exactly,
 including capitals and spaces. Also check your file name ends in `.twee`; otherwise the story
 can't see the file at all.
 
-**A note says "AI review unavailable" or "did not run".** The AI editors couldn't read your
-passage this time. That is not an all-clear, but you can still merge. If it names the monthly AI
-budget, the editors come back on the date it gives.
+**An editor's note says "AI review unavailable".** The editors couldn't read your passages this
+time. That is not an all-clear, but you can still merge. If it names the monthly AI budget, the
+editors come back on the date it gives; nothing you do changes that.
+
+**An editor's note says "did not run".** The editors didn't read this save at all, usually because
+the build failed, and the old notes are gone, so nothing was checked. Fix what Build & Structure
+points to and save again; if the build is fine, ask the organiser.
 
 **Someone else's name appears on a save in my draft.** That's the formatting helper tidying
 spacing and quotes. It never changes your words. Reload the page before you edit again.
 
-**The formatting note says to "update the branch".** Your draft started before the formatting
-helper existed. Click **Update branch** on your pull request page, and it will tidy the file on
-your next save.
+**Build & Structure says to "update the branch from main".** Your draft started before the
+formatting helper existed. Click **Update branch** on your pull request page; the formatting helper
+then tidies your file.
 
 **I want the editors to look again.** Comment `/check-continuity` on your pull request. They also
 look again by themselves every time you save.
@@ -158,11 +182,24 @@ organiser.
 **Anything else.** Ask in a comment on your pull request. The other writers and the organiser
 will see it.
 
+## The story's site
+
+After each merge, the story's site updates with these pages:
+
+- **Play**: the story itself
+- **Proofread**: all the text on one page
+- **All paths**: every route through the story
+- **Metrics**: word counts
+- **Passages**: every passage name, its file and its links; handy when you add a choice
+- **Story Bible**: the characters, places and facts (empty until after the first merge)
+- **Graph**: a map of the story
+- **Writer's Guide**: this guide
+
 ## Before you merge
 
-- [ ] An earlier passage has a choice leading to `Day <N> <your initials>`
-- [ ] Your file is named `src/<initials>-<date>.twee` and starts with that same `Day` line
-- [ ] The build check is green, with no errors in Build & Structure
+- [ ] An earlier passage has a choice leading to `Day <N> <INITIALS>`
+- [ ] Your file is named `src/<INITIALS>-<YYYYMMDD>.twee` and starts with that same `Day` line
+- [ ] No red build or Structure check, and no errors in Build & Structure
 - [ ] You played your part in the preview
 - [ ] You read the Continuity and Style notes, and fixed or dismissed each one
 - [ ] Merged

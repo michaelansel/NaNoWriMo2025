@@ -34,7 +34,7 @@ Work through the steps in order. Before each step marked **destructive**, show e
 
 ## 5. Docs
 
-- `README.md` "Before Nov 1" checklist reset to unchecked. `WRITING-WORKFLOW.md` and `CONTRIBUTING.md` re-read for anything year-specific.
+- `README.md` "Before Nov 1" checklist reset to unchecked. `WRITERS-GUIDE.md` re-read for anything year-specific.
 - `PRIORITIES.md` gets the new year's stack rank; `VISION.md` and `PRINCIPLES.md` change only if a principle changed.
 
 ## 6. Configuration review

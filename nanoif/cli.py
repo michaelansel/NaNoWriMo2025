@@ -213,6 +213,15 @@ def _build_passages(args: argparse.Namespace) -> int:
     return 0
 
 
+def _build_guide(args: argparse.Namespace) -> int:
+    from nanoif.formats.guide import build_guide
+
+    paths = _paths(args)
+    out = build_guide(paths.writers_guide, paths.dist)
+    print(f"Writer's guide: wrote {out}")
+    return 0
+
+
 def _build_landing(args: argparse.Namespace) -> int:
     from nanoif.formats.landing import build_landing
 
@@ -230,6 +239,7 @@ def _build_all(args: argparse.Namespace) -> int:
         _build_story_bible,
         _build_canon_pack,
         _build_passages,
+        _build_guide,
         _build_landing,
     )
     for step in steps:
@@ -547,6 +557,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--cache", type=Path, default=None, help="default: <repo>/ai/story-bible-cache.json"
     )
     _add_build(targets, "passages", "passage index page", _build_passages)
+    _add_build(targets, "guide", "writer's guide page from WRITERS-GUIDE.md", _build_guide)
     _add_build(targets, "landing", "landing page with the story title", _build_landing)
     everything = _add_build(
         targets, "all", "every build step, ending with the landing page", _build_all

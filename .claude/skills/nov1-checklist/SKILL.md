@@ -27,6 +27,6 @@ Run every check, then print one table: check, pass/fail, evidence (a command out
 | One comment per check type | the most recent test PR (`gh pr list --state all --limit 1`) has exactly one Build, one Continuity, one Style comment |
 | Only format commits from bots on branches | `gh pr view <n> --json commits`: every `github-actions[bot]` commit has a `Nanoif-Format:` trailer and touches only `src/` prose files |
 | Eval baseline committed | `tests/eval/baselines/exe.json` exists and `/eval-prompts` reports no regression |
-| Writer docs current | `WRITING-WORKFLOW.md` under 150 lines, `README.md` "Before Nov 1" checklist has no unchecked items |
+| Writer docs current | `WRITERS-GUIDE.md` under 220 lines, `README.md` "Before Nov 1" checklist has no unchecked items |
 
 End with a single line: `READY` if every row passes, otherwise `NOT READY: <n> failing`.
