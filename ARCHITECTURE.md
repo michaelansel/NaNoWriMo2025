@@ -13,7 +13,7 @@ system as it is; each part links its ADR in [`architecture/`](architecture/).
 | `src/` | Writer prose `<INITIALS>-<YYYYMMDD>.twee`, tooling-owned `Start.twee` (the opening; its passages are story prose), and infrastructure passages (`StoryData`, `StoryTitle`, `StoryStyles`, `PathIdDisplay`) | [018](architecture/018-structure-check-and-report-only-lint.md), [020](architecture/020-story-bible-v2.md) |
 | `story-overrides.txt` | Writer-editable Story Bible corrections, syntax-checked on every build | [020](architecture/020-story-bible-v2.md) |
 | `nanoif/` | The one Python package and `nanoif` CLI | [015](architecture/015-nanoif-package.md) |
-| `.github/workflows/` | `build-and-deploy.yml`, `ai-command.yml`, `ai-maintenance.yml`, `intent.yml` | [014](architecture/014-actions-automation-exe-runner.md), [021](architecture/021-intent-gate.md) |
+| `.github/workflows/` | `build-and-deploy.yml`, `ai-command.yml`, `ai-maintenance.yml`, `intent.yml` | [014](architecture/014-actions-automation-exe-runner.md), [021](architecture/021-intent-gate.md), [025](architecture/025-format-commits-on-pr-branches.md) |
 | exe runner | Self-hosted Actions runner on an exe.dev VM, label `exe`; runs only AI jobs; `deploy/exe/`, `docs/exe-runner.md` | [014](architecture/014-actions-automation-exe-runner.md) |
 | LLM gateway | OpenAI-compatible endpoint reached from the exe runner with no key; our spend on it is capped monthly | [016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md) |
 | `ai/` | State written only by Actions jobs on `main` | [014](architecture/014-actions-automation-exe-runner.md), [022](architecture/022-ai-review-lineage-and-not-run.md), [020](architecture/020-story-bible-v2.md) |
@@ -49,13 +49,13 @@ src/*.twee
 - Categories (new / modified / unchanged) and `changes.json` come from comparing the working
   tree with the PR's merge base in git; there is no validation cache
   ([017](architecture/017-git-based-categorization.md)).
-- `nanoif check structure src/` and `nanoif lint src/` report on the same source; neither
-  writes to it ([018](architecture/018-structure-check-and-report-only-lint.md)).
 
 ## Pull request flow
 
 ```
-PR opened / pushed
+PR opened / pushed, or dispatched with pr=<N> for a format commit (a context job resolves the PR)
+  ├─ format  (hosted, same-repo; not built) → lint --fix changed prose → unforced bot commit →
+  │           dispatch checks for it, this run's build skips; cannot fix or dispatch → red + comment
   ├─ build   (hosted, contents: read) → story-preview artifact, Structure check run,
   │                                     <!-- nano:build --> comment (report step on !cancelled())
   ├─ test    (hosted) → pytest + ruff, required
@@ -128,14 +128,14 @@ push to main (or dispatch with bible-mode=full)
 | spend ledger `<NANOIF_LLM_LEDGER_DIR>/YYYY-MM.jsonl` (on the exe VM, not in git) | every model call | the monthly cap ([023](architecture/023-monthly-spend-cap.md)) |
 | extraction store `<NANOIF_BIBLE_STORE_DIR>/` (on the exe VM, not in git; loss = re-extract) | `bible extract` (PR and `main`) | `bible extract` ([026](architecture/026-pr-preview-bible-and-extract-store.md)) |
 
-Only `bible-extract` and `/dismiss` have `contents: write`, only for `ai/` on `main`. No
-automation commits to a PR branch ([014](architecture/014-actions-automation-exe-runner.md)).
+`contents: write`: `bible-extract` and `/dismiss`, only for `ai/` on `main`; `format` (not built),
+only for whitespace and quote fixes to prose on a same-repository PR branch. No other automation
+commits to a PR branch ([025](architecture/025-format-commits-on-pr-branches.md)).
 
 ## Data contracts
 
-Every JSON artifact that crosses a job or process boundary has a schema in
-`nanoif/schemas/artifacts/` and is validated when written and when read
-([015](architecture/015-nanoif-package.md)).
+Every JSON artifact that crosses a job or process boundary has a schema in `nanoif/schemas/artifacts/`
+and is validated when written and when read ([015](architecture/015-nanoif-package.md)).
 
 | Artifact | Schema | Producer → consumer |
 |---|---|---|
@@ -154,9 +154,10 @@ Every JSON artifact that crosses a job or process boundary has a schema in
 
 Other contracts: `ai-review-head-sha.txt` beside `ai-review.json` in the `ai-review-pr-<N>`
 artifact (unvalidated; missing means commit unknown), the `bible-cache` artifact (`bible-extract`
-→ `deploy`), the `story-bible-preview` artifact, markers `<!-- nano:build -->`,
-`<!-- nano:<editor> -->`, `<!-- nano:bible -->`, workflow input `bible-mode`, env `NANOIF_LLM_*`
-(including `MONTHLY_USD`, `LEDGER_DIR`), `NANOIF_BIBLE_STORE_DIR` and
+→ `deploy`), the `story-bible-preview` artifact, the `lint_fix` summary and `Nanoif-Format: <sha>`
+commit trailer ([025](architecture/025-format-commits-on-pr-branches.md)), markers `<!-- nano:build -->`,
+`<!-- nano:<editor> -->`, `<!-- nano:bible -->`, workflow inputs `bible-mode` and `pr`, env
+`NANOIF_LLM_*` (including `MONTHLY_USD`, `LEDGER_DIR`), `NANOIF_BIBLE_STORE_DIR` and
 `NANOIF_REVIEW_UNIT_BUDGET`, and repository variables `LLM_PROFILE`, `LLM_MODEL`,
 `LLM_MONTHLY_USD`, `EXE_HEALTH_URL`, `AI_RUNNER`.
 
@@ -166,12 +167,12 @@ artifact (unvalidated; missing means commit unknown), the `bible-cache` artifact
 |---|---|
 | `cli.py` | `nanoif` commands; every path derived from `--repo` or an explicit argument |
 | `errors.py` | package error hierarchy (`NanoifError`) |
-| `twee/` | the one header regex (`files`), link parser (`links`), story parser (`parse`), prose, word counts and the one infrastructure-passage rule (`prose.is_infra`), quote verifier (`quotes`), passage hashes, report-only linter (`lint`) |
+| `twee/` | the one header regex (`files`), link parser (`links`), story parser (`parse`), prose, word counts and the one infrastructure-passage rule (`prose.is_infra`), quote verifier (`quotes`), passage hashes, linter (`lint`: reports on `src/`; `--fix` only on named prose files, only whitespace and quotes, checked by an invariant) ([018](architecture/018-structure-check-and-report-only-lint.md), [025](architecture/025-format-commits-on-pr-branches.md)) |
 | `graph/` | path enumeration (`paths`), base comparison and categories (`categorize`), passage ids and the path-id lookup (`ids`) |
 | `git/` | the one `git` service: cached, timed, one `git log` per build |
 | `build/` | repository layout (`paths`) and `build core` |
 | `formats/` | `allpaths`, `metrics`, `passages`, `story_bible` pages from core artifacts; HTML in `templates/html/` |
-| `check/` | `structure` checks and the `story-overrides.txt` syntax parser |
+| `check/` | report-only `structure` checks ([018](architecture/018-structure-check-and-report-only-lint.md)) and the `story-overrides.txt` syntax parser |
 | `schemas/` | artifact schemas and write/read validation |
 | `llm/` | client, profiles, schema parsing, prompt rendering and hashes (`prompts`), pricing, spend ledger (`ledger`), test doubles ([016](architecture/016-llm-client-and-prompt-contract.md), [023](architecture/023-monthly-spend-cap.md)) |
 | `prompts/` | Jinja prompts with sibling output schemas |

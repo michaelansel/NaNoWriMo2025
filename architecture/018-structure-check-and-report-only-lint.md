@@ -2,7 +2,7 @@
 
 ## Status
 
-Status: Accepted
+Status: Accepted; the report-only linter and the removal of the smart-quotes rule are Superseded by ADR-025
 
 ## Context
 

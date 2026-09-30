@@ -1,12 +1,12 @@
 # ADR-025: The formatting fixer commits to same-repository pull request branches, and the fixed commit is rebuilt by dispatch
 
-Status: Proposed
+Status: Accepted
 
-On acceptance, this ADR supersedes ADR-018 in part (the report-only linter and the removal of the smart-quotes rule) and ADR-014 in part (no automation commits to a PR branch; the list of `contents: write` jobs). It becomes Accepted, and those two ADRs' `Status:` lines are amended, only when the user approves the formatting exception drafted in `PRINCIPLES.md` §2. Until then ADR-014 and ADR-018 stand, and no job may push to a PR branch.
+Supersedes: ADR-018 in part (the report-only linter and the removal of the smart-quotes rule) and ADR-014 in part (no automation commits to a PR branch; the list of `contents: write` jobs). Accepted when the user approved the formatting exception in `PRINCIPLES.md` §2: curly quotes become ASCII, and only files the PR adds or changes are fixed.
 
 ## Context
 
-ADR-018 stopped the 2025 linter from committing to writers' branches, because it rewrote prose and produced dozens of bot commits. The proposal reverses that for the formatting linter only (the exception drafted in `PRINCIPLES.md` §2): it may commit fixes that change whitespace and quote characters, never wording, never inside Harlowe macros or links.
+ADR-018 stopped the 2025 linter from committing to writers' branches, because it rewrote prose and produced dozens of bot commits. The proposal reverses that for the formatting linter only (the exception in `PRINCIPLES.md` §2): it may commit fixes that change whitespace and quote characters, never wording, never inside Harlowe macros or links.
 
 Four constraints shape how:
 - A push made with `GITHUB_TOKEN` starts no `pull_request` or `push` run. A fixed commit would get no build, preview, AI review, `test` or `Intent` check of its own.
@@ -54,10 +54,11 @@ Four constraints shape how:
   - Subject `style: fix N formatting issues in <files>`.
   - Trailer `Nanoif-Format: <previous head sha>`.
 - **Push:** `HEAD:refs/heads/<head_ref>`, never forced.
-  - A rejection means the writer pushed again. The job does not retry; it writes a step-summary line ("branch moved; the newer run formats it") and sets `pushed=false`.
+  - Only a non-fast-forward rejection means the writer pushed again. The job does not retry; it writes a step-summary line ("branch moved; the newer run formats it") and sets `pushed=false`.
+  - Any other push failure (permissions, protected branch, network) sets `pushed=false` and the output `not_applied=<reason>`, and the job fails; it never reports success. `build` still runs in this run and its Build comment says "Formatting was not applied: <reason>". The reason travels through the output, not a separate comment, because `build` rewrites the same `<!-- nano:build -->` comment after `format`.
 - **Dispatch:** after a push the job runs `gh workflow run build-and-deploy.yml --ref <head_ref> -f pr=<N>` and `gh workflow run intent.yml --ref <head_ref>`, each retried once.
   - If either still fails, the job writes the `<!-- nano:build -->` comment through `nanoif github build-report`: "fixed in `<sha7>`, but the checks for that commit could not start: <reason>; edit any file or ask a maintainer to re-run". Then the job fails.
-- **Outputs:** `pushed`, `new_sha`.
+- **Outputs:** `pushed`, `new_sha`, `not_applied`.
 
 ### The run that pushed, and the dispatched run
 

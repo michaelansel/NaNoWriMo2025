@@ -2,7 +2,7 @@
 
 ## Status
 
-Status: Accepted
+Status: Accepted; "no automation commits to a PR branch" and the list of contents: write jobs are Superseded by ADR-025
 Supersedes: ADR-003, ADR-005, ADR-013
 
 ## Context
