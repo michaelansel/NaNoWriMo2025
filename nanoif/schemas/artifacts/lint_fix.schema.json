@@ -1,0 +1,30 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nanoif.invalid/schemas/artifacts/lint_fix.schema.json",
+  "title": "Lint Fix Summary",
+  "description": "Output of `nanoif lint --fix FILE... --summary-out PATH` (ADR-025): what the formatting fixer changed in each file it was given. Written only when every file was fixed and written.",
+  "type": "object",
+  "required": ["files", "total"],
+  "additionalProperties": false,
+  "properties": {
+    "files": {
+      "type": "array",
+      "description": "Every file given, in the order given",
+      "items": {
+        "type": "object",
+        "required": ["file", "fixed"],
+        "additionalProperties": false,
+        "properties": {
+          "file": { "type": "string", "minLength": 1, "description": "The path as given on the command line" },
+          "fixed": {
+            "type": "object",
+            "description": "Issues fixed per rule; empty when the file needed nothing",
+            "propertyNames": { "pattern": "^[a-z]+(-[a-z]+)*$" },
+            "additionalProperties": { "type": "integer", "minimum": 1 }
+          }
+        }
+      }
+    },
+    "total": { "type": "integer", "minimum": 0, "description": "Sum of every count in files[].fixed" }
+  }
+}

@@ -239,10 +239,53 @@ def _build_all(args: argparse.Namespace) -> int:
     return 0
 
 
+def _lint_fix(args: argparse.Namespace) -> int:
+    """``lint --fix``: named prose files only, all or nothing, with a summary (ADR-025)."""
+    from nanoif.errors import LintError
+    from nanoif.schemas.artifacts import write_artifact
+    from nanoif.twee.files import parse_prose_file_name
+    from nanoif.twee.lint import fix_files, fix_summary
+
+    def usage(message: str) -> int:
+        print(f"error: lint --fix: {message}", file=sys.stderr)
+        return 2
+
+    if args.summary_out is None:
+        return usage("--summary-out PATH is required")
+    if args.exit_zero:
+        return usage("--exit-zero is for reporting; --fix exits 0 unless nothing was written")
+    for path in args.paths:
+        if not (
+            path.is_file()
+            and path.suffix == ".twee"
+            and path.parent.name == "src"
+            and parse_prose_file_name(path.name) is not None
+        ):
+            return usage(f"{path} is not an existing src/<INITIALS>-<YYYYMMDD>.twee file")
+    try:
+        fixes = fix_files(args.paths)
+    except LintError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    summary = fix_summary(fixes)
+    write_artifact(args.summary_out, summary, "lint_fix")
+    for fix in fixes:
+        if fix.violations:
+            print(f"{fix.file}: fixed {len(fix.violations)} formatting issue(s)")
+    changed = sum(1 for fix in fixes if fix.violations)
+    print(f"{summary['total']} formatting issue(s) fixed in {changed} file(s)", file=sys.stderr)
+    return 0
+
+
 def _lint(args: argparse.Namespace) -> int:
     from nanoif.twee.lint import lint_path
 
-    violations = lint_path(args.path)
+    if args.fix:
+        return _lint_fix(args)
+    if args.summary_out is not None:
+        print("error: lint: --summary-out needs --fix", file=sys.stderr)
+        return 2
+    violations = [violation for path in args.paths for violation in lint_path(path)]
     for violation in violations:
         print(violation.github() if args.format == "github" else str(violation))
     files = len({violation.file for violation in violations})
@@ -495,13 +538,34 @@ def build_parser() -> argparse.ArgumentParser:
     everything.set_defaults(include=None, exclude=None, top=10)
     build.set_defaults(handler=lambda _args: (build.print_help(), 2)[1])
 
-    lint = subparsers.add_parser("lint", help="report Twee formatting issues (never edits files)")
-    lint.add_argument("path", type=Path, help=".twee file or directory")
+    lint = subparsers.add_parser(
+        "lint",
+        help="report Twee formatting issues; with --fix, fix named prose files (ADR-025)",
+    )
+    lint.add_argument(
+        "paths",
+        nargs="+",
+        type=Path,
+        metavar="path",
+        help=".twee file or directory; with --fix, src/<INITIALS>-<YYYYMMDD>.twee files only",
+    )
     lint.add_argument("--format", choices=["text", "github"], default="text")
     lint.add_argument(
         "--exit-zero",
         action="store_true",
         help="report issues but exit 0; a linter error still exits 1 (report-only CI)",
+    )
+    lint.add_argument(
+        "--fix",
+        action="store_true",
+        help="fix whitespace and quote marks in the named prose files, all or nothing; "
+        "exit 0 (written, or nothing to fix), 1 (nothing written), 2 (usage)",
+    )
+    lint.add_argument(
+        "--summary-out",
+        type=Path,
+        default=None,
+        help="with --fix: where to write the lint_fix summary (issues fixed per rule per file)",
     )
     lint.set_defaults(handler=_lint)
 

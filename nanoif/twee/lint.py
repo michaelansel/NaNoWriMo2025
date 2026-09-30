@@ -1,8 +1,9 @@
 """Twee formatting rules.
 
-``nanoif lint`` only reports. :func:`fix_file` exists for tests and local use
-and is deliberately not reachable from the CLI: automation never rewrites a
-writer's prose.
+``nanoif lint`` reports. ``nanoif lint --fix FILE...`` (ADR-025) fixes named prose
+files through :func:`fix_files`: :func:`fix_text` checks that every fix changes only
+whitespace and quote marks, never a passage name, tag or link target, and that fixing
+again changes nothing; one refused file means no file is written.
 
 Rules:
 
@@ -22,6 +23,8 @@ Rules:
 
 from __future__ import annotations
 
+from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -381,7 +384,7 @@ def lint_file(path: Path) -> list[Violation]:
 
 
 def fix_file(path: Path) -> list[Violation]:
-    """Rewrite one ``.twee`` file with every violation fixed. Not exposed on the CLI.
+    """Rewrite one ``.twee`` file with every violation fixed (the CLI uses :func:`fix_files`).
 
     Args:
         path: The file.
@@ -396,6 +399,82 @@ def fix_file(path: Path) -> list[Violation]:
     if violations:
         path.write_text(fixed, encoding="utf-8")
     return violations
+
+
+@dataclass(frozen=True)
+class FileFix:
+    """What :func:`fix_files` did to one file.
+
+    Attributes:
+        file: The file, as given.
+        violations: The violations that were fixed; empty when the file was left untouched.
+    """
+
+    file: Path
+    violations: tuple[Violation, ...]
+
+
+def fix_files(paths: Sequence[Path]) -> list[FileFix]:
+    """Fix several ``.twee`` files, all or nothing (ADR-025).
+
+    Every file is read and fixed in memory first, each fix checked by :func:`fix_text`.
+    Only when all of them pass are the changed files written, each to a temporary file
+    beside it that is then renamed over it.
+
+    Args:
+        paths: The files, in the order to report them.
+
+    Returns:
+        One :class:`FileFix` per path, in the order given.
+
+    Raises:
+        LintError: If a file cannot be read, a fix is refused, or a temporary file cannot
+            be written, and then no file has changed; or if a rename fails, and then the
+            message names the files already written.
+    """
+    results = [(path, *fix_text(_read(path), path)) for path in paths]
+    staged: list[tuple[Path, Path]] = []
+
+    def discard() -> None:
+        for temporary, _ in staged:
+            temporary.unlink(missing_ok=True)
+
+    for path, fixed, violations in results:
+        if not violations:
+            continue
+        temporary = path.with_name(f".{path.name}.nanoif-fix")
+        staged.append((temporary, path))
+        try:
+            temporary.write_text(fixed, encoding="utf-8")
+        except OSError as exc:
+            discard()
+            raise LintError(f"cannot write {path}: {exc}; nothing was written") from exc
+    written: list[str] = []
+    for temporary, path in staged:
+        try:
+            temporary.replace(path)
+        except OSError as exc:
+            discard()
+            done = ", ".join(written) or "none"
+            raise LintError(f"cannot replace {path}: {exc}; already written: {done}") from exc
+        written.append(str(path))
+    return [FileFix(path, tuple(violations)) for path, _, violations in results]
+
+
+def fix_summary(fixes: Sequence[FileFix]) -> dict[str, object]:
+    """Build the ``lint_fix`` artifact: the issues fixed per rule in each file, and the total.
+
+    Args:
+        fixes: What :func:`fix_files` returned.
+
+    Returns:
+        ``{"files": [{"file", "fixed": {rule: count}}], "total"}``.
+    """
+    files = [
+        {"file": str(fix.file), "fixed": dict(Counter(v.rule for v in fix.violations))}
+        for fix in fixes
+    ]
+    return {"files": files, "total": sum(len(fix.violations) for fix in fixes)}
 
 
 def lint_path(path: Path) -> list[Violation]:
