@@ -26,7 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from nanoif.errors import LintError
-from nanoif.twee.files import PASSAGE_HEADER_RE
+from nanoif.twee.files import PASSAGE_HEADER_RE, split_twee
 from nanoif.twee.links import find_links
 from nanoif.twee.prose import HTML_TAG_RE, macro_spans
 
@@ -177,6 +177,16 @@ def _words(text: str) -> str:
     return "".join(text.translate(CANONICAL_QUOTES).split())
 
 
+def _shape(text: str) -> dict[str, list[object]]:
+    """What another file can depend on: passage names, their tags, and every link target."""
+    passages = split_twee(text)
+    return {
+        "passage names": [passage.name for passage in passages],
+        "tags": [passage.tags for passage in passages],
+        "link targets": [link.target for link in find_links(text)],
+    }
+
+
 def _run(text: str, file: Path, fix: bool) -> tuple[list[Violation], list[str]]:
     """Apply every rule; return the violations and the fixed lines."""
     lines = text.splitlines(keepends=True)
@@ -305,8 +315,19 @@ def lint_text(text: str, file: Path) -> list[Violation]:
     return _run(text, file, fix=False)[0] + _smart_quotes(text, file)[0]
 
 
+def _fix(text: str, file: Path) -> tuple[str, list[Violation]]:
+    """Apply every fix once, unchecked; return the text unchanged when nothing applies."""
+    quote_violations, unquoted = _smart_quotes(text, file)
+    violations, out = _run(unquoted, file, fix=True)
+    violations += quote_violations
+    if not violations:
+        return text, []
+    fixed = "\n".join(out)
+    return (fixed + "\n" if fixed else fixed), violations
+
+
 def fix_text(text: str, file: Path) -> tuple[str, list[Violation]]:
-    """Fix Twee source.
+    """Fix Twee source, checking that the fix changed only formatting (ADR-025).
 
     Args:
         text: File contents.
@@ -317,17 +338,23 @@ def fix_text(text: str, file: Path) -> tuple[str, list[Violation]]:
         the violations that were fixed.
 
     Raises:
-        LintError: The fix would change a word (anything but whitespace and quote marks).
+        LintError: The fix would change a word (anything but whitespace and quote marks),
+            a passage name, a tag or a link target, or fixing the result again would
+            change it (the fix is not idempotent).
     """
-    quote_violations, unquoted = _smart_quotes(text, file)
-    violations, out = _run(unquoted, file, fix=True)
-    violations += quote_violations
+    fixed, violations = _fix(text, file)
     if not violations:
         return text, []
-    fixed = "\n".join(out)
-    fixed = fixed + "\n" if fixed else fixed
     if _words(fixed) != _words(text):
         raise LintError(f"fixing {file} would change its words; nothing was written")
+    before, after = _shape(text), _shape(fixed)
+    for what, value in before.items():
+        if after[what] != value:
+            raise LintError(f"fixing {file} would change its {what}; nothing was written")
+    if _fix(fixed, file)[0] != fixed:
+        raise LintError(
+            f"fixing {file} is not stable: fixing it again would change it; nothing was written"
+        )
     return fixed, violations
 
 

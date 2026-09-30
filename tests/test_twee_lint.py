@@ -678,6 +678,7 @@ class TestSmartQuotes:
         assert "<span title=\"Tam\u2019s\">" in fixed
         assert "content: \"\u201c\";" in fixed
 
+    @pytest.mark.intent("AC-structure-check-23", "ADR-025")
     def test_a_fix_that_would_change_a_word_is_refused(self, monkeypatch, tmp_path):
         import nanoif.twee.lint as lint_module
 
@@ -688,6 +689,62 @@ class TestSmartQuotes:
         with pytest.raises(LintError, match="would change"):
             fix_file(test_file)
         assert test_file.read_text(encoding="utf-8") == original
+
+    @pytest.mark.intent("AC-structure-check-23", "ADR-025")
+    @pytest.mark.parametrize(
+        ("text", "what"),
+        [
+            (":: The widow’s door\n\nShe knocked.\n", "passage names"),
+            (":: Start [Wren’s]\n\nShe knocked.\n", "tags"),
+            (":: Start\n\n[[Knock->The widow’s door]]\n", "link targets"),
+        ],
+    )
+    def test_a_fix_that_would_change_a_name_tag_or_link_is_refused(
+        self, monkeypatch, tmp_path, text, what
+    ):
+        # If the protected spans ever failed, the smart-quotes fix would rename a passage,
+        # a tag or a link target without changing a word; the invariant still refuses it.
+        import nanoif.twee.lint as lint_module
+
+        monkeypatch.setattr(lint_module, "_protected", lambda source: [False] * len(source))
+        test_file = tmp_path / "test.twee"
+        test_file.write_text(text, encoding="utf-8")
+        with pytest.raises(LintError, match=f"would change its {what}"):
+            fix_file(test_file)
+        assert test_file.read_text(encoding="utf-8") == text
+
+    @pytest.mark.intent("ADR-025")
+    def test_a_fix_that_is_not_idempotent_is_refused(self, monkeypatch):
+        import nanoif.twee.lint as lint_module
+
+        original = lint_module._run
+
+        def drifting(text, file, fix):
+            violations, out = original(text, file, fix)
+            # Each pass adds another blank line at the top: no word changes, but a second
+            # fix would change the text again.
+            return violations + [Violation(file, 1, "drift", "drift")], ["", *out]
+
+        monkeypatch.setattr(lint_module, "_run", drifting)
+        with pytest.raises(LintError, match="fixing it again would change it"):
+            fix_text(":: Start\n\nText\n", Path("x.twee"))
+
+    @pytest.mark.intent("ADR-025")
+    @pytest.mark.parametrize("seed", range(40))
+    def test_fixing_twice_gives_the_text_of_fixing_once(self, seed):
+        import random
+
+        fragments = [
+            ":: Start", "::Wren’s room", ":: Tam [ending]", "", "", "   ", "\t",
+            "Text.", "Text.  ", "She said “hi”.", "[[Go->Start]]", "[[Tam]]",
+            "  [[Wren’s room]]  ", "[[a]] and [[b]]", "(if: $x)[“ok”]",
+            "(set: $a to \"b’\")", "<span>‘q’</span>", ":: StoryData",
+        ]
+        rng = random.Random(seed)
+        lines = [rng.choice(fragments) for _ in range(rng.randint(1, 14))]
+        text = "\n".join(lines) + rng.choice(["", "\n", "\n\n", "\r\n"])
+        once, _ = fix_text(text, Path("x.twee"))
+        assert fix_text(once, Path("x.twee")) == (once, [])
 
     def test_fixing_quotes_and_whitespace_together_is_idempotent(self, tmp_path):
         test_file = tmp_path / "test.twee"
