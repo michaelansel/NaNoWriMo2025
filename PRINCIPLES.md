@@ -200,7 +200,7 @@ simplicity.
 ## Strategic decision: pull requests are the writer's interface
 
 - Writers commit through the GitHub web UI, see results in pull request comments and the preview,
-  and run the few on-demand commands as pull request comments ([WRITING-WORKFLOW.md](WRITING-WORKFLOW.md)).
+  and run the few on-demand commands as pull request comments (see the Writer's Guide on the site).
 - Writers never install tools, run commands, or run Claude in the repository.
 - The `nanoif` CLI is a developer tool. It is not documented in writer guides and is not a supported
   way to contribute.

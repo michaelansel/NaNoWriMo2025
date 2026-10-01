@@ -42,7 +42,6 @@ live without further steps.
 The writer-facing guide is `WRITERS-GUIDE.md`: first-time setup, the daily routine, the notes a
 pull request gets, and what to do when something looks wrong. It describes only the GitHub web UI
 and the story's site, and is also a page on the site ([output-formats](output-formats.md)).
-`CONTRIBUTING.md` and the README point to it and repeat none of it.
 
 ### The naming rule
 | What | Pattern | Example from the eval story |
@@ -70,7 +69,7 @@ Writers may use any of these; every tool reads them the same way:
 - AC-web-editing-6: A link from one writer's file to a passage declared in another writer's file resolves, and no structure error is reported for it.
 - AC-web-editing-7: A writer can edit a passage, commit to a new branch, create the day's file on that branch, and open a pull request using only github.com in a browser. (verify: manual)
 - AC-web-editing-8: `WRITERS-GUIDE.md` is under 220 lines, every step in it happens in the GitHub web UI or on the story's site, and it names no command-line tool. (verify: manual)
-- AC-web-editing-9: `WRITERS-GUIDE.md` takes a first-time writer from accepting the collaborator invitation to an open pull request using only the web UI; `CONTRIBUTING.md` and the README's writing section link to it and contain no steps, commands or note explanations of their own. (verify: manual)
+- AC-web-editing-9: `WRITERS-GUIDE.md` takes a first-time writer from accepting the collaborator invitation to an open pull request using only the web UI; the first line after the README's title sends writers to the guide page on the site by its `https://` address, and the README contains no writer steps or note explanations of its own. (verify: manual)
 - AC-web-editing-10: Every file name and entry passage shown in `WRITERS-GUIDE.md` and `README.md` follows the naming rule, and no other naming pattern appears in them. (verify: manual)
 
 ## Edge cases

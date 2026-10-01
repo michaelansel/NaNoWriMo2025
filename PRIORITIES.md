@@ -25,7 +25,8 @@ from a browser, with nothing blocking them.
   in CI as a required check.
 - No automation commits to a writer's branch or rewrites prose, except the formatting linter,
   which pushes its whitespace and quote fixes to the pull request branch.
-- Writer docs (`README.md`, `CONTRIBUTING.md`, `WRITING-WORKFLOW.md`) are current.
+- The Writer's Guide (`WRITERS-GUIDE.md`, shown on the site) is current for writers, and
+  `README.md` is current for the organiser and developer.
 
 **Done by:** Oct 25, when `/nov1-checklist` prints `READY`.
 

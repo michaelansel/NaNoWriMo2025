@@ -4,7 +4,7 @@ Writers add Twee passages to `src/` through pull requests. GitHub Actions builds
 story and reading aids, runs deterministic checks, and runs AI editors that read only the new
 and changed passages. Every result lands on the PR as one sticky comment and one check run per
 check type, and nothing a check could not do is ever shown as a pass. This page describes the
-system as it is; each part links its ADR in [`architecture/`](architecture/).
+system as it is; each part links its ADR in [`architecture/`](architecture/). ADR numbers missing there are retired decisions, kept in git history and never reused.
 
 ## Components
 

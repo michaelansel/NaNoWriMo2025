@@ -99,6 +99,6 @@ Owners write only their own layer (enforced by a write-scope hook). Skills: `/pr
 
 - Why and what matters: `VISION.md`, `PRINCIPLES.md`, `PRIORITIES.md` (stack rank, dates, and the roadmap; there is no ROADMAP.md)
 - What features do: `features/*.md`; how the system is shaped: `ARCHITECTURE.md`, `architecture/*.md` ADRs
-- What writers read: `WRITERS-GUIDE.md` (also a page on the site) and `README.md`; `CONTRIBUTING.md` and `WRITING-WORKFLOW.md` only point to the guide
+- What writers read: the story's site, whose Writer's Guide page is built from `WRITERS-GUIDE.md`, and the GitHub web UI. Every other doc in the repo is for the organiser and developers
 - What the AI must get right: `tests/fixtures/eval-story/truth.json` and `tests/eval/baselines/`
 - Path-specific rules for this agent: `.claude/rules/*.md`

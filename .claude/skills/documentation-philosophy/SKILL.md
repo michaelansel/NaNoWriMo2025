@@ -39,5 +39,5 @@ paths:
 - **Vision, principles, priorities** (`VISION.md`, `PRINCIPLES.md`, `PRIORITIES.md`): why we exist, how we decide, what matters now in rank order with dates.
 - **Feature notes** (`features/*.md`, `/prd`): user problem, user stories, testable acceptance criteria, edge cases, one status line. Stop at what the writer sees; implementation belongs in an ADR or the code.
 - **ADRs** (`architecture/NNN-*.md`, `/adr`): context, decision, consequences, alternatives. Superseded ADRs get a pointer, not a rewrite.
-- **Writer docs** (`WRITERS-GUIDE.md`, `README.md`; `CONTRIBUTING.md` and `WRITING-WORKFLOW.md` are pointers): written for a non-technical writer in the GitHub web UI and on the site.
+- **Writer doc** (`WRITERS-GUIDE.md`, read as a page on the site): written for a non-technical writer in the GitHub web UI and on the site. Every other doc, `README.md` included, is for the organiser and developers; writer how-to goes in the guide, never in a second file.
 - **Tests and eval baselines** are contracts too: `tests/fixtures/eval-story/truth.json` defines what the AI must get right.

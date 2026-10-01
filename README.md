@@ -1,5 +1,9 @@
 # NaNoWriMo interactive fiction
 
+**Writers:** everything you need is in the
+**[Writer's Guide](https://michaelansel.github.io/NaNoWriMo2026/writers-guide.html)** on the
+story's site. This page is for the organiser and the people who maintain the tooling.
+
 A branching story written together during NaNoWriMo. Writers add Twee passages from the GitHub
 web UI; every pull request gets a playable preview, a structure check and an honest AI read of the
 new passages, and every merge publishes the story.
@@ -16,12 +20,6 @@ https://michaelansel.github.io/NaNoWriMo2026/
 - [ ] `src/Start.twee`: the opening passage, linking to the first day's passage
 - [ ] Writers added as collaborators, so their `/check-continuity` comments count
 - [ ] `/nov1-checklist` prints `READY`
-
-## Writing
-
-Writers never need anything installed. Everything a writer needs, from the first pull request to
-the daily routine, the notes and fixing the Story Bible, is in the
-**[Writer's Guide](WRITERS-GUIDE.md)**.
 
 ## What runs automatically
 
